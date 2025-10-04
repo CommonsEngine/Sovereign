@@ -1,4 +1,5 @@
 import prisma from "../prisma.mjs";
+import { uuid } from "../utils/id.mjs";
 
 export async function createProject(req, res) {
   try {
@@ -23,6 +24,7 @@ export async function createProject(req, res) {
 
     const project = await prisma.project.create({
       data: {
+        id: uuid("p_"),
         name,
         des,
         type,
