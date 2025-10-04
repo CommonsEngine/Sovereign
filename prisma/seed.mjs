@@ -6,7 +6,7 @@ async function main() {
   // Clean in FK-safe order
   await prisma.postMeta.deleteMany();
   await prisma.projectCmsgit.deleteMany();
-  await prisma.projectCanvasGraph.deleteMany();
+  await prisma.projectPaperTrail.deleteMany();
   await prisma.projectWorkspace.deleteMany();
   await prisma.session?.deleteMany().catch(() => {});
   await prisma.verificationToken?.deleteMany().catch(() => {});
@@ -89,21 +89,21 @@ async function main() {
     ],
   });
 
-  // Project: Canvas Graph
-  const canvas = await prisma.project.create({
+  // Project: PaperTrail
+  const papertrail = await prisma.project.create({
     data: {
-      name: "Canvas Playground",
-      des: "A canvas-based experiment",
-      type: "canvasgraph",
+      name: "PaperTrail",
+      des: "A document-based project",
+      type: "papertrail",
       scope: "private",
       status: "draft",
       owner: { connect: { id: admin.id } },
     },
   });
 
-  await prisma.projectCanvasGraph.create({
+  await prisma.projectPaperTrail.create({
     data: {
-      projectId: canvas.id,
+      projectId: papertrail.id,
       width: 1280,
       height: 800,
       bgColor: "#ffffff",

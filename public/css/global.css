@@ -15,6 +15,9 @@ html,
 body {
   height: 100%;
 }
+button {
+  cursor: pointer;
+}
 body.page {
   margin: 0;
   font-family:
@@ -632,7 +635,7 @@ td .title {
   border: 1px solid var(--color-border-card);
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 13px;
   background: #fff;
   color: var(--color-ink);
   outline: none;

@@ -5,7 +5,7 @@ export async function createProject(req, res) {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const allowedTypes = new Set(["cmsgit", "canvasgraph", "workspace"]);
+    const allowedTypes = new Set(["gitcms", "papertrail", "workspace"]);
     const allowedScopes = new Set(["private", "org", "public"]);
 
     const raw = req.body || {};
@@ -15,7 +15,7 @@ export async function createProject(req, res) {
         .slice(0, 120) || "Untitled";
     const type = allowedTypes.has(String(raw.type))
       ? String(raw.type)
-      : "cmsgit";
+      : "gitcms";
     const scope = allowedScopes.has(String(raw.scope))
       ? String(raw.scope)
       : "private";
@@ -31,17 +31,11 @@ export async function createProject(req, res) {
       },
       select: {
         id: true,
-        name: true,
-        type: true,
-        scope: true,
-        createdAt: true,
       },
     });
-
-    // Created
-    res.status(201).json(project);
+    return res.status(201).json(project);
   } catch (e) {
     console.error("Create project failed:", e);
-    res.status(500).json({ error: "Failed to create project" });
+    return res.status(500).json({ error: "Failed to create project" });
   }
 }

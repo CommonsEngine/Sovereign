@@ -8,8 +8,8 @@ generator client {
 }
 
 enum ProjectType {
-  cmsgit
-  canvasgraph
+  gitcms
+  papertrail
   workspace
 }
 
@@ -30,16 +30,15 @@ model Project {
   des       String? @map("desc")
   publicUrl String? @map("public_url")
 
-  type   ProjectType   @default(cmsgit) @map("type")
+  type   ProjectType   @default(gitcms) @map("type")
   scope  ProjectScope  @default(private) @map("scope")
   status ProjectStatus @default(draft) @map("status")
 
   // 1:1 subtypes
-  cmsgit      ProjectCmsgit?
-  canvasgraph ProjectCanvasGraph?
-  workspace   ProjectWorkspace?
+  gitcms     ProjectGitCMS?
+  papertrail ProjectPaperTrail?
+  workspace  ProjectWorkspace?
 
-  // owner (renamed from userId/user), still backed by column "user_id"
   ownerId String? @map("user_id")
   owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
 
@@ -70,23 +69,23 @@ enum AuthType {
 }
 
 // CMS Git project-specific fields
-model ProjectCmsgit {
+model ProjectGitCMS {
   projectId String  @id @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  repoUrl    String  @map("repo_url")
-  defaultBranch     String  @default("main") @map("default_branch")
-  contentDir String? @map("content_dir")
-  lastCommit String? @map("last_commit")
-  provider   GitProvider? @map("provider") @default(github)
-  authType   AuthType? @map("auth_type") @default(ssh)
-  authSecret String? @map("auth_secret")
+  repoUrl       String       @map("repo_url")
+  defaultBranch String       @default("main") @map("default_branch")
+  contentDir    String?      @map("content_dir")
+  lastCommit    String?      @map("last_commit")
+  provider      GitProvider? @default(github) @map("provider")
+  authType      AuthType?    @default(ssh) @map("auth_type")
+  authSecret    String?      @map("auth_secret")
 
   postMetas PostMeta[]
 }
 
-// Canvas Graph project-specific fields
-model ProjectCanvasGraph {
+// PaperTrail project-specific fields
+model ProjectPaperTrail {
   projectId String  @id @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -108,16 +107,16 @@ model PostMeta {
   excerpt   String?
   pubDate   DateTime?
   draft     Boolean?  @default(true)
-  tags      String? // Comma-separated list of tags (e.g., "tag1,tag2")
+  tags      String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  cmsgitId String        @map("cmsgit_id")
-  cmsgit   ProjectCmsgit @relation(fields: [cmsgitId], references: [projectId], onDelete: Cascade)
+  gitcmsId String?        @map("gitcms_id")
+  gitcms   ProjectGitCMS? @relation(fields: [gitcmsId], references: [projectId], onDelete: Cascade)
 
-  @@unique([cmsgitId, path])
-  @@index([cmsgitId])
+  @@unique([gitcmsId, path])
+  @@index([gitcmsId])
   @@map("post_meta")
 }
 

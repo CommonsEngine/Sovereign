@@ -36,10 +36,13 @@ export async function viewIndexPage(req, res) {
       },
       select: {
         id: true,
+        type: true,
+        scope: true,
         name: true,
         des: true,
         status: true,
         createdAt: true,
+        updatedAt: true,
       },
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     });
@@ -92,7 +95,82 @@ export async function viewRegisterPage(_, res) {
 }
 
 export async function viewProjectPage(req, res) {
-  return res.render("project", { projectId: req.params.id });
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        name: true,
+        des: true,
+        type: true,
+        scope: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        gitcms: {
+          select: {
+            projectId: true,
+            repoUrl: true,
+            defaultBranch: true,
+            contentDir: true,
+            provider: true,
+            authType: true,
+          },
+        },
+        papertrail: {
+          select: {
+            projectId: true,
+            width: true,
+            height: true,
+            bgColor: true,
+          },
+        },
+        workspace: {
+          select: {
+            projectId: true,
+          },
+        },
+      },
+    });
+
+    if (!project) {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Not found",
+        description: "Project not found",
+      });
+    }
+
+    let view = "project";
+    const ctx = { project };
+
+    switch (project.type) {
+      case "gitcms":
+        view = "project-gitcms";
+        ctx.gitcms = project.gitcms || null;
+        break;
+      case "papertrail":
+        view = "project-papertrail";
+        ctx.papertrail = project.papertrail || null;
+        break;
+      case "workspace":
+        view = "project-workspace";
+        ctx.workspace = project.workspace || null;
+        break;
+      default:
+        // fall back to generic project view
+        break;
+    }
+
+    return res.render(view, ctx);
+  } catch (err) {
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load project",
+      error: err?.message || String(err),
+    });
+  }
 }
 
 export async function viewPostPage(req, res) {

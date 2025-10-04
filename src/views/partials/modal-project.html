@@ -8,14 +8,25 @@
   >
     <header class="modal__header">
       <h3 id="project-modal-title" class="modal__title">Create new project</h3>
-      <button
+      <!-- <button
         type="button"
         class="modal__close"
         data-modal-close
         aria-label="Close"
       >
-        ×
-      </button>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          aria-hidden="true"
+          focusable="false"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          class="size-4"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </button> -->
     </header>
 
     <div class="modal__body">
@@ -27,15 +38,15 @@
             class="modal__input input"
             type="text"
             maxlength="120"
-            placeholder="My project"
+            placeholder="Eg. My Workspace"
             data-modal-autofocus
           />
         </div>
         <div class="modal__field">
           <label class="modal__label" for="project-type-input">Type</label>
           <select id="project-type-input" class="modal__input input">
-            <option value="cmsgit" selected>CMS Git</option>
-            <option value="canvasgraph">Canvas Graph</option>
+            <option value="gitcms" selected>GitCMS</option>
+            <option value="papertrail">PaperTrail</option>
             <option value="workspace">Workspace</option>
           </select>
         </div>
@@ -56,7 +67,7 @@
             class="modal__input input"
             rows="3"
             maxlength="500"
-            placeholder="Short description"
+            placeholder="Briefly describe the project—purpose, key features, and initial goals."
           ></textarea>
         </div>
 
@@ -69,10 +80,10 @@
     </div>
 
     <footer class="modal__footer">
-      <button type="button" class="button" data-modal-close>Cancel</button>
+      <button type="button" class="chip button" data-modal-close>Cancel</button>
       <button
         type="submit"
-        class="button button--primary"
+        class="chip chip--primary button button--primary"
         formnovalidate
         data-modal-submit
       >
@@ -94,6 +105,27 @@
       const scopeEl = root.querySelector("#project-scope-input");
       const desEl = root.querySelector("#project-desc-input");
 
+      // Reset form and error when modal is closed
+      function resetForm() {
+        form?.reset();
+        if (err) {
+          err.textContent = "";
+          err.style.display = "none";
+        }
+      }
+      // Observe the hidden attribute toggled by the modal runtime
+      const modalObserver = new MutationObserver((mutList) => {
+        for (const m of mutList) {
+          if (m.type === "attributes" && m.attributeName === "hidden") {
+            if (root.hasAttribute("hidden")) resetForm();
+          }
+        }
+      });
+      modalObserver.observe(root, {
+        attributes: true,
+        attributeFilter: ["hidden"],
+      });
+
       root.addEventListener("click", async (e) => {
         const submit = e.target.closest("[data-modal-submit]");
         if (!submit) return;
@@ -102,7 +134,7 @@
 
         const payload = {
           name: (nameEl?.value || "Untitled").trim().slice(0, 120),
-          type: typeEl?.value || "cmsgit",
+          type: typeEl?.value || "gitcms",
           scope: scopeEl?.value || "private",
           des: (desEl?.value || "").trim().slice(0, 500),
         };

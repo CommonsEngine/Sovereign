@@ -40,6 +40,7 @@
   gap: 8px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--color-border-card);
+  background-color: #f9fafb;
 }
 .modal__title {
   font-size: 16px;
@@ -49,14 +50,15 @@
 }
 /* Close button */
 .modal__close {
-  border: 1px solid var(--color-border-card);
-  background: #fff;
+  border: none;
+  background: transparent;
   border-radius: 8px;
-  width: 28px;
-  height: 28px;
-  line-height: 26px;
+  width: 24px;
+  height: 24px;
   text-align: center;
   cursor: pointer;
+  padding: 0;
+  color: #999;
 }
 .modal__close:hover {
   background: #f8fafc;
