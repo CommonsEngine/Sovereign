@@ -1,0 +1,61 @@
+{
+  "name": "sovereign",
+  "description": "Reclaim your digital freedom.",
+  "version": "0.0.1",
+  "main": "./src/index.mjs",
+  "scripts": {
+    "prestart": "npx prisma db push && npm run prisma:reset && npm run prisma:seed",
+    "start": "node src/index.mjs",
+    "dev": "nodemon",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.mjs",
+    "prisma:reset": "prisma/reset.sh",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src",
+      "public",
+      "data"
+    ],
+    "ext": "mjs,js,json,html,css",
+    "exec": "node src/index.mjs",
+    "signal": "SIGTERM"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.16.3",
+    "archiver": "^7.0.1",
+    "argon2": "^0.44.0",
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.2",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "sharp": "^0.34.3",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-promise": "^7.2.1",
+    "globals": "^16.4.0",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.3.3",
+    "prisma": "^6.16.3"
+  }
+}

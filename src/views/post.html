@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Post</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+  </head>
+  <body class="page post-page" data-project-id="demo-project">
+    {{> sidebar}} {{> userbar}}
+    <main class="page__wrap">
+      <header class="page__header">
+        <div class="title__wrap">
+          <h1 id="page-title" class="title__name">New Post</h1>
+          <div id="page-desc" class="title__desc">
+            Create or edit a post under this project.
+          </div>
+        </div>
+        <div class="actions">
+          <a class="chip" href="/" title="Back to dashboard">Back</a>
+          <a
+            id="preview-btn"
+            class="chip chip--ghost"
+            href="#"
+            target="_blank"
+            rel="noopener"
+            >Preview</a
+          >
+          <button id="save-draft-btn" class="chip chip--primary" type="button">
+            Save Draft
+          </button>
+          <button id="publish-btn" class="chip" type="button">Publish</button>
+        </div>
+      </header>
+
+      <section class="grid">
+        <article class="card">
+          <div class="card__bar"><strong>Editor</strong></div>
+          <div class="card__body">
+            <div class="row row--single">
+              <div class="field">
+                <label class="label" for="title">Title</label>
+                <input
+                  id="title"
+                  class="input"
+                  type="text"
+                  placeholder="Post title"
+                  value="Getting Started"
+                />
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="field">
+                <label class="label" for="slug">Slug</label>
+                <input
+                  id="slug"
+                  class="input"
+                  type="text"
+                  placeholder="e.g., getting-started"
+                  value="getting-started"
+                />
+                <div class="help">Used to build the file path and URL.</div>
+              </div>
+              <div class="field">
+                <label class="label">Path</label>
+                <div id="pathPreview" class="help">
+                  src/content/blog/getting-started.md
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label">Rich Text Editor</label>
+              <div class="editor-toolbar">
+                <button class="editor-btn" data-cmd="bold" type="button">
+                  <strong>B</strong>
+                </button>
+                <button class="editor-btn" data-cmd="italic" type="button">
+                  <em>I</em>
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="formatBlock"
+                  data-value="H2"
+                  type="button"
+                >
+                  H2
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="formatBlock"
+                  data-value="H3"
+                  type="button"
+                >
+                  H3
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="insertUnorderedList"
+                  type="button"
+                >
+                  • List
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="insertOrderedList"
+                  type="button"
+                >
+                  1. List
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="formatBlock"
+                  data-value="BLOCKQUOTE"
+                  type="button"
+                >
+                  Quote
+                </button>
+                <button
+                  class="editor-btn"
+                  data-cmd="insertHTML"
+                  data-value="<pre><code></code></pre>"
+                  type="button"
+                >
+                  Code
+                </button>
+                <button class="editor-btn" id="link-btn" type="button">
+                  Link
+                </button>
+                <span class="spacer"></span>
+                <button class="editor-btn" data-cmd="undo" type="button">
+                  Undo
+                </button>
+                <button class="editor-btn" data-cmd="redo" type="button">
+                  Redo
+                </button>
+                <button class="editor-btn" id="clear-btn" type="button">
+                  Clear
+                </button>
+              </div>
+              <div
+                id="editor"
+                class="editor-area"
+                contenteditable="true"
+                spellcheck="true"
+              >
+                <h2>Welcome</h2>
+                <p>This is a sample post.</p>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <aside class="card">
+          <div class="card__bar"><strong>Post Meta</strong></div>
+          <div class="card__body">
+            <div class="field">
+              <label class="label" for="excerpt">Excerpt</label>
+              <textarea
+                id="excerpt"
+                class="textarea"
+                placeholder="Short summary…"
+              >
+How to use this demo project.</textarea
+              >
+            </div>
+            <div class="field">
+              <label class="label" for="tags">Tags</label>
+              <input
+                id="tags"
+                class="input"
+                type="text"
+                placeholder="comma,separated,tags"
+                value="guide,intro"
+              />
+              <div class="help">Comma-separated (e.g., demo,intro)</div>
+            </div>
+            <div class="row">
+              <div
+                class="col"
+                style="gap: 10px; display: flex; flex-direction: column"
+              >
+                <div class="field">
+                  <label class="label" for="pubDate">Publish Date</label>
+                  <input
+                    id="pubDate"
+                    class="input"
+                    type="datetime-local"
+                    value="2025-10-04T12:00"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="draft">Status</label>
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <input id="draft" type="checkbox" checked />
+                    <span class="help">Draft</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr
+              style="
+                border: none;
+                border-top: 1px solid var(--color-border-card);
+                margin: 14px 0;
+              "
+            />
+
+            <div class="meta-grid">
+              <div class="subtle">Project</div>
+              <div id="m-project">Sovereign Demo</div>
+              <div class="subtle">Repo</div>
+              <div id="m-repo">
+                <a
+                  href="https://github.com/example/sovereign-demo-content"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  link
+                </a>
+              </div>
+              <div class="subtle">Branch</div>
+              <div id="m-branch">main</div>
+              <div class="subtle">Content Dir</div>
+              <div id="m-dir">src/content/blog</div>
+            </div>
+
+            <div
+              id="danger-zone"
+              class="danger-zone"
+              style="margin-top: 14px; display: none"
+            >
+              <span class="subtle">Danger zone</span>
+              <button id="delete-btn" class="chip chip--danger" type="button">
+                Delete Post
+              </button>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      // Elements
+      const $ = (id) => document.getElementById(id);
+      const titleEl = $("title");
+      const slugEl = $("slug");
+      const pathPreviewEl = $("pathPreview");
+      const editorEl = $("editor");
+      const excerptEl = $("excerpt");
+      const tagsEl = $("tags");
+      const pubDateEl = $("pubDate");
+      const draftEl = $("draft");
+      const previewBtn = $("preview-btn");
+      const saveDraftBtn = $("save-draft-btn");
+      const publishBtn = $("publish-btn");
+      const deleteBtn = $("delete-btn");
+
+      // Helpers
+      const getContentDir = () =>
+        (document.getElementById("m-dir")?.textContent || "")
+          .trim()
+          .replace(/^\/+|\/+$/g, "");
+
+      function slugify(s) {
+        return String(s || "")
+          .toLowerCase()
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .slice(0, 200);
+      }
+      function toPath(slug) {
+        const dir = getContentDir();
+        const fname = slug ? `${slug}.md` : "untitled.md";
+        return dir ? `${dir}/${fname}` : fname;
+      }
+      function updatePathPreview() {
+        pathPreviewEl.textContent = toPath(slugEl.value.trim());
+      }
+
+      // Initial path preview based on current slug/content dir
+      updatePathPreview();
+
+      // Auto-generate slug from title until user edits slug manually
+      let slugTouched = false;
+      slugEl.addEventListener("input", () => {
+        slugTouched = true;
+        updatePathPreview();
+      });
+      titleEl.addEventListener("input", () => {
+        if (!slugTouched) {
+          slugEl.value = slugify(titleEl.value);
+          updatePathPreview();
+        }
+      });
+
+      // Editor toolbar
+      document.querySelectorAll(".editor-btn[data-cmd]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const cmd = btn.getAttribute("data-cmd");
+          const val = btn.getAttribute("data-value") || null;
+          if (cmd === "insertHTML" && val) {
+            document.execCommand("insertHTML", false, val);
+          } else if (cmd === "formatBlock") {
+            document.execCommand("formatBlock", false, val);
+          } else {
+            document.execCommand(cmd, false, val);
+          }
+          editorEl.focus();
+        });
+      });
+      $("clear-btn").addEventListener("click", () => {
+        editorEl.innerHTML = "";
+        editorEl.focus();
+      });
+      $("link-btn").addEventListener("click", () => {
+        const url = prompt("Enter URL");
+        if (url) document.execCommand("createLink", false, url);
+        editorEl.focus();
+      });
+
+      // Collect payload from DOM (no JS seed)
+      function collectPayload(overrides = {}) {
+        let pubISO = null;
+        if (pubDateEl.value) {
+          try {
+            const d = new Date(pubDateEl.value);
+            pubISO = d.toISOString();
+          } catch {}
+        }
+        const projectId = document.body.dataset.projectId || "demo-project";
+        return {
+          projectId,
+          path: toPath(slugEl.value.trim()),
+          title: titleEl.value.trim(),
+          excerpt: excerptEl.value.trim(),
+          pubDate: pubISO,
+          draft: !!draftEl.checked,
+          tags: tagsEl.value.trim(),
+          contentHtml: editorEl.innerHTML,
+          ...overrides,
+        };
+      }
+
+      // Demo actions
+      saveDraftBtn.addEventListener("click", async () => {
+        const payload = collectPayload({ draft: true });
+        console.log("Save draft payload:", payload);
+        alert("Draft saved (demo). Check console for payload.");
+      });
+      publishBtn.addEventListener("click", async () => {
+        const base = collectPayload();
+        const payload = {
+          ...base,
+          draft: false,
+          pubDate: base.pubDate || new Date().toISOString(),
+        };
+        console.log("Publish payload:", payload);
+        alert("Publish requested (demo). Check console for payload.");
+      });
+      deleteBtn?.addEventListener("click", async () => {
+        if (!confirm("Delete this post?")) return;
+        const path = toPath(slugEl.value.trim());
+        console.log("Delete requested for:", {
+          projectId: document.body.dataset.projectId || "demo-project",
+          path,
+        });
+        alert("Delete requested (demo). Check console for payload.");
+      });
+    </script>
+  </body>
+</html>

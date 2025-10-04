@@ -1,0 +1,189 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ProjectType {
+  cmsgit
+  canvasgraph
+  workspace
+}
+
+enum ProjectScope {
+  private
+  org
+  public
+}
+
+enum ProjectStatus {
+  draft
+  published
+}
+
+model Project {
+  id        String  @id @default(cuid()) @map("id")
+  name      String  @default("Untitled") @map("name")
+  des       String? @map("desc")
+  publicUrl String? @map("public_url")
+
+  type   ProjectType   @default(cmsgit) @map("type")
+  scope  ProjectScope  @default(private) @map("scope")
+  status ProjectStatus @default(draft) @map("status")
+
+  // 1:1 subtypes
+  cmsgit      ProjectCmsgit?
+  canvasgraph ProjectCanvasGraph?
+  workspace   ProjectWorkspace?
+
+  // owner (renamed from userId/user), still backed by column "user_id"
+  ownerId String? @map("user_id")
+  owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  admins  User[] @relation("ProjectAdmins")
+  editors User[] @relation("ProjectEditors")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("projects")
+}
+
+enum GitProvider {
+  github
+  gitlab
+  bitbucket
+  gitea
+  other
+}
+
+enum AuthType {
+  ssh
+  https
+  token
+  userpass
+}
+
+// CMS Git project-specific fields
+model ProjectCmsgit {
+  projectId String  @id @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  repoUrl    String  @map("repo_url")
+  defaultBranch     String  @default("main") @map("default_branch")
+  contentDir String? @map("content_dir")
+  lastCommit String? @map("last_commit")
+  provider   GitProvider? @map("provider") @default(github)
+  authType   AuthType? @map("auth_type") @default(ssh)
+  authSecret String? @map("auth_secret")
+
+  postMetas PostMeta[]
+}
+
+// Canvas Graph project-specific fields
+model ProjectCanvasGraph {
+  projectId String  @id @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  width   Int?    @map("width")
+  height  Int?    @map("height")
+  bgColor String? @map("bg_color")
+}
+
+// Workspace project-specific fields
+model ProjectWorkspace {
+  projectId String  @id @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model PostMeta {
+  id        String    @id @default(cuid())
+  path      String
+  title     String?
+  excerpt   String?
+  pubDate   DateTime?
+  draft     Boolean?  @default(true)
+  tags      String? // Comma-separated list of tags (e.g., "tag1,tag2")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  cmsgitId String        @map("cmsgit_id")
+  cmsgit   ProjectCmsgit @relation(fields: [cmsgitId], references: [projectId], onDelete: Cascade)
+
+  @@unique([cmsgitId, path])
+  @@index([cmsgitId])
+  @@map("post_meta")
+}
+
+model User {
+  id              String    @id @default(cuid()) @map("id")
+  email           String    @unique @map("email")
+  username        String    @unique @map("username")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  passwordHash    String    @map("password_hash")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  sessions            Session[]
+  verificationTokens  VerificationToken[]  @relation("UserToVerificationTokens")
+  passwordResetTokens PasswordResetToken[] @relation("UserToPasswordResetTokens")
+
+  ownedProjects Project[] @relation("Owner")
+  adminOf       Project[] @relation("ProjectAdmins")
+  editorOf      Project[] @relation("ProjectEditors")
+
+  @@index([createdAt])
+  @@index([emailVerifiedAt])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  ipHash    String?  @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(name: "UserToVerificationTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  purpose   String   @map("purpose") // 'email-verify'
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(name: "UserToPasswordResetTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}

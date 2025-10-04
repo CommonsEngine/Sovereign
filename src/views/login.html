@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sovereign — Login</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/pages/login.css" />
+  </head>
+  <body class="page page--fullwidth page--login">
+    <main class="page__wrap">
+      <section class="hero" aria-label="Intro">
+        <h1 class="hero__title">Sovereign</h1>
+        <p class="hero__tagline">Reclaim your digital freedom</p>
+      </section>
+
+      <section class="auth" aria-label="Sign in">
+        <h2 class="auth__title">
+          {{#if reset_mode}}Reset password{{else if forgot_mode}}Forgot your
+          password{{else}}Sign in{{/if}}
+        </h2>
+        <div class="auth__card">
+          {{#if success}}
+          <div class="alert alert--success">{{success}}</div>
+          {{/if}} {{#if error}}
+          <div class="alert alert--error">{{error}}</div>
+          {{/if}} {{!-- LOGIN FORM --}} {{#unless forgot_mode}} {{#unless
+          reset_mode}}
+          <form class="form" method="post" action="/auth/login">
+            <input type="hidden" name="return_to" value="{{return_to}}" />
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                class="input"
+                placeholder="eg. john@example.com"
+                value="{{values.email}}"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div class="actions">
+              <a class="link" href="/login?forgot=1">Forgot your password?</a>
+              <button class="button button--primary" type="submit">
+                Sign in
+              </button>
+            </div>
+          </form>
+          <div class="divider"></div>
+          <div class="actions">
+            <span style="color: #64748b; font-size: 13px"
+              >Don’t have an account?
+              <a class="link" href="/register">Create account</a></span
+            >
+          </div>
+          {{#if guest_enabled}}
+          <div class="divider"></div>
+          <div class="actions">
+            <a class="link" href="/auth/guest">Continue as guest</a>
+          </div>
+          {{/if}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if
+          forgot_mode}}
+          <form class="form" method="post" action="/auth/password/forgot">
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                class="input"
+                placeholder="eg. john@example.com"
+                value="{{values.email}}"
+                required
+              />
+            </div>
+            <div class="actions">
+              <a class="link" href="/login">Back to sign in</a>
+              <button class="button button--primary" type="submit">
+                Send reset link
+              </button>
+            </div>
+            {{#if dev_reset_url}}
+            <div class="divider"></div>
+            <div class="actions">
+              <span style="color: #64748b; font-size: 12px">Dev:</span>
+              <a class="link" href="{{dev_reset_url}}">Open reset link</a>
+            </div>
+            {{/if}}
+          </form>
+          {{/if}} {{!-- RESET PASSWORD FORM --}} {{#if reset_mode}}
+          <form class="form" method="post" action="/auth/password/reset">
+            <input type="hidden" name="token" value="{{token}}" />
+            <div class="field">
+              <label for="password">New password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="input"
+                placeholder="At least 6 characters incl. a letter & number"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="confirm_password">Confirm password</label>
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                class="input"
+                placeholder="Re-enter your password"
+                required
+              />
+            </div>
+            <div class="actions">
+              <a class="link" href="/login">Back to sign in</a>
+              <button class="button button--primary" type="submit">
+                Update password
+              </button>
+            </div>
+          </form>
+          {{/if}}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

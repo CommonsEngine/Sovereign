@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Project</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/css/global.css" />
+  </head>
+  <body class="page project-page">
+    {{> sidebar}} {{> userbar}}
+    <main class="page__wrap">
+      <header class="page__header">
+        <div class="title__wrap">
+          <h1 id="project-title" class="title__name">Sovereign Demo</h1>
+          <div id="project-sub" class="title__desc">
+            Public demo project seeded by prisma/seed.mjs
+          </div>
+        </div>
+        <div class="row-actions">
+          <a
+            id="new-post-btn"
+            class="chip chip--primary"
+            href="/p/{{projectId}}/post/new"
+            >New Post</a
+          >
+          <a
+            id="edit-project-btn"
+            class="chip chip--ghost"
+            href="/p/{{projectId}}/settings"
+            >Project Settings</a
+          >
+        </div>
+      </header>
+
+      <section class="grid">
+        <!-- Posts -->
+        <article class="card">
+          <div class="card__bar">
+            <strong>Posts</strong>
+            <input
+              id="post-search"
+              class="search"
+              type="search"
+              placeholder="Search posts…"
+              autocomplete="off"
+            />
+          </div>
+          <div class="card__body table-wrap">
+            <table id="posts-table" aria-label="Posts">
+              <thead>
+                <tr>
+                  <th style="width: 40%">Title</th>
+                  <th>Path</th>
+                  <th>Tags</th>
+                  <th>Status</th>
+                  <th>Published</th>
+                  <th style="width: 1%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="posts-tbody">
+                <!-- Static sample rows (replace later) -->
+                <tr
+                  data-title="Welcome to Sovereign Demo"
+                  data-path="index.md"
+                  data-tags="demo,intro"
+                  data-excerpt="A public demo project visible to all users."
+                >
+                  <td>
+                    <div class="title">Welcome to Sovereign Demo</div>
+                    <div class="subtle">
+                      A public demo project visible to all users.
+                    </div>
+                  </td>
+                  <td>index.md</td>
+                  <td>
+                    <span class="tag">demo</span>
+                    <span class="tag">intro</span>
+                  </td>
+                  <td><span class="badge">Published</span></td>
+                  <td>
+                    <time datetime="2025-10-04T12:00:00Z"
+                      >Oct 4, 2025, 12:00</time
+                    >
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <a
+                        class="chip"
+                        href="/p/{{projectId}}/post/index.md?edit=true"
+                        >Edit</a
+                      >
+                      <button
+                        class="chip chip--danger"
+                        type="button"
+                        data-action="delete"
+                        data-id="index.md"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr
+                  data-title="Getting Started"
+                  data-path="getting-started.md"
+                  data-tags="guide"
+                  data-excerpt="How to use this demo project."
+                >
+                  <td>
+                    <div class="title">Getting Started</div>
+                    <div class="subtle">How to use this demo project.</div>
+                  </td>
+                  <td>getting-started.md</td>
+                  <td><span class="tag">guide</span></td>
+                  <td><span class="badge">Draft</span></td>
+                  <td>—</td>
+                  <td>
+                    <div class="row-actions">
+                      <a
+                        class="chip"
+                        href="/p/{{projectId}}/post/getting-started.md?edit=true"
+                        >Edit</a
+                      >
+                      <button
+                        class="chip chip--danger"
+                        type="button"
+                        data-action="delete"
+                        data-id="getting-started.md"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Empty state (shown by script when filtered) -->
+                <tr class="empty-row" hidden>
+                  <td colspan="6" class="empty">No posts found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- Project Meta -->
+        <aside class="card">
+          <div class="card__bar"><strong>Project Meta</strong></div>
+          <div class="card__body">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 140px 1fr;
+                row-gap: 8px;
+                column-gap: 12px;
+              "
+            >
+              <div class="subtle">Name</div>
+              <div id="m-name">Sovereign Demo</div>
+
+              <div class="subtle">Status</div>
+              <div id="m-status"><span class="badge">published</span></div>
+
+              <div class="subtle">Posts</div>
+              <div id="m-count">2</div>
+
+              <div class="subtle">Repo</div>
+              <div id="m-repo">
+                <a
+                  href="https://github.com/example/sovereign-demo-content"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  link
+                </a>
+              </div>
+
+              <div class="subtle">Branch</div>
+              <div id="m-branch">main</div>
+
+              <div class="subtle">Content Dir</div>
+              <div id="m-dir">src/content/blog</div>
+
+              <div class="subtle">Live URL</div>
+              <div id="m-live">—</div>
+
+              <div class="subtle">Created</div>
+              <div id="m-created">
+                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+              </div>
+
+              <div class="subtle">Updated</div>
+              <div id="m-updated">
+                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      // Search filter for static rows
+      const search = document.getElementById("post-search");
+      const tbody = document.getElementById("posts-tbody");
+      const rows = Array.from(tbody.querySelectorAll("tr:not(.empty-row)"));
+      const emptyRow = tbody.querySelector(".empty-row");
+
+      function applySearch() {
+        const q = (search.value || "").trim().toLowerCase();
+        let shown = 0;
+        rows.forEach((tr) => {
+          const hay =
+            `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags} ${tr.dataset.excerpt}`.toLowerCase();
+          const match = !q || hay.includes(q);
+          tr.hidden = !match;
+          if (match) shown++;
+        });
+        if (emptyRow) emptyRow.hidden = shown !== 0;
+      }
+      search?.addEventListener("input", applySearch);
+      applySearch();
+
+      // Demo delete handler (replace with real API later)
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest('button[data-action="delete"]');
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        if (!id) return;
+        if (!confirm(`Delete post "${id}"?`)) return;
+        const tr = btn.closest("tr");
+        tr?.remove();
+        applySearch();
+      });
+    </script>
+  </body>
+</html>

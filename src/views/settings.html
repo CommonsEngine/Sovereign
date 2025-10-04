@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/pages/settings.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+  </head>
+  <body class="page settings-page">
+    {{> sidebar settings_active=true}} {{> userbar}}
+
+    <main class="page__wrap">
+      <h2 class="projects__title">Settings</h2>
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/">Home</a>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Settings</span>
+          </li>
+        </ol>
+      </nav>
+
+      <section class="grid">
+        <!-- App settings -->
+        <article class="card" style="grid-column: 1 / -1">
+          <div class="card__bar"><strong>App Settings</strong></div>
+          <div class="card__body">
+            <form id="app-form" class="form">
+              <div class="row">
+                <div class="field">
+                  <label class="label" for="appName">App Name</label>
+                  <input
+                    id="appName"
+                    class="input"
+                    type="text"
+                    placeholder="Sovereign"
+                    value="Sovereign"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="baseUrl">Base URL</label>
+                  <input
+                    id="baseUrl"
+                    class="input"
+                    type="url"
+                    placeholder="https://example.com"
+                    value="https://example.com"
+                  />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label class="label" for="defaultVisibility"
+                    >Default Visibility</label
+                  >
+                  <select id="defaultVisibility" class="input">
+                    <option value="private" selected>Private</option>
+                    <option value="public">Public</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="label" for="contentDir"
+                    >Default Content Dir</label
+                  >
+                  <input
+                    id="contentDir"
+                    class="input"
+                    type="text"
+                    placeholder="src/content/blog"
+                    value="src/content/blog"
+                  />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="field">
+                  <label class="label" for="defaultBranch"
+                    >Default Branch</label
+                  >
+                  <input
+                    id="defaultBranch"
+                    class="input"
+                    type="text"
+                    placeholder="main"
+                    value="main"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="dateFormat">Date Format</label>
+                  <select id="dateFormat" class="input">
+                    <option value="locale" selected>System locale</option>
+                    <option value="iso">ISO 8601</option>
+                    <option value="ymd">YYYY-MM-DD HH:mm</option>
+                    <option value="mdy">MMM d, yyyy h:mm a</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row row--single">
+                <div class="field">
+                  <label class="label">Access</label>
+                  <div style="display: flex; gap: 18px; align-items: center">
+                    <label style="display: flex; gap: 8px; align-items: center">
+                      <input id="allowRegistration" type="checkbox" checked />
+                      <span>Allow self-registration</span>
+                    </label>
+                    <label style="display: flex; gap: 8px; align-items: center">
+                      <input id="allowGuest" type="checkbox" />
+                      <span>Enable guest mode</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="actions">
+                <span class="spacer"></span>
+                <button id="reset-app" class="chip" type="button">Reset</button>
+                <button id="save-app" class="chip chip--primary" type="submit">
+                  Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </article>
+
+        <!-- Localization -->
+        <article class="card" style="grid-column: 1 / -1">
+          <div class="card__bar"><strong>Localization</strong></div>
+          <div class="card__body">
+            <form id="loc-form" class="form">
+              <div class="row">
+                <div class="field">
+                  <label class="label" for="timeZone">Time Zone</label>
+                  <select id="timeZone" class="input" data-default="UTC">
+                    <option value="UTC" selected>UTC</option>
+                    <option value="Europe/London">Europe/London</option>
+                    <option value="Europe/Berlin">Europe/Berlin</option>
+                    <option value="Europe/Paris">Europe/Paris</option>
+                    <option value="America/New_York">America/New_York</option>
+                    <option value="America/Los_Angeles">
+                      America/Los_Angeles
+                    </option>
+                    <option value="Asia/Colombo">Asia/Colombo</option>
+                    <option value="Asia/Kolkata">Asia/Kolkata</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo</option>
+                    <option value="Australia/Sydney">Australia/Sydney</option>
+                  </select>
+                  <div class="help">
+                    Used for displaying dates/times across the app.
+                  </div>
+                </div>
+              </div>
+
+              <div class="actions">
+                <span class="spacer"></span>
+                <button id="reset-loc" class="chip" type="button">Reset</button>
+                <button id="save-loc" class="chip chip--primary" type="submit">
+                  Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      // Save handlers (demo)
+      document
+        .getElementById("app-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            appName: document.getElementById("appName").value.trim(),
+            baseUrl: document.getElementById("baseUrl").value.trim(),
+            defaultVisibility:
+              document.getElementById("defaultVisibility").value,
+            contentDir: document.getElementById("contentDir").value.trim(),
+            defaultBranch: document
+              .getElementById("defaultBranch")
+              .value.trim(),
+            allowRegistration:
+              document.getElementById("allowRegistration").checked,
+            allowGuest: document.getElementById("allowGuest").checked,
+            dateFormat: document.getElementById("dateFormat").value,
+          };
+          console.log("Save App Settings:", payload);
+          alert("Saved (demo). Wire to POST /api/settings");
+        });
+
+      document
+        .getElementById("loc-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            timeZone: document.getElementById("timeZone").value,
+          };
+          console.log("Save Localization:", payload);
+          alert("Saved (demo). Wire to POST /api/settings");
+        });
+
+      // Reset buttons
+      document.getElementById("reset-app").addEventListener("click", () => {
+        window.location.reload();
+      });
+      document.getElementById("reset-loc").addEventListener("click", () => {
+        const sel = document.getElementById("timeZone");
+        sel.value =
+          sel.dataset.default ||
+          sel.querySelector("option[selected]")?.value ||
+          "UTC";
+      });
+    </script>
+  </body>
+</html>

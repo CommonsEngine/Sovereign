@@ -1,0 +1,137 @@
+<div data-modal="project" class="modal" hidden>
+  <div class="modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="project-modal-title"
+  >
+    <header class="modal__header">
+      <h3 id="project-modal-title" class="modal__title">Create new project</h3>
+      <button
+        type="button"
+        class="modal__close"
+        data-modal-close
+        aria-label="Close"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="modal__body">
+      <form class="modal__form" data-modal-form novalidate>
+        <div class="modal__field">
+          <label class="modal__label" for="project-name-input">Name</label>
+          <input
+            id="project-name-input"
+            class="modal__input input"
+            type="text"
+            maxlength="120"
+            placeholder="My project"
+            data-modal-autofocus
+          />
+        </div>
+        <div class="modal__field">
+          <label class="modal__label" for="project-type-input">Type</label>
+          <select id="project-type-input" class="modal__input input">
+            <option value="cmsgit" selected>CMS Git</option>
+            <option value="canvasgraph">Canvas Graph</option>
+            <option value="workspace">Workspace</option>
+          </select>
+        </div>
+        <div class="modal__field">
+          <label class="modal__label" for="project-scope-input">Scope</label>
+          <select id="project-scope-input" class="modal__input input">
+            <option value="private" selected>Private</option>
+            <option value="org">Organization</option>
+            <option value="public">Public</option>
+          </select>
+        </div>
+        <div class="modal__field">
+          <label class="modal__label" for="project-desc-input"
+            >Description</label
+          >
+          <textarea
+            id="project-desc-input"
+            class="modal__input input"
+            rows="3"
+            maxlength="500"
+            placeholder="Short description"
+          ></textarea>
+        </div>
+
+        <div
+          class="modal__alert modal__alert--error"
+          data-modal-alert="error"
+          style="display: none"
+        ></div>
+      </form>
+    </div>
+
+    <footer class="modal__footer">
+      <button type="button" class="button" data-modal-close>Cancel</button>
+      <button
+        type="submit"
+        class="button button--primary"
+        formnovalidate
+        data-modal-submit
+      >
+        Create
+      </button>
+    </footer>
+  </div>
+
+  <script>
+    // Project-specific submission, still generic DOM lookups within the modal
+    (function initProjectModal(
+      root = document.querySelector('[data-modal="project"]'),
+    ) {
+      if (!root) return;
+      const form = root.querySelector("[data-modal-form]");
+      const err = root.querySelector('[data-modal-alert="error"]');
+      const nameEl = root.querySelector("#project-name-input");
+      const typeEl = root.querySelector("#project-type-input");
+      const scopeEl = root.querySelector("#project-scope-input");
+      const desEl = root.querySelector("#project-desc-input");
+
+      root.addEventListener("click", async (e) => {
+        const submit = e.target.closest("[data-modal-submit]");
+        if (!submit) return;
+        e.preventDefault();
+        if (err) err.style.display = "none";
+
+        const payload = {
+          name: (nameEl?.value || "Untitled").trim().slice(0, 120),
+          type: typeEl?.value || "cmsgit",
+          scope: scopeEl?.value || "private",
+          des: (desEl?.value || "").trim().slice(0, 500),
+        };
+        if (!payload.name) {
+          nameEl?.focus();
+          return;
+        }
+
+        try {
+          const resp = await fetch("/api/project", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok)
+            throw new Error(data?.error || "Failed to create project");
+
+          window.ModalRuntime?.close(root);
+          if (data?.id)
+            window.location.href = `/p/${encodeURIComponent(data.id)}`;
+          else window.location.reload();
+        } catch (ex) {
+          if (err) {
+            err.textContent = ex?.message || "Failed to create project";
+            err.style.display = "block";
+          }
+        }
+      });
+    })();
+  </script>
+</div>

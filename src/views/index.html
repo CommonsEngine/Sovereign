@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sovereign — Reclaim your digital freedom</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/components/modal.css" />
+  </head>
+  <body class="page index-page">
+    {{> sidebar projects_active=true}} {{> userbar}}
+
+    <main class="page__wrap">
+      <h2 class="projects__title">Projects</h2>
+
+      <section id="grid" class="projects__grid">
+        <a
+          href="/p/create-new"
+          data-modal-open="project"
+          aria-haspopup="dialog"
+        >
+          <article class="projects__card projects__card--new">
+            <div class="projects__add-icon">+</div>
+            <span>Create new project</span>
+          </article>
+        </a>
+
+        {{> modal-runtime}} {{> modal-project}} {{#each projects}}
+        <article class="projects__card" data-project-id="{{this.id}}">
+          <div class="projects__row">
+            <!-- Title: edit functionality removed -->
+            <div class="projects__card-title">{{this.name}}</div>
+          </div>
+          <div class="projects__meta">
+            <span class="created-at" data-date="{{this.createdAt}}"></span>
+            <span class="projects__badge">{{this.status}}</span>
+          </div>
+          <div class="projects__actions">
+            <a class="projects__link" href="/p/{{this.id}}">Open</a>
+            {{#if this.owned}}
+            <button
+              class="projects__delete"
+              type="button"
+              title="Delete project"
+              aria-label="Delete project"
+              data-action="delete"
+              data-id="{{this.id}}"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                />
+              </svg>
+            </button>
+            {{/if}}
+          </div>
+        </article>
+        {{/each}}
+      </section>
+    </main>
+
+    <script>
+      // Date formatting (project created at)
+      document.querySelectorAll(".created-at").forEach((el) => {
+        const d = new Date(el.dataset.date);
+        if (!isNaN(d)) el.textContent = d.toLocaleString();
+      });
+
+      function findCardById(id) {
+        return document.querySelector(
+          `.projects__card[data-project-id="${CSS.escape(id)}"]`,
+        );
+      }
+
+      // Delete project
+      async function deleteProject(id) {
+        const card = findCardById(id);
+        if (!card) return;
+        if (!confirm("This will permanently delete the project. Continue?"))
+          return;
+        try {
+          const resp = await fetch(`/api/project/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirm: true }),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || "Delete failed");
+          card.remove();
+        } catch (e) {
+          alert(e.message || "Delete failed");
+        }
+      }
+
+      // Bind delete buttons
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest('[data-action="delete"]');
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        if (id) deleteProject(id);
+      });
+    </script>
+  </body>
+</html>

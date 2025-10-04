@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Users</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+  </head>
+  <body class="page users-page">
+    {{> sidebar users_active=true}} {{> userbar}}
+
+    <main class="page__wrap">
+      <h2 class="projects__title">Users</h2>
+
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/">Home</a>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Users</span>
+          </li>
+        </ol>
+      </nav>
+
+      <section class="grid">
+        <article class="card" style="grid-column: 1 / -1">
+          <div class="card__bar">
+            <strong>All Users</strong>
+            <input
+              id="user-search"
+              class="search"
+              type="search"
+              placeholder="Search users…"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="card__body table-wrap">
+            <table aria-label="Users">
+              <thead>
+                <tr>
+                  <th style="width: 28%">User</th>
+                  <th style="width: 22%">Email</th>
+                  <th style="width: 12%">Role</th>
+                  <th style="width: 18%">Projects</th>
+                  <th style="width: 18%">Created</th>
+                  <th style="width: 1%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <!-- Sample static rows (replace with server data later) -->
+                <tr
+                  data-id="u_1"
+                  data-name="Alice Doe"
+                  data-email="alice@example.com"
+                  data-role="admin"
+                >
+                  <td>
+                    <div class="title">Alice Doe</div>
+                    <div class="subtle">alice@example.com</div>
+                  </td>
+                  <td>alice@example.com</td>
+                  <td><span class="badge">admin</span></td>
+                  <td><span class="subtle">2 assigned</span></td>
+                  <td>
+                    <time datetime="2025-10-04T12:00:00Z"
+                      >Oct 4, 2025, 12:00</time
+                    >
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <a class="chip" href="javascript:void(0)">Edit</a>
+                      <a class="chip" href="javascript:void(0)">Roles</a>
+                      <a class="chip" href="javascript:void(0)">Projects</a>
+                      <button
+                        class="chip chip--danger"
+                        type="button"
+                        data-action="delete"
+                        data-id="u_1"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr
+                  data-id="u_2"
+                  data-name="Bob Smith"
+                  data-email="bob@example.com"
+                  data-role="editor"
+                >
+                  <td>
+                    <div class="title">Bob Smith</div>
+                    <div class="subtle">bob@example.com</div>
+                  </td>
+                  <td>bob@example.com</td>
+                  <td><span class="badge">editor</span></td>
+                  <td><span class="subtle">1 assigned</span></td>
+                  <td>
+                    <time datetime="2025-10-03T09:30:00Z"
+                      >Oct 3, 2025, 09:30</time
+                    >
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <a class="chip" href="javascript:void(0)">Edit</a>
+                      <a class="chip" href="javascript:void(0)">Roles</a>
+                      <a class="chip" href="javascript:void(0)">Projects</a>
+                      <button
+                        class="chip chip--danger"
+                        type="button"
+                        data-action="delete"
+                        data-id="u_2"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr
+                  data-id="u_3"
+                  data-name="Cara Ray"
+                  data-email="cara@example.com"
+                  data-role="viewer"
+                >
+                  <td>
+                    <div class="title">Cara Ray</div>
+                    <div class="subtle">cara@example.com</div>
+                  </td>
+                  <td>cara@example.com</td>
+                  <td><span class="badge">viewer</span></td>
+                  <td><span class="subtle">0 assigned</span></td>
+                  <td>
+                    <time datetime="2025-10-01T15:10:00Z"
+                      >Oct 1, 2025, 15:10</time
+                    >
+                  </td>
+                  <td>
+                    <div class="row-actions">
+                      <a class="chip" href="javascript:void(0)">Edit</a>
+                      <a class="chip" href="javascript:void(0)">Roles</a>
+                      <a class="chip" href="javascript:void(0)">Projects</a>
+                      <button
+                        class="chip chip--danger"
+                        type="button"
+                        data-action="delete"
+                        data-id="u_3"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Empty state row (shown when search filters out all rows) -->
+                <tr class="empty-row" hidden>
+                  <td colspan="6" class="empty">No users found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <script>
+      // Simple client-side search on static rows
+      const search = document.getElementById("user-search");
+      const tbody = document.getElementById("users-tbody");
+
+      const rows = Array.from(tbody.querySelectorAll("tr:not(.empty-row)"));
+      const emptyRow = tbody.querySelector(".empty-row");
+
+      function applySearch() {
+        const q = (search.value || "").trim().toLowerCase();
+        let shown = 0;
+        rows.forEach((tr) => {
+          const hay =
+            `${tr.dataset.name} ${tr.dataset.email} ${tr.dataset.role}`.toLowerCase();
+          const match = !q || hay.includes(q);
+          tr.hidden = !match;
+          if (match) shown++;
+        });
+        if (emptyRow) emptyRow.hidden = shown !== 0;
+      }
+
+      search?.addEventListener("input", applySearch);
+      applySearch();
+
+      // Delegated delete (demo only)
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest('button[data-action="delete"]');
+        if (!btn) return;
+        const id = btn.getAttribute("data-id");
+        if (!id) return;
+        if (!confirm("Delete this user?")) return;
+        // Replace with real DELETE call later
+        const tr = tbody.querySelector(`tr[data-id="${CSS.escape(id)}"]`);
+        tr?.remove();
+        applySearch();
+      });
+    </script>
+  </body>
+</html>

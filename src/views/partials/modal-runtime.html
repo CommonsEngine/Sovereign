@@ -1,0 +1,68 @@
+<script>
+  (() => {
+    const openStack = [];
+    const focusableSel =
+      'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+
+    function focusFirst(modal) {
+      const auto = modal.querySelector("[data-modal-autofocus]");
+      if (auto) return auto.focus();
+      const first = modal.querySelector(focusableSel);
+      if (first) first.focus();
+    }
+
+    function openModal(modal) {
+      if (!modal || openStack.includes(modal)) return;
+      modal.hidden = false;
+      modal.dataset.modalActive = "true";
+      openStack.push(modal);
+      document.body.classList.add("modal-open");
+      modal.__returnFocus = document.activeElement;
+      requestAnimationFrame(() => focusFirst(modal));
+    }
+
+    function closeModal(modal) {
+      if (!modal) return;
+      modal.hidden = true;
+      modal.dataset.modalActive = "false";
+      const idx = openStack.lastIndexOf(modal);
+      if (idx >= 0) openStack.splice(idx, 1);
+      if (openStack.length === 0) document.body.classList.remove("modal-open");
+      modal.__returnFocus?.focus?.();
+      modal.__returnFocus = null;
+    }
+
+    // Click: open
+    document.addEventListener("click", (e) => {
+      const opener = e.target.closest("[data-modal-open]");
+      if (!opener) return;
+      e.preventDefault();
+      const key = opener.getAttribute("data-modal-open");
+      const modal =
+        document.querySelector(`[data-modal="${CSS.escape(key)}"]`) ||
+        document.querySelector(key); // allow CSS selector (e.g., #id)
+      openModal(modal);
+    });
+
+    // Click: close (backdrop or any [data-modal-close])
+    document.addEventListener("click", (e) => {
+      const closer = e.target.closest("[data-modal-close]");
+      if (closer) return closeModal(closer.closest("[data-modal]"));
+      // backdrop click
+      if (e.target.classList?.contains("modal__backdrop")) {
+        return closeModal(e.target.closest("[data-modal]"));
+      }
+    });
+
+    // ESC to close top-most
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && openStack.length) {
+        e.preventDefault();
+        closeModal(openStack[openStack.length - 1]);
+      }
+    });
+
+    // Expose minimal API if needed
+    window.ModalRuntime = { open: openModal, close: closeModal };
+  })();
+</script>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Sovereign — Register</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/pages/register.css" />
+  </head>
+  <body class="page page--fullwidth page--register">
+    <main class="page__wrap">
+      <section class="hero" aria-label="Intro">
+        <h1 class="hero__title">Sovereign</h1>
+        <p class="hero__tagline">Reclaim your digital freedom.</p>
+      </section>
+
+      <section class="auth" aria-label="Register">
+        <h2 class="auth__title">Create account</h2>
+        <div class="auth__card">
+          {{#if error}}
+          <div class="alert alert--error">{{error}}</div>
+          {{/if}}
+          <form class="form" method="post" action="/auth/register">
+            <div class="field">
+              <label for="username">User Name</label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                value="{{values.username}}"
+                class="input"
+                placeholder="eg. john_doe"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value="{{values.email}}"
+                class="input"
+                placeholder="eg. john@example.com"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="btn-confirm">Confirm Password</label>
+              <input
+                id="btn-confirm"
+                name="confirm_password"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div class="actions">
+              <a class="link" href="/login">Already have an account?</a>
+              <button class="button button--primary" type="submit">
+                Register
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
