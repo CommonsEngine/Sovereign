@@ -103,6 +103,7 @@ app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { t
 
 // Project Routes
 app.post("/api/project", requireAuth, projectHandler.createProject);
+app.delete("/api/project/:id", requireAuth, projectHandler.deleteProject);
 
 // 404
 app.use((req, res) => {

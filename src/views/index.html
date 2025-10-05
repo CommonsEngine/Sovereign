@@ -28,14 +28,32 @@
 
         {{> modal-runtime}} {{> modal-project}} {{#each projects}}
         <article class="projects__card" data-project-id="{{this.id}}">
+          <!-- Top row: Title + Status badge on the right -->
           <div class="projects__row">
-            <!-- Title: edit functionality removed -->
             <div class="projects__card-title">{{this.name}}</div>
+            <span class="projects__badge projects__badge--status"
+              >{{this.status}}</span
+            >
           </div>
-          <div class="projects__meta">
+
+          <div class="projects__meta projects__meta--info">
+            {{#if this.scope}}
+            <span class="projects__chip projects__chip--scope" title="Scope"
+              >{{this.scope}}</span
+            >
+            {{/if}} {{#if this.type}}
+            <span class="projects__chip projects__chip--type" title="Type"
+              >{{this.type}}</span
+            >
+            {{/if}}
+          </div>
+
+          <!-- Date row kept separate for readability -->
+          <div class="projects__meta projects__meta--date">
             <span class="created-at" data-date="{{this.createdAt}}"></span>
-            <span class="projects__badge">{{this.status}}</span>
           </div>
+
+          <!-- Actions -->
           <div class="projects__actions">
             <a class="projects__link" href="/p/{{this.id}}">Open</a>
             {{#if this.owned}}

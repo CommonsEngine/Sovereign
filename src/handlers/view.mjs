@@ -19,9 +19,8 @@ export async function viewIndexPage(req, res) {
       }
     }
 
-    // Fetch projects owned by the user OR where the user is admin/editor OR public (ownerId null)
     const userId = req.user?.id || null;
-    const projects = await prisma.project.findMany({
+    const projectsRaw = await prisma.project.findMany({
       where: {
         OR: [
           { ownerId: null },
@@ -43,9 +42,16 @@ export async function viewIndexPage(req, res) {
         status: true,
         createdAt: true,
         updatedAt: true,
+        ownerId: true, // needed to compute ownership
       },
       orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
     });
+
+    // Compute owned and omit ownerId from the response
+    const projects = projectsRaw.map(({ ownerId, ...rest }) => ({
+      ...rest,
+      owned: !!(userId && ownerId === userId),
+    }));
 
     const showUserMenu = !(
       GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN
@@ -53,7 +59,7 @@ export async function viewIndexPage(req, res) {
     return res.render("index", {
       username,
       show_user_menu: showUserMenu,
-      projects, // pass to view
+      projects,
     });
   } catch (err) {
     return res.status(500).render("error", {
