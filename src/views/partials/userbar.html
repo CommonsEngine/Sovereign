@@ -1,8 +1,10 @@
-<div class="userbar">
+<div class="userbar {{overrides}}">
   <div class="toolbar__user" role="navigation" aria-label="User toolbar">
+    {{^hide_user_name}}
     <span class="toolbar__greeting"
       >Ayubowan! <strong>{{username}}</strong></span
     >
+    {{/hide_user_name}}
     <details class="toolbar__menu">
       <summary class="toolbar__avatar" title="{{username}}">
         <svg

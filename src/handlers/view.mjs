@@ -220,6 +220,13 @@ export async function viewProjectPage(req, res) {
       case "papertrail":
         view = "project-papertrail";
         ctx.papertrail = project.papertrail || null;
+        ctx.app_version = "0.1.0"; // TODO: dynamic
+        ctx.schema_version = 1;
+        ctx.board_id = req.params.id;
+        ctx.board_title = project.name;
+        ctx.board_visibility = project.scope;
+        ctx.board_status = project.status;
+        ctx.is_owner = true;
         break;
       case "workspace":
         view = "project-workspace";
