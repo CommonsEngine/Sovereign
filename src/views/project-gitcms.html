@@ -189,7 +189,7 @@
 
       function makePostRow(projectId, post) {
         const title = post.filename.replace(/\.md$/i, "");
-        const hrefEdit = `/p/${projectId}/post/${encodeURIComponent(post.filename)}?edit=true`;
+        const hrefEdit = `/p/${projectId}/gitcms/post/${encodeURIComponent(post.filename)}?edit=true`;
         const { iso, label } = post.modified
           ? fmtDate(post.modified)
           : { iso: "", label: "—" };
@@ -257,7 +257,7 @@
 
         try {
           const resp = await fetch(
-            `/api/project/${encodeURIComponent(projectId)}/gitcms/posts`,
+            `/api/project/${encodeURIComponent(projectId)}/gitcms/post/all`,
             { method: "GET", headers: { Accept: "application/json" } },
           );
 
@@ -356,7 +356,7 @@
 
         try {
           const resp = await fetch(
-            `/api/project/${encodeURIComponent(projectId)}/gitcms/posts/${encodeURIComponent(
+            `/api/project/${encodeURIComponent(projectId)}/gitcms/post/${encodeURIComponent(
               filename,
             )}`,
             {

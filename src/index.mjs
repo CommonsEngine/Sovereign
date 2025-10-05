@@ -97,7 +97,7 @@ app.get(
   requireAuthWeb,
   viewHandler.viewPostCreatePage,
 );
-app.get("/p/:projectId/post/:postId", requireAuthWeb, viewHandler.viewPostPage);
+app.get("/p/:projectId/gitcms/post/:filename", requireAuthWeb, viewHandler.viewPostPage);
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
 
@@ -121,12 +121,12 @@ app.post(
   projectHandler.configureGitCMS,
 );
 app.get(
-  "/api/project/:id/gitcms/posts",
+  "/api/project/:id/gitcms/post/all",
   requireAuth,
   projectHandler.listGitCMSPosts,
 );
 app.delete(
-  "/api/project/:id/gitcms/posts/:filename",
+  "/api/project/:id/gitcms/post/:filename",
   requireAuth,
   projectHandler.deleteGitCMSPost,
 );

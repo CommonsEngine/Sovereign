@@ -435,7 +435,7 @@ export async function viewPostCreatePage(req, res) {
     // Redirect to edit page for the newly created post
     return res.redirect(
       302,
-      `/p/${projectId}/post/${encodeURIComponent(finalFilename)}?edit=true`,
+      `/p/${projectId}/gitcms/post/${encodeURIComponent(finalFilename)}?edit=true`,
     );
   } catch (err) {
     console.error("Create post flow failed:", err);
@@ -449,7 +449,7 @@ export async function viewPostCreatePage(req, res) {
 }
 
 export async function viewPostPage(req, res) {
-  return res.render("post", {
+  return res.render("project-gitcms-post-editor", {
     projectId: req.params.projectId,
     postId: req.params.postId,
   });
