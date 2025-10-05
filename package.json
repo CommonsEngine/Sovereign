@@ -1,7 +1,7 @@
 {
   "name": "sovereign",
   "description": "Reclaim your digital freedom.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "./src/index.mjs",
   "scripts": {
     "prestart": "npx prisma db push && npm run prisma:reset && npm run prisma:seed",
