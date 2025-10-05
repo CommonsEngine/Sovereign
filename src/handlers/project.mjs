@@ -35,7 +35,9 @@ export async function createProject(req, res) {
         id: true,
       },
     });
-    return res.status(201).json(project);
+    const url =
+      type === "gitcms" ? `/p/${project.id}/configure` : `/p/${project.id}`;
+    return res.status(201).json({ ...project, url });
   } catch (e) {
     console.error("Create project failed:", e);
     return res.status(500).json({ error: "Failed to create project" });
@@ -89,9 +91,8 @@ export async function updateProject(req, res) {
     }
 
     const raw = req.body || {};
-    const name = typeof raw.name === "string"
-      ? raw.name.trim().slice(0, 120)
-      : undefined;
+    const name =
+      typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : undefined;
 
     if (!name || name.length === 0) {
       return res.status(400).json({ error: "Invalid name" });
@@ -107,5 +108,90 @@ export async function updateProject(req, res) {
   } catch (e) {
     console.error("Update project failed:", e);
     return res.status(500).json({ error: "Failed to update project" });
+  }
+}
+
+export async function configureGitCMS(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = req.params?.id || req.body?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
+
+    // Owner + type check
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true, type: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).json({ error: "Project is not a GitCMS type" });
+    }
+
+    const raw = req.body || {};
+    const repoUrl = String(raw.repoUrl || "").trim();
+    const defaultBranch = (
+      String(raw.defaultBranch || "main").trim() || "main"
+    ).slice(0, 80);
+    const contentDirRaw =
+      typeof raw.contentDir === "string" ? raw.contentDir : "";
+    const contentDir = contentDirRaw.trim().slice(0, 200) || null;
+
+    const gitUserName =
+      typeof raw.gitUserName === "string"
+        ? raw.gitUserName.trim().slice(0, 120)
+        : null;
+    const gitUserEmail =
+      typeof raw.gitUserEmail === "string"
+        ? raw.gitUserEmail.trim().slice(0, 120)
+        : null;
+    const gitAuthToken =
+      typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
+
+    if (!repoUrl)
+      return res.status(400).json({ error: "Repository URL is required" });
+
+    const config = await prisma.projectGitCMS.upsert({
+      where: { projectId: id },
+      update: {
+        repoUrl,
+        defaultBranch,
+        contentDir,
+        gitUserName,
+        gitUserEmail,
+        // optional: persist token if provided
+        ...(gitAuthToken
+          ? { authSecret: gitAuthToken, authType: "token" }
+          : {}),
+      },
+      create: {
+        projectId: id,
+        repoUrl,
+        defaultBranch,
+        contentDir,
+        gitUserName,
+        gitUserEmail,
+        ...(gitAuthToken
+          ? { authSecret: gitAuthToken, authType: "token" }
+          : {}),
+      },
+      select: {
+        projectId: true,
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+      },
+    });
+
+    return res.status(200).json({ configured: true, gitcms: config });
+  } catch (e) {
+    console.error("Configure GitCMS failed:", e);
+    return res.status(500).json({ error: "Failed to save configuration" });
   }
 }

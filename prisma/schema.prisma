@@ -81,6 +81,9 @@ model ProjectGitCMS {
   authType      AuthType?    @default(ssh) @map("auth_type")
   authSecret    String?      @map("auth_secret")
 
+  gitUserName  String? @map("git_user_name")
+  gitUserEmail String? @map("git_user_email")
+
   postMetas PostMeta[]
 }
 

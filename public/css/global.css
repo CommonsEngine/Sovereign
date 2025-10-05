@@ -111,7 +111,9 @@ body.page {
   background: transparent;
   caret-color: currentColor;
 }
-.projects__card-title.is-editing { cursor: text; }
+.projects__card-title.is-editing {
+  cursor: text;
+}
 .projects__row {
   display: flex;
   gap: 10px;
@@ -564,7 +566,51 @@ body.page {
   flex-direction: column;
   gap: 14px;
 }
+/* Form inside cards */
+.card__form {
+  display: grid;
+  gap: 12px; /* vertical rhythm */
+  margin: 0; /* avoid double spacing with card padding */
+}
+.card__form > :first-child {
+  margin-top: 0;
+}
+.card__form > :last-child {
+  margin-bottom: 0;
+}
 
+.card__form .form__field {
+  display: grid;
+  gap: 6px;
+  margin: 0; /* rely on grid gap */
+}
+.card__form .form__label {
+  /* match .label styling */
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  /* text-transform: uppercase; */
+  letter-spacing: 0.02em;
+}
+.card__form .form__help {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.card__form .form__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+.card__form .form__alert--error {
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid var(--color-border-card);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: none;
+}
 /* Buttons and chips */
 .chip {
   background: #f1f5f9;

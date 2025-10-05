@@ -154,8 +154,7 @@
             throw new Error(data?.error || "Failed to create project");
 
           window.ModalRuntime?.close(root);
-          if (data?.id)
-            window.location.href = `/p/${encodeURIComponent(data.id)}`;
+          if (data?.id) window.location.href = data?.url;
           else window.location.reload();
         } catch (ex) {
           if (err) {

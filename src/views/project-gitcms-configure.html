@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Configure GitCMS — {{project.name}}</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/css/global.css" />
+  </head>
+  <body class="page gitcms-config-page">
+    {{> sidebar}} {{> userbar}}
+
+    <main class="page__wrap">
+      <header class="page__header">
+        <h2>Configure GitCMS</h2>
+        <p class="page__subtitle">{{project.name}}</p>
+      </header>
+
+      <section class="card">
+        <div class="card__body">
+          <form
+            id="gitcms-config-form"
+            class="form card__form"
+            data-project-id="{{project.id}}"
+            novalidate
+          >
+            <div class="form__field">
+              <label class="form__label" for="repo-url-input"
+                >Repository URL</label
+              >
+              <input
+                id="repo-url-input"
+                class="input"
+                name="repoUrl"
+                type="text"
+                placeholder="https://github.com/owner/repo.git or git@github.com:owner/repo.git"
+                required
+                autofocus
+              />
+              <small class="form__help"
+                >Use HTTPS or SSH URL to your content repository.</small
+              >
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="branch-input"
+                >Default branch</label
+              >
+              <input
+                id="branch-input"
+                class="input"
+                name="defaultBranch"
+                type="text"
+                placeholder="main"
+                value="main"
+              />
+            </div>
+
+            <!-- Git user name -->
+            <div class="form__field">
+              <label class="form__label" for="git-user-name-input"
+                >Git User Name (optional)</label
+              >
+              <input
+                id="git-user-name-input"
+                class="input"
+                name="gitUserName"
+                type="text"
+                placeholder="e.g., John Doe"
+                maxlength="120"
+                autocomplete="name"
+              />
+              <small class="form__help">Used as commit author name.</small>
+            </div>
+
+            <!-- Git user email -->
+            <div class="form__field">
+              <label class="form__label" for="git-user-email-input"
+                >Git User Email (optional)</label
+              >
+              <input
+                id="git-user-email-input"
+                class="input"
+                name="gitUserEmail"
+                type="email"
+                placeholder="you@example.com"
+                maxlength="120"
+                autocomplete="email"
+              />
+              <small class="form__help">Used as commit author email.</small>
+            </div>
+
+            <!-- Git auth token -->
+            <div class="form__field">
+              <label class="form__label" for="git-auth-token-input"
+                >Git Auth Token (optional)</label
+              >
+              <input
+                id="git-auth-token-input"
+                class="input"
+                name="gitAuthToken"
+                type="password"
+                placeholder="ghp_xxx..."
+                maxlength="200"
+                autocomplete="new-password"
+              />
+              <small class="form__help"
+                >Needed for private repos over HTTPS.</small
+              >
+            </div>
+
+            <div class="form__field">
+              <label class="form__label" for="content-dir-input"
+                >Content directory (optional)</label
+              >
+              <input
+                id="content-dir-input"
+                class="input"
+                name="contentDir"
+                type="text"
+                placeholder="e.g., content/posts"
+                maxlength="200"
+              />
+              <small class="form__help"
+                >Leave empty if content lives at repository root.</small
+              >
+            </div>
+
+            <div
+              class="form__alert form__alert--error"
+              id="form-error"
+              role="alert"
+              style="display: none"
+            ></div>
+
+            <div class="form__actions">
+              <a class="button chip" href="/p/{{project.id}}">Cancel</a>
+              <button
+                type="submit"
+                class="button button--primary chip chip--primary"
+                id="save-btn"
+              >
+                Save
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        const form = document.getElementById("gitcms-config-form");
+        const errEl = document.getElementById("form-error");
+        const saveBtn = document.getElementById("save-btn");
+
+        function showError(msg) {
+          if (!errEl) return;
+          errEl.textContent = msg || "Failed to save configuration";
+          errEl.style.display = "block";
+        }
+        function clearError() {
+          if (!errEl) return;
+          errEl.textContent = "";
+          errEl.style.display = "none";
+        }
+
+        form?.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          clearError();
+
+          const projectId = form.getAttribute("data-project-id");
+          const repoUrl = document
+            .getElementById("repo-url-input")
+            .value.trim();
+          const defaultBranch =
+            (document.getElementById("branch-input").value || "main").trim() ||
+            "main";
+          const contentDir = document
+            .getElementById("content-dir-input")
+            .value.trim();
+
+          const gitUserName = document
+            .getElementById("git-user-name-input")
+            .value.trim();
+          const gitUserEmail = document
+            .getElementById("git-user-email-input")
+            .value.trim();
+          const gitAuthToken = document
+            .getElementById("git-auth-token-input")
+            .value.trim();
+
+          if (!repoUrl) {
+            showError("Repository URL is required.");
+            return;
+          }
+
+          const payload = { repoUrl, defaultBranch };
+          if (contentDir) payload.contentDir = contentDir;
+          if (gitUserName) payload.gitUserName = gitUserName;
+          if (gitUserEmail) payload.gitUserEmail = gitUserEmail;
+          if (gitAuthToken) payload.gitAuthToken = gitAuthToken;
+
+          saveBtn.disabled = true;
+          saveBtn.setAttribute("aria-busy", "true");
+
+          try {
+            const resp = await fetch(
+              `/api/project/${encodeURIComponent(projectId)}/gitcms/configure`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              },
+            );
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data?.error || "Save failed");
+            window.location.replace(`/p/${encodeURIComponent(projectId)}`);
+          } catch (ex) {
+            showError(ex?.message || "Failed to save configuration");
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.removeAttribute("aria-busy");
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

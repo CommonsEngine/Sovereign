@@ -121,6 +121,8 @@ export async function viewProjectPage(req, res) {
             contentDir: true,
             provider: true,
             authType: true,
+            gitUserName: true,
+            gitUserEmail: true,
           },
         },
         papertrail: {
@@ -145,6 +147,11 @@ export async function viewProjectPage(req, res) {
         message: "Not found",
         description: "Project not found",
       });
+    }
+
+    // Redirect GitCMS projects to configure if not yet configured
+    if (project.type === "gitcms" && !project.gitcms) {
+      return res.redirect(302, `/p/${project.id}/configure`);
     }
 
     let view = "project";
@@ -174,6 +181,47 @@ export async function viewProjectPage(req, res) {
       code: 500,
       message: "Oops!",
       description: "Failed to load project",
+      error: err?.message || String(err),
+    });
+  }
+}
+
+export async function viewProjectConfigurePage(req, res) {
+  try {
+    const id = req.params.id;
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        gitcms: { select: { projectId: true } },
+      },
+    });
+
+    if (!project) {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Not found",
+        description: "Project not found",
+      });
+    }
+
+    // Only GitCMS has a configuration flow; others go to project page
+    const alreadyConfigured =
+      project.type === "gitcms" ? !!project.gitcms : true;
+
+    if (project.type !== "gitcms" || alreadyConfigured) {
+      return res.redirect(302, `/p/${project.id}`);
+    }
+
+    // Render GitCMS configuration page
+    return res.render("project-gitcms-configure", { project });
+  } catch (err) {
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load configuration",
       error: err?.message || String(err),
     });
   }

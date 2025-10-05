@@ -87,6 +87,11 @@ app.get("/login", disallowIfAuthed, viewHandler.viewLoginPage);
 app.get("/register", disallowIfAuthed, viewHandler.viewRegisterPage);
 app.get("/logout", authHandler.logout);
 app.get("/p/:id", requireAuthWeb, viewHandler.viewProjectPage);
+app.get(
+  "/p/:id/configure",
+  requireAuthWeb,
+  viewHandler.viewProjectConfigurePage,
+);
 app.get("/p/:projectId/post/:postId", requireAuthWeb, viewHandler.viewPostPage);
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
@@ -105,6 +110,11 @@ app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { t
 app.post("/api/project", requireAuth, projectHandler.createProject);
 app.patch("/api/project/:id", requireAuth, projectHandler.updateProject);
 app.delete("/api/project/:id", requireAuth, projectHandler.deleteProject);
+app.post(
+  "/api/project/:id/gitcms/configure",
+  requireAuth,
+  projectHandler.configureGitCMS,
+);
 
 // 404
 app.use((req, res) => {
