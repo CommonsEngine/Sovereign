@@ -196,7 +196,9 @@ export async function viewProjectPage(req, res) {
       if (!connected) {
         try {
           disposeGitManager(project.id);
-          await prisma.projectGitCMS.delete({ where: { projectId: project.id } });
+          await prisma.projectGitCMS.delete({
+            where: { projectId: project.id },
+          });
         } catch {
           // ignore if already deleted
         }

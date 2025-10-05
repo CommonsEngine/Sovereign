@@ -1,7 +1,10 @@
 import prisma from "../prisma.mjs";
 import { uuid } from "../utils/id.mjs";
-// import { getGitManager, getOrInitGitManager } from "../libs/gitcms/registry.mjs";
-import { getOrInitGitManager } from "../libs/gitcms/registry.mjs";
+import {
+  getGitManager,
+  getOrInitGitManager,
+} from "../libs/gitcms/registry.mjs";
+import FileManager from "../libs/gitcms/fs.mjs";
 
 export async function createProject(req, res) {
   try {
@@ -215,26 +218,73 @@ export async function configureGitCMS(req, res) {
   }
 }
 
-// Example usage inside a handler:
-// const projectId = req.params.id;
-// // Try to get cached manager
-// let gm = getGitManager(projectId);
-// if (!gm) {
-//   // Load config from DB and init once
-//   const cfg = await prisma.projectGitCMS.findUnique({ where: { projectId }, select: {
-//     repoUrl: true, defaultBranch: true, gitUserName: true, gitUserEmail: true, authSecret: true
-//   }});
-//   if (!cfg) return res.status(400).json({ error: "GitCMS not configured" });
+export async function listGitCMSPosts(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-//   gm = await getOrInitGitManager(projectId, {
-//     repoUrl: cfg.repoUrl,
-//     defaultBranch: cfg.defaultBranch,
-//     gitUserName: cfg.gitUserName,
-//     gitUserEmail: cfg.gitUserEmail,
-//     gitAuthToken: cfg.authSecret || null,
-//   });
-// }
+    // 1) Fetch project id from URL params
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
 
-// // Now reuse gm without reconnecting:
-// // const localPath = gm.getLocalPath();
-// // await gm.publish("My commit message");
+    // Verify ownership and type
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true, type: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).json({ error: "Project is not a GitCMS type" });
+    }
+
+    // 2) Fetch gitcms config by project id
+    const cfg = await prisma.projectGitCMS.findUnique({
+      where: { projectId: id },
+      select: {
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.status(400).json({ error: "GitCMS not configured" });
+    }
+
+    // 3) Fetch posts using GitManager from repo working directory
+    let gm = getGitManager(id);
+    if (!gm) {
+      gm = await getOrInitGitManager(id, {
+        repoUrl: cfg.repoUrl,
+        defaultBranch: cfg.defaultBranch,
+        gitUserName: cfg.gitUserName,
+        gitUserEmail: cfg.gitUserEmail,
+        gitAuthToken: cfg.authSecret || null,
+      });
+    }
+    // Ensure latest before reading
+    try {
+      await gm.pullLatest();
+    } catch (err) {
+      console.warn(
+        "Failed to pull latest before listing posts:",
+        err?.message || err,
+      );
+      // continue to read local working tree
+    }
+
+    const basePath = gm.getLocalPath();
+    const fm = new FileManager(basePath, cfg.contentDir || "");
+    const posts = await fm.listMarkdownFiles();
+
+    return res.status(200).json({ posts });
+  } catch (e) {
+    console.error("List GitCMS posts failed:", e);
+    return res.status(500).json({ error: "Failed to list posts" });
+  }
+}

@@ -58,83 +58,20 @@
                 </tr>
               </thead>
               <tbody id="posts-tbody">
-                <!-- Static sample rows (replace later) -->
-                <tr
-                  data-title="Welcome to Sovereign Demo"
-                  data-path="index.md"
-                  data-tags="demo,intro"
-                  data-excerpt="A public demo project visible to all users."
-                >
-                  <td>
-                    <div class="title">Welcome to Sovereign Demo</div>
-                    <div class="subtle">
-                      A public demo project visible to all users.
-                    </div>
-                  </td>
-                  <td>index.md</td>
-                  <td>
-                    <span class="tag">demo</span>
-                    <span class="tag">intro</span>
-                  </td>
-                  <td><span class="badge">Published</span></td>
-                  <td>
-                    <time datetime="2025-10-04T12:00:00Z"
-                      >Oct 4, 2025, 12:00</time
-                    >
-                  </td>
-                  <td>
-                    <div class="row-actions">
-                      <a
-                        class="chip"
-                        href="/p/{{projectId}}/post/index.md?edit=true"
-                        >Edit</a
-                      >
-                      <button
-                        class="chip chip--danger"
-                        type="button"
-                        data-action="delete"
-                        data-id="index.md"
-                      >
-                        Delete
-                      </button>
-                    </div>
+                <!-- Loading state -->
+                <tr class="loading-row" hidden>
+                  <td colspan="6" class="empty">Loading posts…</td>
+                </tr>
+                <!-- Error state -->
+                <tr class="error-row" hidden>
+                  <td colspan="6" class="empty">
+                    Failed to load posts
+                    <button id="retry-posts" class="chip" type="button">
+                      Retry
+                    </button>
                   </td>
                 </tr>
-
-                <tr
-                  data-title="Getting Started"
-                  data-path="getting-started.md"
-                  data-tags="guide"
-                  data-excerpt="How to use this demo project."
-                >
-                  <td>
-                    <div class="title">Getting Started</div>
-                    <div class="subtle">How to use this demo project.</div>
-                  </td>
-                  <td>getting-started.md</td>
-                  <td><span class="tag">guide</span></td>
-                  <td><span class="badge">Draft</span></td>
-                  <td>—</td>
-                  <td>
-                    <div class="row-actions">
-                      <a
-                        class="chip"
-                        href="/p/{{projectId}}/post/getting-started.md?edit=true"
-                        >Edit</a
-                      >
-                      <button
-                        class="chip chip--danger"
-                        type="button"
-                        data-action="delete"
-                        data-id="getting-started.md"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-
-                <!-- Empty state (shown by script when filtered) -->
+                <!-- Empty state (shown by script when filtered or no posts) -->
                 <tr class="empty-row" hidden>
                   <td colspan="6" class="empty">No posts found</td>
                 </tr>
@@ -200,28 +137,178 @@
     </main>
 
     <script>
-      // Search filter for static rows
+      // Resolve project id for API calls
+      function resolveProjectId() {
+        // 1) From "New Post" link
+        const a = document.getElementById("new-post-btn");
+        if (a?.href) {
+          const m = a.href.match(/\/p\/([^/]+)/);
+          if (m) return m[1];
+        }
+        // 2) From location path (/p/:id or /p/:id/...)
+        const m2 = location.pathname.match(/\/p\/([^/]+)/);
+        if (m2) return m2[1];
+        return null;
+      }
+
       const search = document.getElementById("post-search");
       const tbody = document.getElementById("posts-tbody");
-      const rows = Array.from(tbody.querySelectorAll("tr:not(.empty-row)"));
+      let rows = Array.from(
+        tbody.querySelectorAll(
+          "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+        ),
+      );
       const emptyRow = tbody.querySelector(".empty-row");
+      const loadingRow = tbody.querySelector(".loading-row");
+      const errorRow = tbody.querySelector(".error-row");
+      const table = document.getElementById("posts-table");
 
       function applySearch() {
         const q = (search.value || "").trim().toLowerCase();
         let shown = 0;
         rows.forEach((tr) => {
           const hay =
-            `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags} ${tr.dataset.excerpt}`.toLowerCase();
+            `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags || ""} ${tr.dataset.excerpt || ""}`.toLowerCase();
           const match = !q || hay.includes(q);
           tr.hidden = !match;
           if (match) shown++;
         });
         if (emptyRow) emptyRow.hidden = shown !== 0;
       }
-      search?.addEventListener("input", applySearch);
-      applySearch();
 
-      // Demo delete handler (replace with real API later)
+      function fmtDate(d) {
+        try {
+          const dt = new Date(d);
+          const iso = dt.toISOString();
+          const label = dt.toLocaleString();
+          return { iso, label };
+        } catch {
+          return { iso: "", label: "—" };
+        }
+      }
+
+      function makePostRow(projectId, post) {
+        const title = post.filename.replace(/\.md$/i, "");
+        const hrefEdit = `/p/${projectId}/post/${encodeURIComponent(post.filename)}?edit=true`;
+        const { iso, label } = post.modified
+          ? fmtDate(post.modified)
+          : { iso: "", label: "—" };
+
+        const tr = document.createElement("tr");
+        tr.dataset.title = title;
+        tr.dataset.path = post.filename;
+        tr.dataset.tags = "";
+        tr.dataset.excerpt = "";
+
+        tr.innerHTML = `
+          <td>
+            <div class="title">${title}</div>
+            <div class="subtle"></div>
+          </td>
+          <td>${post.filename}</td>
+          <td><!-- tags --></td>
+          <td><span class="badge">—</span></td>
+          <td>${iso ? `<time datetime="${iso}">${label}</time>` : "—"}</td>
+          <td>
+            <div class="row-actions">
+              <a class="chip" href="${hrefEdit}">Edit</a>
+              <button class="chip chip--danger" type="button" data-action="delete" data-id="${post.filename}">
+                Delete
+              </button>
+            </div>
+          </td>
+        `;
+        return tr;
+      }
+
+      function clearDataRows() {
+        Array.from(
+          tbody.querySelectorAll(
+            "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+          ),
+        ).forEach((n) => n.remove());
+        rows = [];
+      }
+
+      function setLoading(isLoading) {
+        if (table)
+          table.setAttribute("aria-busy", isLoading ? "true" : "false");
+        if (search) search.disabled = !!isLoading;
+
+        if (loadingRow) loadingRow.hidden = !isLoading;
+        if (errorRow) errorRow.hidden = true; // hide error on new attempt
+        if (emptyRow) emptyRow.hidden = true;
+
+        if (isLoading) {
+          clearDataRows();
+          const countEl = document.getElementById("m-count");
+          if (countEl) countEl.textContent = "—";
+        }
+      }
+
+      async function loadPosts() {
+        const projectId = resolveProjectId();
+        if (!projectId) {
+          console.warn("Project id not found in URL");
+          return;
+        }
+
+        setLoading(true);
+
+        try {
+          const resp = await fetch(
+            `/api/project/${encodeURIComponent(projectId)}/gitcms/posts`,
+            { method: "GET", headers: { Accept: "application/json" } },
+          );
+
+          if (!resp.ok) {
+            throw new Error(`HTTP ${resp.status}`);
+          }
+
+          const data = await resp.json();
+          const posts = Array.isArray(data.posts) ? data.posts : [];
+
+          // Render
+          const frag = document.createDocumentFragment();
+          posts.forEach((p) => frag.appendChild(makePostRow(projectId, p)));
+          tbody.appendChild(frag);
+
+          // Update rows ref
+          rows = Array.from(
+            tbody.querySelectorAll(
+              "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+            ),
+          );
+          if (emptyRow) emptyRow.hidden = rows.length !== 0;
+
+          // Update meta count
+          const countEl = document.getElementById("m-count");
+          if (countEl) countEl.textContent = String(posts.length);
+
+          setLoading(false);
+          applySearch();
+        } catch (e) {
+          console.error("Error loading posts:", e);
+          setLoading(false);
+          // Show error row
+          if (errorRow) errorRow.hidden = false;
+          if (emptyRow) emptyRow.hidden = true;
+        }
+      }
+
+      // Wire search and initial render
+      search?.addEventListener("input", applySearch);
+      loadPosts();
+
+      // Retry handler
+      tbody.addEventListener("click", (e) => {
+        const btn = e.target.closest("#retry-posts");
+        if (btn) {
+          loadPosts();
+        }
+      });
+
+      // Delete handler (client-only demo; replace with API)
       document.addEventListener("click", (e) => {
         const btn = e.target.closest('button[data-action="delete"]');
         if (!btn) return;
@@ -230,6 +317,11 @@
         if (!confirm(`Delete post "${id}"?`)) return;
         const tr = btn.closest("tr");
         tr?.remove();
+        rows = Array.from(
+          tbody.querySelectorAll(
+            "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+          ),
+        );
         applySearch();
       });
     </script>

@@ -115,6 +115,11 @@ app.post(
   requireAuth,
   projectHandler.configureGitCMS,
 );
+app.get(
+  "/api/project/:id/gitcms/posts",
+  requireAuth,
+  projectHandler.listGitCMSPosts,
+);
 
 // 404
 app.use((req, res) => {

@@ -1,6 +1,6 @@
-import path from 'path';
+import path from "path";
 
-import GitManager from './git.mjs';
+import GitManager from "./git.mjs";
 
 const managers = new Map();
 
@@ -14,11 +14,11 @@ export async function getOrInitGitManager(projectId, cfg) {
 
   const gm = new GitManager({
     repoUrl: cfg.repoUrl,
-    branch: cfg.branch || cfg.defaultBranch || 'main',
-    userName: cfg.userName || cfg.gitUserName || 'Sovereign',
-    userEmail: cfg.userEmail || cfg.gitUserEmail || 'noreply@sovereign.local',
+    branch: cfg.branch || cfg.defaultBranch || "main",
+    userName: cfg.userName || cfg.gitUserName || "Sovereign",
+    userEmail: cfg.userEmail || cfg.gitUserEmail || "noreply@sovereign.local",
     authToken: cfg.authToken || cfg.gitAuthToken || null,
-    localPath: path.join(process.cwd(), 'data', projectId),
+    localPath: path.join(process.cwd(), "data", projectId),
   });
 
   await gm.initialize();
