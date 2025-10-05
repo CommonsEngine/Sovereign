@@ -9,6 +9,7 @@ import {
   disposeGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
+import path from "path";
 
 export async function viewIndexPage(req, res) {
   try {
@@ -448,11 +449,193 @@ export async function viewPostCreatePage(req, res) {
   }
 }
 
-export async function viewPostPage(req, res) {
-  return res.render("project-gitcms-post-editor", {
-    projectId: req.params.projectId,
-    postId: req.params.postId,
-  });
+export async function viewGitCMSPostPage(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).render("error", {
+        code: 401,
+        message: "Unauthorized",
+        description: "Please sign in to view this post.",
+      });
+    }
+
+    // Params
+    const projectId = req.params.projectId || req.params.id;
+    const rawFilename =
+      typeof req.params.postId === "string"
+        ? req.params.postId
+        : typeof req.params.filename === "string"
+          ? req.params.filename
+          : "";
+    const filename = path.basename(String(rawFilename).trim());
+    if (!projectId || !filename || !/\.md$/i.test(filename)) {
+      return res.status(400).render("error", {
+        code: 400,
+        message: "Bad request",
+        description: "Missing project id or invalid filename.",
+      });
+    }
+
+    // Verify project and ownership
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, ownerId: true, type: true, name: true },
+    });
+    if (!project) {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Not found",
+        description: "Project not found",
+      });
+    }
+    if (project.ownerId !== userId) {
+      return res.status(403).render("error", {
+        code: 403,
+        message: "Forbidden",
+        description: "You do not have permission to view this post.",
+      });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).render("error", {
+        code: 400,
+        message: "Invalid project type",
+        description: "Posts are only available for GitCMS projects.",
+      });
+    }
+
+    // Load GitCMS config
+    const cfg = await prisma.projectGitCMS.findUnique({
+      where: { projectId },
+      select: {
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.redirect(302, `/p/${projectId}/configure`);
+    }
+
+    // Ensure git connection
+    let gm = getGitManager(projectId);
+    if (!gm) {
+      try {
+        gm = await getOrInitGitManager(projectId, {
+          repoUrl: cfg.repoUrl,
+          defaultBranch: cfg.defaultBranch,
+          gitUserName: cfg.gitUserName,
+          gitUserEmail: cfg.gitUserEmail,
+          gitAuthToken: cfg.authSecret || null,
+        });
+      } catch (err) {
+        console.error("Git connect failed while opening post:", err);
+        return res.redirect(302, `/p/${projectId}/configure`);
+      }
+    }
+
+    // Pull latest (best effort)
+    try {
+      await gm.pullLatest();
+    } catch (err) {
+      console.warn(
+        "Pull latest failed before opening post:",
+        err?.message || err,
+      );
+    }
+
+    // Read file contents
+    const fm = new FileManager(gm.getLocalPath(), cfg.contentDir || "");
+    let raw = "";
+    try {
+      raw = await fm.readFile(filename);
+    } catch (err) {
+      if (err?.code === "ENOENT") {
+        return res.status(404).render("error", {
+          code: 404,
+          message: "Not found",
+          description: "Post not found",
+        });
+      }
+      if (
+        String(err?.message || "")
+          .toLowerCase()
+          .includes("invalid file path")
+      ) {
+        return res.status(400).render("error", {
+          code: 400,
+          message: "Bad request",
+          description: "Invalid file path",
+        });
+      }
+      console.error("Failed to read post:", err);
+      return res.status(500).render("error", {
+        code: 500,
+        message: "Oops!",
+        description: "Failed to load post file",
+        error: err?.message || String(err),
+      });
+    }
+
+    // Parse basic YAML-like frontmatter (best-effort)
+    function parseFrontmatter(src) {
+      const m = src.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+      if (!m) return [{}, src];
+      const yaml = m[1];
+      const body = m[2] || "";
+      const meta = {};
+      yaml.split(/\r?\n/).forEach((line) => {
+        const i = line.indexOf(":");
+        if (i === -1) return;
+        const k = line.slice(0, i).trim();
+        let v = line.slice(i + 1).trim();
+        // strip quotes
+        v = v.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+        if (/^(true|false)$/i.test(v)) v = /^true$/i.test(v);
+        else if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
+          const d = new Date(v);
+          if (!isNaN(d)) v = d.toISOString();
+        } else if (/^\[.*\]$/.test(v)) {
+          v = v
+            .slice(1, -1)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+        meta[k] = v;
+      });
+      return [meta, body];
+    }
+
+    const [meta, contentMarkdown] = parseFrontmatter(raw);
+
+    // Render editor template with context
+    return res.render("project-gitcms-post-editor", {
+      projectId,
+      filename,
+      projectName: project.name,
+      repoUrl: cfg.repoUrl,
+      branch: cfg.defaultBranch,
+      contentDir: cfg.contentDir || "",
+      meta,
+      contentMarkdown,
+      // convenience fields
+      title: meta.title || filename.replace(/\.md$/i, ""),
+      tags: Array.isArray(meta.tags) ? meta.tags : [],
+      draft: typeof meta.draft === "boolean" ? meta.draft : true,
+      pubDate: meta.date || null,
+    });
+  } catch (err) {
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load post",
+      error: err?.message || String(err),
+    });
+  }
 }
 
 export async function viewUsersPage(req, res) {

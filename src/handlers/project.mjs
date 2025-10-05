@@ -1,3 +1,5 @@
+import path from "path";
+
 import prisma from "../prisma.mjs";
 import { uuid } from "../utils/id.mjs";
 import {
@@ -5,7 +7,6 @@ import {
   getOrInitGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
-import path from "path";
 
 export async function createProject(req, res) {
   try {
@@ -400,5 +401,111 @@ export async function deleteGitCMSPost(req, res) {
   } catch (e) {
     console.error("Delete GitCMS post failed:", e);
     return res.status(500).json({ error: "Failed to delete post" });
+  }
+}
+
+export async function updateGitCMSPost(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Project id
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
+
+    // Filename (route param preferred), and content (markdown)
+    const rawName =
+      (typeof req.params?.filename === "string" && req.params.filename) ||
+      (typeof req.body?.filename === "string" && req.body.filename) ||
+      "";
+    const filename = path.basename(String(rawName).trim());
+    if (!filename || !/\.md$/i.test(filename)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid filename. Expected a .md file." });
+    }
+
+    const content =
+      typeof req.body?.contentMarkdown === "string"
+        ? req.body.contentMarkdown
+        : typeof req.body?.content === "string"
+          ? req.body.content
+          : null;
+    if (content == null) {
+      return res.status(400).json({ error: "Missing content" });
+    }
+
+    // Verify ownership and type
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true, type: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).json({ error: "Project is not a GitCMS type" });
+    }
+
+    // Load config
+    const cfg = await prisma.projectGitCMS.findUnique({
+      where: { projectId: id },
+      select: {
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.status(400).json({ error: "GitCMS not configured" });
+    }
+
+    // Ensure Git working directory exists (no commit/push here)
+    let gm = getGitManager(id);
+    if (!gm) {
+      try {
+        gm = await getOrInitGitManager(id, {
+          repoUrl: cfg.repoUrl,
+          defaultBranch: cfg.defaultBranch,
+          gitUserName: cfg.gitUserName,
+          gitUserEmail: cfg.gitUserEmail,
+          gitAuthToken: cfg.authSecret || null,
+        });
+      } catch (err) {
+        console.error("Git manager init failed during update:", err);
+        return res.status(400).json({
+          error:
+            "Failed to access repository. Please verify the configuration.",
+        });
+      }
+    }
+
+    // Update file on disk
+    const fm = new FileManager(gm.getLocalPath(), cfg.contentDir || "");
+    try {
+      await fm.updateFile(filename, content);
+    } catch (err) {
+      if (err?.code === "ENOENT") {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      if (
+        String(err?.message || "")
+          .toLowerCase()
+          .includes("invalid file path")
+      ) {
+        return res.status(400).json({ error: "Invalid file path" });
+      }
+      console.error("Update file failed:", err);
+      return res.status(500).json({ error: "Failed to update file" });
+    }
+
+    return res.status(200).json({ updated: true, filename });
+  } catch (e) {
+    console.error("Update GitCMS post failed:", e);
+    return res.status(500).json({ error: "Failed to update post" });
   }
 }
