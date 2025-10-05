@@ -317,7 +317,8 @@ export async function viewPostCreatePage(req, res) {
       return res.status(403).render("error", {
         code: 403,
         message: "Forbidden",
-        description: "You do not have permission to create posts in this project.",
+        description:
+          "You do not have permission to create posts in this project.",
       });
     }
     if (project.type !== "gitcms") {
@@ -366,7 +367,10 @@ export async function viewPostCreatePage(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn("Pull latest failed before creating post:", err?.message || err);
+      console.warn(
+        "Pull latest failed before creating post:",
+        err?.message || err,
+      );
       // continue; we'll still create locally
     }
 

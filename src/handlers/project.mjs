@@ -5,6 +5,7 @@ import {
   getOrInitGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
+import path from "path";
 
 export async function createProject(req, res) {
   try {
@@ -286,5 +287,118 @@ export async function listGitCMSPosts(req, res) {
   } catch (e) {
     console.error("List GitCMS posts failed:", e);
     return res.status(500).json({ error: "Failed to list posts" });
+  }
+}
+
+export async function deleteGitCMSPost(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    // Project id
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
+
+    // File name (from route param, body, or query)
+    const rawName =
+      (typeof req.params?.filename === "string" && req.params.filename) ||
+      (typeof req.body?.filename === "string" && req.body.filename) ||
+      (typeof req.query?.filename === "string" && req.query.filename) ||
+      "";
+    const filename = path.basename(String(rawName).trim());
+    if (!filename || !/\.md$/i.test(filename)) {
+      return res
+        .status(400)
+        .json({ error: "Invalid filename. Expected a .md file." });
+    }
+
+    // Verify ownership and type
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true, type: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).json({ error: "Project is not a GitCMS type" });
+    }
+
+    // Load config
+    const cfg = await prisma.projectGitCMS.findUnique({
+      where: { projectId: id },
+      select: {
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.status(400).json({ error: "GitCMS not configured" });
+    }
+
+    // Ensure Git connection
+    let gm = getGitManager(id);
+    if (!gm) {
+      try {
+        gm = await getOrInitGitManager(id, {
+          repoUrl: cfg.repoUrl,
+          defaultBranch: cfg.defaultBranch,
+          gitUserName: cfg.gitUserName,
+          gitUserEmail: cfg.gitUserEmail,
+          gitAuthToken: cfg.authSecret || null,
+        });
+      } catch (err) {
+        console.error("Git connect failed during delete:", err);
+        return res.status(400).json({
+          error:
+            "Failed to connect to repository. Please verify the configuration.",
+        });
+      }
+    }
+
+    // Best-effort pull to reduce conflicts
+    try {
+      await gm.pullLatest();
+    } catch (err) {
+      console.warn("Pull latest failed before deletion:", err?.message || err);
+    }
+
+    // Delete file via FileManager
+    const fm = new FileManager(gm.getLocalPath(), cfg.contentDir || "");
+    try {
+      await fm.deleteFile(filename);
+    } catch (err) {
+      if (err?.code === "ENOENT") {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      if (
+        String(err?.message || "")
+          .toLowerCase()
+          .includes("invalid file path")
+      ) {
+        return res.status(400).json({ error: "Invalid file path" });
+      }
+      console.error("Delete file failed:", err);
+      return res.status(500).json({ error: "Failed to delete file" });
+    }
+
+    // Commit and push
+    let pushed = true;
+    try {
+      await gm.publish(`Delete post: ${filename}`);
+    } catch (err) {
+      pushed = false;
+      console.warn("Publish failed after deletion:", err?.message || err);
+    }
+
+    return res.status(200).json({ deleted: true, filename, pushed });
+  } catch (e) {
+    console.error("Delete GitCMS post failed:", e);
+    return res.status(500).json({ error: "Failed to delete post" });
   }
 }

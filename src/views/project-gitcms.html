@@ -308,21 +308,95 @@
         }
       });
 
-      // Delete handler (client-only demo; replace with API)
-      document.addEventListener("click", (e) => {
+      function setRowBusy(tr, busy, btn) {
+        if (!tr) return;
+        tr.setAttribute("aria-busy", busy ? "true" : "false");
+        tr.querySelectorAll("button").forEach((b) => (b.disabled = !!busy));
+        // Visually block links during busy to avoid interactions
+        tr.querySelectorAll("a").forEach((a) => {
+          if (busy) {
+            a.setAttribute("aria-disabled", "true");
+            a.style.pointerEvents = "none";
+            a.style.opacity = "0.6";
+          } else {
+            a.removeAttribute("aria-disabled");
+            a.style.pointerEvents = "";
+            a.style.opacity = "";
+          }
+        });
+        if (btn) {
+          if (busy) {
+            btn.dataset.prevText = btn.textContent;
+            btn.textContent = "Deleting…";
+          } else if (btn.dataset.prevText) {
+            btn.textContent = btn.dataset.prevText;
+            delete btn.dataset.prevText;
+          }
+        }
+      }
+
+      // Replace the existing client-only delete handler with API-backed deletion
+      document.addEventListener("click", async (e) => {
         const btn = e.target.closest('button[data-action="delete"]');
         if (!btn) return;
-        const id = btn.getAttribute("data-id");
-        if (!id) return;
-        if (!confirm(`Delete post "${id}"?`)) return;
+
+        const filename = btn.getAttribute("data-id");
+        if (!filename) return;
+
+        const projectId = resolveProjectId();
+        if (!projectId) {
+          alert("Project id not found.");
+          return;
+        }
+
+        if (!confirm(`Delete post "${filename}"?`)) return;
+
         const tr = btn.closest("tr");
-        tr?.remove();
-        rows = Array.from(
-          tbody.querySelectorAll(
-            "tr:not(.empty-row):not(.loading-row):not(.error-row)",
-          ),
-        );
-        applySearch();
+        setRowBusy(tr, true, btn);
+
+        try {
+          const resp = await fetch(
+            `/api/project/${encodeURIComponent(projectId)}/gitcms/posts/${encodeURIComponent(
+              filename,
+            )}`,
+            {
+              method: "DELETE",
+              headers: { Accept: "application/json" },
+              credentials: "same-origin",
+            },
+          );
+
+          if (!resp.ok) {
+            let msg = `HTTP ${resp.status}`;
+            try {
+              const data = await resp.json();
+              if (data?.error) msg = data.error;
+            } catch {}
+            throw new Error(msg);
+          }
+
+          // Remove row and update state
+          tr?.remove();
+          rows = Array.from(
+            tbody.querySelectorAll(
+              "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+            ),
+          );
+
+          // Update count
+          const countEl = document.getElementById("m-count");
+          if (countEl) countEl.textContent = String(rows.length);
+
+          // Show empty state if needed and re-apply filter
+          if (emptyRow) emptyRow.hidden = rows.length !== 0;
+          applySearch();
+        } catch (err) {
+          console.error("Delete failed:", err);
+          alert(`Failed to delete: ${err?.message || err}`);
+        } finally {
+          // If row still exists (failed), restore UI
+          if (document.body.contains(tr)) setRowBusy(tr, false, btn);
+        }
       });
     </script>
   </body>

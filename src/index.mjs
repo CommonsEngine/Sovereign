@@ -92,7 +92,11 @@ app.get(
   requireAuthWeb,
   viewHandler.viewProjectConfigurePage,
 );
-app.get("/p/:projectId/post/new", requireAuthWeb, viewHandler.viewPostCreatePage);
+app.get(
+  "/p/:projectId/post/new",
+  requireAuthWeb,
+  viewHandler.viewPostCreatePage,
+);
 app.get("/p/:projectId/post/:postId", requireAuthWeb, viewHandler.viewPostPage);
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
@@ -120,6 +124,11 @@ app.get(
   "/api/project/:id/gitcms/posts",
   requireAuth,
   projectHandler.listGitCMSPosts,
+);
+app.delete(
+  "/api/project/:id/gitcms/posts/:filename",
+  requireAuth,
+  projectHandler.deleteGitCMSPost,
 );
 
 // 404
