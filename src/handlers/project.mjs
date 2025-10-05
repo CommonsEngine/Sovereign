@@ -542,7 +542,7 @@ export async function updateGitCMSPost(req, res) {
       const apply = (k, v) => {
         if (k === "tags") return `${k}: ${renderTags(v)}`;
         if (k === "draft") return `${k}: ${v ? "true" : "false"}`;
-        if (k === "date") {
+        if (k === "pubDate" || k === "updatedDate") {
           const d = new Date(v);
           return `${k}: ${!Number.isNaN(d.getTime()) ? d.toISOString() : ""}`;
         }

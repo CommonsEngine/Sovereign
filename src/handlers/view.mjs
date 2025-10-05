@@ -380,7 +380,7 @@ export async function viewPostCreatePage(req, res) {
     const baseFromQuery =
       (typeof req.query?.name === "string" && req.query.name) ||
       (typeof req.query?.title === "string" && req.query.title) ||
-      "untitled";
+      "Untitled Post";
     const slugBase =
       baseFromQuery
         .toLowerCase()
@@ -395,9 +395,11 @@ export async function viewPostCreatePage(req, res) {
     const frontmatter =
       `---\n` +
       `title: "${baseFromQuery.replace(/"/g, '\\"') || "Untitled Post"}"\n` +
-      `date: ${nowIso}\n` +
+      `description: ""\n` +
+      `pubDate: ${nowIso}\n` +
+      `draft: false\n` +
       `tags: []\n` +
-      `draft: true\n` +
+      `updatedDate: ${nowIso}\n` +
       `---\n\n` +
       `Write your post here...\n`;
 
