@@ -425,15 +425,51 @@ export async function updateGitCMSPost(req, res) {
         .json({ error: "Invalid filename. Expected a .md file." });
     }
 
-    const content =
+    // Validate payload: content + optional meta fields
+    const incoming =
       typeof req.body?.contentMarkdown === "string"
         ? req.body.contentMarkdown
         : typeof req.body?.content === "string"
           ? req.body.content
           : null;
-    if (content == null) {
+    if (incoming == null) {
       return res.status(400).json({ error: "Missing content" });
     }
+    if (typeof incoming !== "string") {
+      return res.status(400).json({ error: "Invalid content" });
+    }
+
+    // Normalize meta updates (only apply provided keys)
+    const updates = {};
+    if (typeof req.body?.title === "string")
+      updates.title = req.body.title.trim().slice(0, 300);
+    if (typeof req.body?.excerpt === "string")
+      updates.excerpt = req.body.excerpt.trim();
+    else if (typeof req.body?.description === "string")
+      updates.excerpt = req.body.description.trim();
+
+    const rawDate =
+      typeof req.body?.pubDate === "string"
+        ? req.body.pubDate
+        : typeof req.body?.date === "string"
+          ? req.body.date
+          : undefined;
+    if (typeof rawDate === "string" && rawDate.trim()) {
+      const d = new Date(rawDate);
+      if (!Number.isNaN(d.getTime())) updates.date = d.toISOString();
+    }
+
+    if (typeof req.body?.draft === "boolean") updates.draft = req.body.draft;
+    else if (typeof req.body?.draft === "string")
+      updates.draft = req.body.draft.toLowerCase() === "true";
+
+    if (Array.isArray(req.body?.tags))
+      updates.tags = req.body.tags.map((t) => String(t).trim()).filter(Boolean);
+    else if (typeof req.body?.tags === "string")
+      updates.tags = req.body.tags
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
 
     // Verify ownership and type
     const project = await prisma.project.findUnique({
@@ -484,10 +520,96 @@ export async function updateGitCMSPost(req, res) {
       }
     }
 
-    // Update file on disk
     const fm = new FileManager(gm.getLocalPath(), cfg.contentDir || "");
+
+    // Helper: split frontmatter
+    const splitFrontmatter = (src) => {
+      const m = String(src || "").match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+      if (!m) return { has: false, fm: "", body: src || "" };
+      return { has: true, fm: m[1], body: m[2] || "" };
+    };
+    const hasFrontmatter = (src) => /^---\n[\s\S]*?\n---\n?/.test(src || "");
+    const yamlQuote = (v) => `"${String(v ?? "").replace(/"/g, '\\"')}"`;
+    const renderTags = (val) => {
+      const arr = Array.isArray(val)
+        ? val
+        : typeof val === "string"
+          ? val
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [];
+      return `[${arr.map((t) => yamlQuote(t)).join(", ")}]`;
+    };
+    // Preserve order/unknown keys, update only provided ones
+    const updateFrontmatter = (fmText, changes) => {
+      const lines = String(fmText || "").split(/\r?\n/);
+      const set = new Set();
+      const apply = (k, v) => {
+        if (k === "tags") return `${k}: ${renderTags(v)}`;
+        if (k === "draft") return `${k}: ${v ? "true" : "false"}`;
+        if (k === "date") {
+          const d = new Date(v);
+          return `${k}: ${!Number.isNaN(d.getTime()) ? d.toISOString() : ""}`;
+        }
+        return `${k}: ${yamlQuote(v)}`;
+      };
+      for (let i = 0; i < lines.length; i++) {
+        const m = lines[i].match(/^\s*([A-Za-z0-9_-]+)\s*:\s*(.*)$/);
+        if (!m) continue;
+        const k = m[1];
+        if (!(k in changes)) continue;
+        lines[i] = apply(k, changes[k]);
+        set.add(k);
+      }
+      // Append any missing provided keys at the end
+      for (const k of Object.keys(changes)) {
+        if (set.has(k)) continue;
+        lines.push(apply(k, changes[k]));
+      }
+      return lines.join("\n");
+    };
+
+    // Read existing file to preserve structure
+    let originalRaw = "";
     try {
-      await fm.updateFile(filename, content);
+      originalRaw = await fm.readFile(filename);
+    } catch (err) {
+      if (err?.code === "ENOENT") {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      if (
+        String(err?.message || "")
+          .toLowerCase()
+          .includes("invalid file path")
+      ) {
+        return res.status(400).json({ error: "Invalid file path" });
+      }
+      console.error("Failed to read existing file:", err);
+      return res.status(500).json({ error: "Failed to read existing file" });
+    }
+
+    // If client sent a full file (frontmatter present), write as-is
+    let finalText = incoming;
+    if (!hasFrontmatter(incoming)) {
+      // Compose from original structure
+      const parts = splitFrontmatter(originalRaw);
+      if (parts.has) {
+        // Update frontmatter with provided meta only, replace body with incoming content
+        const fmUpdated =
+          Object.keys(updates).length > 0
+            ? updateFrontmatter(parts.fm, updates)
+            : parts.fm;
+        finalText = `---\n${fmUpdated}\n---\n\n${incoming || ""}`;
+      } else {
+        // Original had no frontmatter: preserve structure (no frontmatter)
+        finalText = incoming || "";
+      }
+    }
+
+    // Save file
+    try {
+      await fm.updateFile(filename, finalText);
     } catch (err) {
       if (err?.code === "ENOENT") {
         return res.status(404).json({ error: "Post not found" });

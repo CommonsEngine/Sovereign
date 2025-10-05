@@ -1,3 +1,5 @@
+import path from "path";
+
 import prisma from "../prisma.mjs";
 import {
   GUEST_LOGIN_ENABLED,
@@ -9,7 +11,6 @@ import {
   disposeGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
-import path from "path";
 
 export async function viewIndexPage(req, res) {
   try {
@@ -612,6 +613,9 @@ export async function viewGitCMSPostPage(req, res) {
 
     const [meta, contentMarkdown] = parseFrontmatter(raw);
 
+    console.log("Post meta:", meta);
+    console.log("Post contentMarkdown:", contentMarkdown);
+
     // Render editor template with context
     return res.render("project-gitcms-post-editor", {
       projectId,
@@ -622,9 +626,15 @@ export async function viewGitCMSPostPage(req, res) {
       contentDir: cfg.contentDir || "",
       meta,
       contentMarkdown,
+      contentRawB64: Buffer.from(raw, "utf8").toString("base64"),
       // convenience fields
       title: meta.title || filename.replace(/\.md$/i, ""),
       tags: Array.isArray(meta.tags) ? meta.tags : [],
+      tagsCsv: Array.isArray(meta.tags)
+        ? meta.tags.join(",")
+        : typeof meta.tags === "string"
+          ? meta.tags
+          : "",
       draft: typeof meta.draft === "boolean" ? meta.draft : true,
       pubDate: meta.date || null,
     });

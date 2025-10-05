@@ -29,10 +29,12 @@
             rel="noopener"
             >Preview</a
           >
-          <button id="save-draft-btn" class="chip chip--primary" type="button">
+          <button id="save-draft-btn" class="chip" type="button">
             Save Draft
           </button>
-          <button id="publish-btn" class="chip" type="button">Publish</button>
+          <button id="publish-btn" class="chip chip--primary" type="button">
+            Publish
+          </button>
         </div>
       </header>
 
@@ -48,7 +50,7 @@
             "
           >
             <strong>Editor</strong>
-            <div class="segmented">
+            <div class="segmented" role="group" aria-label="Editor mode">
               <button
                 id="mode-md"
                 class="chip chip--ghost"
@@ -238,7 +240,7 @@
                 class="textarea"
                 placeholder="Short summary…"
               >
-{{meta.excerpt}}</textarea
+{{meta.description}}</textarea
               >
             </div>
             <div class="field">
@@ -248,7 +250,7 @@
                 class="input"
                 type="text"
                 placeholder="comma,separated,tags"
-                value="{{#tags}}{{.}},{{/tags}}"
+                value="{{tagsCsv}}"
               />
               <div class="help">Comma-separated (e.g., demo,intro)</div>
             </div>
@@ -263,17 +265,18 @@
                     id="pubDate"
                     class="input"
                     type="datetime-local"
-                    value="{{pubDate}}"
+                    value=""
+                    data-iso="{{meta.pubDate}}"
                   />
                 </div>
                 <div class="field">
                   <label class="label" for="draft">Status</label>
                   <div style="display: flex; align-items: center; gap: 8px">
-                    {{#draft}}
+                    {{#meta.draft}}
                     <input id="draft" type="checkbox" checked />
-                    {{/draft}} {{^draft}}
+                    {{/meta.draft}} {{^meta.draft}}
                     <input id="draft" type="checkbox" />
-                    {{/draft}}
+                    {{/meta.draft}}
                     <span class="help">Draft</span>
                   </div>
                 </div>
@@ -467,6 +470,16 @@
       // Mode management
       let editorMode = "markdown"; // 'markdown' | 'rtf'
 
+      function updateModeButtons(isMd) {
+        modeMdBtn.setAttribute("aria-pressed", isMd ? "true" : "false");
+        modeRtfBtn.setAttribute("aria-pressed", isMd ? "false" : "true");
+        // Visual selection
+        modeMdBtn.classList.toggle("chip--primary", isMd);
+        modeMdBtn.classList.toggle("chip--ghost", !isMd);
+        modeRtfBtn.classList.toggle("chip--primary", !isMd);
+        modeRtfBtn.classList.toggle("chip--ghost", isMd);
+      }
+
       function setMode(mode) {
         if (mode === editorMode) return;
         if (editorMode === "markdown" && mode === "rtf") {
@@ -478,8 +491,7 @@
         const isMd = editorMode === "markdown";
         mdWrap.hidden = !isMd;
         rtfWrap.hidden = isMd;
-        modeMdBtn.setAttribute("aria-pressed", isMd ? "true" : "false");
-        modeRtfBtn.setAttribute("aria-pressed", isMd ? "false" : "true");
+        updateModeButtons(isMd);
       }
 
       // Initial slug/path from server filename
@@ -588,13 +600,31 @@
       if (!mdEditorEl.value || mdEditorEl.value.trim() === "") {
         mdEditorEl.value = htmlToMarkdown(editorEl.innerHTML || "<p></p>");
       }
+      // Initialize visual/aria state for default mode
+      updateModeButtons(true);
       setMode("markdown");
+
+      // Convert ISO (e.g., 2025-09-30T00:00:00.000Z) to datetime-local value (local time)
+      function isoToDatetimeLocalValue(iso) {
+        if (!iso) return "";
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return "";
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      }
+
+      // Initialize the datetime-local input from ISO
+      (function initPubDateFromIso() {
+        const iso = pubDateEl?.dataset?.iso;
+        if (iso) pubDateEl.value = isoToDatetimeLocalValue(iso);
+      })();
 
       // Collect payload from DOM
       function collectPayload(overrides = {}) {
         let pubISO = null;
         if (pubDateEl.value) {
           try {
+            // pubDateEl.value is local time; convert to UTC ISO string
             const d = new Date(pubDateEl.value);
             pubISO = d.toISOString();
           } catch {}
@@ -615,7 +645,7 @@
           projectId,
           path: toPath(slugEl.value.trim()),
           title: titleEl.value.trim(),
-          excerpt: excerptEl.value.trim(),
+          description: excerptEl.value.trim(),
           pubDate: pubISO,
           draft: !!draftEl.checked,
           tags: tagsEl.value.trim(),
@@ -639,7 +669,7 @@
         }
       });
       saveDraftBtn.addEventListener("click", async () => {
-        const payload = collectPayload({ draft: true });
+        const payload = collectPayload();
         const projectId = __PROJECT_ID__;
         const filename = __FILENAME__;
         if (!projectId || !filename) {
