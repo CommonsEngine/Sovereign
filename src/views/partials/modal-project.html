@@ -103,7 +103,7 @@
       const nameEl = root.querySelector("#project-name-input");
       const typeEl = root.querySelector("#project-type-input");
       const scopeEl = root.querySelector("#project-scope-input");
-      const desEl = root.querySelector("#project-desc-input");
+      const descEl = root.querySelector("#project-desc-input");
 
       // Reset form and error when modal is closed
       function resetForm() {
@@ -136,7 +136,7 @@
           name: (nameEl?.value || "Untitled").trim().slice(0, 120),
           type: typeEl?.value || "gitcms",
           scope: scopeEl?.value || "private",
-          des: (desEl?.value || "").trim().slice(0, 500),
+          desc: (descEl?.value || "").trim().slice(0, 500),
         };
         if (!payload.name) {
           nameEl?.focus();

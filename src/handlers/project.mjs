@@ -27,13 +27,14 @@ export async function createProject(req, res) {
     const scope = allowedScopes.has(String(raw.scope))
       ? String(raw.scope)
       : "private";
-    const des = raw.des != null ? String(raw.des).trim().slice(0, 500) : null;
+    const desc =
+      raw.desc != null ? String(raw.desc).trim().slice(0, 500) : null;
 
     const project = await prisma.project.create({
       data: {
         id: uuid("p_"),
         name,
-        des,
+        desc,
         type,
         scope,
         ownerId: userId,
