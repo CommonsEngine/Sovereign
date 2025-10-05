@@ -27,32 +27,32 @@
         </a>
 
         {{> modal-runtime}} {{> modal-project}} {{#each projects}}
-        <article class="projects__card" data-project-id="{{this.id}}">
+        <article class="projects__card" data-project-id="{{this.id}}" data-owned="{{this.owned}}">
           <!-- Top row: Title + Status badge on the right -->
           <div class="projects__row">
-            <div class="projects__card-title">{{this.name}}</div>
-            <span class="projects__badge projects__badge--status"
-              >{{this.status}}</span
-            >
+            <div
+              class="projects__card-title"
+              {{#if this.owned}}
+              data-inline-edit="name"
+              title="Double-click to rename"
+              tabindex="0"
+              {{/if}}
+            >{{this.name}}</div>
+            <span class="projects__badge projects__badge--status">{{this.status}}</span>
           </div>
 
           <div class="projects__meta projects__meta--info">
             {{#if this.scope}}
-            <span class="projects__chip projects__chip--scope" title="Scope"
-              >{{this.scope}}</span
-            >
-            {{/if}} {{#if this.type}}
-            <span class="projects__chip projects__chip--type" title="Type"
-              >{{this.type}}</span
-            >
+            <span class="projects__chip projects__chip--scope" title="Scope">{{this.scope}}</span>
+            {{/if}}
+            {{#if this.type}}
+            <span class="projects__chip projects__chip--type" title="Type">{{this.type}}</span>
             {{/if}}
           </div>
-
           <!-- Date row kept separate for readability -->
           <div class="projects__meta projects__meta--date">
             <span class="created-at" data-date="{{this.createdAt}}"></span>
           </div>
-
           <!-- Actions -->
           <div class="projects__actions">
             <a class="projects__link" href="/p/{{this.id}}">Open</a>
@@ -65,19 +65,8 @@
               data-action="delete"
               data-id="{{this.id}}"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
               </svg>
             </button>
             {{/if}}
@@ -127,6 +116,113 @@
         const id = btn.getAttribute("data-id");
         if (id) deleteProject(id);
       });
+
+      // Inline rename: start editing on dblclick or Enter
+      document.addEventListener("dblclick", (e) => {
+        const title = e.target.closest('[data-inline-edit="name"]');
+        if (title) startTitleEdit(title);
+      });
+      document.addEventListener("keydown", (e) => {
+        const title = e.target.closest('[data-inline-edit="name"]');
+        if (!title) return;
+        if (e.key === "Enter") {
+          e.preventDefault();
+          startTitleEdit(title);
+        }
+      });
+
+      function startTitleEdit(titleEl) {
+        const card = titleEl.closest(".projects__card");
+        if (!card || card.dataset.owned !== "true") return;
+        if (card.dataset.editing === "name") return; // already editing
+
+        const id = card.getAttribute("data-project-id");
+        const prev = titleEl.textContent.trim();
+        card.dataset.editing = "name";
+
+        // Make the title itself editable
+        titleEl.contentEditable = "true";
+        titleEl.setAttribute("role", "textbox");
+        titleEl.setAttribute("aria-label", "Edit project name");
+        titleEl.setAttribute("aria-multiline", "false");
+        titleEl.classList.add("is-editing");
+
+        // Focus and select text
+        titleEl.focus();
+        const range = document.createRange();
+        range.selectNodeContents(titleEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+
+        const cleanup = () => {
+          titleEl.contentEditable = "false";
+          titleEl.removeAttribute("role");
+          titleEl.removeAttribute("aria-label");
+          titleEl.removeAttribute("aria-multiline");
+          titleEl.classList.remove("is-editing");
+          delete card.dataset.editing;
+          titleEl.removeEventListener("keydown", onKeydown);
+          titleEl.removeEventListener("blur", onBlur);
+          titleEl.removeEventListener("paste", onPaste);
+        };
+
+        const cancel = () => {
+          titleEl.textContent = prev;
+          cleanup();
+        };
+
+        const save = async () => {
+          const next = titleEl.textContent.trim().slice(0, 120) || prev;
+          if (next === prev) return cancel();
+          try {
+            titleEl.setAttribute("aria-busy", "true");
+            const resp = await fetch(`/api/project/${encodeURIComponent(id)}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name: next }),
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data?.error || "Rename failed");
+            titleEl.textContent = data?.name || next;
+          } catch (err) {
+            alert(err.message || "Rename failed");
+            titleEl.textContent = prev;
+          } finally {
+            titleEl.removeAttribute("aria-busy");
+            cleanup();
+          }
+        };
+
+        const onKeydown = (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault(); // no newline
+            save();
+          } else if (e.key === "Escape") {
+            e.preventDefault();
+            cancel();
+          }
+        };
+
+        const onBlur = () => {
+          // Save on blur
+          save();
+        };
+
+        const onPaste = (e) => {
+          // Paste plain text, single line, max 120 chars
+          e.preventDefault();
+          const text = (e.clipboardData || window.clipboardData)
+            .getData("text")
+            .replace(/\s+/g, " ")
+            .slice(0, 120);
+          document.execCommand("insertText", false, text);
+        };
+
+        titleEl.addEventListener("keydown", onKeydown);
+        titleEl.addEventListener("blur", onBlur);
+        titleEl.addEventListener("paste", onPaste);
+      }
     </script>
   </body>
 </html>

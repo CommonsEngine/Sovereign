@@ -70,3 +70,42 @@ export async function deleteProject(req, res) {
     return res.status(500).json({ error: "Failed to delete project" });
   }
 }
+
+export async function updateProject(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = req.params?.id || req.body?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
+
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const raw = req.body || {};
+    const name = typeof raw.name === "string"
+      ? raw.name.trim().slice(0, 120)
+      : undefined;
+
+    if (!name || name.length === 0) {
+      return res.status(400).json({ error: "Invalid name" });
+    }
+
+    const updated = await prisma.project.update({
+      where: { id },
+      data: { name },
+      select: { id: true, name: true },
+    });
+
+    return res.status(200).json(updated);
+  } catch (e) {
+    console.error("Update project failed:", e);
+    return res.status(500).json({ error: "Failed to update project" });
+  }
+}

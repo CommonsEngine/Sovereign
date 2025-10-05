@@ -105,6 +105,13 @@ body.page {
   font-size: 18px;
   overflow-wrap: anywhere;
 }
+.projects__card-title[contenteditable="true"] {
+  outline: 1px solid var(--color-border-card);
+  border: 0;
+  background: transparent;
+  caret-color: currentColor;
+}
+.projects__card-title.is-editing { cursor: text; }
 .projects__row {
   display: flex;
   gap: 10px;
