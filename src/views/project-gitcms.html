@@ -188,6 +188,7 @@
       }
 
       function makePostRow(projectId, post) {
+        console.log("Post data:", post);
         const title = post.filename.replace(/\.md$/i, "");
         const hrefEdit = `/p/${projectId}/gitcms/post/${encodeURIComponent(post.filename)}?edit=true`;
         const { iso, label } = post.modified

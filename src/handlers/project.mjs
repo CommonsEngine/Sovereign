@@ -443,20 +443,14 @@ export async function updateGitCMSPost(req, res) {
     const updates = {};
     if (typeof req.body?.title === "string")
       updates.title = req.body.title.trim().slice(0, 300);
-    if (typeof req.body?.excerpt === "string")
-      updates.excerpt = req.body.excerpt.trim();
-    else if (typeof req.body?.description === "string")
-      updates.excerpt = req.body.description.trim();
+    if (typeof req.body?.description === "string")
+      updates.description = req.body.description.trim();
 
-    const rawDate =
-      typeof req.body?.pubDate === "string"
-        ? req.body.pubDate
-        : typeof req.body?.date === "string"
-          ? req.body.date
-          : undefined;
-    if (typeof rawDate === "string" && rawDate.trim()) {
-      const d = new Date(rawDate);
-      if (!Number.isNaN(d.getTime())) updates.date = d.toISOString();
+    if (typeof req.body?.pubDate === "string") {
+      updates.pubDate = new Date(req.body.pubDate).toISOString();
+
+      const d = new Date();
+      updates.updatedDate = d.toISOString();
     }
 
     if (typeof req.body?.draft === "boolean") updates.draft = req.body.draft;
@@ -664,14 +658,12 @@ export async function updateGitCMSPost(req, res) {
           const redirectUrl = `/p/${encodeURIComponent(
             id,
           )}/gitcms/post/${encodeURIComponent(desiredBase)}?edit=true`;
-          return res
-            .status(200)
-            .json({
-              updated: true,
-              renamed: true,
-              filename: desiredBase,
-              redirect: redirectUrl,
-            });
+          return res.status(200).json({
+            updated: true,
+            renamed: true,
+            filename: desiredBase,
+            redirect: redirectUrl,
+          });
         }
       }
     } catch (err) {
