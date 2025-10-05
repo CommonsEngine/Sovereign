@@ -785,13 +785,57 @@
         }
       });
       deleteBtn?.addEventListener("click", async () => {
-        if (!confirm("Delete this post?")) return;
-        const path = toPath(slugEl.value.trim());
-        console.log("Delete requested for:", {
-          projectId: __PROJECT_ID__,
-          path,
-        });
-        alert("Delete requested (demo). Check console for payload.");
+        if (!confirm("Delete this post? This cannot be undone.")) return;
+
+        const projectId = __PROJECT_ID__;
+        const filename = __FILENAME__;
+        if (!projectId || !filename) {
+          alert("Missing project or filename.");
+          return;
+        }
+
+        const btn = deleteBtn;
+        const prevText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Deleting…";
+
+        try {
+          const resp = await fetch(
+            `/api/project/${encodeURIComponent(projectId)}/gitcms/post/${encodeURIComponent(filename)}`,
+            {
+              method: "DELETE",
+              headers: { Accept: "application/json" },
+              credentials: "same-origin",
+            },
+          );
+
+          if (resp.status === 401) {
+            location.href =
+              "/login?return_to=" +
+              encodeURIComponent(location.pathname + location.search);
+            return;
+          }
+          if (resp.status === 404) {
+            alert("Post not found.");
+            btn.disabled = false;
+            btn.textContent = prevText;
+            return;
+          }
+
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            const msg = data?.error || `HTTP ${resp.status}`;
+            throw new Error(msg);
+          }
+
+          // Success: go back to project page
+          location.href = `/p/${encodeURIComponent(projectId)}`;
+        } catch (err) {
+          console.error("Delete failed:", err);
+          alert(`Failed to delete: ${err?.message || err}`);
+          btn.disabled = false;
+          btn.textContent = prevText;
+        }
       });
     </script>
   </body>
