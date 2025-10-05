@@ -134,6 +134,11 @@ app.patch(
   requireAuth,
   projectHandler.updateGitCMSPost,
 );
+app.post(
+  "/api/project/:id/gitcms/post/:filename",
+  requireAuth,
+  projectHandler.publishGitCMSPost,
+);
 app.delete(
   "/api/project/:id/gitcms/post/:filename",
   requireAuth,

@@ -509,3 +509,102 @@ export async function updateGitCMSPost(req, res) {
     return res.status(500).json({ error: "Failed to update post" });
   }
 }
+
+export async function publishGitCMSPost(req, res) {
+  // We need to simply commit and push any changes that are currently in the working directory
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = req.params?.id;
+    if (!id) return res.status(400).json({ error: "Missing project id" });
+
+    // Verify ownership and type
+    const project = await prisma.project.findUnique({
+      where: { id },
+      select: { ownerId: true, type: true },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "gitcms") {
+      return res.status(400).json({ error: "Project is not a GitCMS type" });
+    }
+
+    // Load config to init manager if needed
+    const cfg = await prisma.projectGitCMS.findUnique({
+      where: { projectId: id },
+      select: {
+        repoUrl: true,
+        defaultBranch: true,
+        contentDir: true,
+        gitUserName: true,
+        gitUserEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.status(400).json({ error: "GitCMS not configured" });
+    }
+
+    // Ensure Git manager
+    let gm = getGitManager(id);
+    if (!gm) {
+      try {
+        gm = await getOrInitGitManager(id, {
+          repoUrl: cfg.repoUrl,
+          defaultBranch: cfg.defaultBranch,
+          gitUserName: cfg.gitUserName,
+          gitUserEmail: cfg.gitUserEmail,
+          gitAuthToken: cfg.authSecret || null,
+        });
+      } catch (err) {
+        console.error("Git connect failed during publish:", err);
+        return res.status(400).json({
+          error:
+            "Failed to connect to repository. Please verify the configuration.",
+        });
+      }
+    }
+
+    // Best-effort pull to reduce push conflicts
+    try {
+      await gm.pullLatest();
+    } catch (err) {
+      console.warn("Pull latest failed before publish:", err?.message || err);
+      // continue; publish may still succeed if fast-forward
+    }
+
+    const rawMsg =
+      typeof req.body?.message === "string" ? req.body.message : null;
+    const commitMessage = (rawMsg || "Update with Sovereign")
+      .toString()
+      .trim()
+      .slice(0, 200);
+
+    const result = await gm.publish(commitMessage);
+
+    // Normalize response
+    if (result && result.message && /No changes/i.test(result.message)) {
+      return res
+        .status(200)
+        .json({ published: false, message: result.message });
+    }
+
+    return res.status(200).json({
+      published: true,
+      message: result?.message || "Changes published successfully",
+    });
+  } catch (e) {
+    console.error("Publish GitCMS changes failed:", e);
+    // Common non-fast-forward hint
+    const msg = String(e?.message || e);
+    const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
+      ? "Remote has new commits. Pull/rebase then try again."
+      : undefined;
+    return res
+      .status(500)
+      .json({ error: "Failed to publish changes", hint, detail: msg });
+  }
+}
