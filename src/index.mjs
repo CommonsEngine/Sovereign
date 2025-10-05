@@ -97,7 +97,11 @@ app.get(
   requireAuthWeb,
   viewHandler.viewPostCreatePage,
 );
-app.get("/p/:projectId/gitcms/post/:filename", requireAuthWeb, viewHandler.viewPostPage);
+app.get(
+  "/p/:projectId/gitcms/post/:filename",
+  requireAuthWeb,
+  viewHandler.viewPostPage,
+);
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
 

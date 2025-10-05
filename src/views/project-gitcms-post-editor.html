@@ -36,7 +36,35 @@
 
       <section class="grid">
         <article class="card">
-          <div class="card__bar"><strong>Editor</strong></div>
+          <div
+            class="card__bar"
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 12px;
+            "
+          >
+            <strong>Editor</strong>
+            <div class="segmented">
+              <button
+                id="mode-md"
+                class="chip chip--ghost"
+                type="button"
+                aria-pressed="true"
+              >
+                Markdown
+              </button>
+              <button
+                id="mode-rtf"
+                class="chip chip--ghost"
+                type="button"
+                aria-pressed="false"
+              >
+                Rich Text
+              </button>
+            </div>
+          </div>
           <div class="card__body">
             <div class="row row--single">
               <div class="field">
@@ -71,83 +99,129 @@
               </div>
             </div>
 
-            <div class="field">
-              <label class="label">Rich Text Editor</label>
-              <div class="editor-toolbar">
-                <button class="editor-btn" data-cmd="bold" type="button">
-                  <strong>B</strong>
-                </button>
-                <button class="editor-btn" data-cmd="italic" type="button">
-                  <em>I</em>
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="formatBlock"
-                  data-value="H2"
-                  type="button"
-                >
-                  H2
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="formatBlock"
-                  data-value="H3"
-                  type="button"
-                >
-                  H3
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="insertUnorderedList"
-                  type="button"
-                >
-                  • List
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="insertOrderedList"
-                  type="button"
-                >
-                  1. List
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="formatBlock"
-                  data-value="BLOCKQUOTE"
-                  type="button"
-                >
-                  Quote
-                </button>
-                <button
-                  class="editor-btn"
-                  data-cmd="insertHTML"
-                  data-value="<pre><code></code></pre>"
-                  type="button"
-                >
-                  Code
-                </button>
-                <button class="editor-btn" id="link-btn" type="button">
-                  Link
-                </button>
-                <span class="spacer"></span>
-                <button class="editor-btn" data-cmd="undo" type="button">
-                  Undo
-                </button>
-                <button class="editor-btn" data-cmd="redo" type="button">
-                  Redo
-                </button>
-                <button class="editor-btn" id="clear-btn" type="button">
-                  Clear
-                </button>
+            <!-- Markdown editor (default) -->
+            <div id="md-wrap">
+              <div class="field">
+                <label class="label" for="md-editor">Markdown</label>
+                <div class="editor-toolbar" id="md-toolbar">
+                  <button class="editor-btn" data-md="h2" type="button">
+                    H2
+                  </button>
+                  <button class="editor-btn" data-md="h3" type="button">
+                    H3
+                  </button>
+                  <button class="editor-btn" data-md="bold" type="button">
+                    <strong>B</strong>
+                  </button>
+                  <button class="editor-btn" data-md="italic" type="button">
+                    <em>I</em>
+                  </button>
+                  <button class="editor-btn" data-md="ul" type="button">
+                    • List
+                  </button>
+                  <button class="editor-btn" data-md="ol" type="button">
+                    1. List
+                  </button>
+                  <button class="editor-btn" data-md="code" type="button">
+                    Code
+                  </button>
+                  <button class="editor-btn" data-md="quote" type="button">
+                    Quote
+                  </button>
+                  <span class="spacer"></span>
+                  <button class="editor-btn" data-md="link" type="button">
+                    Link
+                  </button>
+                </div>
+                <textarea
+                  id="md-editor"
+                  class="textarea"
+                  rows="16"
+                  placeholder="Write your post in Markdown…"
+                ></textarea>
               </div>
-              <div
-                id="editor"
-                class="editor-area"
-                contenteditable="true"
-                spellcheck="true"
-              >
-                <h2>Welcome</h2>
-                <p>This is a sample post.</p>
+            </div>
+
+            <!-- Rich text editor (secondary) -->
+            <div id="rtf-wrap" hidden>
+              <div class="field">
+                <label class="label">Rich Text Editor</label>
+                <div class="editor-toolbar" id="rt-toolbar">
+                  <button class="editor-btn" data-cmd="bold" type="button">
+                    <strong>B</strong>
+                  </button>
+                  <button class="editor-btn" data-cmd="italic" type="button">
+                    <em>I</em>
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="formatBlock"
+                    data-value="H2"
+                    type="button"
+                  >
+                    H2
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="formatBlock"
+                    data-value="H3"
+                    type="button"
+                  >
+                    H3
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="insertUnorderedList"
+                    type="button"
+                  >
+                    • List
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="insertOrderedList"
+                    type="button"
+                  >
+                    1. List
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="formatBlock"
+                    data-value="BLOCKQUOTE"
+                    type="button"
+                  >
+                    Quote
+                  </button>
+                  <button
+                    class="editor-btn"
+                    data-cmd="insertHTML"
+                    data-value="<pre><code></code></pre>"
+                    type="button"
+                  >
+                    Code
+                  </button>
+                  <button class="editor-btn" id="link-btn" type="button">
+                    Link
+                  </button>
+                  <span class="spacer"></span>
+                  <button class="editor-btn" data-cmd="undo" type="button">
+                    Undo
+                  </button>
+                  <button class="editor-btn" data-cmd="redo" type="button">
+                    Redo
+                  </button>
+                  <button class="editor-btn" id="clear-btn" type="button">
+                    Clear
+                  </button>
+                </div>
+                <div
+                  id="editor"
+                  class="editor-area"
+                  contenteditable="true"
+                  spellcheck="true"
+                >
+                  <h2>Welcome</h2>
+                  <p>This is a sample post.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -218,9 +292,8 @@ How to use this demo project.</textarea
                   href="https://github.com/example/sovereign-demo-content"
                   target="_blank"
                   rel="noopener"
+                  >link</a
                 >
-                  link
-                </a>
               </div>
               <div class="subtle">Branch</div>
               <div id="m-branch">main</div>
@@ -249,7 +322,12 @@ How to use this demo project.</textarea
       const titleEl = $("title");
       const slugEl = $("slug");
       const pathPreviewEl = $("pathPreview");
+      const mdWrap = $("md-wrap");
+      const mdEditorEl = $("md-editor");
+      const mdToolbar = $("md-toolbar");
+      const rtfWrap = $("rtf-wrap");
       const editorEl = $("editor");
+      const rtToolbar = $("rt-toolbar");
       const excerptEl = $("excerpt");
       const tagsEl = $("tags");
       const pubDateEl = $("pubDate");
@@ -258,6 +336,8 @@ How to use this demo project.</textarea
       const saveDraftBtn = $("save-draft-btn");
       const publishBtn = $("publish-btn");
       const deleteBtn = $("delete-btn");
+      const modeMdBtn = $("mode-md");
+      const modeRtfBtn = $("mode-rtf");
 
       // Helpers
       const getContentDir = () =>
@@ -283,6 +363,155 @@ How to use this demo project.</textarea
         pathPreviewEl.textContent = toPath(slugEl.value.trim());
       }
 
+      // Minimal Markdown <-> HTML converters (best-effort)
+      function markdownToHtml(md) {
+        if (!md) return "";
+        let html = md;
+
+        // Escape basic
+        html = html
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        // Code blocks ``` ```
+        html = html.replace(
+          /```([\s\S]*?)```/g,
+          (_, code) => `<pre><code>${code.replace(/\n$/, "")}</code></pre>`,
+        );
+
+        // Headings
+        html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+        html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+        html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
+
+        // Blockquote
+        html = html.replace(/^\> (.*)$/gm, "<blockquote>$1</blockquote>");
+
+        // Lists
+        html = html.replace(/^(?:\d+\.\s+)(.*)$/gm, "<ol><li>$1</li></ol>");
+        html = html.replace(/^(?:-\s+|\*\s+)(.*)$/gm, "<ul><li>$1</li></ul>");
+        // Merge adjacent single-item lists
+        html = html.replace(/<\/ul>\n<ul>/g, "").replace(/<\/ol>\n<ol>/g, "");
+
+        // Inline
+        html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
+        html = html.replace(/`([^`]+?)`/g, "<code>$1</code>");
+        html = html.replace(
+          /\[([^\]]+?)\]\(([^)]+?)\)/g,
+          '<a href="$2" rel="noopener" target="_blank">$1</a>',
+        );
+
+        // Paragraphs
+        html = html
+          .split(/\n{2,}/)
+          .map((blk) => {
+            if (/^\s*<(h\d|pre|blockquote|ul|ol)/.test(blk)) return blk;
+            return `<p>${blk.replace(/\n/g, "<br/>")}</p>`;
+          })
+          .join("\n");
+
+        return html;
+      }
+
+      function htmlToMarkdown(html) {
+        if (!html) return "";
+        // Work on a detached container
+        const div = document.createElement("div");
+        div.innerHTML = html;
+
+        // Convert common nodes
+        const walk = (node) => {
+          if (node.nodeType === 3) {
+            return node.nodeValue.replace(/\s+/g, " ");
+          }
+          if (node.nodeType !== 1) return "";
+
+          const tag = node.tagName.toLowerCase();
+          const childMd = Array.from(node.childNodes).map(walk).join("");
+
+          switch (tag) {
+            case "h1":
+              return `# ${childMd}\n\n`;
+            case "h2":
+              return `## ${childMd}\n\n`;
+            case "h3":
+              return `### ${childMd}\n\n`;
+            case "strong":
+            case "b":
+              return `**${childMd}**`;
+            case "em":
+            case "i":
+              return `*${childMd}*`;
+            case "code":
+              if (
+                node.parentElement &&
+                node.parentElement.tagName.toLowerCase() === "pre"
+              ) {
+                return childMd; // handled by pre
+              }
+              return "`" + childMd + "`";
+            case "pre":
+              return "```\n" + childMd + "\n```\n\n";
+            case "blockquote":
+              return `> ${childMd}\n\n`;
+            case "ul":
+              return (
+                Array.from(node.children)
+                  .map((li) => `- ${walk(li)}\n`)
+                  .join("") + "\n"
+              );
+            case "ol":
+              return (
+                Array.from(node.children)
+                  .map((li, i) => `${i + 1}. ${walk(li)}\n`)
+                  .join("") + "\n"
+              );
+            case "li":
+              return childMd;
+            case "a": {
+              const href = node.getAttribute("href") || "#";
+              return `[${childMd}](${href})`;
+            }
+            case "br":
+              return "  \n";
+            case "p":
+              return `${childMd}\n\n`;
+            default:
+              return childMd;
+          }
+        };
+
+        return walk(div)
+          .replace(/\n{3,}/g, "\n\n")
+          .trim();
+      }
+
+      // Mode management
+      let editorMode = "markdown"; // 'markdown' | 'rtf'
+
+      function setMode(mode) {
+        if (mode === editorMode) return;
+        // Sync content from current mode to the other
+        if (editorMode === "markdown" && mode === "rtf") {
+          const md = mdEditorEl.value;
+          editorEl.innerHTML = markdownToHtml(md);
+        } else if (editorMode === "rtf" && mode === "markdown") {
+          const html = editorEl.innerHTML;
+          mdEditorEl.value = htmlToMarkdown(html);
+        }
+
+        editorMode = mode;
+
+        // Toggle UI
+        const isMd = editorMode === "markdown";
+        mdWrap.hidden = !isMd;
+        rtfWrap.hidden = isMd;
+        modeMdBtn.setAttribute("aria-pressed", isMd ? "true" : "false");
+        modeRtfBtn.setAttribute("aria-pressed", isMd ? "false" : "true");
+      }
+
       // Initial path preview based on current slug/content dir
       updatePathPreview();
 
@@ -299,21 +528,79 @@ How to use this demo project.</textarea
         }
       });
 
-      // Editor toolbar
-      document.querySelectorAll(".editor-btn[data-cmd]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const cmd = btn.getAttribute("data-cmd");
-          const val = btn.getAttribute("data-value") || null;
-          if (cmd === "insertHTML" && val) {
-            document.execCommand("insertHTML", false, val);
-          } else if (cmd === "formatBlock") {
-            document.execCommand("formatBlock", false, val);
-          } else {
-            document.execCommand(cmd, false, val);
+      // Wire mode toggles
+      modeMdBtn.addEventListener("click", () => setMode("markdown"));
+      modeRtfBtn.addEventListener("click", () => setMode("rtf"));
+
+      // Markdown toolbar actions (simple inserts around selection)
+      function wrapSelectionInTextarea(textarea, before, after = before) {
+        const start = textarea.selectionStart ?? 0;
+        const end = textarea.selectionEnd ?? 0;
+        const val = textarea.value;
+        const selected = val.slice(start, end);
+        const replacement = before + selected + after;
+        textarea.value = val.slice(0, start) + replacement + val.slice(end);
+        // Restore selection
+        const pos = start + replacement.length;
+        textarea.focus();
+        textarea.setSelectionRange(pos, pos);
+      }
+
+      mdToolbar.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-md]");
+        if (!btn) return;
+        const cmd = btn.getAttribute("data-md");
+        switch (cmd) {
+          case "h2":
+            wrapSelectionInTextarea(mdEditorEl, "## ", "");
+            break;
+          case "h3":
+            wrapSelectionInTextarea(mdEditorEl, "### ", "");
+            break;
+          case "bold":
+            wrapSelectionInTextarea(mdEditorEl, "**");
+            break;
+          case "italic":
+            wrapSelectionInTextarea(mdEditorEl, "*");
+            break;
+          case "ul":
+            wrapSelectionInTextarea(mdEditorEl, "- ", "");
+            break;
+          case "ol":
+            wrapSelectionInTextarea(mdEditorEl, "1. ", "");
+            break;
+          case "code":
+            wrapSelectionInTextarea(mdEditorEl, "```\n", "\n```");
+            break;
+          case "quote":
+            wrapSelectionInTextarea(mdEditorEl, "> ", "");
+            break;
+          case "link": {
+            const url = prompt("Enter URL");
+            if (!url) return;
+            wrapSelectionInTextarea(mdEditorEl, "[", `](${url})`);
+            break;
           }
-          editorEl.focus();
-        });
+        }
       });
+
+      // Rich text toolbar
+      document
+        .querySelectorAll("#rt-toolbar .editor-btn[data-cmd]")
+        .forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const cmd = btn.getAttribute("data-cmd");
+            const val = btn.getAttribute("data-value") || null;
+            if (cmd === "insertHTML" && val) {
+              document.execCommand("insertHTML", false, val);
+            } else if (cmd === "formatBlock") {
+              document.execCommand("formatBlock", false, val);
+            } else {
+              document.execCommand(cmd, false, val);
+            }
+            editorEl.focus();
+          });
+        });
       $("clear-btn").addEventListener("click", () => {
         editorEl.innerHTML = "";
         editorEl.focus();
@@ -324,7 +611,11 @@ How to use this demo project.</textarea
         editorEl.focus();
       });
 
-      // Collect payload from DOM (no JS seed)
+      // Seed Markdown editor from initial Rich Text content and set default to Markdown mode
+      mdEditorEl.value = htmlToMarkdown(editorEl.innerHTML || "<p></p>");
+      setMode("markdown");
+
+      // Collect payload from DOM (now includes both html + markdown)
       function collectPayload(overrides = {}) {
         let pubISO = null;
         if (pubDateEl.value) {
@@ -334,6 +625,17 @@ How to use this demo project.</textarea
           } catch {}
         }
         const projectId = document.body.dataset.projectId || "demo-project";
+
+        // Capture content in both formats (canonical = Markdown)
+        let contentMarkdown, contentHtml;
+        if (editorMode === "markdown") {
+          contentMarkdown = mdEditorEl.value;
+          contentHtml = markdownToHtml(contentMarkdown);
+        } else {
+          contentHtml = editorEl.innerHTML;
+          contentMarkdown = htmlToMarkdown(contentHtml);
+        }
+
         return {
           projectId,
           path: toPath(slugEl.value.trim()),
@@ -342,12 +644,26 @@ How to use this demo project.</textarea
           pubDate: pubISO,
           draft: !!draftEl.checked,
           tags: tagsEl.value.trim(),
-          contentHtml: editorEl.innerHTML,
+          contentHtml,
+          contentMarkdown,
+          editorMode,
           ...overrides,
         };
       }
 
       // Demo actions
+      previewBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const { contentHtml } = collectPayload();
+        const w = window.open("", "_blank", "noopener");
+        if (w) {
+          w.document.write(
+            `<meta charset="utf-8"><title>Preview</title>${contentHtml}`,
+          );
+          w.document.close();
+        }
+      });
+
       saveDraftBtn.addEventListener("click", async () => {
         const payload = collectPayload({ draft: true });
         console.log("Save draft payload:", payload);
