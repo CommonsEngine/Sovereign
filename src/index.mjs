@@ -92,6 +92,7 @@ app.get(
   requireAuthWeb,
   viewHandler.viewProjectConfigurePage,
 );
+app.get("/p/:projectId/post/new", requireAuthWeb, viewHandler.viewPostCreatePage);
 app.get("/p/:projectId/post/:postId", requireAuthWeb, viewHandler.viewPostPage);
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
