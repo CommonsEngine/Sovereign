@@ -27,7 +27,8 @@ enum ProjectStatus {
 model Project {
   id        String  @id @default(cuid()) @map("id")
   name      String  @default("Untitled") @map("name")
-  des       String? @map("desc")
+  slug      String? @unique @map("slug")
+  desc      String? @map("desc")
   publicUrl String? @map("public_url")
 
   type   ProjectType   @default(gitcms) @map("type")
@@ -48,6 +49,7 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([id])
   @@index([ownerId])
   @@index([createdAt])
   @@map("projects")
@@ -87,22 +89,6 @@ model ProjectGitCMS {
   postMetas PostMeta[]
 }
 
-// PaperTrail project-specific fields
-model ProjectPaperTrail {
-  projectId String  @id @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  width   Int?    @map("width")
-  height  Int?    @map("height")
-  bgColor String? @map("bg_color")
-}
-
-// Workspace project-specific fields
-model ProjectWorkspace {
-  projectId String  @id @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
-
 model PostMeta {
   id        String    @id @default(cuid())
   path      String
@@ -121,6 +107,86 @@ model PostMeta {
   @@unique([gitcmsId, path])
   @@index([gitcmsId])
   @@map("post_meta")
+}
+
+// PaperTrail project-specific fields
+model ProjectPaperTrail {
+  projectId String  @id @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  schemaVersion Int @default(1) @map("schema_version")
+
+  nodes PaperTrailNode[]
+  edges PaperTrailEdge[]
+}
+
+model PaperTrailNode {
+  id      String @id @default(cuid()) @map("id")
+  boardId String @map("board_id")
+  type    String @map("type")
+  x       Int    @map("x")
+  y       Int    @map("y")
+  w       Int?   @map("w")
+  h       Int?   @map("h")
+
+  // content fields expected by server.mjs
+  title    String? @map("title")
+  text     String? @map("text")
+  html     String? @map("html")
+  descHtml String? @map("desc_html")
+  linkUrl  String? @map("link_url")
+  imageUrl String? @map("image_url")
+
+  board ProjectPaperTrail   @relation(fields: [boardId], references: [projectId], onDelete: Cascade)
+  tags  PaperTrailNodeTag[]
+
+  @@index([boardId])
+  @@index([boardId, type])
+  @@map("nodes")
+}
+
+model PaperTrailEdge {
+  id       String  @id @default(cuid()) @map("id")
+  boardId  String  @map("board_id")
+  sourceId String  @map("source_id")
+  targetId String  @map("target_id")
+  label    String? @map("label")
+  dashed   Boolean @default(false) @map("dashed")
+  color    String? @map("color")
+
+  board ProjectPaperTrail @relation(fields: [boardId], references: [projectId], onDelete: Cascade)
+
+  @@index([boardId])
+  @@index([boardId, sourceId])
+  @@index([boardId, targetId])
+  @@map("edges")
+}
+
+model PaperTrailTag {
+  id    String              @id @default(cuid()) @map("id")
+  name  String              @unique @map("name")
+  nodes PaperTrailNodeTag[]
+
+  @@map("tags")
+}
+
+model PaperTrailNodeTag {
+  nodeId String @map("node_id")
+  tagId  String @map("tag_id")
+
+  node PaperTrailNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  tag  PaperTrailTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, tagId])
+  @@index([nodeId])
+  @@index([tagId])
+  @@map("node_tags")
+}
+
+// Workspace project-specific fields
+model ProjectWorkspace {
+  projectId String  @id @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model User {

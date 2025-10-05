@@ -46,7 +46,7 @@ export async function viewIndexPage(req, res) {
         type: true,
         scope: true,
         name: true,
-        des: true,
+        desc: true,
         status: true,
         createdAt: true,
         updatedAt: true,
@@ -115,7 +115,7 @@ export async function viewProjectPage(req, res) {
       select: {
         id: true,
         name: true,
-        des: true,
+        desc: true,
         type: true,
         scope: true,
         status: true,
@@ -136,9 +136,6 @@ export async function viewProjectPage(req, res) {
         papertrail: {
           select: {
             projectId: true,
-            width: true,
-            height: true,
-            bgColor: true,
           },
         },
         workspace: {
