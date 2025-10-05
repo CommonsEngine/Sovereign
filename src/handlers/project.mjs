@@ -607,7 +607,7 @@ export async function updateGitCMSPost(req, res) {
       }
     }
 
-    // Save file
+    // Save file content
     try {
       await fm.updateFile(filename, finalText);
     } catch (err) {
@@ -625,6 +625,61 @@ export async function updateGitCMSPost(req, res) {
       return res.status(500).json({ error: "Failed to update file" });
     }
 
+    // Handle slug/path rename AFTER saving content
+    try {
+      const desiredPathRaw =
+        typeof req.body?.path === "string" ? req.body.path.trim() : "";
+      let desiredBase = desiredPathRaw ? path.basename(desiredPathRaw) : "";
+
+      if (desiredBase) {
+        // Ensure .md
+        if (!/\.md$/i.test(desiredBase)) desiredBase = `${desiredBase}.md`;
+        // If different, attempt rename
+        if (desiredBase !== filename) {
+          const fs = await import("node:fs/promises");
+          const basePath = gm.getLocalPath();
+          const relDir = (cfg.contentDir || "").trim();
+          const oldFsPath = path.join(basePath, relDir || "", filename);
+          const newFsPath = path.join(basePath, relDir || "", desiredBase);
+
+          // Prevent overwrite
+          let exists = false;
+          try {
+            await fs.access(newFsPath);
+            exists = true;
+          } catch {
+            exists = false;
+          }
+          if (exists) {
+            return res
+              .status(409)
+              .json({ error: "A post with that slug already exists." });
+          }
+
+          await fs.rename(oldFsPath, newFsPath);
+
+          console.log(`Renamed post ${filename} -> ${desiredBase}`);
+
+          // Respond with redirect info for the client to navigate
+          const redirectUrl = `/p/${encodeURIComponent(
+            id,
+          )}/gitcms/post/${encodeURIComponent(desiredBase)}?edit=true`;
+          return res
+            .status(200)
+            .json({
+              updated: true,
+              renamed: true,
+              filename: desiredBase,
+              redirect: redirectUrl,
+            });
+        }
+      }
+    } catch (err) {
+      console.error("Rename after update failed:", err);
+      // Fall through to normal success if rename failed silently
+    }
+
+    // Normal success (no rename)
     return res.status(200).json({ updated: true, filename });
   } catch (e) {
     console.error("Update GitCMS post failed:", e);

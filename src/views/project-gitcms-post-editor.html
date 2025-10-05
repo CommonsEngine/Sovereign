@@ -376,7 +376,7 @@
           .replace(/>/g, "&gt;");
         html = html.replace(
           /```([\s\S]*?)```/g,
-          (_, code) => `<pre><code>${code.replace(/\n$/, "")}</code></pre>`,
+          (_, code) => `<pre><code>${code.replace(/\n$/, "")}</code></pre>`
         );
         html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
         html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
@@ -390,14 +390,14 @@
         html = html.replace(/`([^`]+?)`/g, "<code>$1</code>");
         html = html.replace(
           /\[([^\]]+?)\]\(([^)]+?)\)/g,
-          '<a href="$2" rel="noopener" target="_blank">$1</a>',
+          '<a href="$2" rel="noopener" target="_blank">$1</a>'
         );
         html = html
           .split(/\n{2,}/)
           .map((blk) =>
             /^\s*<(h\d|pre|blockquote|ul|ol)/.test(blk)
               ? blk
-              : `<p>${blk.replace(/\n/g, "<br/>")}</p>`,
+              : `<p>${blk.replace(/\n/g, "<br/>")}</p>`
           )
           .join("\n");
         return html;
@@ -663,7 +663,7 @@
         const w = window.open("", "_blank", "noopener");
         if (w) {
           w.document.write(
-            `<meta charset="utf-8"><title>Preview</title>${contentHtml}`,
+            `<meta charset="utf-8"><title>Preview</title>${contentHtml}`
           );
           w.document.close();
         }
@@ -694,9 +694,9 @@
               credentials: "same-origin",
               body: JSON.stringify({
                 filename,
-                contentMarkdown: payload.contentMarkdown,
+                ...payload,
               }),
-            },
+            }
           );
 
           if (resp.status === 401) {
@@ -709,13 +709,19 @@
             alert("Post not found.");
             return;
           }
+
+          const data = await resp.json();
+
           if (!resp.ok) {
             let msg = `HTTP ${resp.status}`;
             try {
-              const data = await resp.json();
               if (data?.error) msg = data.error;
             } catch {}
             throw new Error(msg);
+          }
+
+          if (resp.status === 200 && data?.renamed) {
+            return (location.href = data?.redirect);
           }
 
           btn.textContent = "Saved";
