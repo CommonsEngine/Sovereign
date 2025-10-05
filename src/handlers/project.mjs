@@ -1,5 +1,7 @@
 import prisma from "../prisma.mjs";
 import { uuid } from "../utils/id.mjs";
+// import { getGitManager, getOrInitGitManager } from "../libs/gitcms/registry.mjs";
+import { getOrInitGitManager } from "../libs/gitcms/registry.mjs";
 
 export async function createProject(req, res) {
   try {
@@ -155,6 +157,24 @@ export async function configureGitCMS(req, res) {
     if (!repoUrl)
       return res.status(400).json({ error: "Repository URL is required" });
 
+    // 1) Validate by connecting once and prime the in-memory connection
+    try {
+      await getOrInitGitManager(id, {
+        repoUrl,
+        defaultBranch,
+        gitUserName,
+        gitUserEmail,
+        gitAuthToken,
+      });
+    } catch (err) {
+      console.error("Git connect/validate failed:", err);
+      return res.status(400).json({
+        error:
+          "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
+      });
+    }
+
+    // 2) Persist config only after successful validation
     const config = await prisma.projectGitCMS.upsert({
       where: { projectId: id },
       update: {
@@ -163,7 +183,6 @@ export async function configureGitCMS(req, res) {
         contentDir,
         gitUserName,
         gitUserEmail,
-        // optional: persist token if provided
         ...(gitAuthToken
           ? { authSecret: gitAuthToken, authType: "token" }
           : {}),
@@ -195,3 +214,27 @@ export async function configureGitCMS(req, res) {
     return res.status(500).json({ error: "Failed to save configuration" });
   }
 }
+
+// Example usage inside a handler:
+// const projectId = req.params.id;
+// // Try to get cached manager
+// let gm = getGitManager(projectId);
+// if (!gm) {
+//   // Load config from DB and init once
+//   const cfg = await prisma.projectGitCMS.findUnique({ where: { projectId }, select: {
+//     repoUrl: true, defaultBranch: true, gitUserName: true, gitUserEmail: true, authSecret: true
+//   }});
+//   if (!cfg) return res.status(400).json({ error: "GitCMS not configured" });
+
+//   gm = await getOrInitGitManager(projectId, {
+//     repoUrl: cfg.repoUrl,
+//     defaultBranch: cfg.defaultBranch,
+//     gitUserName: cfg.gitUserName,
+//     gitUserEmail: cfg.gitUserEmail,
+//     gitAuthToken: cfg.authSecret || null,
+//   });
+// }
+
+// // Now reuse gm without reconnecting:
+// // const localPath = gm.getLocalPath();
+// // await gm.publish("My commit message");

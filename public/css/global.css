@@ -153,15 +153,17 @@ body.page {
 }
 /* Scope variants */
 .projects__chip--scope {
-  background-color: #eef6ff;
+  /* background-color: #eef6ff;
   border-color: #d1e3ff;
-  color: #1d4ed8; /* blue-600 */
+  color: #1d4ed8; */
+  --no-op: 1;
 }
 /* Type variants */
 .projects__chip--type {
-  background-color: #fef9ee;
+  /* background-color: #fef9ee;
   border-color: #fce7b2;
-  color: #b45309; /* amber-700 */
+  color: #b45309; */
+  --no-op: 1;
 }
 /* Optional hover and subtle animation */
 .projects__chip:hover {

@@ -4,4 +4,7 @@ node_modules
 /generated/prisma
 /prisma/data/sovereign.db
 
+/data/*
+!/data/.gitkeep
+
 .env

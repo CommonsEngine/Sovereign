@@ -3,6 +3,11 @@ import {
   GUEST_LOGIN_ENABLED,
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
 } from "../config.mjs";
+import {
+  getGitManager,
+  getOrInitGitManager,
+  disposeGitManager,
+} from "../libs/gitcms/registry.mjs";
 
 export async function viewIndexPage(req, res) {
   try {
@@ -149,9 +154,54 @@ export async function viewProjectPage(req, res) {
       });
     }
 
-    // Redirect GitCMS projects to configure if not yet configured
-    if (project.type === "gitcms" && !project.gitcms) {
-      return res.redirect(302, `/p/${project.id}/configure`);
+    // GitCMS: ensure connection is active; if not configured -> configure.
+    if (project.type === "gitcms") {
+      if (!project.gitcms) {
+        return res.redirect(302, `/p/${project.id}/configure`);
+      }
+      // Try to use cached connection; if missing or broken, try to (re)connect once.
+      let connected = false;
+      try {
+        const cached = getGitManager(project.id);
+        if (cached) {
+          await cached.pullLatest(); // quick connectivity check
+          connected = true;
+        } else {
+          const cfg = await prisma.projectGitCMS.findUnique({
+            where: { projectId: project.id },
+            select: {
+              repoUrl: true,
+              defaultBranch: true,
+              gitUserName: true,
+              gitUserEmail: true,
+              authSecret: true,
+            },
+          });
+          if (cfg) {
+            await getOrInitGitManager(project.id, {
+              repoUrl: cfg.repoUrl,
+              defaultBranch: cfg.defaultBranch,
+              gitUserName: cfg.gitUserName,
+              gitUserEmail: cfg.gitUserEmail,
+              gitAuthToken: cfg.authSecret || null,
+            });
+            connected = true;
+          }
+        }
+      } catch {
+        connected = false;
+      }
+
+      // If still not connected, reset config to avoid loop and redirect to configure
+      if (!connected) {
+        try {
+          disposeGitManager(project.id);
+          await prisma.projectGitCMS.delete({ where: { projectId: project.id } });
+        } catch {
+          // ignore if already deleted
+        }
+        return res.redirect(302, `/p/${project.id}/configure`);
+      }
     }
 
     let view = "project";
