@@ -20,13 +20,13 @@
           <a
             id="new-post-btn"
             class="chip chip--primary"
-            href="/p/{{projectId}}/post/new"
+            href="/p/{{project.id}}/post/new"
             >New Post</a
           >
           <a
             id="edit-project-btn"
             class="chip chip--ghost"
-            href="/p/{{projectId}}/settings"
+            href="/p/{{project.id}}/settings"
             >Project Settings</a
           >
         </div>
@@ -104,7 +104,7 @@
               <div class="subtle">Repo</div>
               <div id="m-repo">
                 <a
-                  href="https://github.com/example/sovereign-demo-content"
+                  href="{{project.gitcms.repoUrl}}"
                   target="_blank"
                   rel="noopener"
                 >
@@ -207,7 +207,7 @@
           </td>
           <td>${post.filename}</td>
           <td><!-- tags --></td>
-          <td><span class="badge">—</span></td>
+          <td><span class="badge">Published</span></td>
           <td>${iso ? `<time datetime="${iso}">${label}</time>` : "—"}</td>
           <td>
             <div class="row-actions">
