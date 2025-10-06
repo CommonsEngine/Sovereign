@@ -20,7 +20,9 @@ import {
 import * as viewHandler from "./handlers/view.mjs";
 import * as authHandler from "./handlers/auth.mjs";
 import * as projectHandler from "./handlers/project.mjs";
-import { __publicdir, __templatedir, __datadir } from "./config.mjs";
+import env from "./config/env.mjs";
+
+const { __publicdir, __templatedir, __datadir } = env();
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });

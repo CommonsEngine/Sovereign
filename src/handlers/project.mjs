@@ -7,13 +7,21 @@ import {
   getOrInitGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
+import { flags } from "../config/flags.mjs";
 
 export async function createProject(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const allowedTypes = new Set(["gitcms", "papertrail", "workspace"]);
+    // Build allowed types from flags
+    const allowedTypes = new Set(
+      [
+        flags.gitcms && "gitcms",
+        flags.papertrail && "papertrail",
+        flags.workspace && "workspace",
+      ].filter(Boolean),
+    );
     const allowedScopes = new Set(["private", "org", "public"]);
 
     const raw = req.body || {};
@@ -21,9 +29,17 @@ export async function createProject(req, res) {
       String(raw.name ?? "")
         .trim()
         .slice(0, 120) || "Untitled";
-    const type = allowedTypes.has(String(raw.type))
-      ? String(raw.type)
-      : "gitcms";
+
+    // If requested type is disabled, fall back to first enabled, else 400
+    const requestedType = String(raw.type || "").trim();
+    let type = allowedTypes.has(requestedType)
+      ? requestedType
+      : [...allowedTypes][0];
+
+    if (!type) {
+      return res.status(400).json({ error: "No project types are enabled." });
+    }
+
     const scope = allowedScopes.has(String(raw.scope))
       ? String(raw.scope)
       : "private";
@@ -38,14 +54,20 @@ export async function createProject(req, res) {
         type,
         scope,
         ownerId: userId,
+        ...(type === "papertrail" ? { papertrail: { create: {} } } : {}),
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     });
+
     const url =
       type === "gitcms" ? `/p/${project.id}/configure` : `/p/${project.id}`;
-    return res.status(201).json({ ...project, url });
+    return res.status(201).json({
+      ...project,
+      url,
+      ...(type === "papertrail"
+        ? { papertrail: { nodes: [], edges: [] } }
+        : {}),
+    });
   } catch (e) {
     console.error("Create project failed:", e);
     return res.status(500).json({ error: "Failed to create project" });

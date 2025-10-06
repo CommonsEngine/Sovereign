@@ -1,16 +1,15 @@
 import path from "path";
 
-import prisma from "../prisma.mjs";
-import {
-  GUEST_LOGIN_ENABLED,
-  GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
-} from "../config.mjs";
+import env from "../config/env.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
   disposeGitManager,
 } from "../libs/gitcms/registry.mjs";
 import FileManager from "../libs/gitcms/fs.mjs";
+import prisma from "../prisma.mjs";
+
+const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
 
 export async function viewIndexPage(req, res) {
   try {

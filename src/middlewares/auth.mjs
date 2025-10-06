@@ -3,18 +3,20 @@ import {
   getOrCreateSingletonGuestUser,
   createSession,
 } from "../utils/auth.mjs";
-import {
-  SESSION_COOKIE,
+import env from "../config/env.mjs";
+
+const {
+  AUTH_SESSION_COOKIE_NAME,
   COOKIE_OPTS,
   GUEST_LOGIN_ENABLED,
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
-} from "../config.mjs";
+} = env();
 
 export async function requireAuth(req, res, next) {
-  const token = req.cookies?.[SESSION_COOKIE];
+  const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
   if (!session) {
-    res.clearCookie(SESSION_COOKIE, COOKIE_OPTS);
+    res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     return res.status(401).json({ error: "Unauthorized" });
   }
   req.user = { id: session.userId, email: session.user.email };
@@ -24,7 +26,7 @@ export async function requireAuth(req, res, next) {
 
 // HTML-only: redirect to login if not authed
 export async function requireAuthWeb(req, res, next) {
-  const token = req.cookies?.[SESSION_COOKIE];
+  const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
   if (!session) {
     if (GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN) {
@@ -36,7 +38,7 @@ export async function requireAuthWeb(req, res, next) {
     }
 
     // Redirect to login
-    res.clearCookie(SESSION_COOKIE, COOKIE_OPTS);
+    res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     const returnTo = encodeURIComponent(req.originalUrl || "/");
     return res.redirect(302, `/login?return_to=${returnTo}`);
   } else {
@@ -48,7 +50,7 @@ export async function requireAuthWeb(req, res, next) {
 
 // HTML-only: block login/register for already authed users
 export async function disallowIfAuthed(req, res, next) {
-  const token = req.cookies?.[SESSION_COOKIE];
+  const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
   if (session) {
     const rt =

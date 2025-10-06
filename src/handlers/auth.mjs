@@ -5,13 +5,15 @@ import {
   createSession,
   createRandomGuestUser,
 } from "../utils/auth.mjs";
+import env from "../config/env.mjs";
 import prisma from "../prisma.mjs";
-import {
-  SESSION_COOKIE,
+
+const {
+  AUTH_SESSION_COOKIE_NAME,
   COOKIE_OPTS,
   GUEST_LOGIN_ENABLED,
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
-} from "../config.mjs";
+} = env();
 
 export async function register(req, res) {
   try {
@@ -434,14 +436,14 @@ export async function getCurrentUser(req, res) {
 
 export async function logout(req, res) {
   try {
-    const token = req.cookies?.[SESSION_COOKIE];
+    const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
     if (token) {
       try {
         await prisma.session.delete({ where: { token } });
       } catch (error) {
         console.warn("Failed to delete session during logout", error);
       }
-      res.clearCookie(SESSION_COOKIE, COOKIE_OPTS);
+      res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     }
   } catch (error) {
     console.error("Logout handler failed", error);

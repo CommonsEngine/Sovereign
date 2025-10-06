@@ -2,8 +2,10 @@
 import crypto from "crypto";
 import argon2 from "argon2";
 
-import { SESSION_COOKIE, SESSION_TTL_MS, COOKIE_OPTS } from "../config.mjs";
+import env from "../config/env.mjs";
 import prisma from "../prisma.mjs";
+
+const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS } = env();
 
 export async function hashPassword(pwd) {
   return argon2.hash(pwd, {
@@ -75,7 +77,10 @@ export async function createSession(res, user, req) {
       expiresAt,
     },
   });
-  res.cookie(SESSION_COOKIE, token, { ...COOKIE_OPTS, expires: expiresAt });
+  res.cookie(AUTH_SESSION_COOKIE_NAME, token, {
+    ...COOKIE_OPTS,
+    expires: expiresAt,
+  });
 }
 
 export async function getSessionWithUser(token) {
