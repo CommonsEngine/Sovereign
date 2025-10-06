@@ -654,9 +654,9 @@ export async function viewGitCMSPostPage(req, res) {
 }
 
 export async function viewUsersPage(req, res) {
-  return res.render("users");
+  return res.render("users", { username: req.user?.username || "" });
 }
 
 export async function viewSettingsPage(req, res) {
-  return res.render("settings");
+  return res.render("settings", { username: req.user?.username || "" });
 }

@@ -19,7 +19,12 @@ export async function requireAuth(req, res, next) {
     res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     return res.status(401).json({ error: "Unauthorized" });
   }
-  req.user = { id: session.userId, email: session.user.email };
+
+  req.user = {
+    id: session.userId,
+    username: session.user.username,
+    email: session.user.email,
+  };
   req.sessionToken = token;
   next();
 }
@@ -33,7 +38,7 @@ export async function requireAuthWeb(req, res, next) {
       // Auto guest login (singleton)
       const guest = await getOrCreateSingletonGuestUser();
       await createSession(res, guest, req);
-      req.user = { id: guest.id, email: guest.email };
+      req.user = { id: guest.id, username: guest.username, email: guest.email };
       return next();
     }
 
@@ -42,7 +47,11 @@ export async function requireAuthWeb(req, res, next) {
     const returnTo = encodeURIComponent(req.originalUrl || "/");
     return res.redirect(302, `/login?return_to=${returnTo}`);
   } else {
-    req.user = { id: session.userId, email: session.user.email };
+    req.user = {
+      id: session.userId,
+      username: session.user.username,
+      email: session.user.email,
+    };
     req.sessionToken = token;
     next();
   }
