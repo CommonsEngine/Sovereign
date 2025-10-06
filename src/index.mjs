@@ -12,6 +12,7 @@ import path from "path";
 
 import { connectPrismaWithRetry, gracefulShutdown } from "./prisma.mjs";
 import { secure } from "./middlewares/security.mjs";
+import { requireFeature } from "./middlewares/feature.mjs";
 import {
   requireAuth,
   requireAuthWeb,
@@ -83,19 +84,24 @@ app.use((req, res, next) => {
   next();
 });
 
-// View Routes
+// View Routes :: Auth
 app.get("/", requireAuthWeb, viewHandler.viewIndexPage);
 app.get("/login", disallowIfAuthed, viewHandler.viewLoginPage);
 app.get("/register", disallowIfAuthed, viewHandler.viewRegisterPage);
 app.get("/logout", authHandler.logout);
+
+// View Routes :: Projects
 app.get("/p/:id", requireAuthWeb, viewHandler.viewProjectPage);
 app.get(
   "/p/:id/configure",
   requireAuthWeb,
   viewHandler.viewProjectConfigurePage,
 );
+
+// View Routes :: Projects/GitCMS
 app.get(
   "/p/:projectId/gitcms/post/new",
+  requireFeature("gitcms"),
   requireAuthWeb,
   viewHandler.viewPostCreatePage,
 );
@@ -104,6 +110,8 @@ app.get(
   requireAuthWeb,
   viewHandler.viewGitCMSPostPage,
 );
+
+// View Routes :: Others
 app.get("/users", requireAuthWeb, viewHandler.viewUsersPage);
 app.get("/settings", requireAuthWeb, viewHandler.viewSettingsPage);
 
@@ -121,28 +129,35 @@ app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { t
 app.post("/api/project", requireAuth, projectHandler.createProject);
 app.patch("/api/project/:id", requireAuth, projectHandler.updateProject);
 app.delete("/api/project/:id", requireAuth, projectHandler.deleteProject);
+
+// Project Routes :: GitCMS
 app.post(
   "/api/project/:id/gitcms/configure",
+  requireFeature("gitcms"),
   requireAuth,
   projectHandler.configureGitCMS,
 );
 app.get(
   "/api/project/:id/gitcms/post/all",
+  requireFeature("gitcms"),
   requireAuth,
   projectHandler.listGitCMSPosts,
 );
 app.patch(
   "/api/project/:id/gitcms/post/:filename",
+  requireFeature("gitcms"),
   requireAuth,
   projectHandler.updateGitCMSPost,
 );
 app.post(
   "/api/project/:id/gitcms/post/:filename",
+  requireFeature("gitcms"),
   requireAuth,
   projectHandler.publishGitCMSPost,
 );
 app.delete(
   "/api/project/:id/gitcms/post/:filename",
+  requireFeature("gitcms"),
   requireAuth,
   projectHandler.deleteGitCMSPost,
 );
