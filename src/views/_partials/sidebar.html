@@ -28,6 +28,7 @@
     </a>
 
     <!-- Users -->
+    {{#if can_access_admin}}
     <a
       class="sidebar__btn{{#if users_active}} is-active{{/if}}"
       href="/users"
@@ -58,11 +59,13 @@
         />
       </svg>
     </a>
+    {{/if}}
   </nav>
 
   <div class="sidebar__spacer"></div>
   <div class="sidebar__bottom">
     <!-- Settings -->
+    {{#if can_access_admin}}
     <a
       class="sidebar__btn{{#if settings_active}} is-active{{/if}}"
       href="/settings"
@@ -89,5 +92,6 @@
         />
       </svg>
     </a>
+    {{/if}}
   </div>
 </aside>

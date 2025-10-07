@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 import {
   hashPassword,
   verifyPassword,
@@ -10,6 +12,7 @@ import env from "../config/env.mjs";
 import prisma from "../prisma.mjs";
 
 const {
+  APP_URL,
   AUTH_SESSION_COOKIE_NAME,
   COOKIE_OPTS,
   GUEST_LOGIN_ENABLED,
@@ -25,12 +28,121 @@ export async function register(req, res) {
       accept.includes("text/html");
 
     // Pull fields (form may pass additional fields like confirm_password)
-    const { username, email, password, confirm_password } = req.body || {};
+    const { display_name, username, email, password, confirm_password } =
+      req.body || {};
+
+    // Invite-only: require a valid invite token
+    const token = String(req.query?.token || req.body?.token || "");
+
+    console.log("Register called with token:", token);
+
+    if (token) {
+      // Look up invite token
+      const vt = await prisma.verificationToken.findUnique({
+        where: { token: token, purpose: "invite" },
+      });
+
+      const validInvite =
+        !!vt &&
+        vt.purpose === "invite" &&
+        vt.expiresAt instanceof Date &&
+        vt.expiresAt > new Date();
+
+      if (!validInvite) {
+        const msg = "Invalid or expired invite link.";
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: msg,
+            values: { display_name, username, email },
+          });
+        }
+        return res.status(400).json({ error: msg });
+      }
+
+      // Load invited user
+      const invitedUser = await prisma.user.findUnique({
+        where: { id: vt.userId },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          displayName: true,
+          passwordHash: true,
+          status: true,
+        },
+      });
+
+      if (!invitedUser) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: "Invalid invite.",
+            values: { display_name, username, email },
+          });
+        }
+        return res.status(400).json({ error: "Invalid invite" });
+      }
+
+      // Optional: enforce provided email/username match the invited account
+      if (email && String(email).toLowerCase().trim() !== invitedUser.email) {
+        const msg = "Email does not match the invited account.";
+        return isFormContent
+          ? res.status(400).render("register", {
+              error: msg,
+              values: { display_name, username, email },
+            })
+          : res.status(400).json({ error: msg });
+      }
+      if (username && String(username).trim() !== invitedUser.username) {
+        const msg = "Username does not match the invited account.";
+        return isFormContent
+          ? res.status(400).render("register", {
+              error: msg,
+              values: { display_name, username, email: invitedUser.email },
+            })
+          : res.status(400).json({ error: msg });
+      }
+
+      // Set password, activate, and verify email
+      const passStr = typeof password === "string" ? password : "";
+      const passwordHash = await hashPassword(passStr);
+      await prisma.user.update({
+        where: { id: invitedUser.id },
+        data: {
+          passwordHash,
+          status: "active",
+        },
+      });
+
+      // Consume invite token
+      await prisma.verificationToken.delete({
+        where: { token },
+      });
+
+      if (isFormContent) {
+        return res.redirect(302, "/login?registered=1");
+      }
+      return res.status(201).json({ ok: true });
+
+      // End of invite-only flow
+    }
 
     // Normalize inputs
+    const displayName =
+      typeof display_name === "string" ? display_name.trim() : "";
     const u = typeof username === "string" ? username.trim() : "";
     const emailNorm =
       typeof email === "string" ? email.trim().toLowerCase() : "";
+
+    // Validate display name (required, 2–80 chars)
+    if (displayName.length < 2 || displayName.length > 80) {
+      if (isFormContent) {
+        return res.status(400).render("register", {
+          error: "Display Name must be between 2 and 80 characters.",
+          values: { display_name: displayName, username: u, email: emailNorm },
+        });
+      }
+      return res.status(400).json({ error: "Invalid display name" });
+    }
 
     // Validate username (required)
     // Rules: 3–24 chars, starts with a letter, then letters/numbers/._-
@@ -41,7 +153,7 @@ export async function register(req, res) {
         return res.status(400).render("register", {
           error:
             "Choose a username (3–24 chars). Start with a letter; use letters, numbers, dot, underscore or hyphen.",
-          values: { username: u, email: emailNorm },
+          values: { display_name: displayName, username: u, email: emailNorm },
         });
       }
       return res
@@ -57,7 +169,7 @@ export async function register(req, res) {
       if (isFormContent) {
         return res.status(400).render("register", {
           error: "Please enter a valid email address.",
-          values: { username: u, email: emailNorm },
+          values: { display_name: displayName, username: u, email: emailNorm },
         });
       }
       return res.status(400).json({ error: "Invalid email" });
@@ -74,7 +186,7 @@ export async function register(req, res) {
         return res.status(400).render("register", {
           error:
             "Password must be at least 6 characters and include a letter and a number.",
-          values: { username: u, email: emailNorm },
+          values: { display_name: displayName, username: u, email: emailNorm },
         });
       }
       return res.status(400).json({ error: "Password too weak" });
@@ -88,7 +200,7 @@ export async function register(req, res) {
     ) {
       return res.status(400).render("register", {
         error: "Passwords do not match.",
-        values: { username: u, email: emailNorm },
+        values: { display_name: displayName, username: u, email: emailNorm },
       });
     }
 
@@ -101,7 +213,7 @@ export async function register(req, res) {
       if (isFormContent) {
         return res.status(409).render("register", {
           error: "That username is taken. Please choose another.",
-          values: { username: u, email: emailNorm },
+          values: { display_name: displayName, username: u, email: emailNorm },
         });
       }
       return res.status(409).json({ error: "Username already registered" });
@@ -110,7 +222,7 @@ export async function register(req, res) {
       if (isFormContent) {
         return res.status(409).render("register", {
           error: "That email is already registered.",
-          values: { username: u, email: emailNorm },
+          values: { display_name: displayName, username: u, email: emailNorm },
         });
       }
       return res.status(409).json({ error: "Email already registered" });
@@ -118,20 +230,22 @@ export async function register(req, res) {
 
     const passwordHash = await hashPassword(passStr);
     const user = await prisma.user.create({
-      data: { username: u, email: emailNorm, passwordHash },
+      data: { displayName, username: u, email: emailNorm, passwordHash },
       select: { id: true },
     });
 
     // Optional: email verification token (kept consistent with existing API)
-    const token = randomToken(32);
+    const verificationToken = randomToken(32);
     await prisma.verificationToken.create({
       data: {
         userId: user.id,
-        token,
+        token: verificationToken,
         purpose: "email-verify",
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
       },
     });
+
+    // TODO: send verification email with link `${APP_URL}/auth/verify?token=${token}`
 
     if (isFormContent) {
       // HTML form flow → redirect to login with banner
@@ -149,12 +263,63 @@ export async function register(req, res) {
       return res.status(500).render("register", {
         error: "Registration failed. Please try again.",
         values: {
+          display_name: String(req.body?.display_name || "").trim(),
           username: String(req.body?.username || ""),
           email: String(req.body?.email || "").toLowerCase(),
         },
       });
     }
     return res.status(500).json({ error: "Register failed" });
+  }
+}
+
+export async function invite(req, res) {
+  try {
+    const { email, displayName, role } = req.body || {};
+    if (!email || !displayName || !Number.isInteger(role)) {
+      return res.status(400).json({ error: "Invalid payload" });
+    }
+
+    const username = displayName.toLowerCase().replace(/\s+/g, "_");
+
+    // Create or find user as invited
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: { displayName, role, username },
+      create: { email, displayName, role, status: "invited", username },
+      select: {
+        id: true,
+        email: true,
+        displayName: true,
+        username: true,
+        role: true,
+      },
+    });
+
+    // Generate a one-time token (persist using your existing token model)
+    const token = crypto.randomUUID().replace(/-/g, "");
+    // Clear any previous invite tokens for this user
+    await prisma.verificationToken.deleteMany({
+      where: { userId: user.id, purpose: "invite" },
+    });
+    // Persist invite token (48h)
+    await prisma.verificationToken.create({
+      data: {
+        userId: user.id,
+        token,
+        purpose: "invite",
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
+      },
+    });
+
+    // Build invite URL that lands on your registration completion page
+    const base = String(APP_URL).replace(/\/+$/, "");
+    const inviteUrl = `${base}/register?token=${token}`;
+
+    return res.status(201).json({ user, inviteUrl });
+  } catch (err) {
+    console.error("Invite user failed:", err);
+    return res.status(500).json({ error: "Failed to create user invite" });
   }
 }
 
@@ -198,6 +363,45 @@ export async function login(req, res) {
         });
       }
       return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Active-only login
+    const status = String(user.status || "").toLowerCase();
+    if (status !== "active") {
+      if (isFormContent) {
+        return res.status(403).render("login", {
+          error:
+            status === "invited"
+              ? "Your account is not activated yet. Please use the invite link to complete setup."
+              : "Your account is inactive. Please contact an administrator.",
+          values: { email: emailNorm },
+          return_to: typeof return_to === "string" ? return_to : "",
+        });
+      }
+      return res.status(403).json({ error: "Account inactive" });
+    }
+
+    // Block login if password not set yet (invited/initialized accounts)
+    if (!user.passwordHash) {
+      const accept = String(req.headers["accept"] || "");
+      const isFormContent =
+        req.is("application/x-www-form-urlencoded") ||
+        accept.includes("text/html");
+      const msg =
+        "Your account is not fully set up. Please use the invite/verification link to set your password.";
+      if (isFormContent) {
+        return res.status(403).render("login", {
+          error: msg,
+          values: {
+            email: String(req.body?.email || "")
+              .toLowerCase()
+              .trim(),
+          },
+          return_to:
+            typeof req.body?.return_to === "string" ? req.body.return_to : "",
+        });
+      }
+      return res.status(403).json({ error: "Password not set" });
     }
 
     const ok = await verifyPassword(user.passwordHash, pwd);
@@ -410,24 +614,59 @@ export async function resetPassword(req, res) {
 
 export async function verifyToken(req, res) {
   try {
-    const token = String(req.query.token || "");
-    if (!token) return res.status(400).json({ error: "Missing token" });
+    const accept = String(req.headers["accept"] || "");
+    const wantsHtml =
+      accept.includes("text/html") || !accept.includes("application/json");
 
-    const vt = await prisma.verificationToken.findUnique({
-      where: { token },
-    });
+    const token = String(req.query.token || "");
+    if (!token) {
+      if (wantsHtml) {
+        return res
+          .status(400)
+          .render("verify", { ok: false, error: "Missing token" });
+      }
+      return res.status(400).json({ error: "Missing token" });
+    }
+
+    const vt = await prisma.verificationToken.findUnique({ where: { token } });
+
     if (!vt || vt.expiresAt < new Date() || vt.purpose !== "email-verify") {
+      if (wantsHtml) {
+        return res
+          .status(400)
+          .render("verify", { ok: false, error: "Invalid or expired link." });
+      }
       return res.status(400).json({ error: "Invalid/expired token" });
     }
+
     await prisma.user.update({
       where: { id: vt.userId },
-      data: { emailVerifiedAt: new Date() },
+      data: {
+        emailVerifiedAt: new Date(),
+        // Promote to active on verify if not already
+        status: "active",
+      },
     });
     await prisma.verificationToken.delete({ where: { token } });
-    res.json({ ok: true });
+
+    if (wantsHtml) {
+      return res.render("auth/verify-token", {
+        ok: true,
+        message: "Your email has been verified.",
+      });
+    }
+    return res.json({ ok: true });
   } catch (e) {
     logger.error("/auth/verify error", e);
-    res.status(500).json({ error: "Verify failed" });
+    const accept = String(req.headers["accept"] || "");
+    const wantsHtml =
+      accept.includes("text/html") || !accept.includes("application/json");
+    if (wantsHtml) {
+      return res
+        .status(500)
+        .render("verify", { ok: false, error: "Verification failed." });
+    }
+    return res.status(500).json({ error: "Verify failed" });
   }
 }
 

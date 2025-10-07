@@ -12,8 +12,8 @@
 
       <section id="grid" class="projects__grid">
         <a
-          href="/p/create-new"
-          data-modal-open="project"
+          href="javascript:void(0)"
+          data-modal-open="create-project"
           aria-haspopup="dialog"
         >
           <article class="projects__card projects__card--new">
@@ -22,7 +22,7 @@
           </article>
         </a>
 
-        {{> modal/modal-runtime}} {{> modal/project}} {{#each projects}}
+        {{> modal/modal-runtime}} {{> modal/create-project}} {{#each projects}}
         <article
           class="projects__card"
           data-project-id="{{this.id}}"

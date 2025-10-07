@@ -17,6 +17,7 @@ import {
   requireAuthWeb,
   disallowIfAuthed,
 } from "./middlewares/auth.mjs";
+import { requireRole, exposeRoleFlags } from "./middlewares/user.mjs";
 
 import * as authHandler from "./handlers/auth.mjs";
 import * as viewHandler from "./handlers/view/index.mjs";
@@ -109,6 +110,12 @@ app.use(secure);
 
 // Auth Routes
 app.post("/auth/register", authHandler.register);
+app.post(
+  "/auth/invite",
+  requireAuth,
+  requireRole(["owner", "admin"]),
+  authHandler.invite,
+);
 app.post("/auth/login", authHandler.login);
 app.get("/auth/guest", authHandler.guestLogin);
 app.post("/auth/logout", authHandler.logout);
@@ -118,18 +125,31 @@ app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body {
 app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
 
 // Web Routes
-app.get("/", requireAuthWeb, viewHandler.index);
+app.get("/", requireAuthWeb, exposeRoleFlags, viewHandler.index);
 app.get("/login", disallowIfAuthed, viewHandler.login);
 app.get("/register", disallowIfAuthed, viewHandler.register);
 app.get("/logout", authHandler.logout);
 
-app.get("/users", requireAuthWeb, viewHandler.users);
-app.get("/settings", requireAuthWeb, viewHandler.settings);
+app.get(
+  "/users",
+  requireAuthWeb,
+  requireRole(["owner", "admin"]),
+  exposeRoleFlags,
+  viewHandler.users,
+);
+app.get(
+  "/settings",
+  requireAuthWeb,
+  requireRole(["owner", "admin"]),
+  exposeRoleFlags,
+  viewHandler.settings,
+);
 
-app.get("/p/:projectId", requireAuthWeb, viewHandler.project);
+app.get("/p/:projectId", requireAuthWeb, exposeRoleFlags, viewHandler.project);
 app.get(
   "/p/:projectId/configure",
   requireAuthWeb,
+  exposeRoleFlags,
   viewHandler.projectConfigure,
 );
 
@@ -138,11 +158,13 @@ app.get(
   "/p/:projectId/gitcms/post/new",
   requireFeature("gitcms"),
   requireAuthWeb,
+  exposeRoleFlags,
   viewHandler.gitcms.postCreate,
 );
 app.get(
   "/p/:projectId/gitcms/post/:fp",
   requireAuthWeb,
+  exposeRoleFlags,
   viewHandler.gitcms.postView,
 );
 

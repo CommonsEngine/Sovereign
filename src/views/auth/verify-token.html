@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    {{> layout/head}}
+    <title>
+      {{#if head.title}}{{head.title}}{{else}}Verify Email — Sovereign{{/if}}
+    </title>
+    <link rel="stylesheet" href="/css/global.css" />
+    <style>
+      .verify-page .card {
+        max-width: 520px;
+        margin: 64px auto;
+        padding: 24px;
+      }
+      .verify-page .actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 8px;
+      }
+    </style>
+  </head>
+  <body class="page page--fullwidth verify-page">
+    <main class="page__wrap">
+      <div class="card">
+        {{#if ok}}
+        <h2>Email verified</h2>
+        <p>
+          {{#if message}}{{message}}{{else}}Your email has been verified
+          successfully.{{/if}}
+        </p>
+        <div class="actions">
+          <a class="button button--primary" href="/login">Continue to Login</a>
+          <a class="button" href="/">Go to Home</a>
+        </div>
+        {{else}}
+        <h2>Verification failed</h2>
+        <p>
+          {{#if error}}{{error}}{{else}}Invalid or expired verification
+          link.{{/if}}
+        </p>
+        <div class="actions">
+          <a class="button" href="/login">Back to Login</a>
+        </div>
+        {{/if}}
+      </div>
+    </main>
+  </body>
+</html>

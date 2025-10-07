@@ -1,2 +1,3 @@
-# Ignore Handlebars partial that uses conditional attrs
+# Ignore Handlebars templates that use conditional attrs
 src/views/_partials/layout/head.html
+src/views/register.html

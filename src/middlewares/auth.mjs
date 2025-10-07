@@ -22,6 +22,7 @@ export async function requireAuth(req, res, next) {
 
   req.user = {
     id: session.userId,
+    role: session.user.role,
     username: session.user.username,
     email: session.user.email,
   };
@@ -51,6 +52,7 @@ export async function requireAuthWeb(req, res, next) {
       id: session.userId,
       username: session.user.username,
       email: session.user.email,
+      role: session.user.role,
     };
     req.sessionToken = token;
     next();

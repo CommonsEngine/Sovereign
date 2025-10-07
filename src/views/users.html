@@ -3,6 +3,32 @@
   <head>
     {{> layout/head}}
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+    <link rel="stylesheet" href="/css/components/modal.css" />
+    <style>
+      /* Scoped: icon button next to "All Users" */
+      .card__bar .icon-user-add {
+        margin: -5px 0 0 -2px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--fg, #111);
+        text-decoration: none;
+        vertical-align: middle;
+      }
+      .card__bar .icon-user-add:hover {
+        background: #eee;
+        color: blue;
+      }
+      .card__bar .icon-user-add svg {
+        width: 18px;
+        height: 18px;
+      }
+    </style>
   </head>
   <body class="page users-page">
     {{> sidebar users_active=true}} {{> userbar show_user_menu=true}}
@@ -22,10 +48,36 @@
         </ol>
       </nav>
 
+      {{> modal/modal-runtime}} {{> modal/create-user}}
+
       <section class="grid">
         <article class="card" style="grid-column: 1 / -1">
           <div class="card__bar">
-            <strong>All Users</strong>
+            <div>
+              <strong>All Users</strong>
+              <a
+                href="javascript:void(0)"
+                class="icon-user-add"
+                aria-label="Create new user"
+                title="Create new user"
+                data-modal-open="create-user"
+                aria-haspopup="dialog"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
+                  />
+                </svg>
+              </a>
+            </div>
             <input
               id="user-search"
               class="search"

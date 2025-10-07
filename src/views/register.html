@@ -14,10 +14,23 @@
       <section class="auth" aria-label="Register">
         <h2 class="auth__title">Create account</h2>
         <div class="auth__card">
-          {{#if error}}
-          <div class="alert alert--error">{{error}}</div>
-          {{/if}}
-          <form class="form" method="post" action="/auth/register">
+          <form class="form" method="post" action="{{#if token}}/auth/register?token={{token}}{{else}}/auth/register{{/if}}">
+            {{#if success}}<div class="alert alert--success">{{success}}</div>{{/if}}
+            {{#if error}}<div class="alert alert--error">{{error}}</div>{{/if}}
+            {{#if token}}<input type="hidden" name="token" value="{{token}}" />{{/if}}
+            <div class="field">
+              <label for="display_name">Display Name</label>
+              <input
+                id="display_name"
+                name="display_name"
+                type="text"
+                value="{{values.display_name}}"
+                class="input"
+                placeholder="eg. John Doe"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
+                required
+              />
+            </div>
             <div class="field">
               <label for="username">User Name</label>
               <input
@@ -27,6 +40,7 @@
                 value="{{values.username}}"
                 class="input"
                 placeholder="eg. john_doe"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>
@@ -39,6 +53,7 @@
                 value="{{values.email}}"
                 class="input"
                 placeholder="eg. john@example.com"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>

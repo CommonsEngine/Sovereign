@@ -43,8 +43,9 @@ model Project {
   ownerId String? @map("user_id")
   owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
 
-  admins  User[] @relation("ProjectAdmins")
-  editors User[] @relation("ProjectEditors")
+  admins       User[] @relation("ProjectAdmins")
+  editors      User[] @relation("ProjectEditors")
+  contributors User[] @relation("ProjectContributors")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -189,14 +190,20 @@ model ProjectWorkspace {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
+enum UserStatus {
+  invited
+  active
+  suspended
+}
+
 model User {
   id              String    @id @default(cuid()) @map("id")
   email           String    @unique @map("email")
-  username        String    @unique @map("username")
   emailVerifiedAt DateTime? @map("email_verified_at")
-  passwordHash    String    @map("password_hash")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  displayName     String?   @map("display_name")
+  username        String    @unique @map("username")
+  role            Int       @default(9) @map("role") // 0=owner, 1=admin, 2=editor, 3=viewer, 4=contributor, ..., 9=guest
+  passwordHash    String?   @map("password_hash") // allow empty until user sets it
 
   sessions            Session[]
   verificationTokens  VerificationToken[]  @relation("UserToVerificationTokens")
@@ -205,6 +212,11 @@ model User {
   ownedProjects Project[] @relation("Owner")
   adminOf       Project[] @relation("ProjectAdmins")
   editorOf      Project[] @relation("ProjectEditors")
+  contributorOf Project[] @relation("ProjectContributors")
+
+  status    UserStatus @default(invited) @map("status")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   @@index([createdAt])
   @@index([emailVerifiedAt])

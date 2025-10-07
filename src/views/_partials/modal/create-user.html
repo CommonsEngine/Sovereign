@@ -1,0 +1,208 @@
+<div data-modal="create-user" class="modal" hidden>
+  <div class="modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="create-user-modal-title"
+  >
+    <header class="modal__header">
+      <h3 id="create-user-modal-title" class="modal__title">Create new user</h3>
+    </header>
+
+    <div class="modal__body">
+      <form class="modal__form" data-modal-form novalidate>
+        <div class="modal__field">
+          <label class="modal__label" for="user-display-name-input"
+            >Display Name</label
+          >
+          <input
+            id="user-display-name-input"
+            class="modal__input input"
+            type="text"
+            maxlength="32"
+            placeholder="e.g. John Doe"
+            data-modal-autofocus
+            required
+          />
+        </div>
+
+        <div class="modal__field">
+          <label class="modal__label" for="user-email-input">Email</label>
+          <input
+            id="user-email-input"
+            class="modal__input input"
+            type="email"
+            maxlength="254"
+            placeholder="name@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+
+        <div class="modal__field">
+          <label class="modal__label" for="user-role-select">Role</label>
+          <select id="user-role-select" class="modal__input input" required>
+            <option value="" selected disabled>Select a role…</option>
+            <option value="1">Admin</option>
+            <option value="2">Editor</option>
+            <option value="3">Contributor</option>
+            <option value="4">Viewer</option>
+          </select>
+        </div>
+
+        <div
+          class="modal__alert modal__alert--error"
+          data-modal-alert="error"
+          style="display: none"
+        ></div>
+      </form>
+
+      <!-- Success state: show invite URL to copy/share -->
+      <div class="modal__result" data-modal-result style="display: none">
+        <p>
+          User created. Share this link with the user to complete registration:
+        </p>
+        <div class="copyrow">
+          <input type="url" class="input" data-invite-url readonly />
+          <button type="button" class="chip" data-copy-invite>Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal__footer">
+      <button type="button" class="chip button" data-modal-close>Close</button>
+      <button
+        type="submit"
+        class="chip chip--primary button button--primary"
+        formnovalidate
+        data-modal-submit
+      >
+        Create
+      </button>
+    </footer>
+  </div>
+
+  <script>
+    // Create-User submission handler (scoped to this modal only)
+    (function initCreateUserModal(
+      root = document.querySelector('[data-modal="create-user"]'),
+    ) {
+      if (!root) return;
+
+      const form = root.querySelector("[data-modal-form]");
+      const err = root.querySelector('[data-modal-alert="error"]');
+      const emailEl = root.querySelector("#user-email-input");
+      const displayNameEl = root.querySelector("#user-display-name-input");
+      const roleEl = root.querySelector("#user-role-select");
+      const submitBtn = root.querySelector("[data-modal-submit]");
+      const resultBox = root.querySelector("[data-modal-result]");
+      const inviteInput = root.querySelector("[data-invite-url]");
+      const copyBtn = root.querySelector("[data-copy-invite]");
+
+      function resetForm() {
+        form?.reset();
+        if (err) {
+          err.textContent = "";
+          err.style.display = "none";
+        }
+        submitBtn?.removeAttribute("disabled");
+        if (resultBox) {
+          resultBox.style.display = "none";
+          if (inviteInput) inviteInput.value = "";
+        }
+      }
+
+      const obs = new MutationObserver((ml) => {
+        for (const m of ml) {
+          if (
+            m.type === "attributes" &&
+            m.attributeName === "hidden" &&
+            root.hasAttribute("hidden")
+          ) {
+            resetForm();
+          }
+        }
+      });
+      obs.observe(root, { attributes: true, attributeFilter: ["hidden"] });
+
+      copyBtn?.addEventListener("click", async () => {
+        const url = inviteInput?.value || "";
+        try {
+          await navigator.clipboard.writeText(url);
+          copyBtn.textContent = "Copied";
+          setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+        } catch {}
+      });
+
+      root.addEventListener("click", async (e) => {
+        const submit = e.target.closest("[data-modal-submit]");
+        if (!submit) return;
+        e.preventDefault();
+        if (err) {
+          err.style.display = "none";
+          err.textContent = "";
+        }
+
+        const email = (emailEl?.value || "").trim();
+        const displayName = (displayNameEl?.value || "").trim();
+        const role = Number(roleEl?.value || "");
+
+        // Basic validation
+        if (!displayName) {
+          displayNameEl?.focus();
+          return;
+        }
+        if (!email) {
+          emailEl?.focus();
+          return;
+        }
+        if (!Number.isInteger(role) || role < 1 || role > 4) {
+          roleEl?.focus();
+          return;
+        }
+
+        submitBtn?.setAttribute("disabled", "true");
+
+        try {
+          // Expect backend to return: { user: {...}, inviteUrl: "https://.../register?token=..." }
+          const resp = await fetch("/auth/invite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ email, displayName, role }),
+            credentials: "same-origin",
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+
+          // Show invite URL result in place
+          if (inviteInput) inviteInput.value = data?.inviteUrl || "";
+          if (resultBox) resultBox.style.display = "block";
+          // Keep modal open; admin can copy the link
+        } catch (ex) {
+          console.error("Invite user failed:", ex);
+          if (err) {
+            err.textContent = ex?.message || "Failed to create user invite";
+            err.style.display = "block";
+          }
+          submitBtn?.removeAttribute("disabled");
+        }
+      });
+    })();
+  </script>
+
+  <style>
+    /* Small helpers for the success result row */
+    .copyrow {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .copyrow .input {
+      flex: 1 1 auto;
+    }
+  </style>
+</div>

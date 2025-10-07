@@ -109,8 +109,68 @@ export async function login(req, res) {
   });
 }
 
-export async function register(_, res) {
-  return res.render("register");
+export async function register(req, res) {
+  // if URL param ?token=? is present, show invite registration mode
+  // First validate the token, and if valid populate email and display name fields
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+
+  if (!token) {
+    return res.status(403).render("register", {
+      // error: "Registration is by invitation only.",
+      values: { display_name: "", username: "", email: "" },
+    });
+  }
+
+  try {
+    const invite = await prisma.verificationToken.findUnique({
+      where: { token },
+      select: { userId: true, expiresAt: true, purpose: true },
+    });
+
+    const valid =
+      !!invite &&
+      invite.purpose === "invite" &&
+      invite.expiresAt instanceof Date &&
+      invite.expiresAt > new Date();
+
+    if (!valid) {
+      return res.status(400).render("register", {
+        error: "Invalid or expired invite link.",
+        values: { display_name: "", username: "", email: "" },
+      });
+    }
+
+    const invitedUser = await prisma.user.findUnique({
+      where: { id: invite.userId },
+      select: { email: true, username: true, displayName: true },
+    });
+
+    if (!invitedUser) {
+      return res.status(400).render("register", {
+        error: "Invalid invite.",
+        values: { display_name: "", username: "", email: "" },
+      });
+    }
+
+    // Prefill email (readonly in template) and display name if present
+    return res.render("register", {
+      invite_mode: true,
+      token,
+      success: "Invitation accepted. Please complete your registration.",
+      values: {
+        display_name: invitedUser.displayName || "",
+        username: invitedUser.username || "",
+        email: invitedUser.email,
+      },
+    });
+  } catch (err) {
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load registration form",
+      error: err?.message || String(err),
+    });
+  }
 }
 
 export async function project(req, res) {

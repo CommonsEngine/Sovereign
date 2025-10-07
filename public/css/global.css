@@ -1093,3 +1093,38 @@ td .title {
     border-radius: 8px;
   }
 }
+
+/* Readonly fields: make them visually obvious but still submittable */
+input[readonly],
+textarea[readonly],
+[aria-readonly="true"] {
+  background-color: #e9eaec !important;
+  border-color: var(--color-border-card);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+/* Subtle placeholder for readonly fields */
+input[readonly]::placeholder,
+textarea[readonly]::placeholder,
+[aria-readonly="true"]::placeholder {
+  color: #a3aab5 !important;
+}
+
+/* Reduce focus ring on readonly */
+input[readonly]:focus,
+textarea[readonly]:focus,
+[aria-readonly="true"]:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Optional: disabled fields look similar */
+input[disabled],
+textarea[disabled],
+select[disabled] {
+  background-color: #e9eaec !important;
+  border-color: var(--color-border-card);
+  color: var(--color-muted) !important;
+  cursor: not-allowed;
+}
