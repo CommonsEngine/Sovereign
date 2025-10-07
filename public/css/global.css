@@ -18,6 +18,10 @@ body {
 button {
   cursor: pointer;
 }
+time {
+  color: #64748b;
+  font-size: 12px;
+}
 body.page {
   margin: 0;
   font-family:

@@ -93,6 +93,7 @@ export function roleLabelFrom(user) {
   return null;
 }
 
+// TODO: Maybe we can merge this with exposeGlobals?
 export function exposeRoleFlags(req, res, next) {
   const label = roleLabelFrom(req.user);
   const isOwner = label === "owner";

@@ -28,6 +28,10 @@
         width: 18px;
         height: 18px;
       }
+      span.email {
+        font-size: 13px;
+        color: #334155;
+      }
     </style>
   </head>
   <body class="page users-page">
@@ -100,23 +104,25 @@
                 </tr>
               </thead>
               <tbody id="users-tbody">
-                <!-- Sample static rows (replace with server data later) -->
+                {{#each users}}
                 <tr
-                  data-id="u_1"
-                  data-name="Alice Doe"
-                  data-email="alice@example.com"
-                  data-role="admin"
+                  data-id="{{id}}"
+                  data-name="{{displayName}}"
+                  data-email="{{email}}"
+                  data-role="{{roleLabel}}"
                 >
                   <td>
-                    <div class="title">Alice Doe</div>
-                    <div class="subtle">alice@example.com</div>
+                    <div class="title">{{displayName}}</div>
+                    <div class="subtle">{{email}}</div>
                   </td>
-                  <td>alice@example.com</td>
-                  <td><span class="badge">admin</span></td>
-                  <td><span class="subtle">2 assigned</span></td>
+                  <td><span class="email">{{email}}</span></td>
+                  <td><span class="badge">{{roleLabel}}</span></td>
                   <td>
-                    <time datetime="2025-10-04T12:00:00Z"
-                      >Oct 4, 2025, 12:00</time
+                    <span class="subtle">{{projectsAssigned}} assigned</span>
+                  </td>
+                  <td>
+                    <time datetime="{{createdAtISO}}"
+                      >{{createdAtDisplay}}</time
                     >
                   </td>
                   <td>
@@ -128,83 +134,14 @@
                         class="chip chip--danger"
                         type="button"
                         data-action="delete"
-                        data-id="u_1"
+                        data-id="{{id}}"
                       >
                         Delete
                       </button>
                     </div>
                   </td>
                 </tr>
-
-                <tr
-                  data-id="u_2"
-                  data-name="Bob Smith"
-                  data-email="bob@example.com"
-                  data-role="editor"
-                >
-                  <td>
-                    <div class="title">Bob Smith</div>
-                    <div class="subtle">bob@example.com</div>
-                  </td>
-                  <td>bob@example.com</td>
-                  <td><span class="badge">editor</span></td>
-                  <td><span class="subtle">1 assigned</span></td>
-                  <td>
-                    <time datetime="2025-10-03T09:30:00Z"
-                      >Oct 3, 2025, 09:30</time
-                    >
-                  </td>
-                  <td>
-                    <div class="row-actions">
-                      <a class="chip" href="javascript:void(0)">Edit</a>
-                      <a class="chip" href="javascript:void(0)">Roles</a>
-                      <a class="chip" href="javascript:void(0)">Projects</a>
-                      <button
-                        class="chip chip--danger"
-                        type="button"
-                        data-action="delete"
-                        data-id="u_2"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-
-                <tr
-                  data-id="u_3"
-                  data-name="Cara Ray"
-                  data-email="cara@example.com"
-                  data-role="viewer"
-                >
-                  <td>
-                    <div class="title">Cara Ray</div>
-                    <div class="subtle">cara@example.com</div>
-                  </td>
-                  <td>cara@example.com</td>
-                  <td><span class="badge">viewer</span></td>
-                  <td><span class="subtle">0 assigned</span></td>
-                  <td>
-                    <time datetime="2025-10-01T15:10:00Z"
-                      >Oct 1, 2025, 15:10</time
-                    >
-                  </td>
-                  <td>
-                    <div class="row-actions">
-                      <a class="chip" href="javascript:void(0)">Edit</a>
-                      <a class="chip" href="javascript:void(0)">Roles</a>
-                      <a class="chip" href="javascript:void(0)">Projects</a>
-                      <button
-                        class="chip chip--danger"
-                        type="button"
-                        data-action="delete"
-                        data-id="u_3"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                {{/each}}
 
                 <!-- Empty state row (shown when search filters out all rows) -->
                 <tr class="empty-row" hidden>
