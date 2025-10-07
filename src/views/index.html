@@ -1,11 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Sovereign — Reclaim your digital freedom</title>
-    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-    <link rel="stylesheet" href="/css/global.css" />
+    {{> layout/head}}
     <link rel="stylesheet" href="/css/components/modal.css" />
   </head>
   <body class="page index-page">
@@ -26,7 +22,7 @@
           </article>
         </a>
 
-        {{> modal-runtime}} {{> modal-project}} {{#each projects}}
+        {{> modal/modal-runtime}} {{> modal/project}} {{#each projects}}
         <article
           class="projects__card"
           data-project-id="{{this.id}}"

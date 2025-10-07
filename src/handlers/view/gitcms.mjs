@@ -1,291 +1,17 @@
 import path from "path";
 
-import env from "../config/env.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
-  disposeGitManager,
-} from "../libs/gitcms/registry.mjs";
-import FileManager from "../libs/gitcms/fs.mjs";
-import prisma from "../prisma.mjs";
+} from "../../libs/gitcms/registry.mjs";
+import FileManager from "../../libs/gitcms/fs.mjs";
+import logger from "../../utils/logger.mjs";
+import prisma from "../../prisma.mjs";
 
-const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
+const gitcms = {};
+export default gitcms;
 
-export async function viewIndexPage(req, res) {
-  try {
-    let username = "";
-    if (req.user) {
-      try {
-        const u = await prisma.user.findUnique({
-          where: { id: req.user.id },
-          select: { username: true },
-        });
-        if (u) username = u.username;
-      } catch (error) {
-        console.warn("Failed to load user username", error);
-      }
-    }
-
-    const userId = req.user?.id || null;
-    const projectsRaw = await prisma.project.findMany({
-      where: {
-        OR: [
-          { ownerId: null },
-          ...(userId
-            ? [
-                { ownerId: userId },
-                { admins: { some: { id: userId } } },
-                { editors: { some: { id: userId } } },
-              ]
-            : []),
-        ],
-      },
-      select: {
-        id: true,
-        type: true,
-        scope: true,
-        name: true,
-        desc: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        ownerId: true, // needed to compute ownership
-      },
-      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-    });
-
-    // Compute owned and omit ownerId from the response
-    const projects = projectsRaw.map(({ ownerId, ...rest }) => ({
-      ...rest,
-      owned: !!(userId && ownerId === userId),
-    }));
-
-    const showUserMenu = !(
-      GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN
-    );
-    return res.render("index", {
-      username,
-      show_user_menu: showUserMenu,
-      projects,
-    });
-  } catch (err) {
-    return res.status(500).render("error", {
-      code: 500,
-      message: "Oops!",
-      description: "Failed to load projects",
-      error: err?.message || String(err),
-    });
-  }
-}
-
-export async function viewLoginPage(req, res) {
-  if (GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN) {
-    return res.redirect(302, "/");
-  }
-  const justRegistered = String(req.query.registered || "") === "1";
-  const justReset = String(req.query.reset || "") === "1";
-  const returnTo =
-    typeof req.query.return_to === "string" ? req.query.return_to : "";
-  const forgotMode = String(req.query.forgot || "") === "1";
-  const token = typeof req.query.token === "string" ? req.query.token : "";
-  const resetMode = !!token;
-  return res.render("login", {
-    success: justRegistered
-      ? "Account created. Please sign in."
-      : justReset
-        ? "Password updated. Please sign in."
-        : null,
-    return_to: returnTo,
-    forgot_mode: forgotMode && !resetMode,
-    reset_mode: resetMode,
-    token,
-    guest_enabled: GUEST_LOGIN_ENABLED && !GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
-  });
-}
-
-export async function viewRegisterPage(_, res) {
-  return res.render("register");
-}
-
-export async function viewProjectPage(req, res) {
-  try {
-    const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        name: true,
-        desc: true,
-        type: true,
-        scope: true,
-        status: true,
-        createdAt: true,
-        updatedAt: true,
-        gitcms: {
-          select: {
-            projectId: true,
-            repoUrl: true,
-            defaultBranch: true,
-            contentDir: true,
-            provider: true,
-            authType: true,
-            gitUserName: true,
-            gitUserEmail: true,
-          },
-        },
-        papertrail: {
-          select: {
-            projectId: true,
-          },
-        },
-        workspace: {
-          select: {
-            projectId: true,
-          },
-        },
-      },
-    });
-
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not found",
-        description: "Project not found",
-      });
-    }
-
-    // GitCMS: ensure connection is active; if not configured -> configure.
-    if (project.type === "gitcms") {
-      if (!project.gitcms) {
-        return res.redirect(302, `/p/${project.id}/configure`);
-      }
-      // Try to use cached connection; if missing or broken, try to (re)connect once.
-      let connected = false;
-      try {
-        const cached = getGitManager(project.id);
-        if (cached) {
-          await cached.pullLatest(); // quick connectivity check
-          connected = true;
-        } else {
-          const cfg = await prisma.projectGitCMS.findUnique({
-            where: { projectId: project.id },
-            select: {
-              repoUrl: true,
-              defaultBranch: true,
-              gitUserName: true,
-              gitUserEmail: true,
-              authSecret: true,
-            },
-          });
-          if (cfg) {
-            await getOrInitGitManager(project.id, {
-              repoUrl: cfg.repoUrl,
-              defaultBranch: cfg.defaultBranch,
-              gitUserName: cfg.gitUserName,
-              gitUserEmail: cfg.gitUserEmail,
-              gitAuthToken: cfg.authSecret || null,
-            });
-            connected = true;
-          }
-        }
-      } catch {
-        connected = false;
-      }
-
-      // If still not connected, reset config to avoid loop and redirect to configure
-      if (!connected) {
-        try {
-          disposeGitManager(project.id);
-          await prisma.projectGitCMS.delete({
-            where: { projectId: project.id },
-          });
-        } catch {
-          // ignore if already deleted
-        }
-        return res.redirect(302, `/p/${project.id}/configure`);
-      }
-    }
-
-    let view = "project";
-    const ctx = { project };
-
-    switch (project.type) {
-      case "gitcms":
-        view = "project-gitcms";
-        ctx.gitcms = project.gitcms || null;
-        break;
-      case "papertrail":
-        view = "project-papertrail";
-        ctx.papertrail = project.papertrail || null;
-        ctx.app_version = "0.1.0"; // TODO: dynamic
-        ctx.schema_version = 1;
-        ctx.board_id = req.params.id;
-        ctx.board_title = project.name;
-        ctx.board_visibility = project.scope;
-        ctx.board_status = project.status;
-        ctx.is_owner = true;
-        break;
-      case "workspace":
-        view = "project-workspace";
-        ctx.workspace = project.workspace || null;
-        break;
-      default:
-        // fall back to generic project view
-        break;
-    }
-
-    return res.render(view, ctx);
-  } catch (err) {
-    return res.status(500).render("error", {
-      code: 500,
-      message: "Oops!",
-      description: "Failed to load project",
-      error: err?.message || String(err),
-    });
-  }
-}
-
-export async function viewProjectConfigurePage(req, res) {
-  try {
-    const id = req.params.id;
-    const project = await prisma.project.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        gitcms: { select: { projectId: true } },
-      },
-    });
-
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not found",
-        description: "Project not found",
-      });
-    }
-
-    // Only GitCMS has a configuration flow; others go to project page
-    const alreadyConfigured =
-      project.type === "gitcms" ? !!project.gitcms : true;
-
-    if (project.type !== "gitcms" || alreadyConfigured) {
-      return res.redirect(302, `/p/${project.id}`);
-    }
-
-    // Render GitCMS configuration page
-    return res.render("project-gitcms-configure", { project });
-  } catch (err) {
-    return res.status(500).render("error", {
-      code: 500,
-      message: "Oops!",
-      description: "Failed to load configuration",
-      error: err?.message || String(err),
-    });
-  }
-}
-
-export async function viewPostCreatePage(req, res) {
+gitcms.postCreate = async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -363,7 +89,7 @@ export async function viewPostCreatePage(req, res) {
           gitAuthToken: cfg.authSecret || null,
         });
       } catch (err) {
-        console.error("Git connect failed during post creation:", err);
+        logger.error("Git connect failed during post creation:", err);
         return res.redirect(302, `/p/${projectId}/configure`);
       }
     }
@@ -372,7 +98,7 @@ export async function viewPostCreatePage(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn(
+      logger.warn(
         "Pull latest failed before creating post:",
         err?.message || err,
       );
@@ -435,7 +161,7 @@ export async function viewPostCreatePage(req, res) {
     try {
       await gm.publish(`Create post: ${finalFilename}`);
     } catch (err) {
-      console.warn("Publish failed after creating post:", err?.message || err);
+      logger.warn("Publish failed after creating post:", err?.message || err);
       // non-fatal; proceed to editor
     }
 
@@ -445,7 +171,7 @@ export async function viewPostCreatePage(req, res) {
       `/p/${projectId}/gitcms/post/${encodeURIComponent(finalFilename)}?edit=true`,
     );
   } catch (err) {
-    console.error("Create post flow failed:", err);
+    logger.error("Create post flow failed:", err);
     return res.status(500).render("error", {
       code: 500,
       message: "Oops!",
@@ -453,9 +179,9 @@ export async function viewPostCreatePage(req, res) {
       error: err?.message || String(err),
     });
   }
-}
+};
 
-export async function viewGitCMSPostPage(req, res) {
+gitcms.postView = async (req, res) => {
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -471,8 +197,8 @@ export async function viewGitCMSPostPage(req, res) {
     const rawFilename =
       typeof req.params.postId === "string"
         ? req.params.postId
-        : typeof req.params.filename === "string"
-          ? req.params.filename
+        : typeof req.params.fp === "string"
+          ? req.params.fp
           : "";
     const filename = path.basename(String(rawFilename).trim());
     if (!projectId || !filename || !/\.md$/i.test(filename)) {
@@ -538,7 +264,7 @@ export async function viewGitCMSPostPage(req, res) {
           gitAuthToken: cfg.authSecret || null,
         });
       } catch (err) {
-        console.error("Git connect failed while opening post:", err);
+        logger.error("Git connect failed while opening post:", err);
         return res.redirect(302, `/p/${projectId}/configure`);
       }
     }
@@ -547,7 +273,7 @@ export async function viewGitCMSPostPage(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn(
+      logger.warn(
         "Pull latest failed before opening post:",
         err?.message || err,
       );
@@ -577,7 +303,7 @@ export async function viewGitCMSPostPage(req, res) {
           description: "Invalid file path",
         });
       }
-      console.error("Failed to read post:", err);
+      logger.error("Failed to read post:", err);
       return res.status(500).render("error", {
         code: 500,
         message: "Oops!",
@@ -618,11 +344,11 @@ export async function viewGitCMSPostPage(req, res) {
 
     const [meta, contentMarkdown] = parseFrontmatter(raw);
 
-    console.log("Post meta:", meta);
-    console.log("Post contentMarkdown:", contentMarkdown);
+    logger.log("Post meta:", meta);
+    logger.log("Post contentMarkdown:", contentMarkdown);
 
     // Render editor template with context
-    return res.render("project-gitcms-post-editor", {
+    return res.render("project/gitcms/editor", {
       projectId,
       filename,
       projectName: project.name,
@@ -651,12 +377,4 @@ export async function viewGitCMSPostPage(req, res) {
       error: err?.message || String(err),
     });
   }
-}
-
-export async function viewUsersPage(req, res) {
-  return res.render("users", { username: req.user?.username || "" });
-}
-
-export async function viewSettingsPage(req, res) {
-  return res.render("settings", { username: req.user?.username || "" });
-}
+};

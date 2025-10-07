@@ -5,6 +5,7 @@ import {
   createSession,
   createRandomGuestUser,
 } from "../utils/auth.mjs";
+import logger from "../utils/logger.mjs";
 import env from "../config/env.mjs";
 import prisma from "../prisma.mjs";
 
@@ -139,7 +140,7 @@ export async function register(req, res) {
     // JSON API flow
     return res.status(201).json({ ok: true });
   } catch (e) {
-    console.error("/auth/register error", e);
+    logger.error("/auth/register error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -222,7 +223,7 @@ export async function login(req, res) {
     }
     return res.json({ ok: true });
   } catch (e) {
-    console.error("/auth/login error", e);
+    logger.error("/auth/login error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -247,7 +248,7 @@ export async function guestLogin(req, res) {
     await createSession(res, guest, req);
     return res.redirect(302, "/");
   } catch (e) {
-    console.error("guestLogin error", e);
+    logger.error("guestLogin error", e);
     return res.status(500).json({ error: "Guest login failed" });
   }
 }
@@ -305,7 +306,7 @@ export async function forgotPassword(req, res) {
     }
     return res.json({ ok: true });
   } catch (e) {
-    console.error("/auth/password/forgot error", e);
+    logger.error("/auth/password/forgot error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -391,7 +392,7 @@ export async function resetPassword(req, res) {
     }
     return res.json({ ok: true });
   } catch (e) {
-    console.error("/auth/password/reset error", e);
+    logger.error("/auth/password/reset error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -425,7 +426,7 @@ export async function verifyToken(req, res) {
     await prisma.verificationToken.delete({ where: { token } });
     res.json({ ok: true });
   } catch (e) {
-    console.error("/auth/verify error", e);
+    logger.error("/auth/verify error", e);
     res.status(500).json({ error: "Verify failed" });
   }
 }
@@ -441,12 +442,12 @@ export async function logout(req, res) {
       try {
         await prisma.session.delete({ where: { token } });
       } catch (error) {
-        console.warn("Failed to delete session during logout", error);
+        logger.warn("Failed to delete session during logout", error);
       }
       res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     }
   } catch (error) {
-    console.error("Logout handler failed", error);
+    logger.error("Logout handler failed", error);
   }
   return res.redirect(302, "/login");
 }

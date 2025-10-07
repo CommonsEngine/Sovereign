@@ -1,0 +1,2 @@
+# Ignore Handlebars partial that uses conditional attrs
+src/views/_partials/layout/head.html

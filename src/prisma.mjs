@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
+import logger from "./utils/logger.mjs";
+
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 });
@@ -9,9 +11,9 @@ export default prisma;
 async function connectPrisma() {
   try {
     await prisma.$connect();
-    console.log("Connected to the database.");
+    logger.log("Connected to the database.");
   } catch (err) {
-    console.error("Failed to connect to the database:", err);
+    logger.error("Failed to connect to the database:", err);
     process.exit(1);
   }
 }
@@ -31,12 +33,12 @@ export async function connectPrismaWithRetry(maxRetries = 5, delayMs = 2000) {
     } catch (err) {
       attempt++;
       if (attempt >= maxRetries) {
-        console.error(
+        logger.error(
           `Failed to connect to the database after ${maxRetries} attempts. Exiting.`,
         );
         process.exit(1);
       }
-      console.warn(
+      logger.warn(
         `Database connection failed (attempt ${attempt}/${maxRetries}). Retrying in ${delayMs}ms...`,
         err,
       );
@@ -47,12 +49,12 @@ export async function connectPrismaWithRetry(maxRetries = 5, delayMs = 2000) {
 
 // Graceful shutdown
 export async function gracefulShutdown(signal) {
-  console.log(`Received ${signal}. Closing database connection...`);
+  logger.log(`Received ${signal}. Closing database connection...`);
   try {
     await prisma.$disconnect();
-    console.log("Database connection closed.");
+    logger.log("Database connection closed.");
   } catch (err) {
-    console.error("Error during disconnect:", err);
+    logger.error("Error during disconnect:", err);
   } finally {
     process.exit(0);
   }

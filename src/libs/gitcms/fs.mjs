@@ -1,6 +1,8 @@
 import { promises as fs } from "fs";
 import path from "path";
 
+import logger from "../../utils/logger.mjs";
+
 export default class FileManager {
   constructor(basePath, blogDir) {
     this.basePath = basePath;
@@ -11,9 +13,9 @@ export default class FileManager {
   async ensureBlogDirExists() {
     try {
       await fs.mkdir(this.fullPath, { recursive: true });
-    } catch (error) {
-      console.error("Failed to create blog directory:", error.message);
-      throw error;
+    } catch (err) {
+      logger.error("Failed to create blog directory:", err.message);
+      throw err;
     }
   }
 
@@ -38,9 +40,9 @@ export default class FileManager {
 
       fileDetails.sort((a, b) => b.modified - a.modified);
       return fileDetails;
-    } catch (error) {
-      console.error("Failed to list markdown files:", error.message);
-      throw error;
+    } catch (err) {
+      logger.error("Failed to list markdown files:", err.message);
+      throw err;
     }
   }
 
@@ -52,9 +54,9 @@ export default class FileManager {
     try {
       const content = await fs.readFile(filePath, "utf-8");
       return content;
-    } catch (error) {
-      console.error("Failed to read file:", error.message);
-      throw error;
+    } catch (err) {
+      logger.error("Failed to read file:", err.message);
+      throw err;
     }
   }
 
@@ -69,9 +71,9 @@ export default class FileManager {
     try {
       await fs.access(filePath);
       throw new Error("File already exists");
-    } catch (error) {
-      if (error.message === "File already exists") {
-        throw error;
+    } catch (err) {
+      if (err.message === "File already exists") {
+        throw err;
       }
     }
 

@@ -1,5 +1,9 @@
 /* eslint-disable import/order */
 import * as simpleGitPkg from "simple-git";
+import { promises as fs } from "fs";
+import path from "path";
+
+import logger from "../../utils/logger.mjs";
 
 const sg =
   typeof simpleGitPkg === "function"
@@ -7,9 +11,6 @@ const sg =
     : typeof simpleGitPkg.default === "function"
       ? simpleGitPkg.default
       : simpleGitPkg.simpleGit;
-
-import { promises as fs } from "fs";
-import path from "path";
 
 export default class GitManager {
   constructor(config) {
@@ -33,7 +34,7 @@ export default class GitManager {
       }
       return true;
     } catch (error) {
-      console.error("Failed to initialize repository:", error.message);
+      logger.error("Failed to initialize repository:", error.message);
       throw error;
     }
   }

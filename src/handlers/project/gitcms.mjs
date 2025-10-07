@@ -1,157 +1,25 @@
 import path from "path";
 
-import prisma from "../prisma.mjs";
-import { uuid } from "../utils/id.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
-} from "../libs/gitcms/registry.mjs";
-import FileManager from "../libs/gitcms/fs.mjs";
-import { flags } from "../config/flags.mjs";
+} from "../../libs/gitcms/registry.mjs";
+import FileManager from "../../libs/gitcms/fs.mjs";
+import logger from "../../utils/logger.mjs";
+import prisma from "../../prisma.mjs";
 
-export async function createProject(req, res) {
+async function configure(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    // Build allowed types from flags
-    const allowedTypes = new Set(
-      [
-        flags.gitcms && "gitcms",
-        flags.papertrail && "papertrail",
-        flags.workspace && "workspace",
-      ].filter(Boolean),
-    );
-    const allowedScopes = new Set(["private", "org", "public"]);
-
-    const raw = req.body || {};
-    const name =
-      String(raw.name ?? "")
-        .trim()
-        .slice(0, 120) || "Untitled";
-
-    // If requested type is disabled, fall back to first enabled, else 400
-    const requestedType = String(raw.type || "").trim();
-    let type = allowedTypes.has(requestedType)
-      ? requestedType
-      : [...allowedTypes][0];
-
-    if (!type) {
-      return res.status(400).json({ error: "No project types are enabled." });
-    }
-
-    const scope = allowedScopes.has(String(raw.scope))
-      ? String(raw.scope)
-      : "private";
-    const desc =
-      raw.desc != null ? String(raw.desc).trim().slice(0, 500) : null;
-
-    const project = await prisma.project.create({
-      data: {
-        id: uuid("p_"),
-        name,
-        desc,
-        type,
-        scope,
-        ownerId: userId,
-        ...(type === "papertrail" ? { papertrail: { create: {} } } : {}),
-      },
-      select: { id: true },
-    });
-
-    const url =
-      type === "gitcms" ? `/p/${project.id}/configure` : `/p/${project.id}`;
-    return res.status(201).json({
-      ...project,
-      url,
-      ...(type === "papertrail"
-        ? { papertrail: { nodes: [], edges: [] } }
-        : {}),
-    });
-  } catch (e) {
-    console.error("Create project failed:", e);
-    return res.status(500).json({ error: "Failed to create project" });
-  }
-}
-
-export async function deleteProject(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    const id = req.params?.id || req.body?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
-
-    const project = await prisma.project.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-
-    // Only the owner can delete
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
-    // Cascades will remove subtype records (gitcms/papertrail/workspace) and related rows as defined in schema
-    await prisma.project.delete({ where: { id } });
-
-    return res.status(204).end();
-  } catch (e) {
-    console.error("Delete project failed:", e);
-    return res.status(500).json({ error: "Failed to delete project" });
-  }
-}
-
-export async function updateProject(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    const id = req.params?.id || req.body?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
-
-    const project = await prisma.project.findUnique({
-      where: { id },
-      select: { ownerId: true },
-    });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
-    const raw = req.body || {};
-    const name =
-      typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : undefined;
-
-    if (!name || name.length === 0) {
-      return res.status(400).json({ error: "Invalid name" });
-    }
-
-    const updated = await prisma.project.update({
-      where: { id },
-      data: { name },
-      select: { id: true, name: true },
-    });
-
-    return res.status(200).json(updated);
-  } catch (e) {
-    console.error("Update project failed:", e);
-    return res.status(500).json({ error: "Failed to update project" });
-  }
-}
-
-export async function configureGitCMS(req, res) {
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    const id = req.params?.id || req.body?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
+    const projectId = req.params?.projectId || req.body?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
 
     // Owner + type check
     const project = await prisma.project.findUnique({
-      where: { id },
+      where: { id: projectId },
       select: { ownerId: true, type: true },
     });
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -187,7 +55,7 @@ export async function configureGitCMS(req, res) {
 
     // 1) Validate by connecting once and prime the in-memory connection
     try {
-      await getOrInitGitManager(id, {
+      await getOrInitGitManager(projectId, {
         repoUrl,
         defaultBranch,
         gitUserName,
@@ -195,7 +63,7 @@ export async function configureGitCMS(req, res) {
         gitAuthToken,
       });
     } catch (err) {
-      console.error("Git connect/validate failed:", err);
+      logger.error("Git connect/validate failed:", err);
       return res.status(400).json({
         error:
           "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
@@ -204,7 +72,7 @@ export async function configureGitCMS(req, res) {
 
     // 2) Persist config only after successful validation
     const config = await prisma.projectGitCMS.upsert({
-      where: { projectId: id },
+      where: { projectId },
       update: {
         repoUrl,
         defaultBranch,
@@ -237,24 +105,25 @@ export async function configureGitCMS(req, res) {
     });
 
     return res.status(200).json({ configured: true, gitcms: config });
-  } catch (e) {
-    console.error("Configure GitCMS failed:", e);
+  } catch (err) {
+    logger.error("Configure GitCMS failed:", err);
     return res.status(500).json({ error: "Failed to save configuration" });
   }
 }
 
-export async function listGitCMSPosts(req, res) {
+async function getPosts(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     // 1) Fetch project id from URL params
-    const id = req.params?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
+    const projectId = req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
     const project = await prisma.project.findUnique({
-      where: { id },
+      where: { id: projectId },
       select: { ownerId: true, type: true },
     });
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -267,7 +136,7 @@ export async function listGitCMSPosts(req, res) {
 
     // 2) Fetch gitcms config by project id
     const cfg = await prisma.projectGitCMS.findUnique({
-      where: { projectId: id },
+      where: { projectId },
       select: {
         repoUrl: true,
         defaultBranch: true,
@@ -282,9 +151,9 @@ export async function listGitCMSPosts(req, res) {
     }
 
     // 3) Fetch posts using GitManager from repo working directory
-    let gm = getGitManager(id);
+    let gm = getGitManager(projectId);
     if (!gm) {
-      gm = await getOrInitGitManager(id, {
+      gm = await getOrInitGitManager(projectId, {
         repoUrl: cfg.repoUrl,
         defaultBranch: cfg.defaultBranch,
         gitUserName: cfg.gitUserName,
@@ -296,7 +165,7 @@ export async function listGitCMSPosts(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn(
+      logger.warn(
         "Failed to pull latest before listing posts:",
         err?.message || err,
       );
@@ -309,25 +178,26 @@ export async function listGitCMSPosts(req, res) {
 
     return res.status(200).json({ posts });
   } catch (e) {
-    console.error("List GitCMS posts failed:", e);
+    logger.error("List GitCMS posts failed:", e);
     return res.status(500).json({ error: "Failed to list posts" });
   }
 }
 
-export async function deleteGitCMSPost(req, res) {
+async function deletePost(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     // Project id
-    const id = req.params?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
+    const projectId = req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
 
     // File name (from route param, body, or query)
     const rawName =
-      (typeof req.params?.filename === "string" && req.params.filename) ||
-      (typeof req.body?.filename === "string" && req.body.filename) ||
-      (typeof req.query?.filename === "string" && req.query.filename) ||
+      (typeof req.params?.fp === "string" && req.params.fp) ||
+      (typeof req.body?.fp === "string" && req.body.fp) ||
+      (typeof req.query?.fp === "string" && req.query.fp) ||
       "";
     const filename = path.basename(String(rawName).trim());
     if (!filename || !/\.md$/i.test(filename)) {
@@ -338,7 +208,7 @@ export async function deleteGitCMSPost(req, res) {
 
     // Verify ownership and type
     const project = await prisma.project.findUnique({
-      where: { id },
+      where: { id: projectId },
       select: { ownerId: true, type: true },
     });
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -351,7 +221,7 @@ export async function deleteGitCMSPost(req, res) {
 
     // Load config
     const cfg = await prisma.projectGitCMS.findUnique({
-      where: { projectId: id },
+      where: { projectId },
       select: {
         repoUrl: true,
         defaultBranch: true,
@@ -366,10 +236,10 @@ export async function deleteGitCMSPost(req, res) {
     }
 
     // Ensure Git connection
-    let gm = getGitManager(id);
+    let gm = getGitManager(projectId);
     if (!gm) {
       try {
-        gm = await getOrInitGitManager(id, {
+        gm = await getOrInitGitManager(projectId, {
           repoUrl: cfg.repoUrl,
           defaultBranch: cfg.defaultBranch,
           gitUserName: cfg.gitUserName,
@@ -377,7 +247,7 @@ export async function deleteGitCMSPost(req, res) {
           gitAuthToken: cfg.authSecret || null,
         });
       } catch (err) {
-        console.error("Git connect failed during delete:", err);
+        logger.error("Git connect failed during delete:", err);
         return res.status(400).json({
           error:
             "Failed to connect to repository. Please verify the configuration.",
@@ -389,7 +259,7 @@ export async function deleteGitCMSPost(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn("Pull latest failed before deletion:", err?.message || err);
+      logger.warn("Pull latest failed before deletion:", err?.message || err);
     }
 
     // Delete file via FileManager
@@ -407,7 +277,7 @@ export async function deleteGitCMSPost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      console.error("Delete file failed:", err);
+      logger.error("Delete file failed:", err);
       return res.status(500).json({ error: "Failed to delete file" });
     }
 
@@ -417,29 +287,30 @@ export async function deleteGitCMSPost(req, res) {
       await gm.publish(`Delete post: ${filename}`);
     } catch (err) {
       pushed = false;
-      console.warn("Publish failed after deletion:", err?.message || err);
+      logger.warn("Publish failed after deletion:", err?.message || err);
     }
 
     return res.status(200).json({ deleted: true, filename, pushed });
-  } catch (e) {
-    console.error("Delete GitCMS post failed:", e);
+  } catch (err) {
+    logger.error("Delete GitCMS post failed:", err);
     return res.status(500).json({ error: "Failed to delete post" });
   }
 }
 
-export async function updateGitCMSPost(req, res) {
+async function updatePost(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     // Project id
-    const id = req.params?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
+    const projectId = req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
 
     // Filename (route param preferred), and content (markdown)
     const rawName =
-      (typeof req.params?.filename === "string" && req.params.filename) ||
-      (typeof req.body?.filename === "string" && req.body.filename) ||
+      (typeof req.params?.fp === "string" && req.params.fp) ||
+      (typeof req.body?.fp === "string" && req.body.fp) ||
       "";
     const filename = path.basename(String(rawName).trim());
     if (!filename || !/\.md$/i.test(filename)) {
@@ -490,7 +361,7 @@ export async function updateGitCMSPost(req, res) {
 
     // Verify ownership and type
     const project = await prisma.project.findUnique({
-      where: { id },
+      where: { id: projectId },
       select: { ownerId: true, type: true },
     });
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -503,7 +374,7 @@ export async function updateGitCMSPost(req, res) {
 
     // Load config
     const cfg = await prisma.projectGitCMS.findUnique({
-      where: { projectId: id },
+      where: { projectId },
       select: {
         repoUrl: true,
         defaultBranch: true,
@@ -518,10 +389,10 @@ export async function updateGitCMSPost(req, res) {
     }
 
     // Ensure Git working directory exists (no commit/push here)
-    let gm = getGitManager(id);
+    let gm = getGitManager(projectId);
     if (!gm) {
       try {
-        gm = await getOrInitGitManager(id, {
+        gm = await getOrInitGitManager(projectId, {
           repoUrl: cfg.repoUrl,
           defaultBranch: cfg.defaultBranch,
           gitUserName: cfg.gitUserName,
@@ -529,7 +400,7 @@ export async function updateGitCMSPost(req, res) {
           gitAuthToken: cfg.authSecret || null,
         });
       } catch (err) {
-        console.error("Git manager init failed during update:", err);
+        logger.error("Git manager init failed during update:", err);
         return res.status(400).json({
           error:
             "Failed to access repository. Please verify the configuration.",
@@ -602,7 +473,7 @@ export async function updateGitCMSPost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      console.error("Failed to read existing file:", err);
+      logger.error("Failed to read existing file:", err);
       return res.status(500).json({ error: "Failed to read existing file" });
     }
 
@@ -638,7 +509,7 @@ export async function updateGitCMSPost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      console.error("Update file failed:", err);
+      logger.error("Update file failed:", err);
       return res.status(500).json({ error: "Failed to update file" });
     }
 
@@ -675,11 +546,11 @@ export async function updateGitCMSPost(req, res) {
 
           await fs.rename(oldFsPath, newFsPath);
 
-          console.log(`Renamed post ${filename} -> ${desiredBase}`);
+          logger.log(`Renamed post ${filename} -> ${desiredBase}`);
 
           // Respond with redirect info for the client to navigate
           const redirectUrl = `/p/${encodeURIComponent(
-            id,
+            projectId,
           )}/gitcms/post/${encodeURIComponent(desiredBase)}?edit=true`;
           return res.status(200).json({
             updated: true,
@@ -690,30 +561,31 @@ export async function updateGitCMSPost(req, res) {
         }
       }
     } catch (err) {
-      console.error("Rename after update failed:", err);
+      logger.error("Rename after update failed:", err);
       // Fall through to normal success if rename failed silently
     }
 
     // Normal success (no rename)
     return res.status(200).json({ updated: true, filename });
-  } catch (e) {
-    console.error("Update GitCMS post failed:", e);
+  } catch (err) {
+    logger.error("Update GitCMS post failed:", err);
     return res.status(500).json({ error: "Failed to update post" });
   }
 }
 
-export async function publishGitCMSPost(req, res) {
+async function publishPost(req, res) {
   // We need to simply commit and push any changes that are currently in the working directory
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    const id = req.params?.id;
-    if (!id) return res.status(400).json({ error: "Missing project id" });
+    const projectId = req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
     const project = await prisma.project.findUnique({
-      where: { id },
+      where: { id: projectId },
       select: { ownerId: true, type: true },
     });
     if (!project) return res.status(404).json({ error: "Project not found" });
@@ -726,7 +598,7 @@ export async function publishGitCMSPost(req, res) {
 
     // Load config to init manager if needed
     const cfg = await prisma.projectGitCMS.findUnique({
-      where: { projectId: id },
+      where: { projectId },
       select: {
         repoUrl: true,
         defaultBranch: true,
@@ -741,10 +613,10 @@ export async function publishGitCMSPost(req, res) {
     }
 
     // Ensure Git manager
-    let gm = getGitManager(id);
+    let gm = getGitManager(projectId);
     if (!gm) {
       try {
-        gm = await getOrInitGitManager(id, {
+        gm = await getOrInitGitManager(projectId, {
           repoUrl: cfg.repoUrl,
           defaultBranch: cfg.defaultBranch,
           gitUserName: cfg.gitUserName,
@@ -752,7 +624,7 @@ export async function publishGitCMSPost(req, res) {
           gitAuthToken: cfg.authSecret || null,
         });
       } catch (err) {
-        console.error("Git connect failed during publish:", err);
+        logger.error("Git connect failed during publish:", err);
         return res.status(400).json({
           error:
             "Failed to connect to repository. Please verify the configuration.",
@@ -764,7 +636,7 @@ export async function publishGitCMSPost(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      console.warn("Pull latest failed before publish:", err?.message || err);
+      logger.warn("Pull latest failed before publish:", err?.message || err);
       // continue; publish may still succeed if fast-forward
     }
 
@@ -788,10 +660,10 @@ export async function publishGitCMSPost(req, res) {
       published: true,
       message: result?.message || "Changes published successfully",
     });
-  } catch (e) {
-    console.error("Publish GitCMS changes failed:", e);
+  } catch (err) {
+    logger.error("Publish GitCMS changes failed:", err);
     // Common non-fast-forward hint
-    const msg = String(e?.message || e);
+    const msg = String(err?.message || err);
     const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
       ? "Remote has new commits. Pull/rebase then try again."
       : undefined;
@@ -800,3 +672,13 @@ export async function publishGitCMSPost(req, res) {
       .json({ error: "Failed to publish changes", hint, detail: msg });
   }
 }
+
+const gitcms = {
+  configure,
+  getPosts,
+  updatePost,
+  publishPost,
+  deletePost,
+};
+
+export default gitcms;
