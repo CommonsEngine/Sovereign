@@ -125,16 +125,16 @@
 .papertrail-header__menu[open] .papertrail-header__avatar {
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.15),
-    0 0 0 1px var(--color-border-card) inset;
+    0 0 0 1px var(--color-border-primary) inset;
 }
 .papertrail-header__menu-panel {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
   background: #fff;
-  border: 1px solid var(--color-border-card);
+  border: 1px solid var(--color-border-primary);
   border-radius: 10px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-s);
   min-width: 160px;
   padding: 6px;
   z-index: 20;
@@ -147,8 +147,8 @@
   background: #e5e7eb;
   display: grid;
   place-items: center;
-  border: 1px solid var(--color-border-card);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border-primary);
+  box-shadow: var(--shadow-s);
 }
 .papertrail-header__avatar > img {
   width: 100%;
@@ -246,7 +246,7 @@
   height: calc(100% - 24px);
   /* refined by JS to subtract toolbar height */
   overflow: auto;
-  background-image: radial-gradient(var(--color-muted) 1px, transparent 1px);
+  background-image: radial-gradient(var(--color-bg-muted) 1px, transparent 1px);
   background-size: 16px 16px;
   background-position: -1px -1px;
   flex: 1 1 auto;
@@ -768,7 +768,7 @@ body.connect-mode .node .node__port {
 .papertrail-board {
   flex: 1 1 auto;
   /* background already set:
-     background-image: radial-gradient(var(--color-muted) 1px, transparent 1px);
+     background-image: radial-gradient(var(--color-bg-muted) 1px, transparent 1px);
      background-size: 16px 16px;
      background-position: -1px -1px; */
 }
@@ -776,4 +776,8 @@ body.connect-mode .node .node__port {
 /* Remove the extra 8px gutter so header touches the sidebar */
 .page.page-papertrail {
   padding-left: var(--sidebar-w);
+}
+
+.toolbar__spacer {
+  flex: 1;
 }

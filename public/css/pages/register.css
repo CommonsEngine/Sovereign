@@ -38,10 +38,10 @@
   margin: 0 0 15px;
 }
 .page--register .auth__card {
-  background: var(--color-bg);
-  border: 1px solid var(--color-border-card);
-  border-radius: var(--spacing-m);
-  box-shadow: var(--shadow);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--space-s);
+  box-shadow: var(--shadow-s);
   padding: 18px;
   max-width: 520px;
   width: 100%;
@@ -62,12 +62,12 @@
 .page--register .input {
   appearance: none;
   width: 100%;
-  border: 1px solid var(--color-border-card);
+  border: 1px solid var(--color-border-primary);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
   background: #fff;
-  color: var(--color-ink);
+  color: var(--color-text-primary);
 }
 .page--register .input:focus {
   outline: 2px solid rgba(99, 102, 241, 0.25);
@@ -75,7 +75,7 @@
 }
 .page--register .divider {
   height: 1px;
-  background: var(--color-border-card);
+  background: var(--color-border-primary);
   margin: 14px 0;
 }
 .page--register .actions {
@@ -104,7 +104,7 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-s);
   transition:
     transform 0.02s ease,
     filter 0.15s ease;

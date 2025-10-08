@@ -1,12 +1,12 @@
 <div class="userbar {{overrides}}">
-  <div class="toolbar__user" role="navigation" aria-label="User toolbar">
+  <div class="userbar__user" role="navigation" aria-label="User toolbar">
     {{^hide_user_name}}
-    <span class="toolbar__greeting"
+    <span class="userbar__greeting"
       >Ayubowan! <strong>{{username}}</strong></span
     >
     {{/hide_user_name}}
-    <details class="toolbar__menu">
-      <summary class="toolbar__avatar" title="{{username}}">
+    <details class="userbar__menu">
+      <summary class="userbar__avatar" title="{{username}}">
         <svg
           width="18"
           height="18"
@@ -19,8 +19,8 @@
         </svg>
       </summary>
       {{#if show_user_menu}}
-      <div class="toolbar__menu-panel" role="menu" aria-label="User menu">
-        <a class="menu__item" href="/logout" role="menuitem">Logout</a>
+      <div class="userbar__menu-panel" role="menu" aria-label="User menu">
+        <a class="userbar__menu-item" href="/logout" role="menuitem">Logout</a>
       </div>
       {{/if}}
     </details>

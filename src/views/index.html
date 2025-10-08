@@ -2,13 +2,16 @@
 <html lang="en">
   <head>
     {{> layout/head}}
+    <link rel="stylesheet" href="/css/pages/index.css" />
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/modal.css" />
   </head>
-  <body class="page index-page">
+  <body class="page page--with-sidebar page--index">
     {{> sidebar projects_active=true}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
-      <h2 class="projects__title">Projects</h2>
+      <h2 class="page__title">Projects</h2>
 
       <section id="grid" class="projects__grid">
         <a
@@ -28,8 +31,7 @@
           data-project-id="{{this.id}}"
           data-owned="{{this.owned}}"
         >
-          <!-- Top row: Title + Status badge on the right -->
-          <div class="projects__row">
+          <div class="projects__card-row">
             {{#if this.owned}}
             <div
               class="projects__card-title"
@@ -42,32 +44,36 @@
             {{else}}
             <div class="projects__card-title">{{this.name}}</div>
             {{/if}}
-            <span class="projects__badge projects__badge--status"
+            <span class="projects__card-badge projects__card-badge--status"
               >{{this.status}}</span
             >
           </div>
 
-          <div class="projects__meta projects__meta--info">
+          <div class="projects__card-meta projects__card-meta--info">
             {{#if this.scope}}
-            <span class="projects__chip projects__chip--scope" title="Scope"
+            <span
+              class="projects__card-chip projects__card-chip--scope"
+              title="Scope"
               >{{this.scope}}</span
             >
             {{/if}} {{#if this.type}}
-            <span class="projects__chip projects__chip--type" title="Type"
+            <span
+              class="projects__card-chip projects__card-chip--type"
+              title="Type"
               >{{this.type}}</span
             >
             {{/if}}
           </div>
-          <!-- Date row kept separate for readability -->
-          <div class="projects__meta projects__meta--date">
-            <span class="created-at" data-date="{{this.createdAt}}"></span>
+
+          <div class="projects__card-meta projects__card-meta--date">
+            <time class="created-at" data-date="{{this.createdAt}}"></time>
           </div>
-          <!-- Actions -->
-          <div class="projects__actions">
-            <a class="projects__link" href="/p/{{this.id}}">Open</a>
+
+          <div class="projects__card-actions">
+            <a class="projects__card-link" href="/p/{{this.id}}">Open</a>
             {{#if this.owned}}
             <button
-              class="projects__delete"
+              class="projects__card-delete"
               type="button"
               title="Delete project"
               aria-label="Delete project"
