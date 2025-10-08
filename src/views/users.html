@@ -3,42 +3,20 @@
   <head>
     {{> layout/head}}
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/modal.css" />
     <style>
-      /* Scoped: icon button next to "All Users" */
-      .card__bar .icon-user-add {
-        margin: -5px 0 0 -2px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 6px;
-        background: transparent;
-        color: var(--fg, #111);
-        text-decoration: none;
-        vertical-align: middle;
-      }
-      .card__bar .icon-user-add:hover {
-        background: #eee;
-        color: blue;
-      }
-      .card__bar .icon-user-add svg {
-        width: 18px;
-        height: 18px;
-      }
-      span.email {
-        font-size: 13px;
-        color: #334155;
+      .users__card {
+        grid-column: 1 / -1;
       }
     </style>
   </head>
-  <body class="page users-page">
+  <body class="page page--users">
     {{> sidebar users_active=true}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
-      <h2 class="projects__title">Users</h2>
+      <h2 class="page__title">Users</h2>
 
       <!-- Breadcrumb -->
       <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -54,25 +32,36 @@
 
       {{> modal/modal-runtime}} {{> modal/create-user}}
 
-      <section class="grid">
-        <article class="card" style="grid-column: 1 / -1">
+      <section class="users__grid">
+        <article class="card users__card">
           <div class="card__bar">
-            <div>
+            <div class="card__bar-left">
               <strong>All Users</strong>
-              <a
-                href="javascript:void(0)"
-                class="icon-user-add"
+            </div>
+            <div class="card__bar-right">
+              <input
+                id="user-search"
+                class="card__bar-search-input"
+                type="search"
+                placeholder="Search users…"
+                autocomplete="off"
+              />
+              <button
+                class="card__bar-icon"
+                type="button"
                 aria-label="Create new user"
                 title="Create new user"
                 data-modal-open="create-user"
-                aria-haspopup="dialog"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
+                  width="22"
+                  height="22"
                   stroke-width="1.5"
                   stroke="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     stroke-linecap="round"
@@ -80,15 +69,8 @@
                     d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
                   />
                 </svg>
-              </a>
+              </button>
             </div>
-            <input
-              id="user-search"
-              class="search"
-              type="search"
-              placeholder="Search users…"
-              autocomplete="off"
-            />
           </div>
 
           <div class="card__body table-wrap">
@@ -96,7 +78,6 @@
               <thead>
                 <tr>
                   <th style="width: 28%">User</th>
-                  <th style="width: 22%">Email</th>
                   <th style="width: 12%">Role</th>
                   <th style="width: 18%">Projects</th>
                   <th style="width: 18%">Created</th>
@@ -104,7 +85,8 @@
                 </tr>
               </thead>
               <tbody id="users-tbody">
-                {{#each users}}
+                {{!-- removed stray ">" that broke the table --}} {{#each
+                users}}
                 <tr
                   data-id="{{id}}"
                   data-name="{{displayName}}"
@@ -112,10 +94,9 @@
                   data-role="{{roleLabel}}"
                 >
                   <td>
-                    <div class="title">{{displayName}}</div>
+                    <div class="strong">{{displayName}}</div>
                     <div class="subtle">{{email}}</div>
                   </td>
-                  <td><span class="email">{{email}}</span></td>
                   <td><span class="badge">{{roleLabel}}</span></td>
                   <td>
                     <span class="subtle">{{projectsAssigned}} assigned</span>
@@ -127,16 +108,99 @@
                   </td>
                   <td>
                     <div class="row-actions">
-                      <a class="chip" href="javascript:void(0)">Edit</a>
-                      <a class="chip" href="javascript:void(0)">Roles</a>
-                      <a class="chip" href="javascript:void(0)">Projects</a>
+                      <button
+                        class="chip"
+                        aria-label="Edit user"
+                        title="Edit user"
+                        type="button"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        class="chip"
+                        href="javascript:void(0)"
+                        aria-label="Manage roles"
+                        title="Manage roles"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
+                          />
+                        </svg>
+                      </button>
+                      <button
+                        class="chip"
+                        href="javascript:void(0)"
+                        aria-label="Manage projects"
+                        title="Manage projects"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+                          />
+                        </svg>
+                      </button>
                       <button
                         class="chip chip--danger"
                         type="button"
                         data-action="delete"
                         data-id="{{id}}"
+                        aria-label="Delete user"
+                        title="Delete user"
                       >
-                        Delete
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          width="18"
+                          height="18"
+                          stroke-width="1.5"
+                          stroke="currentColor"
+                          aria-hidden="true"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                          />
+                        </svg>
                       </button>
                     </div>
                   </td>
@@ -153,43 +217,5 @@
         </article>
       </section>
     </main>
-
-    <script>
-      // Simple client-side search on static rows
-      const search = document.getElementById("user-search");
-      const tbody = document.getElementById("users-tbody");
-
-      const rows = Array.from(tbody.querySelectorAll("tr:not(.empty-row)"));
-      const emptyRow = tbody.querySelector(".empty-row");
-
-      function applySearch() {
-        const q = (search.value || "").trim().toLowerCase();
-        let shown = 0;
-        rows.forEach((tr) => {
-          const hay =
-            `${tr.dataset.name} ${tr.dataset.email} ${tr.dataset.role}`.toLowerCase();
-          const match = !q || hay.includes(q);
-          tr.hidden = !match;
-          if (match) shown++;
-        });
-        if (emptyRow) emptyRow.hidden = shown !== 0;
-      }
-
-      search?.addEventListener("input", applySearch);
-      applySearch();
-
-      // Delegated delete (demo only)
-      document.addEventListener("click", (e) => {
-        const btn = e.target.closest('button[data-action="delete"]');
-        if (!btn) return;
-        const id = btn.getAttribute("data-id");
-        if (!id) return;
-        if (!confirm("Delete this user?")) return;
-        // Replace with real DELETE call later
-        const tr = tbody.querySelector(`tr[data-id="${CSS.escape(id)}"]`);
-        tr?.remove();
-        applySearch();
-      });
-    </script>
   </body>
 </html>

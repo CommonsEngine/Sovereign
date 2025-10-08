@@ -350,7 +350,10 @@ export async function projectConfigure(req, res) {
     }
 
     // Render GitCMS configuration page
-    return res.render("project/gitcms/configure", { project });
+    return res.render("project/gitcms/configure", {
+      project,
+      username: req.user?.username || "",
+    });
   } catch (err) {
     return res.status(500).render("error", {
       code: 500,

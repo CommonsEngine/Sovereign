@@ -84,7 +84,7 @@ async function configure(req, res) {
           : {}),
       },
       create: {
-        projectId: id,
+        projectId,
         repoUrl,
         defaultBranch,
         contentDir,

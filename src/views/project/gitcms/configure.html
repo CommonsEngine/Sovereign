@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     {{> layout/head}}
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
   </head>
   <body class="page gitcms-config-page">
     {{> sidebar}} {{> userbar show_user_menu=true}}
@@ -20,125 +22,129 @@
             data-project-id="{{project.id}}"
             novalidate
           >
-            <div class="form__field">
-              <label class="form__label" for="repo-url-input"
-                >Repository URL</label
-              >
-              <input
-                id="repo-url-input"
-                class="input"
-                name="repoUrl"
-                type="text"
-                placeholder="https://github.com/owner/repo.git or git@github.com:owner/repo.git"
-                required
-                autofocus
-              />
-              <small class="form__help"
-                >Use HTTPS or SSH URL to your content repository.</small
-              >
-            </div>
+            <fieldset>
+              <div class="form__field">
+                <label class="form__label" for="repo-url-input"
+                  >Repository URL</label
+                >
+                <input
+                  id="repo-url-input"
+                  class="input"
+                  name="repoUrl"
+                  type="text"
+                  placeholder="https://github.com/owner/repo.git or git@github.com:owner/repo.git"
+                  required
+                  autofocus
+                />
+                <small class="form__help"
+                  >Use HTTPS or SSH URL to your content repository.</small
+                >
+              </div>
 
-            <div class="form__field">
-              <label class="form__label" for="branch-input"
-                >Default branch</label
-              >
-              <input
-                id="branch-input"
-                class="input"
-                name="defaultBranch"
-                type="text"
-                placeholder="main"
-                value="main"
-              />
-            </div>
+              <div class="form__field">
+                <label class="form__label" for="branch-input"
+                  >Default branch</label
+                >
+                <input
+                  id="branch-input"
+                  class="input"
+                  name="defaultBranch"
+                  type="text"
+                  placeholder="main"
+                  value="main"
+                />
+              </div>
 
-            <!-- Git user name -->
-            <div class="form__field">
-              <label class="form__label" for="git-user-name-input"
-                >Git User Name (optional)</label
-              >
-              <input
-                id="git-user-name-input"
-                class="input"
-                name="gitUserName"
-                type="text"
-                placeholder="e.g., John Doe"
-                maxlength="120"
-                autocomplete="name"
-              />
-              <small class="form__help">Used as commit author name.</small>
-            </div>
+              <!-- Git user name -->
+              <div class="form__field">
+                <label class="form__label" for="git-user-name-input"
+                  >Git User Name (optional)</label
+                >
+                <input
+                  id="git-user-name-input"
+                  class="input"
+                  name="gitUserName"
+                  type="text"
+                  placeholder="e.g., John Doe"
+                  maxlength="120"
+                  autocomplete="name"
+                />
+                <small class="form__help">Used as commit author name.</small>
+              </div>
 
-            <!-- Git user email -->
-            <div class="form__field">
-              <label class="form__label" for="git-user-email-input"
-                >Git User Email (optional)</label
-              >
-              <input
-                id="git-user-email-input"
-                class="input"
-                name="gitUserEmail"
-                type="email"
-                placeholder="you@example.com"
-                maxlength="120"
-                autocomplete="email"
-              />
-              <small class="form__help">Used as commit author email.</small>
-            </div>
+              <!-- Git user email -->
+              <div class="form__field">
+                <label class="form__label" for="git-user-email-input"
+                  >Git User Email (optional)</label
+                >
+                <input
+                  id="git-user-email-input"
+                  class="input"
+                  name="gitUserEmail"
+                  type="email"
+                  placeholder="you@example.com"
+                  maxlength="120"
+                  autocomplete="email"
+                />
+                <small class="form__help">Used as commit author email.</small>
+              </div>
 
-            <!-- Git auth token -->
-            <div class="form__field">
-              <label class="form__label" for="git-auth-token-input"
-                >Git Auth Token (optional)</label
-              >
-              <input
-                id="git-auth-token-input"
-                class="input"
-                name="gitAuthToken"
-                type="password"
-                placeholder="ghp_xxx..."
-                maxlength="200"
-                autocomplete="new-password"
-              />
-              <small class="form__help"
-                >Needed for private repos over HTTPS.</small
-              >
-            </div>
+              <!-- Git auth token -->
+              <div class="form__field">
+                <label class="form__label" for="git-auth-token-input"
+                  >Git Auth Token (optional)</label
+                >
+                <input
+                  id="git-auth-token-input"
+                  class="input"
+                  name="gitAuthToken"
+                  type="password"
+                  placeholder="ghp_xxx..."
+                  maxlength="200"
+                  autocomplete="new-password"
+                />
+                <small class="form__help"
+                  >Needed for private repos over HTTPS.</small
+                >
+              </div>
 
-            <div class="form__field">
-              <label class="form__label" for="content-dir-input"
-                >Content directory (optional)</label
-              >
-              <input
-                id="content-dir-input"
-                class="input"
-                name="contentDir"
-                type="text"
-                placeholder="e.g., content/posts"
-                maxlength="200"
-              />
-              <small class="form__help"
-                >Leave empty if content lives at repository root.</small
-              >
-            </div>
+              <div class="form__field">
+                <label class="form__label" for="content-dir-input"
+                  >Content directory (optional)</label
+                >
+                <input
+                  id="content-dir-input"
+                  class="input"
+                  name="contentDir"
+                  type="text"
+                  placeholder="e.g., content/posts"
+                  maxlength="200"
+                />
+                <small class="form__help"
+                  >Leave empty if content lives at repository root.</small
+                >
+              </div>
 
-            <div
-              class="form__alert form__alert--error"
-              id="form-error"
-              role="alert"
-              style="display: none"
-            ></div>
+              <div
+                class="form__alert form__alert--error"
+                id="form-error"
+                role="alert"
+                style="display: none"
+              ></div>
 
-            <div class="form__actions">
-              <a class="button chip" href="/p/{{project.id}}">Cancel</a>
-              <button
-                type="submit"
-                class="button button--primary chip chip--primary"
-                id="save-btn"
-              >
-                Save
-              </button>
-            </div>
+              <div class="form__actions">
+                <button class="button chip" onclick="location.href='/'">
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="button button--primary chip chip--primary"
+                  id="save-btn"
+                >
+                  Save
+                </button>
+              </div>
+            </fieldset>
           </form>
         </div>
       </section>

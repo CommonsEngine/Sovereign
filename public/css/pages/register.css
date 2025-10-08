@@ -1,142 +1,148 @@
-.page.page--register {
-  padding: 0;
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.page--register .page__wrap {
-  width: min(1100px, 100%);
-  margin: 0;
-  padding: 40px 20px 80px;
-}
-.page--register .hero {
-  text-align: center;
-  margin: 4vh 0 30px;
-}
-.page--register .hero__title {
-  font-size: clamp(32px, 5vw, 56px);
-  letter-spacing: -0.02em;
-  margin: 0 0 2px;
-}
-.page--register .hero__tagline {
-  color: #475569;
-  font-size: clamp(14px, 2.5vw, 18px);
-  margin: 0 0 22px;
-}
-.page--register .auth {
-  margin: 36px auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.page--register .auth__title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 15px;
-}
-.page--register .auth__card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--space-s);
-  box-shadow: var(--shadow-s);
-  padding: 18px;
-  max-width: 520px;
-  width: 100%;
-}
-/* form */
-.page--register .form {
-  display: grid;
-  gap: 12px;
-}
-.page--register .field {
-  display: grid;
-  gap: 6px;
-}
-.page--register .field label {
-  font-size: 13px;
-  color: #475569;
-}
-.page--register .input {
-  appearance: none;
-  width: 100%;
-  border: 1px solid var(--color-border-primary);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 14px;
-  background: #fff;
-  color: var(--color-text-primary);
-}
-.page--register .input:focus {
-  outline: 2px solid rgba(99, 102, 241, 0.25);
-  outline-offset: 1px;
-}
-.page--register .divider {
-  height: 1px;
-  background: var(--color-border-primary);
-  margin: 14px 0;
-}
-.page--register .actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 4px;
-}
-.page--register .link {
-  color: #2563eb;
-  text-decoration: none;
-  font-size: 13px;
-}
-.page--register .link:hover {
-  text-decoration: underline;
-}
-.page--register .button {
-  appearance: none;
-  border: 0;
-  outline: 0;
-  cursor: pointer;
-  padding: 10px 15px;
-  color: #fff;
-  font-weight: 700;
-  font-size: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: var(--shadow-s);
-  transition:
-    transform 0.02s ease,
-    filter 0.15s ease;
-  text-decoration: none;
-}
-.page--register .button--primary {
-  background: var(--color-accent);
-}
-.page--register .button:active {
-  transform: translateY(1px);
-}
-/* alert */
-.page--register .alert {
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-.page--register .alert--error {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-}
-.page--register .alert--success {
-  background: #dcfce7;
-  border: 1px solid #bbf7d0;
-  color: #166534;
-}
-
-/* Mobile: top-align content for better ergonomics */
-@media (max-width: 640px) {
+@layer pages {
   .page.page--register {
-    align-items: flex-start;
+    padding: 0;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page--register .page__wrap {
+    width: min(1100px, 100%);
+    margin: 0;
+    padding: 40px 20px 80px;
+  }
+  .page--register .hero {
+    text-align: center;
+    margin: 4vh 0 30px;
+  }
+  .page--register .hero__title {
+    font-size: clamp(32px, 5vw, 56px);
+    letter-spacing: -0.02em;
+    margin: 0 0 2px;
+    color: var(--color-text-primary);
+  }
+  .page--register .hero__tagline {
+    color: var(--color-text-secondary);
+    font-size: clamp(14px, 2.5vw, 18px);
+    margin: 0 0 22px;
+  }
+
+  .page--register .auth {
+    margin: 36px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .page--register .auth__title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    margin: 0 0 15px;
+  }
+  .page--register .auth__card {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--space-s);
+    box-shadow: var(--shadow-s);
+    padding: 18px;
+    max-width: 520px;
+    width: 100%;
+  }
+
+  /* form */
+  .page--register .form {
+    display: grid;
+    gap: 12px;
+  }
+  .page--register .field {
+    display: grid;
+    gap: 6px;
+  }
+  .page--register .field label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+  }
+  .page--register .input {
+    appearance: none;
+    width: 100%;
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-m, 10px);
+    padding: 10px 12px;
+    font-size: 14px;
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+  }
+  .page--register .input:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+
+  .page--register .divider {
+    height: 1px;
+    background: var(--color-border-primary);
+    margin: 14px 0;
+  }
+  .page--register .actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .page--register .link {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .page--register .link:hover {
+    text-decoration: underline;
+  }
+  .page--register .link:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+
+  /* alert */
+  .page--register .alert {
+    border-radius: var(--radius-m, 10px);
+    padding: 10px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .page--register .alert--error {
+    background: color-mix(
+      in oklab,
+      var(--color-danger),
+      var(--color-bg-primary) 85%
+    );
+    border: 1px solid
+      color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 70%);
+    color: color-mix(
+      in oklab,
+      var(--color-danger),
+      var(--color-text-primary) 40%
+    );
+  }
+  .page--register .alert--success {
+    background: color-mix(
+      in oklab,
+      var(--color-success),
+      var(--color-bg-primary) 85%
+    );
+    border: 1px solid
+      color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
+    color: color-mix(
+      in oklab,
+      var(--color-success),
+      var(--color-text-primary) 40%
+    );
+  }
+
+  /* Mobile: top-align content for better ergonomics */
+  @media (max-width: 640px) {
+    .page.page--register {
+      align-items: flex-start;
+    }
   }
 }

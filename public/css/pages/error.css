@@ -1,0 +1,97 @@
+@layer pages {
+  .error {
+    text-align: center;
+    max-width: 680px;
+    background: transparent;
+    color: var(--color-text-primary);
+  }
+
+  .error__code {
+    font-size: clamp(40px, 8vw, 80px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-s, 12px);
+    color: var(--color-text-primary);
+  }
+
+  .error__title {
+    font-size: clamp(16px, 3vw, 22px);
+    color: var(--color-text-secondary);
+    margin: 0 0 var(--space-xs, 8px);
+  }
+
+  .error__text {
+    font-size: var(--font-size-s, 14px);
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-m, 16px);
+  }
+
+  .error__stack {
+    text-align: left;
+    font-size: 13px;
+    font-family: var(
+      --font-mono,
+      ui-monospace,
+      SFMono-Regular,
+      Menlo,
+      Consolas,
+      monospace
+    );
+    color: var(--color-text-muted);
+    background: var(--color-bg-muted);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-m, 8px);
+    padding: var(--space-s, 12px);
+    max-height: 240px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0 0 var(--space-m, 16px);
+  }
+
+  .error__actions {
+    margin-top: var(--space-s, 12px);
+  }
+
+  .button {
+    appearance: none;
+    border: 1px solid transparent;
+    outline: 0;
+    padding: 12px 18px;
+    border-radius: var(--radius-m, 10px);
+    font-weight: var(--font-weight-bold, 700);
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs, 8px);
+    box-shadow: var(--shadow-s);
+    text-decoration: none;
+    background: var(--color-primary);
+    color: var(--color-bg-primary);
+    cursor: pointer;
+    transition:
+      background-color var(--transition-base, 200ms)
+        var(--transition-easing-standard, ease),
+      color var(--transition-base, 200ms)
+        var(--transition-easing-standard, ease),
+      opacity var(--transition-fast, 120ms)
+        var(--transition-easing-standard, ease);
+  }
+  .button:hover {
+    opacity: var(--opacity-hover, 0.85);
+  }
+  .button:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+
+  .button--text {
+    background: transparent;
+    color: var(--color-accent);
+    box-shadow: none;
+    padding: 0;
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: 0.9rem;
+    border: 0;
+  }
+}

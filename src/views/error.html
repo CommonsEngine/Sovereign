@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     {{> layout/head}}
+    <link rel="stylesheet" href="/css/pages/error.css" />
   </head>
-  <body class="page page--fullwidth error-page">
-    <main class="page__wrap page__wrap--center">
+  <body class="page page--fullwidth page--error">
+    <main class="page__wrap--center">
       <section class="error" aria-label="{{message}}">
         <h1 class="error__code">{{code}}</h1>
         <p class="error__title">{{message}}</p>
