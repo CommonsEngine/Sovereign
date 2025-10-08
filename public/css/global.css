@@ -731,11 +731,6 @@
     align-items: center;
     gap: 8px;
   }
-  td .empty {
-    color: var(--color-text-secondary);
-    padding: 16px;
-    text-align: center;
-  }
   td .chip {
     display: inline-flex;
     align-items: center;
@@ -745,7 +740,6 @@
     min-height: 32px;
     padding: 6px 10px;
     border: 1px solid var(--color-border-primary);
-    border-radius: 9999px;
     background: var(--color-bg-primary);
     color: var(--color-text-primary);
     line-height: 1;
@@ -769,6 +763,12 @@
     height: 18px;
     stroke: currentColor;
     pointer-events: none;
+  }
+  td.empty {
+    color: var(--color-text-secondary);
+    padding: 16px;
+    text-align: center;
+    font-size: small;
   }
   /* form */
   .form {

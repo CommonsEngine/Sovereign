@@ -217,5 +217,54 @@
         </article>
       </section>
     </main>
+
+    <script>
+      (() => {
+        const input = document.getElementById("user-search");
+        const tbody = document.getElementById("users-tbody");
+        if (!input || !tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll("tr[data-id]"));
+        const emptyRow = tbody.querySelector(".empty-row");
+
+        const normalize = (s) =>
+          (s || "")
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+
+        const applyFilter = () => {
+          const q = normalize(input.value.trim());
+          let visible = 0;
+
+          for (const tr of rows) {
+            const haystack = normalize(
+              [tr.dataset.name, tr.dataset.email, tr.dataset.role].join(" "),
+            );
+            const match = !q || haystack.includes(q);
+            tr.hidden = !match;
+            if (match) visible++;
+          }
+
+          if (emptyRow) emptyRow.hidden = visible !== 0;
+        };
+
+        // Filter as the user types
+        input.addEventListener("input", applyFilter);
+
+        // ESC to clear
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") {
+            input.value = "";
+            applyFilter();
+            e.preventDefault();
+          }
+        });
+
+        // Initial run (handles back/forward cache or prefilled values)
+        applyFilter();
+      })();
+    </script>
   </body>
 </html>

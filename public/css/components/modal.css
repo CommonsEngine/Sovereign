@@ -108,6 +108,19 @@
     width: 100%;
   }
 
+  .modal__result {
+    font-size: var(--font-size-s, 13px);
+    padding: var(--space-s);
+    background-color: #faffe9;
+    border-radius: var(--space-s);
+    margin-top: var(--space-xs);
+  }
+
+  .modal__result input {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+
   /* Alerts */
   .modal__alert {
     display: none; /* toggled by script */
