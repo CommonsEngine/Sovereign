@@ -7,6 +7,89 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// [1] User model / User management
+enum UserStatus {
+  invited
+  active
+  suspended
+}
+
+model User {
+  id              String    @id @default(cuid()) @map("id")
+  email           String    @unique @map("email")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  displayName     String?   @map("display_name")
+  username        String    @unique @map("username")
+  role            Int       @default(9) @map("role") // 0=owner, 1=admin, 2=editor, 3=viewer, 4=contributor, ..., 9=guest
+  passwordHash    String?   @map("password_hash") // allow empty until user sets it
+
+  sessions            Session[]
+  verificationTokens  VerificationToken[]  @relation("UserToVerificationTokens")
+  passwordResetTokens PasswordResetToken[] @relation("UserToPasswordResetTokens")
+
+  ownedProjects Project[] @relation("Owner")
+  adminOf       Project[] @relation("ProjectAdmins")
+  editorOf      Project[] @relation("ProjectEditors")
+  contributorOf Project[] @relation("ProjectContributors")
+
+  status    UserStatus @default(invited) @map("status")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@index([createdAt])
+  @@index([emailVerifiedAt])
+  @@map("users")
+}
+
+// [1.1] Session model
+model Session {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  ipHash    String?  @map("ip_hash")
+  userAgent String?  @map("user_agent")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// [1.2] Tokens for invites, email verification 
+model VerificationToken {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(name: "UserToVerificationTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  purpose   String   @map("purpose") // 'email-verify'
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("verification_tokens")
+}
+
+// [1.3] Tokens for password resets
+model PasswordResetToken {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  user      User     @relation(name: "UserToPasswordResetTokens", fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique @map("token")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+// [2] Project model and its subtypes
 enum ProjectType {
   gitcms
   papertrail
@@ -56,6 +139,7 @@ model Project {
   @@map("projects")
 }
 
+// [2.1] GitCMS project-specific fields
 enum GitProvider {
   github
   gitlab
@@ -71,7 +155,6 @@ enum AuthType {
   userpass
 }
 
-// CMS Git project-specific fields
 model ProjectGitCMS {
   projectId String  @id @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -87,30 +170,34 @@ model ProjectGitCMS {
   gitUserName  String? @map("git_user_name")
   gitUserEmail String? @map("git_user_email")
 
-  postMetas PostMeta[]
+  postMeta GitCMSPostMeta?
+
+  @@map("gitcms_projects")
 }
 
-model PostMeta {
-  id        String    @id @default(cuid())
-  path      String
-  title     String?
-  excerpt   String?
-  pubDate   DateTime?
-  draft     Boolean?  @default(true)
-  tags      String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model GitCMSPostMeta {
+  id          String    @id @default(cuid())
+  pubDate     DateTime? @default(now())
+  updatedDate DateTime? @updatedAt
+  title       String?
+  description String?
+  author      String?
+  imageUrl    String?
+  imageAlt    String?
+  tags        String? // comma-separated tags
+  draft       Boolean?  @default(true)
+
   deletedAt DateTime?
 
   gitcmsId String?        @map("gitcms_id")
   gitcms   ProjectGitCMS? @relation(fields: [gitcmsId], references: [projectId], onDelete: Cascade)
 
-  @@unique([gitcmsId, path])
+  @@unique([gitcmsId])
   @@index([gitcmsId])
-  @@map("post_meta")
+  @@map("gitcms_post_meta")
 }
 
-// PaperTrail project-specific fields
+// [2.2] PaperTrail project-specific fields
 model ProjectPaperTrail {
   projectId String  @id @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -143,7 +230,7 @@ model PaperTrailNode {
 
   @@index([boardId])
   @@index([boardId, type])
-  @@map("nodes")
+  @@map("papertrail_nodes")
 }
 
 model PaperTrailEdge {
@@ -160,7 +247,7 @@ model PaperTrailEdge {
   @@index([boardId])
   @@index([boardId, sourceId])
   @@index([boardId, targetId])
-  @@map("edges")
+  @@map("papertrail_edges")
 }
 
 model PaperTrailTag {
@@ -181,89 +268,31 @@ model PaperTrailNodeTag {
   @@id([nodeId, tagId])
   @@index([nodeId])
   @@index([tagId])
-  @@map("node_tags")
+  @@map("papertrail_node_tags")
 }
 
-// Workspace project-specific fields
+// [2.3] Workspace project-specific fields
 model ProjectWorkspace {
   projectId String  @id @map("project_id")
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
-enum UserStatus {
-  invited
-  active
-  suspended
-}
-
-model User {
-  id              String    @id @default(cuid()) @map("id")
-  email           String    @unique @map("email")
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  displayName     String?   @map("display_name")
-  username        String    @unique @map("username")
-  role            Int       @default(9) @map("role") // 0=owner, 1=admin, 2=editor, 3=viewer, 4=contributor, ..., 9=guest
-  passwordHash    String?   @map("password_hash") // allow empty until user sets it
-
-  sessions            Session[]
-  verificationTokens  VerificationToken[]  @relation("UserToVerificationTokens")
-  passwordResetTokens PasswordResetToken[] @relation("UserToPasswordResetTokens")
-
-  ownedProjects Project[] @relation("Owner")
-  adminOf       Project[] @relation("ProjectAdmins")
-  editorOf      Project[] @relation("ProjectEditors")
-  contributorOf Project[] @relation("ProjectContributors")
-
-  status    UserStatus @default(invited) @map("status")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-
-  @@index([createdAt])
-  @@index([emailVerifiedAt])
-  @@map("users")
-}
-
-model Session {
+// [3] App settings / Version registry
+model AppSetting {
   id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique @map("token")
-  ipHash    String?  @map("ip_hash")
-  userAgent String?  @map("user_agent")
-  expiresAt DateTime @map("expires_at")
+  scope     String   @map("scope") // 'global', 'org:{orgId}', 'user:{userId}', 'project:{projectId}'
+  key       String   @unique @map("key")
+  value     Json     @map("value")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([userId])
-  @@index([token])
-  @@index([expiresAt])
-  @@map("sessions")
+  @@unique([scope, key])
+  @@index([scope])
+  @@map("app_settings")
 }
 
-model VerificationToken {
-  id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  user      User     @relation(name: "UserToVerificationTokens", fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique @map("token")
-  purpose   String   @map("purpose") // 'email-verify'
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([userId])
-  @@index([token])
-  @@index([expiresAt])
-  @@map("verification_tokens")
-}
-
-model PasswordResetToken {
-  id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  user      User     @relation(name: "UserToPasswordResetTokens", fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique @map("token")
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([userId])
-  @@index([token])
-  @@index([expiresAt])
-  @@map("password_reset_tokens")
+model VersionRegistry {
+  id        String   @id // appsettings, locales, ...
+  v         Int      @default(1)
+  updatedAt DateTime @updatedAt
 }
