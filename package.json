@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "main": "./src/index.mjs",
   "scripts": {
-    "prestart": "npx prisma db push && npm run prisma:reset && npm run prisma:seed",
+    "init-s": "cp .env.example .env && yarn prisma db push && yarn run prisma:reset && yarn run prisma:seed",
     "start": "node src/index.mjs",
     "dev": "nodemon",
     "prisma:generate": "prisma generate",
