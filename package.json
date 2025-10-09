@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "main": "./src/index.mjs",
   "scripts": {
-    "init-s": "cp .env.example .env && yarn prisma db push && yarn run prisma:reset && yarn run prisma:seed",
+    "init:prepare": "cp .env.example .env",
+    "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
     "start": "node src/index.mjs",
     "dev": "nodemon",
     "prisma:generate": "prisma generate",
