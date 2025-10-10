@@ -1,6 +1,5 @@
 import env from "../../config/env.mjs";
 import { isFeatureEnabled } from "../../config/flags.mjs";
-import { useHeadConfig } from "../../config/head.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
@@ -66,17 +65,11 @@ export async function index(req, res) {
       GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN
     );
 
-    return res.render(
-      "index",
-      useHeadConfig(
-        {
-          username: req.user?.username,
-          show_user_menu: showUserMenu,
-          projects: [],
-        },
-        req,
-      ),
-    );
+    return res.render("index", {
+      username: req.user?.username,
+      show_user_menu: showUserMenu,
+      projects: [],
+    });
   } catch (err) {
     return res.status(500).render("error", {
       code: 500,
