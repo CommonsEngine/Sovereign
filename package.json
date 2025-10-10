@@ -10,7 +10,7 @@
     "dev": "nodemon",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed.mjs",
+    "prisma:seed": "node prisma/seed/seed.mjs",
     "prisma:reset": "prisma/reset.sh",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
