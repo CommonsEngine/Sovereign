@@ -28,7 +28,7 @@ model User {
   pictureUrl String?      @map("picture_url")
   profile    UserProfile? @relation(name: "UserToUserProfile")
 
-  primaryEmailId  String      @unique @map("primary_email_id")
+  primaryEmailId  String?     @unique @map("primary_email_id")
   primaryEmail    UserEmail?  @relation("PrimaryEmail", fields: [primaryEmailId], references: [id])
   emails          UserEmail[] @relation("UserEmails")
   emailVerifiedAt DateTime?   @map("email_verified_at")

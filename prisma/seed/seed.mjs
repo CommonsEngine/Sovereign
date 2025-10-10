@@ -59,20 +59,16 @@ async function seedRBAC() {
   }
 }
 
-async function upsertUserWithEmail({ username, firstName, lastName, email, status, passwordHash }) {
-  // Create UserEmail first
-  const userEmail = await prisma.userEmail.upsert({
-    where: { email },
-    update: {},
-    create: {
-      email,
-      isVerified: true,
-      isPrimary: true,
-    },
-  });
-
-  // Upsert user with primaryEmailId set
-  const user = await prisma.user.upsert({
+async function upsertUserWithEmail({
+  username,
+  firstName,
+  lastName,
+  email,
+  status,
+  passwordHash,
+}) {
+  // 1. Upsert user without primaryEmailId
+  let user = await prisma.user.upsert({
     where: { name: username },
     update: {
       name: username,
@@ -80,7 +76,6 @@ async function upsertUserWithEmail({ username, firstName, lastName, email, statu
       lastName,
       status,
       passwordHash,
-      primaryEmailId: userEmail.id,
     },
     create: {
       name: username,
@@ -88,16 +83,31 @@ async function upsertUserWithEmail({ username, firstName, lastName, email, statu
       lastName,
       status,
       passwordHash,
-      primaryEmailId: userEmail.id,
-      emails: { connect: { id: userEmail.id } },
     },
     select: { id: true, name: true, status: true },
   });
 
-  // Link UserEmail to user if not already
-  await prisma.userEmail.update({
-    where: { id: userEmail.id },
-    data: { userId: user.id },
+  // 2. Upsert UserEmail with userId
+  const userEmail = await prisma.userEmail.upsert({
+    where: { email },
+    update: {
+      userId: user.id,
+      isVerified: true,
+      isPrimary: true,
+    },
+    create: {
+      email,
+      userId: user.id,
+      isVerified: true,
+      isPrimary: true,
+    },
+  });
+
+  // 3. Update user's primaryEmailId if needed
+  user = await prisma.user.update({
+    where: { id: user.id },
+    data: { primaryEmailId: userEmail.id },
+    select: { id: true, name: true, status: true },
   });
 
   return user;
@@ -120,10 +130,14 @@ async function seedOwnerUser() {
   });
 
   // Assign platform_admin role
-  const platformAdminRole = await prisma.userRole.findUnique({ where: { key: "platform_admin" } });
+  const platformAdminRole = await prisma.userRole.findUnique({
+    where: { key: "platform_admin" },
+  });
   if (platformAdminRole) {
     await prisma.userRoleAssignment.upsert({
-      where: { userId_roleId: { userId: user.id, roleId: platformAdminRole.id } },
+      where: {
+        userId_roleId: { userId: user.id, roleId: platformAdminRole.id },
+      },
       update: {},
       create: { userId: user.id, roleId: platformAdminRole.id },
     });
@@ -169,7 +183,9 @@ async function seedTestUsers() {
       create: { userId: user.id, roleId: role.id },
     });
 
-    console.log(`Test user seeded: ${username} (${role.key}) password: ${password}`);
+    console.log(
+      `Test user seeded: ${username} (${role.key}) password: ${password}`,
+    );
   }
 }
 
