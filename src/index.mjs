@@ -115,16 +115,15 @@ app.get("/register", disallowIfAuthed, viewHandler.register);
 app.get("/logout", authHandler.logout);
 
 // Auth Routes
-app.post("/auth/register", authHandler.register);
+app.post("/login", authHandler.login);
+app.post("/register", authHandler.register);
 app.post(
   "/auth/invite",
   requireAuth,
   requireRole(["owner", "admin"]),
   authHandler.invite,
 );
-app.post("/auth/login", authHandler.login);
 app.get("/auth/guest", authHandler.guestLogin);
-app.post("/auth/logout", authHandler.logout);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
 app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
 app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }

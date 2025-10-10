@@ -87,7 +87,6 @@ model UserEmail {
 enum UserRoleScope {
   global
   tenant
-  workspace
   service
 }
 

@@ -23,7 +23,7 @@
           <div class="alert alert--error">{{error}}</div>
           {{/if}} {{!-- LOGIN FORM --}} {{#unless forgot_mode}} {{#unless
           reset_mode}}
-          <form class="form" method="post" action="/auth/login">
+          <form class="form" method="post" action="/login">
             <input type="hidden" name="return_to" value="{{return_to}}" />
             <div class="field">
               <label for="email">Email</label>

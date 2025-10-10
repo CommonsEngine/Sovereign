@@ -33,37 +33,93 @@ function hashIp(ip) {
 export async function createRandomGuestUser() {
   while (true) {
     const suffix = crypto.randomBytes(4).toString("hex");
-    const username = `guest_${suffix}`;
+    const name = `guest_${suffix}`;
     const email = `guest+${suffix}@guest.local`;
+
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ username }, { email }] },
+      where: { name },
       select: { id: true },
     });
     if (existing) continue;
+
     const passwordHash = await hashPassword(randomToken(12));
-    return prisma.user.create({
-      data: { username, email, passwordHash },
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        firstName: "Guest",
+        lastName: suffix,
+        status: "active",
+        passwordHash,
+      },
+    });
+
+    const userEmail = await prisma.userEmail.create({
+      data: {
+        email,
+        userId: user.id,
+        isVerified: true,
+        isPrimary: true,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { primaryEmailId: userEmail.id },
+    });
+
+    // return freshly built user with primary email for callers
+    return prisma.user.findUnique({
+      where: { id: user.id },
+      include: { emails: true },
     });
   }
 }
 
 export async function getOrCreateSingletonGuestUser() {
-  let user = await prisma.user.findFirst({ where: { username: "guest" } });
+  // prefer to return a user with email info
+  let user = await prisma.user.findFirst({
+    where: { name: "guest" },
+    include: { emails: true },
+  });
   if (user) return user;
-  // Attempt to create singleton; handle race by retry fetch
+
   try {
     const passwordHash = await hashPassword(randomToken(16));
-    user = await prisma.user.create({
+    const created = await prisma.user.create({
       data: {
-        username: "guest",
-        email: "guest@guest.local",
+        name: "guest",
+        firstName: "Guest",
+        lastName: "User",
+        status: "active",
         passwordHash,
       },
     });
-    return user;
+
+    const userEmail = await prisma.userEmail.create({
+      data: {
+        email: "guest@guest.local",
+        userId: created.id,
+        isVerified: true,
+        isPrimary: true,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: created.id },
+      data: { primaryEmailId: userEmail.id },
+    });
+
+    return prisma.user.findUnique({
+      where: { id: created.id },
+      include: { emails: true },
+    });
   } catch {
-    // Another request likely created it; fetch again
-    return prisma.user.findFirst({ where: { username: "guest" } });
+    // race condition: another process likely created it — fetch again
+    return prisma.user.findFirst({
+      where: { name: "guest" },
+      include: { emails: true },
+    });
   }
 }
 

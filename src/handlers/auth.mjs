@@ -254,7 +254,7 @@ export async function register(req, res) {
     // JSON API flow
     return res.status(201).json({ ok: true });
   } catch (e) {
-    logger.error("/auth/register error", e);
+    logger.error("/register error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -437,7 +437,7 @@ export async function login(req, res) {
     }
     return res.json({ ok: true });
   } catch (e) {
-    logger.error("/auth/login error", e);
+    logger.error("/login error", e);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
