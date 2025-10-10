@@ -1,25 +1,23 @@
-// TODO: Fetch from manifest.json
-// TODO: Utilize config/head.mjs
-const namespace = "Sovereign";
-const title = "Sovereign — Reclaim your digital freedom.";
-const description =
-  "A self-hostable, privacy-first workspace suite — the foundation of personal cloud autonomy.";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../../package.json");
 
 export function exposeGlobals(req, res, next) {
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
-    title,
+    title: pkg.manifest.title,
     meta: [
-      { name: "application-name", content: namespace },
-      { name: "description", content: description },
-      { name: "keywords", content: "" },
+      { name: "application-name", content: pkg.manifest.title },
+      { name: "description", content: pkg.manifest.description },
+      { name: "keywords", content: pkg.keywords.join(", ") },
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
-      { property: "og:site_name", content: namespace },
+      { property: "og:site_name", content: pkg.manifest.title },
       { property: "og:type", content: "app" },
-      { property: "og:title", content: title },
-      { property: "og:description", content: description },
+      { property: "og:title", content: pkg.manifest.title },
+      { property: "og:description", content: pkg.manifest.description },
       { property: "og:url", content: "/" },
       { property: "og:image", content: "/assets/og-image.png" },
       { property: "og:image:type", content: "image/png" },
