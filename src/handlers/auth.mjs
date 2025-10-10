@@ -351,10 +351,14 @@ export async function login(req, res) {
       return res.status(400).json({ error: "Invalid payload" });
     }
 
-    const user = await prisma.user.findUnique({
+    // Lookup user via UserEmail (schema change: email moved to UserEmail)
+    const userEmailRec = await prisma.userEmail.findUnique({
       where: { email: emailNorm },
+      include: { user: true },
     });
-    if (!user) {
+
+    // require an email record, linked user, and a verified email for login
+    if (!userEmailRec || !userEmailRec.user || !userEmailRec.isVerified) {
       if (isFormContent) {
         return res.status(401).render("login", {
           error: "Invalid email or password.",
@@ -364,6 +368,10 @@ export async function login(req, res) {
       }
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    const user = userEmailRec.user;
+
+    console.log(">> 1", user);
 
     // Active-only login
     const status = String(user.status || "").toLowerCase();
@@ -415,6 +423,8 @@ export async function login(req, res) {
       }
       return res.status(401).json({ error: "Invalid credentials" });
     }
+
+    console.log("++ 2", user);
 
     await createSession(res, user, req);
 

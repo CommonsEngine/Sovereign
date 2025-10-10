@@ -70,6 +70,67 @@ export async function getOrCreateSingletonGuestUser() {
 export async function createSession(res, user, req) {
   const token = randomToken(48);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  // Fetch roles + capabilities snapshot once at session creation time.
+  // We'll not mutate DB schema here; instead store the computed snapshot in the session cookie as a small JSON payload.
+  // Keep payload minimal: role keys and an effective capability map.
+  let roles = [];
+  let capabilities = {};
+  try {
+    const assignments = await prisma.userRoleAssignment.findMany({
+      where: { userId: user.id },
+      include: {
+        role: {
+          include: {
+            roleCapabilities: {
+              include: { capability: true },
+            },
+          },
+        },
+      },
+    });
+
+    roles = assignments.map((a) => {
+      const r = a.role;
+      return {
+        id: r.id,
+        key: r.key,
+        label: r.label,
+        level: r.level,
+        scope: r.scope,
+      };
+    });
+
+    // Build effective capability map (role precedence not enforced here — later logic can implement precedence)
+    for (const a of assignments) {
+      for (const rc of a.role.roleCapabilities || []) {
+        const key = rc.capabilityKey;
+        const value = String(rc.value || "deny");
+        // simple precedence: allow > consent > compliance > scoped > anonymized > deny
+        const precedence = {
+          allow: 6,
+          consent: 5,
+          compliance: 4,
+          scoped: 3,
+          anonymized: 2,
+          deny: 1,
+        };
+        if (
+          !capabilities[key] ||
+          precedence[value] > precedence[capabilities[key]]
+        ) {
+          capabilities[key] = value;
+        }
+      }
+    }
+  } catch (err) {
+    // Don't block session creation on RBAC read errors; log and proceed.
+    logger.warn("Failed to fetch roles/capabilities for session snapshot", err);
+  }
+
+  // TODO: Maybe we can simply use database references in the session table to map
+  // capabilities and roles with the user without storing the full JSON payload.
+
   await prisma.session.create({
     data: {
       userId: user.id,
@@ -77,6 +138,8 @@ export async function createSession(res, user, req) {
       userAgent: req.get("user-agent") || undefined,
       ipHash: hashIp(req.ip),
       expiresAt,
+      roles,
+      capabilities,
     },
   });
   res.cookie(AUTH_SESSION_COOKIE_NAME, token, {
@@ -101,7 +164,20 @@ export async function getSessionWithUser(token) {
     }
     return null;
   }
-  return s;
+  return {
+    id: s.id,
+    userId: s.userId,
+    token: s.token,
+    ipHash: s.ipHash,
+    userAgent: s.userAgent,
+    createdAt: s.createdAt,
+    expiresAt: s.expiresAt,
+    user: {
+      ...s.user,
+      roles: s.roles || [],
+      capabilities: s.capabilities || {},
+    },
+  };
 }
 
 export function verifyPassword(hash, pwd) {

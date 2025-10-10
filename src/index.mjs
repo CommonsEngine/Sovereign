@@ -108,6 +108,12 @@ app.use(
 // Security headers
 app.use(secure);
 
+// Web Routes
+app.get("/", requireAuthWeb, exposeRoleFlags, viewHandler.index);
+app.get("/login", disallowIfAuthed, viewHandler.login);
+app.get("/register", disallowIfAuthed, viewHandler.register);
+app.get("/logout", authHandler.logout);
+
 // Auth Routes
 app.post("/auth/register", authHandler.register);
 app.post(
@@ -123,12 +129,6 @@ app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
 app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
 app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
 app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
-
-// Web Routes
-app.get("/", requireAuthWeb, exposeRoleFlags, viewHandler.index);
-app.get("/login", disallowIfAuthed, viewHandler.login);
-app.get("/register", disallowIfAuthed, viewHandler.register);
-app.get("/logout", authHandler.logout);
 
 app.get(
   "/users",

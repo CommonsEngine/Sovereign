@@ -95,12 +95,13 @@ export function roleLabelFrom(user) {
 
 // TODO: Maybe we can merge this with exposeGlobals?
 export function exposeRoleFlags(req, res, next) {
-  const label = roleLabelFrom(req.user);
-  const isOwner = label === "owner";
-  const isAdmin = label === "admin";
-  res.locals.role = label;
-  res.locals.is_owner = isOwner;
-  res.locals.is_admin = isAdmin;
-  res.locals.can_access_admin = isOwner || isAdmin;
+  // TODO: Fix properly
+  // const label = roleLabelFrom(req.user);
+  // const isOwner = label === "owner";
+  // const isAdmin = label === "admin";
+  // res.locals.role = label;
+  // res.locals.is_owner = isOwner;
+  // res.locals.is_admin = isAdmin;
+  // res.locals.can_access_admin = isOwner || isAdmin;
   next();
 }

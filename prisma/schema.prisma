@@ -55,7 +55,7 @@ model UserProfile {
   userId   String  @id @map("user_id")
   locale   String?
   timezone String?
-  meta     Json    // Remove @default("{}")
+  meta     Json // Remove @default("{}")
 
   // Relations
   user User @relation(name: "UserToUserProfile", fields: [userId], references: [id], onDelete: Cascade)
@@ -157,12 +157,15 @@ model UserRoleAssignment {
 
 // [1.4] Session model
 model Session {
-  id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique @map("token")
-  ipHash    String?  @map("ip_hash")
-  userAgent String?  @map("user_agent")
+  id           String  @id @default(cuid()) @map("id")
+  userId       String  @map("user_id")
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String  @unique @map("token")
+  ipHash       String? @map("ip_hash")
+  userAgent    String? @map("user_agent")
+  roles        Json?   @map("roles")
+  capabilities Json?   @map("capabilities")
+
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
