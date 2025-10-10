@@ -19,27 +19,27 @@
             {{#if error}}<div class="alert alert--error">{{error}}</div>{{/if}}
             {{#if token}}<input type="hidden" name="token" value="{{token}}" />{{/if}}
             <div class="field">
-              <label for="display_name">Display Name</label>
+              <label for="first_name">First Name</label>
               <input
-                id="display_name"
-                name="display_name"
+                id="first_name"
+                name="first_name"
                 type="text"
-                value="{{values.display_name}}"
+                value="{{values.first_name}}"
                 class="input"
-                placeholder="eg. John Doe"
+                placeholder="eg. John"
                 {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>
             <div class="field">
-              <label for="username">User Name</label>
+              <label for="last_name">Last Name</label>
               <input
-                id="username"
-                name="username"
+                id="last_name"
+                name="last_name"
                 type="text"
-                value="{{values.username}}"
+                value="{{values.last_name}}"
                 class="input"
-                placeholder="eg. john_doe"
+                placeholder="eg. Doe"
                 {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />

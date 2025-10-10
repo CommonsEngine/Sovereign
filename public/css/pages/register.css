@@ -9,7 +9,7 @@
   .page--register .page__wrap {
     width: min(1100px, 100%);
     margin: 0;
-    padding: 40px 20px 80px;
+    padding: 0;
   }
   .page--register .hero {
     text-align: center;
