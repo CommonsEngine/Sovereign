@@ -105,3 +105,7 @@ export function exposeRoleFlags(req, res, next) {
   // res.locals.can_access_admin = isOwner || isAdmin;
   next();
 }
+
+export function exposeGlobals(req, res, next) {
+  next();
+}

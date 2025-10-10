@@ -34,7 +34,7 @@ export async function register(req, res) {
     // Invite-only: require a valid invite token
     const token = String(req.query?.token || req.body?.token || "");
 
-    console.log("Register called with token:", token);
+    logger.log("Register called with token:", token);
 
     if (token) {
       // Look up invite token
@@ -318,7 +318,7 @@ export async function invite(req, res) {
 
     return res.status(201).json({ user, inviteUrl });
   } catch (err) {
-    console.error("Invite user failed:", err);
+    logger.error("Invite user failed:", err);
     return res.status(500).json({ error: "Failed to create user invite" });
   }
 }
@@ -354,7 +354,43 @@ export async function login(req, res) {
     // Lookup user via UserEmail (schema change: email moved to UserEmail)
     const userEmailRec = await prisma.userEmail.findUnique({
       where: { email: emailNorm },
-      include: { user: true },
+      select: {
+        id: true,
+        email: true,
+        isVerified: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            passwordHash: true,
+            primaryEmailId: true,
+            roleAssignments: {
+              select: {
+                id: true,
+                role: {
+                  select: {
+                    id: true,
+                    key: true,
+                    label: true,
+                    level: true,
+                    scope: true,
+                    roleCapabilities: {
+                      select: {
+                        capabilityKey: true,
+                        value: true,
+                        capability: {
+                          select: { key: true, description: true },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     // require an email record, linked user, and a verified email for login
@@ -370,8 +406,6 @@ export async function login(req, res) {
     }
 
     const user = userEmailRec.user;
-
-    console.log(">> 1", user);
 
     // Active-only login
     const status = String(user.status || "").toLowerCase();
@@ -424,9 +458,7 @@ export async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    console.log("++ 2", user);
-
-    await createSession(res, user, req);
+    await createSession(req, res, { ...user, email });
 
     if (isFormContent) {
       const dest =
@@ -459,7 +491,7 @@ export async function guestLogin(req, res) {
   }
   try {
     const guest = await createRandomGuestUser();
-    await createSession(res, guest, req);
+    await createSession(req, res, guest);
     return res.redirect(302, "/");
   } catch (e) {
     logger.error("guestLogin error", e);

@@ -12,11 +12,7 @@ import path from "path";
 
 import { secure } from "./middlewares/security.mjs";
 import { requireFeature } from "./middlewares/feature.mjs";
-import {
-  requireAuth,
-  requireAuthWeb,
-  disallowIfAuthed,
-} from "./middlewares/auth.mjs";
+import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
 import { requireRole, exposeRoleFlags } from "./middlewares/user.mjs";
 
 import * as authHandler from "./handlers/auth.mjs";
@@ -109,7 +105,7 @@ app.use(
 app.use(secure);
 
 // Web Routes
-app.get("/", requireAuthWeb, exposeRoleFlags, viewHandler.index);
+app.get("/", requireAuth, exposeRoleFlags, viewHandler.index);
 app.get("/login", disallowIfAuthed, viewHandler.login);
 app.get("/register", disallowIfAuthed, viewHandler.register);
 app.get("/logout", authHandler.logout);
@@ -131,23 +127,23 @@ app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { t
 
 app.get(
   "/users",
-  requireAuthWeb,
+  requireAuth,
   requireRole(["owner", "admin"]),
   exposeRoleFlags,
   viewHandler.users,
 );
 app.get(
   "/settings",
-  requireAuthWeb,
+  requireAuth,
   requireRole(["owner", "admin"]),
   exposeRoleFlags,
   viewHandler.settings,
 );
 
-app.get("/p/:projectId", requireAuthWeb, exposeRoleFlags, viewHandler.project);
+app.get("/p/:projectId", requireAuth, exposeRoleFlags, viewHandler.project);
 app.get(
   "/p/:projectId/configure",
-  requireAuthWeb,
+  requireAuth,
   exposeRoleFlags,
   viewHandler.projectConfigure,
 );
@@ -156,13 +152,13 @@ app.get(
 app.get(
   "/p/:projectId/gitcms/post/new",
   requireFeature("gitcms"),
-  requireAuthWeb,
+  requireAuth,
   exposeRoleFlags,
   viewHandler.gitcms.postCreate,
 );
 app.get(
   "/p/:projectId/gitcms/post/:fp",
-  requireAuthWeb,
+  requireAuth,
   exposeRoleFlags,
   viewHandler.gitcms.postView,
 );

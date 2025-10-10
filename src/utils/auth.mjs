@@ -123,7 +123,7 @@ export async function getOrCreateSingletonGuestUser() {
   }
 }
 
-export async function createSession(res, user, req) {
+export async function createSession(req, res, user) {
   const token = randomToken(48);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
@@ -133,19 +133,7 @@ export async function createSession(res, user, req) {
   let roles = [];
   let capabilities = {};
   try {
-    const assignments = await prisma.userRoleAssignment.findMany({
-      where: { userId: user.id },
-      include: {
-        role: {
-          include: {
-            roleCapabilities: {
-              include: { capability: true },
-            },
-          },
-        },
-      },
-    });
-
+    const assignments = user.roleAssignments || [];
     roles = assignments.map((a) => {
       const r = a.role;
       return {
@@ -183,9 +171,6 @@ export async function createSession(res, user, req) {
     // Don't block session creation on RBAC read errors; log and proceed.
     logger.warn("Failed to fetch roles/capabilities for session snapshot", err);
   }
-
-  // TODO: Maybe we can simply use database references in the session table to map
-  // capabilities and roles with the user without storing the full JSON payload.
 
   await prisma.session.create({
     data: {
