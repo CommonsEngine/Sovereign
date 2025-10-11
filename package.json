@@ -1,13 +1,16 @@
 {
   "name": "sovereign",
-  "description": "Reclaim your digital freedom.",
   "version": "0.1.0",
+  "title": "Sovereign",
+  "tagline": "Reclaim your digital freedom.",
+  "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
   "main": "./src/index.mjs",
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
     "start": "node src/index.mjs",
     "dev": "nodemon",
+    "reset": "yarn prisma:reset",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed/seed.mjs",
@@ -26,11 +29,6 @@
     "ext": "mjs,js,json,html,css",
     "exec": "node src/index.mjs",
     "signal": "SIGTERM"
-  },
-  "manifest": {
-    "title": "Sovereign",
-    "tagline": "Reclaim your digital freedom.",
-    "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination."
   },
   "keywords": [
     "sovereign",

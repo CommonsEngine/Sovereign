@@ -1,23 +1,25 @@
 import { createRequire } from "module";
 
+// TODO: Utilize confg/head.mjs for these
+
 const require = createRequire(import.meta.url);
 const pkg = require("../../package.json");
 
 export function exposeGlobals(req, res, next) {
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
-    title: pkg.manifest.title,
+    title: pkg.title,
     meta: [
-      { name: "application-name", content: pkg.manifest.title },
-      { name: "description", content: pkg.manifest.description },
+      { name: "application-name", content: pkg.title },
+      { name: "description", content: pkg.description },
       { name: "keywords", content: pkg.keywords.join(", ") },
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
-      { property: "og:site_name", content: pkg.manifest.title },
+      { property: "og:site_name", content: pkg.title },
       { property: "og:type", content: "app" },
-      { property: "og:title", content: pkg.manifest.title },
-      { property: "og:description", content: pkg.manifest.description },
+      { property: "og:title", content: pkg.title },
+      { property: "og:description", content: pkg.description },
       { property: "og:url", content: "/" },
       { property: "og:image", content: "/assets/og-image.png" },
       { property: "og:image:type", content: "image/png" },
