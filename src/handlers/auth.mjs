@@ -28,7 +28,7 @@ export async function register(req, res) {
       accept.includes("text/html");
 
     // Pull fields (form may pass additional fields like confirm_password)
-    const { display_name, username, email, password, confirm_password } =
+    const { first_name, last_name, email, password, confirm_password } =
       req.body || {};
 
     // Invite-only: require a valid invite token
@@ -37,9 +37,10 @@ export async function register(req, res) {
     logger.log("Register called with token:", token);
 
     if (token) {
+      // TODO: Fix invite-only mode (configurable) later.
       // Look up invite token
       const vt = await prisma.verificationToken.findUnique({
-        where: { token: token, purpose: "invite" },
+        where: { token: token },
       });
 
       const validInvite =
@@ -53,7 +54,7 @@ export async function register(req, res) {
         if (isFormContent) {
           return res.status(400).render("register", {
             error: msg,
-            values: { display_name, username, email },
+            values: { first_name, username, email },
           });
         }
         return res.status(400).json({ error: msg });
@@ -64,9 +65,10 @@ export async function register(req, res) {
         where: { id: vt.userId },
         select: {
           id: true,
-          email: true,
-          username: true,
-          displayName: true,
+          primaryEmail: true,
+          name: true,
+          firstName: true,
+          lastName: true,
           passwordHash: true,
           status: true,
         },
@@ -76,7 +78,7 @@ export async function register(req, res) {
         if (isFormContent) {
           return res.status(400).render("register", {
             error: "Invalid invite.",
-            values: { display_name, username, email },
+            values: { first_name, username, email },
           });
         }
         return res.status(400).json({ error: "Invalid invite" });
@@ -88,7 +90,7 @@ export async function register(req, res) {
         return isFormContent
           ? res.status(400).render("register", {
               error: msg,
-              values: { display_name, username, email },
+              values: { first_name, username, email },
             })
           : res.status(400).json({ error: msg });
       }
@@ -97,7 +99,7 @@ export async function register(req, res) {
         return isFormContent
           ? res.status(400).render("register", {
               error: msg,
-              values: { display_name, username, email: invitedUser.email },
+              values: { first_name, username, email: invitedUser.email },
             })
           : res.status(400).json({ error: msg });
       }
@@ -127,33 +129,57 @@ export async function register(req, res) {
     }
 
     // Normalize inputs
-    const displayName =
-      typeof display_name === "string" ? display_name.trim() : "";
-    const u = typeof username === "string" ? username.trim() : "";
+    const firstName = typeof first_name === "string" ? first_name.trim() : "";
+    const lastName = typeof last_name === "string" ? last_name.trim() : "";
+    const name = [firstName, lastName].join("_").toLowerCase();
     const emailNorm =
       typeof email === "string" ? email.trim().toLowerCase() : "";
 
-    // Validate display name (required, 2–80 chars)
-    if (displayName.length < 2 || displayName.length > 80) {
+    // Validate First name (required, 2–80 chars)
+    if (firstName.length < 2 || firstName.length > 80) {
       if (isFormContent) {
         return res.status(400).render("register", {
-          error: "Display Name must be between 2 and 80 characters.",
-          values: { display_name: displayName, username: u, email: emailNorm },
+          error: "First Name must be between 2 and 80 characters.",
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
         });
       }
-      return res.status(400).json({ error: "Invalid display name" });
+      return res.status(400).json({ error: "Invalid first name" });
+    }
+
+    // Validate last name (required, 2–80 chars)
+    if (lastName.length < 2 || lastName.length > 80) {
+      if (isFormContent) {
+        return res.status(400).render("register", {
+          error: "Last Name must be between 2 and 80 characters.",
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
+        });
+      }
+      return res.status(400).json({ error: "Invalid last name" });
     }
 
     // Validate username (required)
     // Rules: 3–24 chars, starts with a letter, then letters/numbers/._-
     const usernameOk =
-      typeof u === "string" && /^[A-Za-z][A-Za-z0-9._-]{2,23}$/.test(u || "");
+      typeof name === "string" &&
+      /^[A-Za-z][A-Za-z0-9._-]{2,23}$/.test(name || "");
     if (!usernameOk) {
       if (isFormContent) {
         return res.status(400).render("register", {
           error:
             "Choose a username (3–24 chars). Start with a letter; use letters, numbers, dot, underscore or hyphen.",
-          values: { display_name: displayName, username: u, email: emailNorm },
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
         });
       }
       return res
@@ -169,7 +195,11 @@ export async function register(req, res) {
       if (isFormContent) {
         return res.status(400).render("register", {
           error: "Please enter a valid email address.",
-          values: { display_name: displayName, username: u, email: emailNorm },
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
         });
       }
       return res.status(400).json({ error: "Invalid email" });
@@ -186,7 +216,11 @@ export async function register(req, res) {
         return res.status(400).render("register", {
           error:
             "Password must be at least 6 characters and include a letter and a number.",
-          values: { display_name: displayName, username: u, email: emailNorm },
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
         });
       }
       return res.status(400).json({ error: "Password too weak" });
@@ -200,39 +234,87 @@ export async function register(req, res) {
     ) {
       return res.status(400).render("register", {
         error: "Passwords do not match.",
-        values: { display_name: displayName, username: u, email: emailNorm },
+        values: {
+          first_name: firstName,
+          last_name: lastName,
+          email: emailNorm,
+        },
       });
     }
 
     // Uniqueness checks
-    const [existingEmail, existingUsername] = await Promise.all([
-      prisma.user.findUnique({ where: { email: emailNorm } }).catch(() => null),
-      prisma.user.findFirst({ where: { username: u } }).catch(() => null),
-    ]);
-    if (existingUsername) {
-      if (isFormContent) {
-        return res.status(409).render("register", {
-          error: "That username is taken. Please choose another.",
-          values: { display_name: displayName, username: u, email: emailNorm },
-        });
-      }
-      return res.status(409).json({ error: "Username already registered" });
-    }
+    // const [existingEmail, existingUsername] = await Promise.all([
+    //   prisma.user.findUnique({ where: { email: emailNorm } }).catch(() => null),
+    //   prisma.user.findFirst({ where: { name } }).catch(() => null),
+    // ]);
+    const existingEmail = await prisma.userEmail
+      .findUnique({ where: { email: emailNorm } })
+      .catch(() => null);
+    // if (existingUsername) {
+    //   if (isFormContent) {
+    //     return res.status(409).render("register", {
+    //       error: "That username is taken. Please choose another.",
+    //       values: { first_name: firstName, last_name: lastName, email: emailNorm },
+    //     });
+    //   }
+    //   return res.status(409).json({ error: "Username already registered" });
+    // }
     if (existingEmail) {
       if (isFormContent) {
         return res.status(409).render("register", {
           error: "That email is already registered.",
-          values: { display_name: displayName, username: u, email: emailNorm },
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
         });
       }
       return res.status(409).json({ error: "Email already registered" });
     }
 
     const passwordHash = await hashPassword(passStr);
+    // 1) create user (without primaryEmailId)
     const user = await prisma.user.create({
-      data: { displayName, username: u, email: emailNorm, passwordHash },
+      data: {
+        name,
+        firstName,
+        lastName,
+        passwordHash,
+      },
       select: { id: true },
     });
+
+    // 2) create user email and link to user
+    const userEmail = await prisma.userEmail.create({
+      data: {
+        email: emailNorm,
+        userId: user.id,
+        isVerified: false,
+        isPrimary: true,
+      },
+      select: { id: true },
+    });
+
+    // 3) set user's primaryEmailId to the created email id
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { primaryEmailId: userEmail.id },
+    });
+
+    // Assign guest role for this user (default)
+    const guestUserRole = await prisma.userRole.findUnique({
+      where: { key: "guest" },
+    });
+    if (guestUserRole) {
+      await prisma.userRoleAssignment.upsert({
+        where: {
+          userId_roleId: { userId: user.id, roleId: guestUserRole.id },
+        },
+        update: {},
+        create: { userId: user.id, roleId: guestUserRole.id },
+      });
+    }
 
     // Optional: email verification token (kept consistent with existing API)
     const verificationToken = randomToken(32);
@@ -263,8 +345,8 @@ export async function register(req, res) {
       return res.status(500).render("register", {
         error: "Registration failed. Please try again.",
         values: {
-          display_name: String(req.body?.display_name || "").trim(),
-          username: String(req.body?.username || ""),
+          first_name: String(req.body?.first_name || "").trim(),
+          name: String(req.body?.username || ""),
           email: String(req.body?.email || "").toLowerCase(),
         },
       });
@@ -291,7 +373,7 @@ export async function invite(req, res) {
         id: true,
         email: true,
         displayName: true,
-        username: true,
+        name: true,
         role: true,
       },
     });
