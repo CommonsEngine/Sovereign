@@ -13,7 +13,7 @@
     "reset": "yarn prisma:reset",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed/seed.mjs",
+    "prisma:seed": "node prisma/seed/index.mjs",
     "prisma:reset": "prisma/reset.sh",
     "format:check": "prettier --check .",
     "format": "prettier --write .",

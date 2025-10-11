@@ -4,6 +4,8 @@ import argon2 from "argon2";
 import fs from "fs";
 import path from "path";
 
+import { seedAppSettings } from "./app-configs.mjs";
+
 const prisma = new PrismaClient();
 
 const rbacPath = path.resolve(process.cwd(), "prisma/seed/rbac.json");
@@ -198,6 +200,7 @@ async function main() {
 
   await seedRBAC();
   await seedOwnerUser();
+  await seedAppSettings(prisma);
 
   if (process.env.NODE_ENV === "development") {
     await seedTestUsers();

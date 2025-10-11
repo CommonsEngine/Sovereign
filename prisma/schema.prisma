@@ -223,4 +223,6 @@ model VersionRegistry {
   id        String   @id // appsettings, locales, ...
   v         Int      @default(1)
   updatedAt DateTime @updatedAt
+
+  @@map("version_registry")
 }
