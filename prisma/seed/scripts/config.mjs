@@ -3,7 +3,7 @@ import "dotenv/config";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
-const pkg = require("../../package.json");
+const pkg = require("../../../package.json");
 
 function parseBoolLike(v) {
   const s = String(v ?? "")

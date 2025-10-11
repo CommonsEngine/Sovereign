@@ -4,7 +4,7 @@ import argon2 from "argon2";
 import fs from "fs";
 import path from "path";
 
-import { seedAppSettings } from "./app-configs.mjs";
+import { seedAppSettings } from "./scripts/config.mjs";
 
 const prisma = new PrismaClient();
 
