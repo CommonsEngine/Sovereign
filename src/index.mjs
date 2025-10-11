@@ -16,7 +16,7 @@ import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
 import { requireRole } from "./middlewares/user.mjs";
 import { exposeGlobals } from "./middlewares/misc.mjs";
 
-import * as authHandler from "./handlers/auth.mjs";
+import * as authHandler from "./handlers/auth/index.mjs";
 import * as viewHandler from "./handlers/view/index.mjs";
 import * as projectHandler from "./handlers/project/index.mjs";
 
@@ -118,7 +118,7 @@ app.post(
   "/auth/invite",
   requireAuth,
   requireRole(["owner", "admin"]),
-  authHandler.invite,
+  authHandler.inviteUser,
 );
 app.get("/auth/guest", authHandler.guestLogin);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
