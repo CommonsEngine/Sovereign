@@ -1,0 +1,468 @@
+{
+  "meta": {
+    "version": "1.0",
+    "capability_value_semantics": [
+      "allow",
+      "deny",
+      "consent",
+      "compliance",
+      "scoped",
+      "anonymized"
+    ],
+    "notes": "Privacy-by-design: platform roles have no tenant content/PII access by default; PI/PII access requires consent or compliance override and is fully audited."
+  },
+  "capabilities_catalog": [
+    {
+      "key": "platform_settings",
+      "description": "Manage platform-wide settings, policies, and feature flags."
+    },
+    {
+      "key": "tenant_lifecycle",
+      "description": "Create/suspend/delete tenants or workspaces."
+    },
+    {
+      "key": "system_health_monitoring",
+      "description": "View platform health/telemetry without tenant data visibility."
+    },
+    {
+      "key": "view_tenant_metadata",
+      "description": "View tenant/workspace metadata (name, plan, region)."
+    },
+    {
+      "key": "view_member_identities",
+      "description": "View real user identities and emails within a tenant/workspace."
+    },
+    {
+      "key": "view_content_private",
+      "description": "View private tenant content (drafts, non-public data)."
+    },
+    {
+      "key": "modify_content",
+      "description": "Create/edit/publish/delete tenant content."
+    },
+    {
+      "key": "access_private_workspaces",
+      "description": "Enter private workspaces not explicitly shared."
+    },
+    {
+      "key": "cross_tenant_access",
+      "description": "Participate across multiple tenants via memberships."
+    },
+    {
+      "key": "manage_workspace_users_roles",
+      "description": "Invite members and assign roles within a tenant/workspace."
+    },
+    {
+      "key": "project_manage",
+      "description": "Create/archive/delete projects within a workspace."
+    },
+    {
+      "key": "project_types_manage",
+      "description": "Enable/manage project types (GitCMS, Docs, Sheets, Forms, Kanban, PaperTrail, etc.)."
+    },
+    {
+      "key": "comment_collaborate",
+      "description": "Comment, review, react, collaborate in-app."
+    },
+    {
+      "key": "moderate_review",
+      "description": "Moderate submissions, handle reports, approve/reject."
+    },
+    {
+      "key": "audit_logs_tenant",
+      "description": "View tenant-scoped audit logs."
+    },
+    {
+      "key": "audit_logs_platform",
+      "description": "View platform-scoped audit logs."
+    },
+    {
+      "key": "integrations_api_tokens",
+      "description": "Create/manage integrations and API tokens (workspace scope)."
+    },
+    {
+      "key": "billing_subscription",
+      "description": "Manage billing, subscriptions, and invoices."
+    },
+    {
+      "key": "system_maintenance",
+      "description": "Perform deployments, backups, restores, migrations."
+    },
+    {
+      "key": "data_export_portability",
+      "description": "Export workspace data (portability)."
+    },
+    {
+      "key": "data_deletion_tenant",
+      "description": "Delete tenant/workspace data."
+    },
+    {
+      "key": "read_public_content",
+      "description": "Read publicly shared content."
+    },
+    {
+      "key": "aggregated_analytics",
+      "description": "Access anonymized/aggregate analytics only (no PII)."
+    },
+    {
+      "key": "compliance_override_access",
+      "description": "Activate compliance/legal override for time-boxed, audited access."
+    },
+    {
+      "key": "token_scopes_manage",
+      "description": "Define and assign fine-grained token scopes (least privilege)."
+    }
+  ],
+  "roles": [
+    {
+      "id": 0,
+      "key": "platform_admin",
+      "label": "Platform Admin",
+      "level": 0,
+      "scope": "global",
+      "description": "Full platform governance without default access to tenant content or identities.",
+      "capabilities": {
+        "platform_settings": "allow",
+        "tenant_lifecycle": "allow",
+        "system_health_monitoring": "allow",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "anonymized",
+        "view_member_identities": "compliance",
+        "view_content_private": "compliance",
+        "modify_content": "deny",
+        "access_private_workspaces": "compliance",
+        "cross_tenant_access": "deny",
+        "manage_workspace_users_roles": "consent",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "deny",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "anonymized",
+        "audit_logs_platform": "allow",
+        "integrations_api_tokens": "allow",
+        "billing_subscription": "allow",
+        "system_maintenance": "allow",
+        "data_export_portability": "compliance",
+        "data_deletion_tenant": "compliance",
+        "read_public_content": "allow",
+        "compliance_override_access": "allow",
+        "token_scopes_manage": "allow"
+      }
+    },
+    {
+      "id": 1,
+      "key": "platform_engineer",
+      "label": "Platform Engineer",
+      "level": 100,
+      "scope": "global",
+      "description": "Operations & reliability; no tenant data/PII by default.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "consent",
+        "system_health_monitoring": "allow",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "anonymized",
+        "view_member_identities": "deny",
+        "view_content_private": "deny",
+        "modify_content": "deny",
+        "access_private_workspaces": "deny",
+        "cross_tenant_access": "deny",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "deny",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "anonymized",
+        "audit_logs_platform": "allow",
+        "integrations_api_tokens": "allow",
+        "billing_subscription": "deny",
+        "system_maintenance": "allow",
+        "data_export_portability": "deny",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "consent",
+        "token_scopes_manage": "allow"
+      }
+    },
+    {
+      "id": 2,
+      "key": "tenant_admin",
+      "label": "Tenant Admin",
+      "level": 200,
+      "scope": "tenant",
+      "description": "Owns a workspace/tenant; full control within that boundary.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "allow",
+        "view_member_identities": "allow",
+        "view_content_private": "allow",
+        "modify_content": "allow",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "allow",
+        "project_manage": "allow",
+        "project_types_manage": "allow",
+        "comment_collaborate": "allow",
+        "moderate_review": "allow",
+        "audit_logs_tenant": "allow",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "allow",
+        "billing_subscription": "allow",
+        "system_maintenance": "deny",
+        "data_export_portability": "allow",
+        "data_deletion_tenant": "allow",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "allow"
+      }
+    },
+    {
+      "id": 3,
+      "key": "admin",
+      "label": "Admin",
+      "level": 300,
+      "scope": "tenant",
+      "description": "Top admin within a workspace’s apps and projects.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "allow",
+        "view_member_identities": "consent",
+        "view_content_private": "allow",
+        "modify_content": "allow",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "allow",
+        "project_manage": "allow",
+        "project_types_manage": "allow",
+        "comment_collaborate": "allow",
+        "moderate_review": "allow",
+        "audit_logs_tenant": "allow",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "allow",
+        "billing_subscription": "consent",
+        "system_maintenance": "deny",
+        "data_export_portability": "allow",
+        "data_deletion_tenant": "consent",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "allow"
+      }
+    },
+    {
+      "id": 4,
+      "key": "editor",
+      "label": "Editor",
+      "level": 400,
+      "scope": "tenant",
+      "description": "Create, edit, and publish within assigned projects.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "allow",
+        "view_member_identities": "deny",
+        "view_content_private": "allow",
+        "modify_content": "allow",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "consent",
+        "project_types_manage": "deny",
+        "comment_collaborate": "allow",
+        "moderate_review": "consent",
+        "audit_logs_tenant": "deny",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "consent",
+        "billing_subscription": "deny",
+        "system_maintenance": "deny",
+        "data_export_portability": "consent",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "deny"
+      }
+    },
+    {
+      "id": 5,
+      "key": "moderator",
+      "label": "Moderator",
+      "level": 500,
+      "scope": "tenant",
+      "description": "Moderation and abuse handling within scope.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "allow",
+        "view_member_identities": "deny",
+        "view_content_private": "consent",
+        "modify_content": "consent",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "allow",
+        "moderate_review": "allow",
+        "audit_logs_tenant": "consent",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "deny",
+        "billing_subscription": "deny",
+        "system_maintenance": "deny",
+        "data_export_portability": "deny",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "deny"
+      }
+    },
+    {
+      "id": 6,
+      "key": "contributor",
+      "label": "Contributor",
+      "level": 600,
+      "scope": "tenant",
+      "description": "Create/edit own drafts; submit for review.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "deny",
+        "view_member_identities": "deny",
+        "view_content_private": "consent",
+        "modify_content": "consent",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "allow",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "deny",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "deny",
+        "billing_subscription": "deny",
+        "system_maintenance": "deny",
+        "data_export_portability": "deny",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "deny"
+      }
+    },
+    {
+      "id": 7,
+      "key": "viewer",
+      "label": "Viewer",
+      "level": 700,
+      "scope": "tenant",
+      "description": "Authenticated read-only member.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "allow",
+        "aggregated_analytics": "deny",
+        "view_member_identities": "deny",
+        "view_content_private": "deny",
+        "modify_content": "deny",
+        "access_private_workspaces": "allow",
+        "cross_tenant_access": "allow",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "allow",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "deny",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "deny",
+        "billing_subscription": "deny",
+        "system_maintenance": "deny",
+        "data_export_portability": "deny",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "deny"
+      }
+    },
+    {
+      "id": 8,
+      "key": "guest",
+      "label": "Guest",
+      "level": 800,
+      "scope": "tenant",
+      "description": "Temporary/external viewer; minimal access.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "deny",
+        "view_tenant_metadata": "consent",
+        "aggregated_analytics": "deny",
+        "view_member_identities": "deny",
+        "view_content_private": "deny",
+        "modify_content": "deny",
+        "access_private_workspaces": "deny",
+        "cross_tenant_access": "deny",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "deny",
+        "project_types_manage": "deny",
+        "comment_collaborate": "consent",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "deny",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "deny",
+        "billing_subscription": "deny",
+        "system_maintenance": "deny",
+        "data_export_portability": "deny",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "deny"
+      }
+    },
+    {
+      "id": 9,
+      "key": "automation_bot",
+      "label": "Automation / Bot",
+      "level": 950,
+      "scope": "service",
+      "description": "Non-human principal; all access must be token-scoped and least-privilege.",
+      "capabilities": {
+        "platform_settings": "deny",
+        "tenant_lifecycle": "deny",
+        "system_health_monitoring": "scoped",
+        "view_tenant_metadata": "scoped",
+        "aggregated_analytics": "scoped",
+        "view_member_identities": "deny",
+        "view_content_private": "scoped",
+        "modify_content": "scoped",
+        "access_private_workspaces": "scoped",
+        "cross_tenant_access": "deny",
+        "manage_workspace_users_roles": "deny",
+        "project_manage": "scoped",
+        "project_types_manage": "deny",
+        "comment_collaborate": "deny",
+        "moderate_review": "deny",
+        "audit_logs_tenant": "scoped",
+        "audit_logs_platform": "deny",
+        "integrations_api_tokens": "scoped",
+        "billing_subscription": "deny",
+        "system_maintenance": "scoped",
+        "data_export_portability": "scoped",
+        "data_deletion_tenant": "deny",
+        "read_public_content": "allow",
+        "compliance_override_access": "deny",
+        "token_scopes_manage": "scoped"
+      }
+    }
+  ]
+}

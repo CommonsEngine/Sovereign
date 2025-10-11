@@ -1,6 +1,5 @@
 import env from "../../config/env.mjs";
 import { isFeatureEnabled } from "../../config/flags.mjs";
-import { useHeadConfig } from "../../config/head.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
@@ -15,66 +14,62 @@ const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
 
 export async function index(req, res) {
   try {
-    const userId = req.user?.id || null;
+    // const userId = req.user?.id || null;
 
-    // Build allowed types from feature flags
-    const allowedTypes = ["gitcms", "papertrail", "workspace"].filter((t) =>
-      isFeatureEnabled(t),
-    );
+    // return res.send(userId);
+
+    // // Build allowed types from feature flags
+    // const allowedTypes = ["gitcms", "papertrail", "workspace"].filter((t) =>
+    //   isFeatureEnabled(t),
+    // );
 
     // If no types are enabled, short-circuit to empty list
-    const projectsRaw =
-      allowedTypes.length === 0
-        ? []
-        : await prisma.project.findMany({
-            where: {
-              AND: [{ type: { in: allowedTypes } }],
-              OR: [
-                { ownerId: null },
-                ...(userId
-                  ? [
-                      { ownerId: userId },
-                      { admins: { some: { id: userId } } },
-                      { editors: { some: { id: userId } } },
-                    ]
-                  : []),
-              ],
-            },
-            select: {
-              id: true,
-              type: true,
-              scope: true,
-              name: true,
-              desc: true,
-              status: true,
-              createdAt: true,
-              updatedAt: true,
-              ownerId: true, // needed to compute ownership
-            },
-            orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-          });
+    // const projectsRaw =
+    //   allowedTypes.length === 0
+    //     ? []
+    //     : await prisma.project.findMany({
+    //         where: {
+    //           AND: [{ type: { in: allowedTypes } }],
+    //           OR: [
+    //             { ownerId: null },
+    //             ...(userId
+    //               ? [
+    //                   { ownerId: userId },
+    //                   { admins: { some: { id: userId } } },
+    //                   { editors: { some: { id: userId } } },
+    //                 ]
+    //               : []),
+    //           ],
+    //         },
+    //         select: {
+    //           id: true,
+    //           type: true,
+    //           scope: true,
+    //           name: true,
+    //           desc: true,
+    //           status: true,
+    //           createdAt: true,
+    //           updatedAt: true,
+    //           ownerId: true, // needed to compute ownership
+    //         },
+    //         orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    //       });
 
     // Compute owned and omit ownerId from the response
-    const projects = projectsRaw.map(({ ownerId, ...rest }) => ({
-      ...rest,
-      owned: !!(userId && ownerId === userId),
-    }));
+    // const projects = projectsRaw.map(({ ownerId, ...rest }) => ({
+    //   ...rest,
+    //   owned: !!(userId && ownerId === userId),
+    // }));
 
     const showUserMenu = !(
       GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN
     );
 
-    return res.render(
-      "index",
-      useHeadConfig(
-        {
-          username: req.user?.username,
-          show_user_menu: showUserMenu,
-          projects,
-        },
-        req,
-      ),
-    );
+    return res.render("index", {
+      username: req.user?.username,
+      show_user_menu: showUserMenu,
+      projects: [],
+    });
   } catch (err) {
     return res.status(500).render("error", {
       code: 500,

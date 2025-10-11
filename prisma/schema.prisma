@@ -14,23 +14,32 @@ enum UserStatus {
   suspended
 }
 
-model User {
-  id              String    @id @default(cuid()) @map("id")
-  email           String    @unique @map("email")
-  emailVerifiedAt DateTime? @map("email_verified_at")
-  displayName     String?   @map("display_name")
-  username        String    @unique @map("username")
-  role            Int       @default(9) @map("role") // 0=owner, 1=admin, 2=editor, 3=viewer, 4=contributor, ..., 9=guest
-  passwordHash    String?   @map("password_hash") // allow empty until user sets it
+enum UserType {
+  human
+  bot
+}
 
+model User {
+  id         String       @id @default(cuid()) @map("id")
+  type       UserType     @default(human) @map("type")
+  name       String       @unique @map("name")
+  firstName  String?      @map("first_name")
+  lastName   String?      @map("last_name")
+  pictureUrl String?      @map("picture_url")
+  profile    UserProfile? @relation(name: "UserToUserProfile")
+
+  primaryEmailId  String?     @unique @map("primary_email_id")
+  primaryEmail    UserEmail?  @relation("PrimaryEmail", fields: [primaryEmailId], references: [id])
+  emails          UserEmail[] @relation("UserEmails")
+  emailVerifiedAt DateTime?   @map("email_verified_at")
+
+  passwordHash        String?              @map("password_hash") // allow empty until user sets it
   sessions            Session[]
   verificationTokens  VerificationToken[]  @relation("UserToVerificationTokens")
   passwordResetTokens PasswordResetToken[] @relation("UserToPasswordResetTokens")
 
-  ownedProjects Project[] @relation("Owner")
-  adminOf       Project[] @relation("ProjectAdmins")
-  editorOf      Project[] @relation("ProjectEditors")
-  contributorOf Project[] @relation("ProjectContributors")
+  // Add opposite relation for UserRoleAssignment
+  roleAssignments UserRoleAssignment[]
 
   status    UserStatus @default(invited) @map("status")
   createdAt DateTime   @default(now()) @map("created_at")
@@ -41,14 +50,121 @@ model User {
   @@map("users")
 }
 
-// [1.1] Session model
+// [1.1] User profile (1:1 with User)
+model UserProfile {
+  userId   String  @id @map("user_id")
+  locale   String?
+  timezone String?
+  meta     Json // Remove @default("{}")
+
+  // Relations
+  user User @relation(name: "UserToUserProfile", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+// [1.2] User emails
+model UserEmail {
+  id         String    @id @default(uuid())
+  userId     String
+  email      String    @unique
+  isVerified Boolean   @default(false) @map("is_verified")
+  isPrimary  Boolean   @default(false) @map("is_primary")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  verifiedAt DateTime? @map("verified_at")
+
+  user User @relation("UserEmails", fields: [userId], references: [id])
+
+  /// Backref for the optional primaryEmail relation on User (1:1)
+  primaryOf User? @relation("PrimaryEmail")
+
+  @@unique([userId, id]) // supports composite FK from User(id, primaryEmailId) -> (userId, id)
+  @@index([userId, isPrimary])
+  @@map("user_emails")
+}
+
+// [1.3] User roles and capabilities
+enum UserRoleScope {
+  global
+  tenant
+  service
+}
+
+model UserRole {
+  id          Int           @id @map("id") // SMALLINT → Int
+  key         String        @unique
+  label       String
+  level       Int
+  scope       UserRoleScope
+  description String
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  roleCapabilities UserRoleCapability[]
+  roleAssignments  UserRoleAssignment[] // opposite relation for UserRoleAssignment
+
+  @@map("user_roles")
+}
+
+model UserCapability {
+  key         String @id
+  description String
+
+  // Relations
+  roleCapabilities UserRoleCapability[]
+
+  @@map("user_capabilities")
+}
+
+enum CapabilityValue {
+  allow
+  deny
+  consent
+  compliance
+  scoped
+  anonymized
+}
+
+model UserRoleCapability {
+  roleId        Int
+  capabilityKey String
+  value         CapabilityValue @default(deny)
+
+  // Relations
+  role       UserRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  capability UserCapability @relation(fields: [capabilityKey], references: [key], onDelete: Cascade)
+
+  @@id([roleId, capabilityKey])
+  @@map("user_role_capabilities")
+}
+
+model UserRoleAssignment {
+  id     String @id @default(cuid())
+  userId String
+  roleId Int
+
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role UserRole @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  assignedAt DateTime @default(now())
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+  @@map("user_role_assignments")
+}
+
+// [1.4] Session model
 model Session {
-  id        String   @id @default(cuid()) @map("id")
-  userId    String   @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique @map("token")
-  ipHash    String?  @map("ip_hash")
-  userAgent String?  @map("user_agent")
+  id           String  @id @default(cuid()) @map("id")
+  userId       String  @map("user_id")
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String  @unique @map("token")
+  ipHash       String? @map("ip_hash")
+  userAgent    String? @map("user_agent")
+  roles        Json?   @map("roles")
+  capabilities Json?   @map("capabilities")
+
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -58,7 +174,7 @@ model Session {
   @@map("sessions")
 }
 
-// [1.2] Tokens for invites, email verification 
+// [1.5] Tokens for invites, email verification 
 model VerificationToken {
   id        String   @id @default(cuid()) @map("id")
   userId    String   @map("user_id")
@@ -74,7 +190,7 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// [1.3] Tokens for password resets
+// [1.6] Tokens for password resets
 model PasswordResetToken {
   id        String   @id @default(cuid()) @map("id")
   userId    String   @map("user_id")
@@ -87,212 +203,4 @@ model PasswordResetToken {
   @@index([token])
   @@index([expiresAt])
   @@map("password_reset_tokens")
-}
-
-// [2] Project model and its subtypes
-enum ProjectType {
-  gitcms
-  papertrail
-  workspace
-}
-
-enum ProjectScope {
-  private
-  org
-  public
-}
-
-enum ProjectStatus {
-  draft
-  published
-}
-
-model Project {
-  id        String  @id @default(cuid()) @map("id")
-  name      String  @default("Untitled") @map("name")
-  slug      String? @unique @map("slug")
-  desc      String? @map("desc")
-  publicUrl String? @map("public_url")
-
-  type   ProjectType   @default(gitcms) @map("type")
-  scope  ProjectScope  @default(private) @map("scope")
-  status ProjectStatus @default(draft) @map("status")
-
-  // 1:1 subtypes
-  gitcms     ProjectGitCMS?
-  papertrail ProjectPaperTrail?
-  workspace  ProjectWorkspace?
-
-  ownerId String? @map("user_id")
-  owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
-
-  admins       User[] @relation("ProjectAdmins")
-  editors      User[] @relation("ProjectEditors")
-  contributors User[] @relation("ProjectContributors")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@index([id])
-  @@index([ownerId])
-  @@index([createdAt])
-  @@map("projects")
-}
-
-// [2.1] GitCMS project-specific fields
-enum GitProvider {
-  github
-  gitlab
-  bitbucket
-  gitea
-  other
-}
-
-enum AuthType {
-  ssh
-  https
-  token
-  userpass
-}
-
-model ProjectGitCMS {
-  projectId String  @id @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  repoUrl       String       @map("repo_url")
-  defaultBranch String       @default("main") @map("default_branch")
-  contentDir    String?      @map("content_dir")
-  lastCommit    String?      @map("last_commit")
-  provider      GitProvider? @default(github) @map("provider")
-  authType      AuthType?    @default(ssh) @map("auth_type")
-  authSecret    String?      @map("auth_secret")
-
-  gitUserName  String? @map("git_user_name")
-  gitUserEmail String? @map("git_user_email")
-
-  postMeta GitCMSPostMeta?
-
-  @@map("gitcms_projects")
-}
-
-model GitCMSPostMeta {
-  id          String    @id @default(cuid())
-  pubDate     DateTime? @default(now())
-  updatedDate DateTime? @updatedAt
-  title       String?
-  description String?
-  author      String?
-  imageUrl    String?
-  imageAlt    String?
-  tags        String? // comma-separated tags
-  draft       Boolean?  @default(true)
-
-  deletedAt DateTime?
-
-  gitcmsId String?        @map("gitcms_id")
-  gitcms   ProjectGitCMS? @relation(fields: [gitcmsId], references: [projectId], onDelete: Cascade)
-
-  @@unique([gitcmsId])
-  @@index([gitcmsId])
-  @@map("gitcms_post_meta")
-}
-
-// [2.2] PaperTrail project-specific fields
-model ProjectPaperTrail {
-  projectId String  @id @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  schemaVersion Int @default(1) @map("schema_version")
-
-  nodes PaperTrailNode[]
-  edges PaperTrailEdge[]
-}
-
-model PaperTrailNode {
-  id      String @id @default(cuid()) @map("id")
-  boardId String @map("board_id")
-  type    String @map("type")
-  x       Int    @map("x")
-  y       Int    @map("y")
-  w       Int?   @map("w")
-  h       Int?   @map("h")
-
-  // content fields expected by server.mjs
-  title    String? @map("title")
-  text     String? @map("text")
-  html     String? @map("html")
-  descHtml String? @map("desc_html")
-  linkUrl  String? @map("link_url")
-  imageUrl String? @map("image_url")
-
-  board ProjectPaperTrail   @relation(fields: [boardId], references: [projectId], onDelete: Cascade)
-  tags  PaperTrailNodeTag[]
-
-  @@index([boardId])
-  @@index([boardId, type])
-  @@map("papertrail_nodes")
-}
-
-model PaperTrailEdge {
-  id       String  @id @default(cuid()) @map("id")
-  boardId  String  @map("board_id")
-  sourceId String  @map("source_id")
-  targetId String  @map("target_id")
-  label    String? @map("label")
-  dashed   Boolean @default(false) @map("dashed")
-  color    String? @map("color")
-
-  board ProjectPaperTrail @relation(fields: [boardId], references: [projectId], onDelete: Cascade)
-
-  @@index([boardId])
-  @@index([boardId, sourceId])
-  @@index([boardId, targetId])
-  @@map("papertrail_edges")
-}
-
-model PaperTrailTag {
-  id    String              @id @default(cuid()) @map("id")
-  name  String              @unique @map("name")
-  nodes PaperTrailNodeTag[]
-
-  @@map("tags")
-}
-
-model PaperTrailNodeTag {
-  nodeId String @map("node_id")
-  tagId  String @map("tag_id")
-
-  node PaperTrailNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
-  tag  PaperTrailTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([nodeId, tagId])
-  @@index([nodeId])
-  @@index([tagId])
-  @@map("papertrail_node_tags")
-}
-
-// [2.3] Workspace project-specific fields
-model ProjectWorkspace {
-  projectId String  @id @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-}
-
-// [3] App settings / Version registry
-model AppSetting {
-  id        String   @id @default(cuid()) @map("id")
-  scope     String   @map("scope") // 'global', 'org:{orgId}', 'user:{userId}', 'project:{projectId}'
-  key       String   @unique @map("key")
-  value     Json     @map("value")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@unique([scope, key])
-  @@index([scope])
-  @@map("app_settings")
-}
-
-model VersionRegistry {
-  id        String   @id // appsettings, locales, ...
-  v         Int      @default(1)
-  updatedAt DateTime @updatedAt
 }

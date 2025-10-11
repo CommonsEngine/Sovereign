@@ -33,43 +33,145 @@ function hashIp(ip) {
 export async function createRandomGuestUser() {
   while (true) {
     const suffix = crypto.randomBytes(4).toString("hex");
-    const username = `guest_${suffix}`;
+    const name = `guest_${suffix}`;
     const email = `guest+${suffix}@guest.local`;
+
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ username }, { email }] },
+      where: { name },
       select: { id: true },
     });
     if (existing) continue;
+
     const passwordHash = await hashPassword(randomToken(12));
-    return prisma.user.create({
-      data: { username, email, passwordHash },
+
+    const user = await prisma.user.create({
+      data: {
+        name,
+        firstName: "Guest",
+        lastName: suffix,
+        status: "active",
+        passwordHash,
+      },
+    });
+
+    const userEmail = await prisma.userEmail.create({
+      data: {
+        email,
+        userId: user.id,
+        isVerified: true,
+        isPrimary: true,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { primaryEmailId: userEmail.id },
+    });
+
+    // return freshly built user with primary email for callers
+    return prisma.user.findUnique({
+      where: { id: user.id },
+      include: { emails: true },
     });
   }
 }
 
 export async function getOrCreateSingletonGuestUser() {
-  let user = await prisma.user.findFirst({ where: { username: "guest" } });
+  // prefer to return a user with email info
+  let user = await prisma.user.findFirst({
+    where: { name: "guest" },
+    include: { emails: true },
+  });
   if (user) return user;
-  // Attempt to create singleton; handle race by retry fetch
+
   try {
     const passwordHash = await hashPassword(randomToken(16));
-    user = await prisma.user.create({
+    const created = await prisma.user.create({
       data: {
-        username: "guest",
-        email: "guest@guest.local",
+        name: "guest",
+        firstName: "Guest",
+        lastName: "User",
+        status: "active",
         passwordHash,
       },
     });
-    return user;
+
+    const userEmail = await prisma.userEmail.create({
+      data: {
+        email: "guest@guest.local",
+        userId: created.id,
+        isVerified: true,
+        isPrimary: true,
+      },
+    });
+
+    await prisma.user.update({
+      where: { id: created.id },
+      data: { primaryEmailId: userEmail.id },
+    });
+
+    return prisma.user.findUnique({
+      where: { id: created.id },
+      include: { emails: true },
+    });
   } catch {
-    // Another request likely created it; fetch again
-    return prisma.user.findFirst({ where: { username: "guest" } });
+    // race condition: another process likely created it — fetch again
+    return prisma.user.findFirst({
+      where: { name: "guest" },
+      include: { emails: true },
+    });
   }
 }
 
-export async function createSession(res, user, req) {
+export async function createSession(req, res, user) {
   const token = randomToken(48);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
+
+  // Fetch roles + capabilities snapshot once at session creation time.
+  // We'll not mutate DB schema here; instead store the computed snapshot in the session cookie as a small JSON payload.
+  // Keep payload minimal: role keys and an effective capability map.
+  let roles = [];
+  let capabilities = {};
+  try {
+    const assignments = user.roleAssignments || [];
+    roles = assignments.map((a) => {
+      const r = a.role;
+      return {
+        id: r.id,
+        key: r.key,
+        label: r.label,
+        level: r.level,
+        scope: r.scope,
+      };
+    });
+
+    // Build effective capability map (role precedence not enforced here — later logic can implement precedence)
+    for (const a of assignments) {
+      for (const rc of a.role.roleCapabilities || []) {
+        const key = rc.capabilityKey;
+        const value = String(rc.value || "deny");
+        // simple precedence: allow > consent > compliance > scoped > anonymized > deny
+        const precedence = {
+          allow: 6,
+          consent: 5,
+          compliance: 4,
+          scoped: 3,
+          anonymized: 2,
+          deny: 1,
+        };
+        if (
+          !capabilities[key] ||
+          precedence[value] > precedence[capabilities[key]]
+        ) {
+          capabilities[key] = value;
+        }
+      }
+    }
+  } catch (err) {
+    // Don't block session creation on RBAC read errors; log and proceed.
+    logger.warn("Failed to fetch roles/capabilities for session snapshot", err);
+  }
+
   await prisma.session.create({
     data: {
       userId: user.id,
@@ -77,6 +179,8 @@ export async function createSession(res, user, req) {
       userAgent: req.get("user-agent") || undefined,
       ipHash: hashIp(req.ip),
       expiresAt,
+      roles,
+      capabilities,
     },
   });
   res.cookie(AUTH_SESSION_COOKIE_NAME, token, {
@@ -101,7 +205,20 @@ export async function getSessionWithUser(token) {
     }
     return null;
   }
-  return s;
+  return {
+    id: s.id,
+    userId: s.userId,
+    token: s.token,
+    ipHash: s.ipHash,
+    userAgent: s.userAgent,
+    createdAt: s.createdAt,
+    expiresAt: s.expiresAt,
+    user: {
+      ...s.user,
+      roles: s.roles || [],
+      capabilities: s.capabilities || {},
+    },
+  };
 }
 
 export function verifyPassword(hash, pwd) {

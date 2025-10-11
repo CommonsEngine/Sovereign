@@ -12,14 +12,11 @@ import path from "path";
 
 import { secure } from "./middlewares/security.mjs";
 import { requireFeature } from "./middlewares/feature.mjs";
-import {
-  requireAuth,
-  requireAuthWeb,
-  disallowIfAuthed,
-} from "./middlewares/auth.mjs";
-import { requireRole, exposeRoleFlags } from "./middlewares/user.mjs";
+import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
+import { requireRole } from "./middlewares/user.mjs";
+import { exposeGlobals } from "./middlewares/misc.mjs";
 
-import * as authHandler from "./handlers/auth.mjs";
+import * as authHandler from "./handlers/auth/index.mjs";
 import * as viewHandler from "./handlers/view/index.mjs";
 import * as projectHandler from "./handlers/project/index.mjs";
 
@@ -108,48 +105,47 @@ app.use(
 // Security headers
 app.use(secure);
 
+// Web Routes
+app.get("/", requireAuth, exposeGlobals, viewHandler.index);
+app.get("/login", disallowIfAuthed, viewHandler.login);
+app.get("/register", disallowIfAuthed, viewHandler.register);
+app.get("/logout", authHandler.logout);
+
 // Auth Routes
-app.post("/auth/register", authHandler.register);
+app.post("/login", authHandler.login);
+app.post("/register", authHandler.register);
 app.post(
   "/auth/invite",
   requireAuth,
   requireRole(["owner", "admin"]),
-  authHandler.invite,
+  authHandler.inviteUser,
 );
-app.post("/auth/login", authHandler.login);
 app.get("/auth/guest", authHandler.guestLogin);
-app.post("/auth/logout", authHandler.logout);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
 app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
 app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
 app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
 
-// Web Routes
-app.get("/", requireAuthWeb, exposeRoleFlags, viewHandler.index);
-app.get("/login", disallowIfAuthed, viewHandler.login);
-app.get("/register", disallowIfAuthed, viewHandler.register);
-app.get("/logout", authHandler.logout);
-
 app.get(
   "/users",
-  requireAuthWeb,
+  requireAuth,
   requireRole(["owner", "admin"]),
-  exposeRoleFlags,
+  exposeGlobals,
   viewHandler.users,
 );
 app.get(
   "/settings",
-  requireAuthWeb,
+  requireAuth,
   requireRole(["owner", "admin"]),
-  exposeRoleFlags,
+  exposeGlobals,
   viewHandler.settings,
 );
 
-app.get("/p/:projectId", requireAuthWeb, exposeRoleFlags, viewHandler.project);
+app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);
 app.get(
   "/p/:projectId/configure",
-  requireAuthWeb,
-  exposeRoleFlags,
+  requireAuth,
+  exposeGlobals,
   viewHandler.projectConfigure,
 );
 
@@ -157,14 +153,14 @@ app.get(
 app.get(
   "/p/:projectId/gitcms/post/new",
   requireFeature("gitcms"),
-  requireAuthWeb,
-  exposeRoleFlags,
+  requireAuth,
+  exposeGlobals,
   viewHandler.gitcms.postCreate,
 );
 app.get(
   "/p/:projectId/gitcms/post/:fp",
-  requireAuthWeb,
-  exposeRoleFlags,
+  requireAuth,
+  exposeGlobals,
   viewHandler.gitcms.postView,
 );
 
