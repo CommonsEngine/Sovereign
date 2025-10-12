@@ -2,8 +2,13 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
   </head>
   <body class="page post-page" data-project-id="{{projectId}}">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
     {{> sidebar}} {{> userbar show_user_menu=true}}
     <main class="page__wrap">
       <header class="page__header">
@@ -331,7 +336,7 @@
       const tagsEl = $("tags");
       const pubDateEl = $("pubDate");
       const draftEl = $("draft");
-      const previewBtn = $("preview-btn");
+      // const previewBtn = $("preview-btn");
       const saveDraftBtn = $("save-draft-btn");
       const publishBtn = $("publish-btn");
       const deleteBtn = $("delete-btn");
@@ -653,17 +658,17 @@
       }
 
       // Preview/Save/Publish demo handlers (replace with API wiring)
-      previewBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const { contentHtml } = collectPayload();
-        const w = window.open("", "_blank", "noopener");
-        if (w) {
-          w.document.write(
-            `<meta charset="utf-8"><title>Preview</title>${contentHtml}`,
-          );
-          w.document.close();
-        }
-      });
+      // previewBtn.addEventListener("click", (e) => {
+      //   e.preventDefault();
+      //   const { contentHtml } = collectPayload();
+      //   const w = window.open("", "_blank", "noopener");
+      //   if (w) {
+      //     w.document.write(
+      //       `<meta charset="utf-8"><title>Preview</title>${contentHtml}`,
+      //     );
+      //     w.document.close();
+      //   }
+      // });
       saveDraftBtn.addEventListener("click", async () => {
         const payload = collectPayload();
         const projectId = __PROJECT_ID__;

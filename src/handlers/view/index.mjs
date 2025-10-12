@@ -4,7 +4,7 @@ import {
   getGitManager,
   getOrInitGitManager,
   disposeGitManager,
-} from "../../libs/gitcms/registry.mjs";
+} from "../../libs/git/registry.mjs";
 import logger from "../../utils/logger.mjs";
 import prisma from "../../prisma.mjs";
 

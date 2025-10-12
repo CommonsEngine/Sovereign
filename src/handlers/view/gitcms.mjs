@@ -3,8 +3,8 @@ import path from "path";
 import {
   getGitManager,
   getOrInitGitManager,
-} from "../../libs/gitcms/registry.mjs";
-import FileManager from "../../libs/gitcms/fs.mjs";
+} from "../../libs/git/registry.mjs";
+import FileManager from "../../libs/git/fs.mjs";
 import logger from "../../utils/logger.mjs";
 import prisma from "../../prisma.mjs";
 

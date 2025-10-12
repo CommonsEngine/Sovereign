@@ -1,6 +1,6 @@
 import logger from "../../../utils/logger.mjs";
 import prisma from "../../../prisma.mjs";
-import { getOrInitGitManager } from "../../../libs/gitcms/registry.mjs";
+import { getOrInitGitManager } from "../../../libs/git/registry.mjs";
 
 function ensureAccess(project, req) {
   const userId = req.user?.id ?? null;

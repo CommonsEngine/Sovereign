@@ -1,3 +1,8 @@
+import {
+  getGitManager,
+  getOrInitGitManager,
+  disposeGitManager,
+} from "../../libs/git/registry.mjs";
 import logger from "../../utils/logger.mjs";
 import prisma from "../../prisma.mjs";
 
@@ -16,7 +21,7 @@ const DEFAULT_SELECT = {
   createdAt: true,
   updatedAt: true,
   ownerId: true,
-  Blog: { select: { projectId: true, gitConfig: true } },
+  Blog: { select: { id: true, projectId: true, gitConfig: true } },
 };
 
 // TODO: Maybe we can isolate these functions in a separate utils file if they are needed elsewhere
@@ -63,21 +68,70 @@ export async function viewProject(req, res) {
       });
     }
 
-    // If this is a blog and not configured yet, send to configure flow
-    const needsBlogConfigure =
-      project.type === "blog" && !project.Blog?.gitConfig;
-    if (needsBlogConfigure) {
-      return res.redirect(302, `/p/${project.id}/configure`);
+    if (project.type === "blog") {
+      // If this is a blog and not configured yet, send to configure flow
+      const needsBlogConfigure = !project.Blog?.gitConfig;
+      if (needsBlogConfigure) {
+        return res.redirect(302, `/p/${project.id}/configure`);
+      }
+
+      // Try to use cached connection; if missing or broken, try to (re)connect once.
+      let connected = false;
+      try {
+        const cached = getGitManager(project.id);
+        if (cached) {
+          await cached.pullLatest(); // quick connectivity check
+          connected = true;
+        } else {
+          const cfg = await prisma.gitConfig.findUnique({
+            where: { blogId: project.Blog.id },
+            select: {
+              repoUrl: true,
+              branch: true,
+              userName: true,
+              userEmail: true,
+              authSecret: true,
+            },
+          });
+          if (cfg) {
+            await getOrInitGitManager(project.id, {
+              repoUrl: cfg.repoUrl,
+              branch: cfg.branch,
+              userName: cfg.userName,
+              userEmail: cfg.userEmail,
+              authToken: cfg.authSecret || null,
+            });
+            connected = true;
+          }
+        }
+      } catch {
+        connected = false;
+      }
+
+      let path = "project/blog/editor";
+
+      // If still not connected, reset config to avoid loop and redirect to configure
+      if (!connected) {
+        try {
+          disposeGitManager(project.id);
+          await prisma.gitConfig.delete({
+            where: { blogId: project.Blog.id },
+          });
+        } catch {
+          // ignore if already deleted
+        }
+        // return res.redirect(302, `/p/${project.id}/configure`);
+        path = "project/blog/editor?connect_error=1"; // TODO: show error banner
+      }
+
+      return res.render(path, { blog: project.Blog, project });
     }
 
-    // TODO: load other project details, settings, etc.
-    logger.debug("Render project page for project:", {
-      id: project.id,
-      type: project.type,
+    return res.status(404).render("error", {
+      code: 404,
+      message: "Not Found",
+      description: "Project not found",
     });
-
-    // placeholder while page is implemented
-    return res.send("Project page - under construction");
   } catch (err) {
     logger.error("Render project page failed:", err);
     return res.status(500).render("error", {
@@ -104,7 +158,7 @@ export async function viewProjectConfigure(req, res) {
       id: true,
       name: true,
       type: true,
-      Blog: { select: { projectId: true, gitConfig: true } },
+      Blog: { select: { id: true, projectId: true, gitConfig: true } },
     });
 
     if (!project) {
