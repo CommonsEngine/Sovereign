@@ -7,6 +7,7 @@
 
 export { default as create } from "./create.mjs";
 export { default as getAll } from "./getAll.mjs";
+export { default as update } from "./update.mjs";
 export { default as remove } from "./remove.mjs";
 
 // export async function create(req, res) {
