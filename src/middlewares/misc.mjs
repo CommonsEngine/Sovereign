@@ -34,6 +34,9 @@ export function exposeGlobals(req, res, next) {
   };
 
   // Set app-wide globals
+  res.locals.app = {
+    version: String(pkg.version || "0.0.0"),
+  };
   res.locals.user = {
     name: req.user?.name || "Guest",
   };

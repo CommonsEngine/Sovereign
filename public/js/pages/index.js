@@ -1,4 +1,4 @@
-// Uses global StartupManager (vanilla)
+// Uses global StartupManager for index page specific startup tasks
 (function () {
   const SM = window.StartupManager;
   if (!SM) {

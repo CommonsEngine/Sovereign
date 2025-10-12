@@ -8,9 +8,9 @@
     <link rel="stylesheet" href="/css/components/modal.css" />
   </head>
   <body class="page page--with-sidebar page--index">
-    <!-- include near top of page -->
-    <div data-startup-spinner style="display: none">Loading…</div>
-    <ul id="projects-list"></ul>
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
     {{> sidebar projects_active=true}} {{> userbar}}
 
     <main class="page__wrap">

@@ -562,6 +562,13 @@
 }
 
 @layer base-overrides {
+  .loading-bar {
+    background-color: red;
+    height: 3px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+  }
   /* page */
   body.page {
     display: grid;
@@ -577,8 +584,8 @@
     padding: 0;
   }
   .page--with-sidebar {
-    --sidebar-w: 64px;
-    padding-left: calc(var(--sidebar-w) + 8px);
+    --sidebar-w: 56px;
+    padding-left: calc(var(--sidebar-w));
   }
   .page__wrap {
     width: min(1100px, 100%);
