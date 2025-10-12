@@ -1,6 +1,7 @@
 import { toBool } from "./utils.mjs";
 
 // TODO: Should allow registering new project types and flags.
+// TODO: Fetch feature toggles from DB-stored config (e.g. per-tenant or per-user overrides).
 
 export const flags = {
   gitcms: toBool(process.env.FT_PROJECT_TYPE_GITCMS, true),
