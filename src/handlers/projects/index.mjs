@@ -6,6 +6,8 @@
 // export { default as gitcms } from "./gitcms.mjs";
 
 export { default as create } from "./create.mjs";
+export { default as getAll } from "./getAll.mjs";
+export { default as remove } from "./remove.mjs";
 
 // export async function create(req, res) {
 //   try {

@@ -10,5 +10,7 @@ router.use(requireAuth);
 
 // Projects api endpoints
 router.post("/projects", projectsHandler.create);
+router.get("/projects", projectsHandler.getAll);
+router.delete("/projects/:id", projectsHandler.remove);
 
 export default router;

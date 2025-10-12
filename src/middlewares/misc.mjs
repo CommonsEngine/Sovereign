@@ -32,5 +32,10 @@ export function exposeGlobals(req, res, next) {
     ],
     link: [{ rel: "canonical", href: "/" }],
   };
+
+  // Set app-wide globals
+  res.locals.user = {
+    name: req.user?.name || "Guest",
+  };
   next();
 }

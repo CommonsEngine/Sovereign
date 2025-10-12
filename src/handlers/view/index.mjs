@@ -66,7 +66,6 @@ export async function index(req, res) {
     );
 
     return res.render("index", {
-      username: req.user?.username,
       show_user_menu: showUserMenu,
       projects: [],
     });
