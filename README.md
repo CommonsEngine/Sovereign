@@ -1,4 +1,4 @@
-# Sovereign - Reclaim your digital freedom.
+# Sovereign — reclaim your digital freedom.
 
 Sovereign is to develop as a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign will enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.
 
@@ -40,13 +40,7 @@ Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) f
    ```
 
    - `init:prepare` script will copy `.env.example` → `.env`
-   - Update `.env`with required variables
-     - DATABASE_URL (e.g. file:./dev.db or postgres://...)
-     - NODE_ENV=development
-     - AUTH_SESSION_COOKIE_NAME (cookie name)
-     - AUTH*ARGON2*\* (optional hashing params)
-     - FT\_\* (feature toggles, e.g. FT_MYFEATURE=true)
-     - ALLOWED*FEATURES (comma-separated whitelist for FT*\* if desired)
+   - Update `.env` with required variables
 
 4. Generate Prisma client and apply migrations
 
