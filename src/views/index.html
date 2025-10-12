@@ -8,7 +8,10 @@
     <link rel="stylesheet" href="/css/components/modal.css" />
   </head>
   <body class="page page--with-sidebar page--index">
-    {{> sidebar projects_active=true}} {{> userbar show_user_menu=true}}
+    <!-- include near top of page -->
+    <div data-startup-spinner style="display: none">Loading…</div>
+    <ul id="projects-list"></ul>
+    {{> sidebar projects_active=true}} {{> userbar}}
 
     <main class="page__wrap">
       <h2 class="page__title">Projects</h2>
@@ -102,6 +105,9 @@
       </section>
     </main>
 
+    <script src="/js/startup.js" defer></script>
+    <script src="/js/pages/index.js" defer></script>
+
     <script>
       // Date formatting (project created at)
       document.querySelectorAll(".created-at").forEach((el) => {
@@ -122,7 +128,7 @@
         if (!confirm("This will permanently delete the project. Continue?"))
           return;
         try {
-          const resp = await fetch(`/api/project/${encodeURIComponent(id)}`, {
+          const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ confirm: true }),
@@ -203,11 +209,14 @@
           if (next === prev) return cancel();
           try {
             titleEl.setAttribute("aria-busy", "true");
-            const resp = await fetch(`/api/project/${encodeURIComponent(id)}`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name: next }),
-            });
+            const resp = await fetch(
+              `/api/projects/${encodeURIComponent(id)}`,
+              {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: next }),
+              },
+            );
             const data = await resp.json().catch(() => ({}));
             if (!resp.ok) throw new Error(data?.error || "Rename failed");
             titleEl.textContent = data?.name || next;
