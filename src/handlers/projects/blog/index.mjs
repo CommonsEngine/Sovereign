@@ -85,7 +85,7 @@ export async function configure(req, res) {
       contentDir,
       authType: "ssh",
       authSecret: gitAuthToken,
-      userName: gitUserName,   // model field is userName
+      userName: gitUserName, // model field is userName
       userEmail: gitUserEmail, // model field is userEmail
     };
 
