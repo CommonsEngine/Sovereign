@@ -17,8 +17,9 @@ Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) f
 - macOS or Linux
 - Node.js (v18+ recommended, v22.20.0+ for development)
 - Yarn
+- Configured the local workstation to push signed (via SSH/GPG) commits to GitHub.
 
-#### Quickstart (development, macOS)
+#### Quickstart (development, unix-based)
 
 1. Clone repo
 

@@ -1,47 +1,51 @@
-// Map numeric roles to labels (owner optionally as 0)
-const ROLE_MAP = new Map([
-  [0, "owner"],
-  [1, "admin"],
-  [2, "editor"],
-  [3, "contributor"],
-  [4, "viewer"],
-  [9, "guest"],
-]);
-
-function normalizeRoleValue(r) {
-  if (typeof r === "string") return r.toLowerCase();
-  if (typeof r === "number") return ROLE_MAP.get(r) || null;
+function normalizeInputAllowed(v) {
+  if (typeof v === "number") return String(v);
+  if (typeof v === "string") return v.toLowerCase();
   return null;
 }
 
-function getUserRoleLabel(user) {
-  if (!user) return null;
-  // Treat isOwner as a super-role if present
-  if (user.isOwner === true) return "owner";
+function userHasAllowedRole(user, allowedSet) {
+  if (!user || !allowedSet) return false;
 
-  // TODO: clean up these legacy fields at some point
-  const raw =
-    user.roleLabel ??
-    user.role_name ??
-    user.roleName ??
-    user.role ??
-    user.roleId ??
-    user.role_id;
+  // If no restrictions specified, allow any authenticated user
+  if (allowedSet.size === 0) return !!user;
 
-  return normalizeRoleValue(raw);
+  // prefer role snapshot if present
+  const roleObj = user.role || null;
+  if (!roleObj) return false; // not logged in
+
+  // allow wildcard / any
+  if (allowedSet.has("any") || allowedSet.has("*")) return true;
+
+  // normalize candidates
+  const roleId = roleObj.id !== undefined ? String(roleObj.id) : null;
+  const roleKey = roleObj.key ? String(roleObj.key).toLowerCase() : null;
+  const roleLabel = roleObj.label ? String(roleObj.label).toLowerCase() : null;
+
+  if (roleId && allowedSet.has(roleId)) return true;
+  if (roleKey && allowedSet.has(roleKey)) return true;
+  if (roleLabel && allowedSet.has(roleLabel)) return true;
+
+  // TODO: Extend this middleware to consider capabilities as well
+
+  return false;
 }
 
 /**
- * requireRole(["owner","admin"]) -> allows only Owner or Admin
- * requireRole(1) or requireRole(["admin"]) -> allows Admin
- * Pass strings (owner, admin, editor, contributor, viewer) or numeric ids (0..4).
+ * Usage:
+ * requireRole(["platform_admin","tenant_admin"]) -> allows only defined roles
+ * requireRole(0) -> allows only platform_admin (id=0)
+ * requireRole(["admin","editor"]) -> allows any user with role label "admin" or "editor"
+ * requireRole("any") -> allows any authenticated user
+ * requireRole() -> allows any authenticated user
+ * Accepts:
+ *  - role keys (e.g. "platform_admin", "tenant_admin")
+ *  - numeric ids (0..n)
  */
 export function requireRole(allowed = []) {
+  const raw = Array.isArray(allowed) ? allowed : [allowed];
   const allowedSet = new Set(
-    (Array.isArray(allowed) ? allowed : [allowed])
-      .filter((v) => v !== undefined && v !== null)
-      .map(normalizeRoleValue)
-      .filter(Boolean),
+    raw.map(normalizeInputAllowed).filter((v) => v !== null),
   );
 
   return function roleGuard(req, res, next) {
@@ -56,8 +60,9 @@ export function requireRole(allowed = []) {
       });
     }
 
-    const role = getUserRoleLabel(req.user);
-    if (!role || !allowedSet.has(role)) {
+    // Check RBAC snapshot or legacy fields
+    const allowed = userHasAllowedRole(req.user, allowedSet);
+    if (!allowed) {
       if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
         return res.status(403).json({ error: "Forbidden" });
       }
