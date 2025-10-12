@@ -17,7 +17,8 @@ export async function requireAuth(req, res, next) {
   const session = await getSessionWithUser(token);
 
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
-    if (!session) {
+    // API Auth Block Starts here
+    if (!session || !session.user) {
       res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -32,6 +33,7 @@ export async function requireAuth(req, res, next) {
     req.sessionToken = token;
     next();
   } else {
+    // Web Auth Block Starts here
     if (!session) {
       if (GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN) {
         // Auto guest login (singleton)

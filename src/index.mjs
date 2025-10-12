@@ -10,15 +10,16 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
+import apiRouter from "./routes/api.mjs";
+
 import { secure } from "./middlewares/security.mjs";
-import { requireFeature } from "./middlewares/feature.mjs";
+// import { requireFeature } from "./middlewares/feature.mjs";
 import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
 import { requireRole } from "./middlewares/user.mjs";
 import { exposeGlobals } from "./middlewares/misc.mjs";
 
 import * as authHandler from "./handlers/auth/index.mjs";
 import * as viewHandler from "./handlers/view/index.mjs";
-import * as projectHandler from "./handlers/project/index.mjs";
 
 import logger from "./utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
@@ -121,6 +122,8 @@ app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
 app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
 app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
 
+app.use("/api", apiRouter);
+
 app.get(
   "/users",
   requireAuth,
@@ -136,67 +139,67 @@ app.get(
   viewHandler.settings,
 );
 
-app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);
-app.get(
-  "/p/:projectId/configure",
-  requireAuth,
-  exposeGlobals,
-  viewHandler.projectConfigure,
-);
+// app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);
+// app.get(
+//   "/p/:projectId/configure",
+//   requireAuth,
+//   exposeGlobals,
+//   viewHandler.projectConfigure,
+// );
 
 // Web Routes :: Project/GitCMS
-app.get(
-  "/p/:projectId/gitcms/post/new",
-  requireFeature("gitcms"),
-  requireAuth,
-  exposeGlobals,
-  viewHandler.gitcms.postCreate,
-);
-app.get(
-  "/p/:projectId/gitcms/post/:fp",
-  requireAuth,
-  exposeGlobals,
-  viewHandler.gitcms.postView,
-);
+// app.get(
+//   "/p/:projectId/gitcms/post/new",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   exposeGlobals,
+//   viewHandler.gitcms.postCreate,
+// );
+// app.get(
+//   "/p/:projectId/gitcms/post/:fp",
+//   requireAuth,
+//   exposeGlobals,
+//   viewHandler.gitcms.postView,
+// );
 
 // API Routes :: Project
-app.post("/api/project", requireAuth, projectHandler.create);
-app.patch("/api/project/:id", requireAuth, projectHandler.update);
-app.delete("/api/project/:id", requireAuth, projectHandler.remove);
+// app.post("/api/project", requireAuth, projectHandler.create);
+// app.patch("/api/project/:id", requireAuth, projectHandler.update);
+// app.delete("/api/project/:id", requireAuth, projectHandler.remove);
 
 // TODO: Move project-specific APIs to /routes/*
 
 // API Routes :: Project/GitCMS
-app.post(
-  "/api/project/:projectId/gitcms/configure",
-  requireFeature("gitcms"),
-  requireAuth,
-  projectHandler.gitcms.configure,
-);
-app.get(
-  "/api/project/:projectId/gitcms/post/all",
-  requireFeature("gitcms"),
-  requireAuth,
-  projectHandler.gitcms.getPosts,
-);
-app.patch(
-  "/api/project/:projectId/gitcms/post/:fp",
-  requireFeature("gitcms"),
-  requireAuth,
-  projectHandler.gitcms.updatePost,
-);
-app.post(
-  "/api/project/:projectId/gitcms/post/:fp",
-  requireFeature("gitcms"),
-  requireAuth,
-  projectHandler.gitcms.publishPost,
-);
-app.delete(
-  "/api/project/:projectId/gitcms/post/:fp",
-  requireFeature("gitcms"),
-  requireAuth,
-  projectHandler.gitcms.deletePost,
-);
+// app.post(
+//   "/api/project/:projectId/gitcms/configure",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   projectHandler.gitcms.configure,
+// );
+// app.get(
+//   "/api/project/:projectId/gitcms/post/all",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   projectHandler.gitcms.getPosts,
+// );
+// app.patch(
+//   "/api/project/:projectId/gitcms/post/:fp",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   projectHandler.gitcms.updatePost,
+// );
+// app.post(
+//   "/api/project/:projectId/gitcms/post/:fp",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   projectHandler.gitcms.publishPost,
+// );
+// app.delete(
+//   "/api/project/:projectId/gitcms/post/:fp",
+//   requireFeature("gitcms"),
+//   requireAuth,
+//   projectHandler.gitcms.deletePost,
+// );
 
 // 404
 app.use((req, res) => {

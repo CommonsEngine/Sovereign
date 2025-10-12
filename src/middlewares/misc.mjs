@@ -6,6 +6,7 @@ const require = createRequire(import.meta.url);
 const pkg = require("../../package.json");
 
 export function exposeGlobals(req, res, next) {
+  // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
     title: pkg.title,

@@ -8,25 +8,6 @@
   >
     <header class="modal__header">
       <h3 id="project-modal-title" class="modal__title">Create new project</h3>
-      <!-- <button
-        type="button"
-        class="modal__close"
-        data-modal-close
-        aria-label="Close"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          aria-hidden="true"
-          focusable="false"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          class="size-4"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-        </svg>
-      </button> -->
     </header>
 
     <div class="modal__body">
@@ -102,6 +83,61 @@
       const typeEl = root.querySelector("#project-type-input");
       const scopeEl = root.querySelector("#project-scope-input");
       const descEl = root.querySelector("#project-desc-input");
+      const submitBtn = root.querySelector("[data-modal-submit]");
+
+      // helper to show per-field error element
+      function setFieldError(el, message) {
+        if (!el) return;
+        el.setAttribute("aria-invalid", !!message);
+        let e = el.closest(".modal__field")?.querySelector(".field-error");
+        if (message) {
+          if (!e) {
+            e = document.createElement("div");
+            e.className = "field-error";
+            e.style.color = "#b00020";
+            e.style.fontSize = "0.9rem";
+            e.style.marginTop = "6px";
+            el.closest(".modal__field")?.appendChild(e);
+          }
+          e.textContent = message;
+        } else if (e) {
+          e.textContent = "";
+        }
+      }
+
+      // basic validation logic
+      function validate() {
+        const errors = {};
+        const name = (nameEl?.value || "").trim();
+        const desc = (descEl?.value || "").trim();
+        const type = typeEl?.value || "";
+        const scope = scopeEl?.value || "";
+
+        if (!name) errors.name = "Project name is required.";
+        else if (name.length > 120)
+          errors.name = "Name must be 120 characters or fewer.";
+
+        if (desc.length > 500)
+          errors.desc = "Description must be 500 characters or fewer.";
+
+        // ensure type/scope are one of the available options
+        if (typeEl && ![...typeEl.options].some((o) => o.value === type)) {
+          errors.type = "Invalid project type.";
+        }
+        if (scopeEl && ![...scopeEl.options].some((o) => o.value === scope)) {
+          errors.scope = "Invalid project scope.";
+        }
+
+        // reflect errors to UI
+        setFieldError(nameEl, errors.name || "");
+        setFieldError(descEl, errors.desc || "");
+        setFieldError(typeEl, errors.type || "");
+        setFieldError(scopeEl, errors.scope || "");
+
+        const valid = Object.keys(errors).length === 0;
+        if (submitBtn) submitBtn.disabled = !valid;
+        return { valid, errors };
+      }
 
       // Reset form and error when modal is closed
       function resetForm() {
@@ -110,6 +146,12 @@
           err.textContent = "";
           err.style.display = "none";
         }
+        // clear per-field errors
+        setFieldError(nameEl, "");
+        setFieldError(descEl, "");
+        setFieldError(typeEl, "");
+        setFieldError(scopeEl, "");
+        if (submitBtn) submitBtn.disabled = false;
       }
       // Observe the hidden attribute toggled by the modal runtime
       const modalObserver = new MutationObserver((mutList) => {
@@ -124,11 +166,28 @@
         attributeFilter: ["hidden"],
       });
 
+      // live-validate on input
+      [nameEl, descEl, typeEl, scopeEl].forEach((el) => {
+        if (!el) return;
+        el.addEventListener("input", () => validate());
+        el.addEventListener("blur", () => validate());
+      });
+
       root.addEventListener("click", async (e) => {
         const submit = e.target.closest("[data-modal-submit]");
         if (!submit) return;
         e.preventDefault();
         if (err) err.style.display = "none";
+
+        const { valid, errors } = validate();
+        if (!valid) {
+          // focus first invalid field
+          if (errors.name) nameEl?.focus();
+          else if (errors.type) typeEl?.focus();
+          else if (errors.scope) scopeEl?.focus();
+          else if (errors.desc) descEl?.focus();
+          return;
+        }
 
         const payload = {
           name: (nameEl?.value || "Untitled").trim().slice(0, 120),
@@ -142,7 +201,7 @@
         }
 
         try {
-          const resp = await fetch("/api/project", {
+          const resp = await fetch("/api/projects", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
