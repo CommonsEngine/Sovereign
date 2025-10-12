@@ -114,12 +114,7 @@ app.get("/logout", authHandler.logout);
 // Auth Routes
 app.post("/login", authHandler.login);
 app.post("/register", authHandler.register);
-app.post(
-  "/auth/invite",
-  requireAuth,
-  requireRole(["owner", "admin"]),
-  authHandler.inviteUser,
-);
+app.post("/auth/invite", requireAuth, authHandler.inviteUser);
 app.get("/auth/guest", authHandler.guestLogin);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
 app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
@@ -129,15 +124,15 @@ app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { t
 app.get(
   "/users",
   requireAuth,
-  requireRole(["owner", "admin"]),
   exposeGlobals,
+  requireRole(["platform_admin", "tenant_admin", "admin"]),
   viewHandler.users,
 );
 app.get(
   "/settings",
   requireAuth,
-  requireRole(["owner", "admin"]),
   exposeGlobals,
+  requireRole(["platform_admin", "tenant_admin", "admin"]),
   viewHandler.settings,
 );
 

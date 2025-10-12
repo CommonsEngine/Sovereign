@@ -1,15 +1,12 @@
 /* eslint-disable import/order */
-import { PrismaClient } from "@prisma/client";
 import argon2 from "argon2";
 import fs from "fs";
 import path from "path";
 
-const prisma = new PrismaClient();
-
 const rbacPath = path.resolve(process.cwd(), "prisma/seed/rbac.json");
 const rbac = JSON.parse(fs.readFileSync(rbacPath, "utf8"));
 
-async function seedRBAC() {
+export async function seedRBAC(prisma) {
   // Seed capabilities
   for (const cap of rbac.capabilities_catalog) {
     await prisma.userCapability.upsert({
@@ -59,14 +56,10 @@ async function seedRBAC() {
   }
 }
 
-async function upsertUserWithEmail({
-  username,
-  firstName,
-  lastName,
-  email,
-  status,
-  passwordHash,
-}) {
+async function upsertUserWithEmail(
+  prisma,
+  { username, firstName, lastName, email, status, passwordHash },
+) {
   // 1. Upsert user without primaryEmailId
   let user = await prisma.user.upsert({
     where: { name: username },
@@ -113,14 +106,14 @@ async function upsertUserWithEmail({
   return user;
 }
 
-async function seedOwnerUser() {
+export async function seedOwnerUser(prisma) {
   const username = "heimdallr";
   const email = "heimdallr@sovereign.local";
   const status = "active";
   const password = "ffp@2025";
   const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
 
-  const user = await upsertUserWithEmail({
+  const user = await upsertUserWithEmail(prisma, {
     username,
     firstName: "Heim",
     lastName: "Dall",
@@ -147,7 +140,7 @@ async function seedOwnerUser() {
   console.log(`Login with -> username: ${username}  password: ${password}`);
 }
 
-async function seedTestUsers() {
+export async function seedTestUsers(prisma) {
   const roles = await prisma.userRole.findMany({ orderBy: { id: "asc" } });
   for (let i = 0; i < roles.length; i++) {
     const role = roles[i];
@@ -168,7 +161,7 @@ async function seedTestUsers() {
 
     const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
 
-    const user = await upsertUserWithEmail({
+    const user = await upsertUserWithEmail(prisma, {
       username,
       firstName,
       lastName,
@@ -188,29 +181,3 @@ async function seedTestUsers() {
     );
   }
 }
-
-async function main() {
-  // Clean up ephemeral tables
-  // TODO: Consider using prisma migrate reset --force
-  await prisma.session.deleteMany().catch(() => {});
-  await prisma.verificationToken.deleteMany().catch(() => {});
-  await prisma.passwordResetToken.deleteMany().catch(() => {});
-
-  await seedRBAC();
-  await seedOwnerUser();
-
-  if (process.env.NODE_ENV === "development") {
-    await seedTestUsers();
-  }
-}
-
-(async () => {
-  try {
-    await main();
-  } catch (e) {
-    console.error("Seed failed:", e);
-    process.exit(1);
-  } finally {
-    await prisma.$disconnect();
-  }
-})();

@@ -13,12 +13,13 @@
     "reset": "yarn prisma:reset",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed/seed.mjs",
+    "prisma:seed": "node prisma/seed/index.mjs",
     "prisma:reset": "prisma/reset.sh",
-    "format": "prettier --check .",
-    "format:fix": "prettier --write .",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint": "eslint . --fix",
+    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format"
   },
   "nodemonConfig": {
     "watch": [

@@ -204,3 +204,25 @@ model PasswordResetToken {
   @@index([expiresAt])
   @@map("password_reset_tokens")
 }
+
+// [2] App settings / Version registry
+model AppSetting {
+  id        String   @id @default(cuid()) @map("id")
+  scope     String   @map("scope") // 'global', 'org:{orgId}', 'user:{userId}', 'project:{projectId}'
+  key       String   @unique @map("key")
+  value     Json     @map("value")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([scope, key])
+  @@index([scope])
+  @@map("app_settings")
+}
+
+model VersionRegistry {
+  id        String   @id // appsettings, locales, ...
+  v         Int      @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@map("version_registry")
+}
