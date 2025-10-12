@@ -55,6 +55,59 @@ const defaultConfigs = [
     value:
       parseBoolLike(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN) ?? "false",
   },
+  {
+    scope: "platform",
+    key: "env.locale.default",
+    value: process.env.DEFAULT_LOCALE ?? "en-US",
+  },
+  {
+    scope: "platform",
+    key: "env.locale.supported",
+    value: process.env.SUPPORTED_LOCALES
+      ? process.env.SUPPORTED_LOCALES.split(",").map((s) => s.trim())
+      : ["en-US", "en-GB"],
+  },
+  {
+    scope: "platform",
+    key: "env.timezone.default",
+    value: process.env.DEFAULT_TIMEZONE ?? "UTC",
+  },
+  {
+    scope: "platform",
+    key: "env.currency.default",
+    value: process.env.DEFAULT_CURRENCY ?? "USD",
+  },
+  {
+    scope: "platform",
+    key: "auth.password.min_length",
+    value: Number(process.env.AUTH_PASSWORD_MIN_LENGTH ?? 8),
+  },
+  {
+    scope: "platform",
+    key: "auth.session.ttl_ms",
+    value: Number(process.env.AUTH_SESSION_TTL_MS ?? 24 * 60 * 60 * 1000),
+  },
+  {
+    scope: "platform",
+    key: "auth.cookie.name",
+    value: process.env.AUTH_SESSION_COOKIE_NAME ?? "svg_session",
+  },
+  {
+    scope: "platform",
+    key: "signup.policy",
+    value: process.env.SIGNUP_POLICY ?? "invite",
+  },
+  {
+    scope: "platform",
+    key: "default.user.role",
+    value: process.env.DEFAULT_USER_ROLE ?? "guest",
+  },
+  {
+    scope: "platform",
+    key: "feature.terms.require_acceptance",
+    value:
+      parseBoolLike(process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE) ?? "false",
+  },
 ];
 
 export async function seedAppSettings(prisma) {
