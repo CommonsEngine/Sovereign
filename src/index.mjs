@@ -20,6 +20,7 @@ import { exposeGlobals } from "./middlewares/misc.mjs";
 
 import * as authHandler from "./handlers/auth/index.mjs";
 import * as viewHandler from "./handlers/view/index.mjs";
+import * as projectHandler from "./handlers/projects/index.mjs";
 
 import logger from "./utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
@@ -137,6 +138,19 @@ app.get(
   exposeGlobals,
   requireRole(["platform_admin", "tenant_admin", "admin"]),
   viewHandler.settings,
+);
+
+app.get(
+  "/p/:projectId",
+  requireAuth,
+  exposeGlobals,
+  projectHandler.viewProject,
+);
+app.get(
+  "/p/:projectId/configure",
+  requireAuth,
+  exposeGlobals,
+  projectHandler.viewProjectConfigure,
 );
 
 // app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);

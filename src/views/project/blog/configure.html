@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="/css/components/userbar.css" />
   </head>
   <body class="page gitcms-config-page">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
     {{> sidebar}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
@@ -17,7 +20,7 @@
       <section class="card">
         <div class="card__body">
           <form
-            id="gitcms-config-form"
+            id="blog-config-form"
             class="form card__form"
             data-project-id="{{project.id}}"
             novalidate
@@ -149,10 +152,10 @@
         </div>
       </section>
     </main>
-
+    <script src="/js/startup.js" defer></script>
     <script>
       (function () {
-        const form = document.getElementById("gitcms-config-form");
+        const form = document.getElementById("blog-config-form");
         const errEl = document.getElementById("form-error");
         const saveBtn = document.getElementById("save-btn");
 
@@ -208,9 +211,9 @@
 
           try {
             const resp = await fetch(
-              `/api/project/${encodeURIComponent(projectId)}/gitcms/configure`,
+              `/api/projects/${encodeURIComponent(projectId)}/blog/configure`,
               {
-                method: "POST",
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
               },

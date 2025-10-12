@@ -13,5 +13,6 @@ router.post("/projects", projectsHandler.create);
 router.get("/projects", projectsHandler.getAll);
 router.patch("/projects/:id", projectsHandler.update);
 router.delete("/projects/:id", projectsHandler.remove);
+router.patch("/projects/:id/blog/configure", projectsHandler.blog.configure);
 
 export default router;

@@ -1,143 +1,142 @@
-// import { uuid } from "../../utils/id.mjs";
-// import logger from "../../utils/logger.mjs";
-// import { flags } from "../../config/flags.mjs";
-// import prisma from "../../prisma.mjs";
-
-// export { default as gitcms } from "./gitcms.mjs";
+import logger from "../../utils/logger.mjs";
+import prisma from "../../prisma.mjs";
 
 export { default as create } from "./create.mjs";
 export { default as getAll } from "./getAll.mjs";
 export { default as update } from "./update.mjs";
 export { default as remove } from "./remove.mjs";
 
-// export async function create(req, res) {
-//   try {
-//     const userId = req.user?.id;
-//     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+export * as blog from "./blog/index.mjs";
 
-//     // Build allowed types from flags
-//     const allowedTypes = new Set(
-//       [
-//         flags.gitcms && "gitcms",
-//         flags.papertrail && "papertrail",
-//         flags.workspace && "workspace",
-//       ].filter(Boolean),
-//     );
-//     const allowedScopes = new Set(["private", "org", "public"]);
+const DEFAULT_SELECT = {
+  id: true,
+  name: true,
+  type: true,
+  status: true,
+  createdAt: true,
+  updatedAt: true,
+  ownerId: true,
+  Blog: { select: { projectId: true, gitConfig: true } },
+};
 
-//     const raw = req.body || {};
-//     const name =
-//       String(raw.name ?? "")
-//         .trim()
-//         .slice(0, 120) || "Untitled";
+// TODO: Maybe we can isolate these functions in a separate utils file if they are needed elsewhere
+async function loadProject(projectId, select = DEFAULT_SELECT) {
+  if (!projectId) return null;
+  return prisma.project.findUnique({
+    where: { id: projectId },
+    select,
+  });
+}
 
-//     // If requested type is disabled, fall back to first enabled, else 400
-//     const requestedType = String(raw.type || "").trim();
-//     let type = allowedTypes.has(requestedType)
-//       ? requestedType
-//       : [...allowedTypes][0];
+function ensureAccess(project, req) {
+  const userId = req.user?.id ?? null;
+  // if ownerId set and doesn't match current user -> forbidden
+  if (project.ownerId && project.ownerId !== userId) return false;
+  return true;
+}
 
-//     if (!type) {
-//       return res.status(400).json({ error: "No project types are enabled." });
-//     }
+export async function viewProject(req, res) {
+  try {
+    const projectId = req.params.projectId;
+    if (!projectId) {
+      return res.status(400).render("error", {
+        code: 400,
+        message: "Bad Request",
+        description: "Missing project id",
+      });
+    }
 
-//     const scope = allowedScopes.has(String(raw.scope))
-//       ? String(raw.scope)
-//       : "private";
-//     const desc =
-//       raw.desc != null ? String(raw.desc).trim().slice(0, 500) : null;
+    const project = await loadProject(projectId);
+    if (!project) {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Not Found",
+        description: "Project not found",
+      });
+    }
 
-//     const project = await prisma.project.create({
-//       data: {
-//         id: uuid("p_"),
-//         name,
-//         desc,
-//         type,
-//         scope,
-//         ownerId: userId,
-//         ...(type === "papertrail" ? { papertrail: { create: {} } } : {}),
-//       },
-//       select: { id: true },
-//     });
+    if (!ensureAccess(project, req)) {
+      return res.status(403).render("error", {
+        code: 403,
+        message: "Forbidden",
+        description: "You do not have access to this project",
+      });
+    }
 
-//     const url =
-//       type === "gitcms" ? `/p/${project.id}/configure` : `/p/${project.id}`;
-//     return res.status(201).json({
-//       ...project,
-//       url,
-//       ...(type === "papertrail"
-//         ? { papertrail: { nodes: [], edges: [] } }
-//         : {}),
-//     });
-//   } catch (err) {
-//     logger.error("Create project failed:", err);
-//     return res.status(500).json({ error: "Failed to create project" });
-//   }
-// }
+    // If this is a blog and not configured yet, send to configure flow
+    const needsBlogConfigure =
+      project.type === "blog" && !project.Blog?.gitConfig;
+    if (needsBlogConfigure) {
+      return res.redirect(302, `/p/${project.id}/configure`);
+    }
 
-// export async function remove(req, res) {
-//   try {
-//     const userId = req.user?.id;
-//     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    // TODO: load other project details, settings, etc.
+    logger.debug("Render project page for project:", {
+      id: project.id,
+      type: project.type,
+    });
 
-//     const id = req.params?.id || req.body?.id;
-//     if (!id) return res.status(400).json({ error: "Missing project id" });
+    // placeholder while page is implemented
+    return res.send("Project page - under construction");
+  } catch (err) {
+    logger.error("Render project page failed:", err);
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load project",
+      error: err?.message || String(err),
+    });
+  }
+}
 
-//     const project = await prisma.project.findUnique({
-//       where: { id },
-//       select: { ownerId: true },
-//     });
-//     if (!project) return res.status(404).json({ error: "Project not found" });
+export async function viewProjectConfigure(req, res) {
+  try {
+    const projectId = req.params.projectId;
+    if (!projectId) {
+      return res.status(400).render("error", {
+        code: 400,
+        message: "Bad Request",
+        description: "Missing project id",
+      });
+    }
 
-//     // Only the owner can delete
-//     if (project.ownerId !== userId) {
-//       return res.status(403).json({ error: "Forbidden" });
-//     }
+    const project = await loadProject(projectId, {
+      id: true,
+      name: true,
+      type: true,
+      Blog: { select: { projectId: true, gitConfig: true } },
+    });
 
-//     // Cascades will remove subtype records (gitcms/papertrail/workspace) and related rows as defined in schema
-//     await prisma.project.delete({ where: { id } });
+    if (!project) {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Not found",
+        description: "Project not found",
+      });
+    }
 
-//     return res.status(204).end();
-//   } catch (err) {
-//     logger.error("Delete project failed:", err);
-//     return res.status(500).json({ error: "Failed to delete project" });
-//   }
-// }
+    if (!ensureAccess(project, req)) {
+      return res.status(403).render("error", {
+        code: 403,
+        message: "Forbidden",
+        description: "You do not have access to this project",
+      });
+    }
 
-// export async function update(req, res) {
-//   try {
-//     const userId = req.user?.id;
-//     if (!userId) return res.status(401).json({ error: "Unauthorized" });
+    // Only blogs have configuration flow. If already configured or not a blog, redirect to project.
+    const alreadyConfigured = !!project.Blog?.gitConfig;
+    if (project.type !== "blog" || alreadyConfigured) {
+      return res.redirect(302, `/p/${project.id}`);
+    }
 
-//     const id = req.params?.id || req.body?.id;
-//     if (!id) return res.status(400).json({ error: "Missing project id" });
-
-//     const project = await prisma.project.findUnique({
-//       where: { id },
-//       select: { ownerId: true },
-//     });
-//     if (!project) return res.status(404).json({ error: "Project not found" });
-//     if (project.ownerId !== userId) {
-//       return res.status(403).json({ error: "Forbidden" });
-//     }
-
-//     const raw = req.body || {};
-//     const name =
-//       typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : undefined;
-
-//     if (!name || name.length === 0) {
-//       return res.status(400).json({ error: "Invalid name" });
-//     }
-
-//     const updated = await prisma.project.update({
-//       where: { id },
-//       data: { name },
-//       select: { id: true, name: true },
-//     });
-
-//     return res.status(200).json(updated);
-//   } catch (err) {
-//     logger.error("Update project failed:", err);
-//     return res.status(500).json({ error: "Failed to update project" });
-//   }
-// }
+    return res.render("project/blog/configure", { project });
+  } catch (err) {
+    logger.error("Load project configure failed:", err);
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load configuration",
+      error: err?.message || String(err),
+    });
+  }
+}
