@@ -45,10 +45,7 @@
         <div class="modal__field">
           <label class="modal__label" for="project-type-input">Type</label>
           <select id="project-type-input" class="modal__input input">
-            <option value="gitcms" selected>GitCMS</option>
-            <!-- Fetch these from the server -->
-            <!-- <option value="papertrail">PaperTrail</option>
-            <option value="workspace">Workspace</option> -->
+            <option value="blog" selected>Blog</option>
           </select>
         </div>
         <div class="modal__field">
@@ -135,7 +132,7 @@
 
         const payload = {
           name: (nameEl?.value || "Untitled").trim().slice(0, 120),
-          type: typeEl?.value || "gitcms",
+          type: typeEl?.value || "blog",
           scope: scopeEl?.value || "private",
           desc: (descEl?.value || "").trim().slice(0, 500),
         };
