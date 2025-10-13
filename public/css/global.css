@@ -64,7 +64,7 @@
   --font-size-l: 1.25rem; /* 20px */
   --font-size-xl: 1.5rem; /* 24px */
 
-  --font-size-base: var(--font-size-m);
+  --font-size-base: var(--font-size-s);
 
   /* Weights */
   --font-weight-regular: 400;

@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <!-- ensure global tokens & base styles are available -->
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
+    <!-- page-specific adjustments -->
+    <style>
+      /* Ensure grid columns stretch same height so headers match */
+      .grid {
+        align-items: stretch;
+      }
+
+      /* Normalize header bar sizing so both column headers have identical height */
+      .card__bar {
+        display: flex;
+        align-items: center; /* vertical center content */
+        gap: 12px;
+        padding: 0 14px; /* consistent padding */
+        min-height: 50px; /* enforce a fixed minimum header height */
+        box-sizing: border-box;
+        width: 100%;
+      }
+
+      /* Make table header cells align and share same vertical metrics */
+      #posts-table thead th {
+        padding: 12px 14px;
+        line-height: 1.25;
+        vertical-align: middle;
+        box-sizing: border-box;
+        height: auto;
+        white-space: nowrap;
+      }
+
+      /* If there are action buttons causing extra height, force their container alignment */
+      .row-actions {
+        align-items: center;
+        display: flex;
+      }
+
+      /* Smaller screens: keep same header height but allow wrapping */
+      @media (max-width: 720px) {
+        .card__bar {
+          min-height: 48px;
+          padding: 10px;
+        }
+        #posts-table thead th {
+          padding: 10px;
+          white-space: normal;
+        }
+      }
+
+      /* page container */
+      .page__wrap {
+        max-width: 1200px;
+        width: 100%;
+        margin: 36px auto;
+        padding: 0 20px 56px;
+        box-sizing: border-box;
+      }
+
+      /* header */
+      .page__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .title__wrap {
+        min-width: 0;
+      }
+      .title__name {
+        margin: 0;
+        font-size: 1.5rem;
+        line-height: 1.15;
+        font-weight: 600;
+        color: var(--color-text-primary, #111827);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .title__desc {
+        color: var(--color-text-muted, #6b7280);
+        font-size: 0.95rem;
+        margin-top: 4px;
+        white-space: normal;
+      }
+
+      /* layout grid: main content + sidebar */
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 980px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .page__header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+
+      /* cards */
+      .card {
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--color-surface, #fff);
+        box-shadow: 0 1px 0 rgba(16, 24, 40, 0.02);
+      }
+      .card__bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 14px;
+        border-bottom: 1px solid var(--color-border-primary, #e5e7eb);
+      }
+      .card__body {
+        padding: 12px 14px;
+      }
+      .table-wrap {
+        overflow: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* table */
+      #posts-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+      #posts-table th,
+      #posts-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--color-border-primary, #e5e7eb);
+        vertical-align: middle;
+      }
+      #posts-table thead th {
+        font-weight: 600;
+        color: var(--color-text-muted, #4b5563);
+        text-align: left;
+      }
+      #posts-table td .title {
+        font-weight: 500;
+        color: var(--color-text-primary, #111827);
+      }
+      #posts-table td .subtle {
+        color: var(--color-text-muted, #6b7280);
+        font-size: 0.9rem;
+        margin-top: 4px;
+      }
+      #posts-table td time {
+        color: var(--color-text-muted, #6b7280);
+        font-size: 0.9rem;
+      }
+      #posts-table td .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: var(--color-bg-muted, #f3f4f6);
+        color: var(--color-text-muted, #374151);
+        font-size: 0.85rem;
+      }
+
+      /* search input */
+      .search {
+        width: 600px;
+        max-width: 40%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
+        background: var(--color-bg-primary, #fff);
+        color: var(--color-text-primary, #111827);
+      }
+      @media (max-width: 720px) {
+        .search {
+          width: 100%;
+          max-width: none;
+        }
+      }
+
+      /* small helpers */
+      .row-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .empty,
+      .error-row .empty {
+        text-align: center;
+        padding: 18px 0;
+        color: var(--color-text-muted, #6b7280);
+      }
+
+      /* ensure icon buttons show visible svg and inherit a sensible color */
+      .card__bar button.icon-button {
+        background: transparent;
+        border: 0;
+        padding: 6px;
+        color: var(--color-text-muted, #4b5563); /* stroke uses currentColor */
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card__bar button.icon-button svg {
+        display: block;
+        width: 20px;
+        height: 20px;
+      }
+    </style>
+  </head>
+  <body class="page project-page">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
+    {{> sidebar}} {{> userbar show_user_menu=true}}
+    <!-- expose project id to client via data attribute for simpler resolution -->
+    <main class="page__wrap" data-project-id="{{project.id}}">
+      <header class="page__header">
+        <div class="title__wrap">
+          <h1 id="project-title" class="title__name">Sovereign Demo</h1>
+          <div id="project-sub" class="title__desc">
+            Public demo project seeded by prisma/seed.mjs
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <!-- Posts -->
+        <article class="card">
+          <div class="card__bar">
+            <strong>Posts</strong>
+            <div
+              style="
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-end;
+                gap: 10px;
+              "
+            >
+              <input
+                id="post-search"
+                class="search"
+                type="search"
+                placeholder="Search posts…"
+                autocomplete="off"
+              />
+              <a
+                role="alert"
+                class="card__bar-icon"
+                href="/p/{{project.id}}/blog/post/new"
+                title="Create post"
+                aria-label="Create post"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="size-6"
+                  role="img"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <title>Create post</title>
+                  <path
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div class="card__body table-wrap">
+            <table id="posts-table" aria-label="Posts">
+              <thead>
+                <tr>
+                  <th style="width: 40%">Title</th>
+                  <th>Path</th>
+                  <th>Tags</th>
+                  <th>Status</th>
+                  <th>Published</th>
+                  <th style="width: 1%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="posts-tbody">
+                <!-- Loading state -->
+                <tr class="loading-row" hidden>
+                  <td colspan="6" class="empty">Loading posts…</td>
+                </tr>
+                <!-- Error state -->
+                <tr class="error-row" hidden>
+                  <td colspan="6" class="empty">
+                    Failed to load posts
+                    <button id="retry-posts" class="chip" type="button">
+                      Retry
+                    </button>
+                  </td>
+                </tr>
+                <!-- Empty state (shown by script when filtered or no posts) -->
+                <tr class="empty-row" hidden>
+                  <td colspan="6" class="empty">No posts found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- Project Meta -->
+        <aside class="card">
+          <div class="card__bar">
+            <strong>Project Meta</strong>
+            <button
+              class="card__bar-icon"
+              type="button"
+              aria-label="Project info"
+              title="Project info"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="size-6"
+                role="img"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="card__body">
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 140px 1fr;
+                row-gap: 8px;
+                column-gap: 12px;
+              "
+            >
+              <div class="subtle">Name</div>
+              <div id="m-name">Sovereign Demo</div>
+
+              <div class="subtle">Status</div>
+              <div id="m-status"><span class="badge">published</span></div>
+
+              <div class="subtle">Posts</div>
+              <div id="m-count">2</div>
+
+              <div class="subtle">Repo</div>
+              <div id="m-repo">
+                <a
+                  href="{{project.blog.repoUrl}}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  link
+                </a>
+              </div>
+
+              <div class="subtle">Branch</div>
+              <div id="m-branch">main</div>
+
+              <div class="subtle">Content Dir</div>
+              <div id="m-dir">src/content/blog</div>
+
+              <div class="subtle">Live URL</div>
+              <div id="m-live">—</div>
+
+              <div class="subtle">Created</div>
+              <div id="m-created">
+                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+              </div>
+
+              <div class="subtle">Updated</div>
+              <div id="m-updated">
+                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+    <script src="/js/startup.js" defer></script>
+    <script src="/js/pages/blog/index.js" defer></script>
+  </body>
+</html>

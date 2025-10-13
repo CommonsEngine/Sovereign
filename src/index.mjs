@@ -153,6 +153,20 @@ app.get(
   projectHandler.viewProjectConfigure,
 );
 
+app.get(
+  "/p/:projectId/blog/post/new",
+  requireAuth,
+  exposeGlobals,
+  projectHandler.blog.viewPostCreate,
+);
+
+app.get(
+  "/p/:projectId/blog/post/:fp",
+  requireAuth,
+  exposeGlobals,
+  projectHandler.blog.viewPostEdit,
+);
+
 // app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);
 // app.get(
 //   "/p/:projectId/configure",

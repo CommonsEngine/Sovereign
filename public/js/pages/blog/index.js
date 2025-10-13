@@ -1,0 +1,283 @@
+// New file — page logic moved from inline script and registered as a startup task
+(function () {
+  const SM = window.StartupManager;
+  if (!SM) {
+    console.error("StartupManager not loaded");
+    return;
+  }
+
+  function resolveProjectId() {
+    // prefer explicit data attribute
+    const main = document.querySelector("main[data-project-id]");
+    if (main?.dataset?.projectId) return main.dataset.projectId;
+    // fallback: from "New Post" link
+    const a = document.getElementById("new-post-btn");
+    if (a?.href) {
+      const m = a.href.match(/\/p\/([^/]+)/);
+      if (m) return m[1];
+    }
+    // fallback: location
+    const m2 = location.pathname.match(/\/p\/([^/]+)/);
+    if (m2) return m2[1];
+    return null;
+  }
+
+  const search = document.getElementById("post-search");
+  const tbody = document.getElementById("posts-tbody");
+  const table = document.getElementById("posts-table");
+  const emptyRow = tbody?.querySelector(".empty-row");
+  const loadingRow = tbody?.querySelector(".loading-row");
+  const errorRow = tbody?.querySelector(".error-row");
+
+  let rows = [];
+
+  function applySearch() {
+    const q = (search?.value || "").trim().toLowerCase();
+    let shown = 0;
+    rows.forEach((tr) => {
+      const hay =
+        `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags || ""} ${tr.dataset.excerpt || ""}`.toLowerCase();
+      const match = !q || hay.includes(q);
+      tr.hidden = !match;
+      if (match) shown++;
+    });
+    if (emptyRow) emptyRow.hidden = shown !== 0;
+  }
+
+  function fmtDate(d) {
+    try {
+      const dt = new Date(d);
+      return { iso: dt.toISOString(), label: dt.toLocaleString() };
+    } catch {
+      return { iso: "", label: "—" };
+    }
+  }
+
+  function makePostRow(projectId, post) {
+    const title = (post.filename || "").replace(/\.md$/i, "");
+    const hrefEdit = `/p/${projectId}/blog/post/${encodeURIComponent(post.filename)}?edit=true`;
+    const { iso, label } = post.modified
+      ? fmtDate(post.modified)
+      : { iso: "", label: "—" };
+
+    const tr = document.createElement("tr");
+    tr.dataset.title = title;
+    tr.dataset.path = post.filename || "";
+    tr.dataset.tags = (post.tags || []).join(", ");
+    tr.dataset.excerpt = post.excerpt || "";
+
+    tr.innerHTML = `
+      <td>
+        <div class="title">${escapeHtml(title)}</div>
+        <div class="subtle">${escapeHtml(post.description || "")}</div>
+      </td>
+      <td>${escapeHtml(post.filename || "")}</td>
+      <td>${escapeHtml((post.tags || []).join(", "))}</td>
+      <td><span class="badge">${escapeHtml(post.status || "Published")}</span></td>
+      <td>${iso ? `<time datetime="${iso}">${escapeHtml(label)}</time>` : "—"}</td>
+      <td>
+        <div class="row-actions">
+          <a class="chip" href="${hrefEdit}">Edit</a>
+          <button class="chip chip--danger" type="button" data-action="delete" data-id="${escapeAttr(post.filename)}">
+            Delete
+          </button>
+        </div>
+      </td>
+    `;
+    return tr;
+  }
+
+  function escapeHtml(s) {
+    if (!s) return "";
+    return String(s).replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  }
+  function escapeAttr(s) {
+    return encodeURIComponent(String(s || ""));
+  }
+
+  function clearDataRows() {
+    Array.from(
+      tbody.querySelectorAll(
+        "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+      ),
+    ).forEach((n) => n.remove());
+    rows = [];
+  }
+
+  function setLoading(isLoading) {
+    if (table) table.setAttribute("aria-busy", isLoading ? "true" : "false");
+    if (search) search.disabled = !!isLoading;
+    if (loadingRow) loadingRow.hidden = !isLoading;
+    if (errorRow) errorRow.hidden = true;
+    if (emptyRow) emptyRow.hidden = true;
+    if (isLoading) {
+      clearDataRows();
+      const countEl = document.getElementById("m-count");
+      if (countEl) countEl.textContent = "—";
+    }
+  }
+
+  async function fetchPosts(projectId) {
+    const resp = await fetch(
+      `/api/projects/${encodeURIComponent(projectId)}/blog/post/all`,
+      {
+        method: "GET",
+        headers: { Accept: "application/json" },
+      },
+    );
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    return Array.isArray(data.posts) ? data.posts : [];
+  }
+
+  // register startup task (so global loader shows)
+  SM.register("posts", async () => {
+    const projectId = resolveProjectId();
+    if (!projectId) {
+      console.warn("Project id not found in URL");
+      return { posts: [] };
+    }
+
+    setLoading(true);
+    try {
+      const posts = await fetchPosts(projectId);
+      const frag = document.createDocumentFragment();
+      posts.forEach((p) => frag.appendChild(makePostRow(projectId, p)));
+      tbody.appendChild(frag);
+
+      rows = Array.from(
+        tbody.querySelectorAll(
+          "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+        ),
+      );
+      if (emptyRow) emptyRow.hidden = rows.length !== 0;
+      const countEl = document.getElementById("m-count");
+      if (countEl) countEl.textContent = String(posts.length);
+
+      setLoading(false);
+      applySearch();
+      return { posts };
+    } catch (err) {
+      console.error("Error loading posts:", err);
+      setLoading(false);
+      if (errorRow) errorRow.hidden = false;
+      if (emptyRow) emptyRow.hidden = true;
+      throw err;
+    }
+  });
+
+  // UI behaviors not part of startup task (delegated handlers)
+  function setRowBusy(tr, busy, btn) {
+    if (!tr) return;
+    tr.setAttribute("aria-busy", busy ? "true" : "false");
+    tr.querySelectorAll("button").forEach((b) => (b.disabled = !!busy));
+    tr.querySelectorAll("a").forEach((a) => {
+      if (busy) {
+        a.setAttribute("aria-disabled", "true");
+        a.style.pointerEvents = "none";
+        a.style.opacity = "0.6";
+      } else {
+        a.removeAttribute("aria-disabled");
+        a.style.pointerEvents = "";
+        a.style.opacity = "";
+      }
+    });
+    if (btn) {
+      if (busy) {
+        btn.dataset.prevText = btn.textContent;
+        btn.textContent = "Deleting…";
+      } else if (btn.dataset.prevText) {
+        btn.textContent = btn.dataset.prevText;
+        delete btn.dataset.prevText;
+      }
+    }
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest('button[data-action="delete"]');
+    if (!btn) return;
+
+    const filename = btn.getAttribute("data-id");
+    if (!filename) return;
+
+    const projectId = resolveProjectId();
+    if (!projectId) {
+      alert("Project id not found.");
+      return;
+    }
+
+    if (!confirm(`Delete post "${decodeURIComponent(filename)}"?`)) return;
+
+    const tr = btn.closest("tr");
+    setRowBusy(tr, true, btn);
+
+    try {
+      const resp = await fetch(
+        `/api/projects/${encodeURIComponent(projectId)}/blog/post/${encodeURIComponent(decodeURIComponent(filename))}`,
+        {
+          method: "DELETE",
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+        },
+      );
+
+      if (!resp.ok) {
+        let msg = `HTTP ${resp.status}`;
+        try {
+          const data = await resp.json();
+          if (data?.error) msg = data.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      tr?.remove();
+      rows = Array.from(
+        tbody.querySelectorAll(
+          "tr:not(.empty-row):not(.loading-row):not(.error-row)",
+        ),
+      );
+
+      const countEl = document.getElementById("m-count");
+      if (countEl) countEl.textContent = String(rows.length);
+
+      if (emptyRow) emptyRow.hidden = rows.length !== 0;
+      applySearch();
+    } catch (err) {
+      console.error("Delete failed:", err);
+      alert(`Failed to delete: ${err?.message || err}`);
+    } finally {
+      if (document.body.contains(tr)) setRowBusy(tr, false, btn);
+    }
+  });
+
+  // wire search & loader and kick off startup tasks
+  function wireLoader() {
+    const spinner = document.querySelector("[data-startup-spinner]");
+    SM.onChange((state) => {
+      if (!spinner) return;
+      spinner.style.display = state.isLoading ? "block" : "none";
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    wireLoader();
+    search?.addEventListener("input", applySearch);
+    // run page startup tasks
+    try {
+      await SM.runAll({ parallel: true });
+    } catch (e) {
+      // errors already surfaced in UI; keep page interactive
+      console.error("Startup errors", SM.getState());
+    }
+  });
+})();

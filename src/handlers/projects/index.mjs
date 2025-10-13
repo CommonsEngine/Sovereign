@@ -108,8 +108,6 @@ export async function viewProject(req, res) {
         connected = false;
       }
 
-      let path = "project/blog/editor";
-
       // If still not connected, reset config to avoid loop and redirect to configure
       if (!connected) {
         try {
@@ -121,10 +119,12 @@ export async function viewProject(req, res) {
           // ignore if already deleted
         }
         // return res.redirect(302, `/p/${project.id}/configure`);
-        path = "project/blog/editor?connect_error=1"; // TODO: show error banner
       }
 
-      return res.render(path, { blog: project.Blog, project });
+      return res.render("project/blog/index", {
+        project,
+        connect_error: !connected,
+      });
     }
 
     return res.status(404).render("error", {
