@@ -184,3 +184,28 @@ export async function guestLogin(req, res) {
     return res.status(500).json({ error: "Guest login failed" });
   }
 }
+
+export async function viewLogin(req, res) {
+  if (GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN) {
+    return res.redirect(302, "/");
+  }
+  const justRegistered = String(req.query.registered || "") === "1";
+  const justReset = String(req.query.reset || "") === "1";
+  const returnTo =
+    typeof req.query.return_to === "string" ? req.query.return_to : "";
+  const forgotMode = String(req.query.forgot || "") === "1";
+  const token = typeof req.query.token === "string" ? req.query.token : "";
+  const resetMode = !!token;
+  return res.render("login", {
+    success: justRegistered
+      ? "Account created. Please sign in."
+      : justReset
+        ? "Password updated. Please sign in."
+        : null,
+    return_to: returnTo,
+    forgot_mode: forgotMode && !resetMode,
+    reset_mode: resetMode,
+    token,
+    guest_enabled: GUEST_LOGIN_ENABLED && !GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
+  });
+}

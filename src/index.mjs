@@ -19,7 +19,9 @@ import { requireRole } from "./middlewares/user.mjs";
 import { exposeGlobals } from "./middlewares/misc.mjs";
 
 import * as authHandler from "./handlers/auth/index.mjs";
-import * as viewHandler from "./handlers/view/index.mjs";
+import * as indexHandler from "./handlers/index.mjs";
+import * as usersHandler from "./handlers/users/index.mjs";
+import * as settingsHandler from "./handlers/settings/index.mjs";
 import * as projectHandler from "./handlers/projects/index.mjs";
 
 import logger from "./utils/logger.mjs";
@@ -107,15 +109,14 @@ app.use(
 // Security headers
 app.use(secure);
 
-// Web Routes
-app.get("/", requireAuth, exposeGlobals, viewHandler.index);
-app.get("/login", disallowIfAuthed, viewHandler.login);
-app.get("/register", disallowIfAuthed, viewHandler.register);
+app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
+app.get("/login", disallowIfAuthed, authHandler.viewLogin);
+app.post("/login", authHandler.login);
+app.get("/register", disallowIfAuthed, authHandler.viewRegister);
+app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 
 // Auth Routes
-app.post("/login", authHandler.login);
-app.post("/register", authHandler.register);
 app.post("/auth/invite", requireAuth, authHandler.inviteUser);
 app.get("/auth/guest", authHandler.guestLogin);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
@@ -130,16 +131,17 @@ app.get(
   requireAuth,
   exposeGlobals,
   requireRole(["platform_admin", "tenant_admin", "admin"]),
-  viewHandler.users,
+  usersHandler.viewUsers,
 );
 app.get(
   "/settings",
   requireAuth,
   exposeGlobals,
   requireRole(["platform_admin", "tenant_admin", "admin"]),
-  viewHandler.settings,
+  settingsHandler.viewSettings,
 );
 
+// TODO: Move this to projects router
 app.get(
   "/p/:projectId",
   requireAuth,
@@ -166,68 +168,6 @@ app.get(
   exposeGlobals,
   projectHandler.blog.viewPostEdit,
 );
-
-// app.get("/p/:projectId", requireAuth, exposeGlobals, viewHandler.project);
-// app.get(
-//   "/p/:projectId/configure",
-//   requireAuth,
-//   exposeGlobals,
-//   viewHandler.projectConfigure,
-// );
-
-// Web Routes :: Project/GitCMS
-// app.get(
-//   "/p/:projectId/gitcms/post/new",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   exposeGlobals,
-//   viewHandler.gitcms.postCreate,
-// );
-// app.get(
-//   "/p/:projectId/gitcms/post/:fp",
-//   requireAuth,
-//   exposeGlobals,
-//   viewHandler.gitcms.postView,
-// );
-
-// API Routes :: Project
-// app.post("/api/project", requireAuth, projectHandler.create);
-// app.patch("/api/project/:id", requireAuth, projectHandler.update);
-// app.delete("/api/project/:id", requireAuth, projectHandler.remove);
-
-// TODO: Move project-specific APIs to /routes/*
-
-// API Routes :: Project/GitCMS
-// app.post(
-//   "/api/project/:projectId/gitcms/configure",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   projectHandler.gitcms.configure,
-// );
-// app.get(
-//   "/api/project/:projectId/gitcms/post/all",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   projectHandler.gitcms.getPosts,
-// );
-// app.patch(
-//   "/api/project/:projectId/gitcms/post/:fp",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   projectHandler.gitcms.updatePost,
-// );
-// app.post(
-//   "/api/project/:projectId/gitcms/post/:fp",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   projectHandler.gitcms.publishPost,
-// );
-// app.delete(
-//   "/api/project/:projectId/gitcms/post/:fp",
-//   requireFeature("gitcms"),
-//   requireAuth,
-//   projectHandler.gitcms.deletePost,
-// );
 
 // 404
 app.use((req, res) => {

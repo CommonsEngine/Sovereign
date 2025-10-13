@@ -7,8 +7,8 @@ import prisma from "../../prisma.mjs";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS } = env();
 
-export { default as register } from "./register.mjs";
-export { default as login, guestLogin } from "./login.mjs";
+export { default as register, viewRegister } from "./register.mjs";
+export { default as login, guestLogin, viewLogin } from "./login.mjs";
 
 export async function inviteUser(req, res) {
   try {
