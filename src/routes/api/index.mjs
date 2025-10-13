@@ -1,7 +1,7 @@
 import express from "express";
 
-import * as projectsHandler from "../handlers/projects/index.mjs";
-import { requireAuth } from "../middlewares/auth.mjs";
+import * as projectsHandler from "../../handlers/projects/index.mjs";
+import { requireAuth } from "../../middlewares/auth.mjs";
 
 import blogRouter from "./blog.mjs";
 

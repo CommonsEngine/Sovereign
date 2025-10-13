@@ -10,19 +10,17 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
-import apiRouter from "./routes/api.mjs";
+import authRouter from "./routes/auth.mjs";
+import apiRouter from "./routes/api/index.mjs";
+import webRouter from "./routes/web.mjs";
 
 import { secure } from "./middlewares/security.mjs";
 // import { requireFeature } from "./middlewares/feature.mjs";
 import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
-import { requireRole } from "./middlewares/user.mjs";
 import { exposeGlobals } from "./middlewares/misc.mjs";
 
 import * as indexHandler from "./handlers/index.mjs";
 import * as authHandler from "./handlers/auth/index.mjs";
-import * as usersHandler from "./handlers/users/index.mjs";
-import * as settingsHandler from "./handlers/settings/index.mjs";
-import * as projectHandler from "./handlers/projects/index.mjs";
 
 import logger from "./utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
@@ -116,57 +114,9 @@ app.get("/register", disallowIfAuthed, authHandler.viewRegister);
 app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 
-app.post("/auth/invite", requireAuth, authHandler.inviteUser);
-app.get("/auth/guest", authHandler.guestLogin);
-app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
-app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
-app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
-app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
-
+app.use(webRouter);
+app.use("/auth", authRouter);
 app.use("/api", apiRouter);
-
-app.get(
-  "/users",
-  requireAuth,
-  exposeGlobals,
-  requireRole(["platform_admin", "tenant_admin", "admin"]),
-  usersHandler.viewUsers,
-);
-app.get(
-  "/settings",
-  requireAuth,
-  exposeGlobals,
-  requireRole(["platform_admin", "tenant_admin", "admin"]),
-  settingsHandler.viewSettings,
-);
-
-// TODO: Move this to projects router
-app.get(
-  "/p/:projectId",
-  requireAuth,
-  exposeGlobals,
-  projectHandler.viewProject,
-);
-app.get(
-  "/p/:projectId/configure",
-  requireAuth,
-  exposeGlobals,
-  projectHandler.viewProjectConfigure,
-);
-
-app.get(
-  "/p/:projectId/blog/post/new",
-  requireAuth,
-  exposeGlobals,
-  projectHandler.blog.viewPostCreate,
-);
-
-app.get(
-  "/p/:projectId/blog/post/:fp",
-  requireAuth,
-  exposeGlobals,
-  projectHandler.blog.viewPostEdit,
-);
 
 // 404
 app.use((req, res) => {
