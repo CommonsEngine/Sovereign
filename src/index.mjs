@@ -18,8 +18,8 @@ import { requireAuth, disallowIfAuthed } from "./middlewares/auth.mjs";
 import { requireRole } from "./middlewares/user.mjs";
 import { exposeGlobals } from "./middlewares/misc.mjs";
 
-import * as authHandler from "./handlers/auth/index.mjs";
 import * as indexHandler from "./handlers/index.mjs";
+import * as authHandler from "./handlers/auth/index.mjs";
 import * as usersHandler from "./handlers/users/index.mjs";
 import * as settingsHandler from "./handlers/settings/index.mjs";
 import * as projectHandler from "./handlers/projects/index.mjs";
@@ -116,7 +116,6 @@ app.get("/register", disallowIfAuthed, authHandler.viewRegister);
 app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 
-// Auth Routes
 app.post("/auth/invite", requireAuth, authHandler.inviteUser);
 app.get("/auth/guest", authHandler.guestLogin);
 app.get("/auth/me", requireAuth, authHandler.getCurrentUser);

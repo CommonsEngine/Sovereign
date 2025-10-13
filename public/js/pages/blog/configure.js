@@ -63,7 +63,7 @@
 
       try {
         const resp = await fetch(
-          `/api/projects/${encodeURIComponent(projectId)}/blog/configure`,
+          `/api/projects/${encodeURIComponent(projectId)}/configure`,
           {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },

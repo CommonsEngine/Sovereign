@@ -1,5 +1,5 @@
-import logger from "../../utils/logger.mjs";
-import prisma from "../../prisma.mjs";
+import logger from "../../../utils/logger.mjs";
+import prisma from "../../../prisma.mjs";
 
 export default async function getAll(req, res) {
   console.log("GET /api/projects");

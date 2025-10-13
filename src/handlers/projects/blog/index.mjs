@@ -8,106 +8,6 @@ import {
 } from "../../../libs/git/registry.mjs";
 import FileManager from "../../../libs/git/fs.mjs";
 
-function ensureAccess(project, req) {
-  const userId = req.user?.id ?? null;
-  // if ownerId set and doesn't match current user -> forbidden
-  if (project.ownerId && project.ownerId !== userId) return false;
-  return true;
-}
-
-export async function configure(req, res) {
-  try {
-    const projectId = req.params.id;
-    logger.log("Configuring blog for project: >>", projectId);
-    if (!projectId) {
-      return res.status(400).json({ error: "Missing project id" });
-    }
-
-    const blog = await prisma.blog.findUnique({
-      where: { projectId },
-      select: {
-        id: true,
-        projectId: true,
-        gitConfig: true,
-        project: { select: { id: true, ownerId: true } },
-      },
-    });
-
-    if (!blog) {
-      return res.status(404).json({ error: "Unsupported project type" });
-    }
-    if (blog?.gitConfig) {
-      return res.status(400).json({ error: "Blog already configured" });
-    }
-
-    if (!ensureAccess(blog.project, req)) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
-    const raw = req.body || {};
-
-    const repoUrl = String(raw.repoUrl || "").trim();
-    if (!repoUrl)
-      return res.status(400).json({ error: "Repository URL is required" });
-
-    const branch = (String(raw.branch || "main").trim() || "main").slice(0, 80);
-    const contentDirRaw =
-      typeof raw.contentDir === "string" ? raw.contentDir : "";
-    const contentDir = contentDirRaw.trim().slice(0, 200) || null;
-    const gitUserName =
-      typeof raw.gitUserName === "string"
-        ? raw.gitUserName.trim().slice(0, 120)
-        : null;
-    const gitUserEmail =
-      typeof raw.gitUserEmail === "string"
-        ? raw.gitUserEmail.trim().slice(0, 120)
-        : null;
-    const gitAuthToken =
-      typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
-
-    // 1) Validate by connecting once and prime the in-memory connection
-    try {
-      await getOrInitGitManager(projectId, {
-        repoUrl,
-        branch,
-        gitUserName,
-        gitUserEmail,
-        gitAuthToken,
-      });
-    } catch (err) {
-      logger.error("Git connect/validate failed:", err);
-      return res.status(400).json({
-        error:
-          "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
-      });
-    }
-
-    // 2) Save configuration
-    // map to Prisma model field names
-    const gitConfigPayload = {
-      provider: "github",
-      repoUrl,
-      branch,
-      contentDir,
-      authType: "ssh",
-      authSecret: gitAuthToken,
-      userName: gitUserName, // model field is userName
-      userEmail: gitUserEmail, // model field is userEmail
-    };
-
-    await prisma.gitConfig.upsert({
-      where: { blogId: blog.id },
-      create: { blogId: blog.id, ...gitConfigPayload },
-      update: gitConfigPayload,
-    });
-
-    return res.json({ configured: true, gitConfigPayload });
-  } catch (err) {
-    logger.error("Configure blog failed:", err);
-    return res.status(500).json({ error: "Failed to configure blog" });
-  }
-}
-
 export async function viewPostEdit(req, res) {
   try {
     const userId = req.user?.id;
@@ -774,6 +674,106 @@ export async function deletePost(req, res) {
   }
 }
 
+export async function publishPost(req, res) {
+  // We need to simply commit and push any changes that are currently in the working directory
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const projectId = req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
+
+    // Verify ownership and type
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
+    });
+    if (!project) return res.status(404).json({ error: "Project not found" });
+    if (project.ownerId !== userId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    if (project.type !== "blog") {
+      return res.status(400).json({ error: "Project is not a blog type" });
+    }
+
+    // Load config to init manager if needed
+    const cfg = await prisma.gitConfig.findUnique({
+      where: { blogId: project.Blog.id },
+      select: {
+        repoUrl: true,
+        branch: true,
+        contentDir: true,
+        userName: true,
+        userEmail: true,
+        authSecret: true,
+      },
+    });
+    if (!cfg) {
+      return res.status(400).json({ error: "Blog is not configured" });
+    }
+
+    // Ensure Git manager
+    let gm = getGitManager(projectId);
+    if (!gm) {
+      try {
+        gm = await getOrInitGitManager(projectId, {
+          repoUrl: cfg.repoUrl,
+          branch: cfg.branch,
+          userName: cfg.userName,
+          userEmail: cfg.userEmail,
+          authToken: cfg.authSecret || null,
+        });
+      } catch (err) {
+        logger.error("Git connect failed during publish:", err);
+        return res.status(400).json({
+          error:
+            "Failed to connect to repository. Please verify the configuration.",
+        });
+      }
+    }
+
+    // Best-effort pull to reduce push conflicts
+    try {
+      await gm.pullLatest();
+    } catch (err) {
+      logger.warn("Pull latest failed before publish:", err?.message || err);
+      // continue; publish may still succeed if fast-forward
+    }
+
+    const rawMsg =
+      typeof req.body?.message === "string" ? req.body.message : null;
+    const commitMessage = (rawMsg || "Update with Sovereign")
+      .toString()
+      .trim()
+      .slice(0, 200);
+
+    const result = await gm.publish(commitMessage);
+
+    // Normalize response
+    if (result && result.message && /No changes/i.test(result.message)) {
+      return res
+        .status(200)
+        .json({ published: false, message: result.message });
+    }
+
+    return res.status(200).json({
+      published: true,
+      message: result?.message || "Changes published successfully",
+    });
+  } catch (err) {
+    logger.error("Publish Blog changes failed:", err);
+    // Common non-fast-forward hint
+    const msg = String(err?.message || err);
+    const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
+      ? "Remote has new commits. Pull/rebase then try again."
+      : undefined;
+    return res
+      .status(500)
+      .json({ error: "Failed to publish changes", hint, detail: msg });
+  }
+}
+
 export async function viewPostCreate(req, res) {
   try {
     const userId = req.user?.id;
@@ -946,105 +946,5 @@ export async function viewPostCreate(req, res) {
       description: "Failed to create a new post",
       error: err?.message || String(err),
     });
-  }
-}
-
-export async function publishPost(req, res) {
-  // We need to simply commit and push any changes that are currently in the working directory
-  try {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    const projectId = req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
-
-    // Verify ownership and type
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
-    });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    if (project.type !== "blog") {
-      return res.status(400).json({ error: "Project is not a blog type" });
-    }
-
-    // Load config to init manager if needed
-    const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
-      select: {
-        repoUrl: true,
-        branch: true,
-        contentDir: true,
-        userName: true,
-        userEmail: true,
-        authSecret: true,
-      },
-    });
-    if (!cfg) {
-      return res.status(400).json({ error: "Blog is not configured" });
-    }
-
-    // Ensure Git manager
-    let gm = getGitManager(projectId);
-    if (!gm) {
-      try {
-        gm = await getOrInitGitManager(projectId, {
-          repoUrl: cfg.repoUrl,
-          branch: cfg.branch,
-          userName: cfg.userName,
-          userEmail: cfg.userEmail,
-          authToken: cfg.authSecret || null,
-        });
-      } catch (err) {
-        logger.error("Git connect failed during publish:", err);
-        return res.status(400).json({
-          error:
-            "Failed to connect to repository. Please verify the configuration.",
-        });
-      }
-    }
-
-    // Best-effort pull to reduce push conflicts
-    try {
-      await gm.pullLatest();
-    } catch (err) {
-      logger.warn("Pull latest failed before publish:", err?.message || err);
-      // continue; publish may still succeed if fast-forward
-    }
-
-    const rawMsg =
-      typeof req.body?.message === "string" ? req.body.message : null;
-    const commitMessage = (rawMsg || "Update with Sovereign")
-      .toString()
-      .trim()
-      .slice(0, 200);
-
-    const result = await gm.publish(commitMessage);
-
-    // Normalize response
-    if (result && result.message && /No changes/i.test(result.message)) {
-      return res
-        .status(200)
-        .json({ published: false, message: result.message });
-    }
-
-    return res.status(200).json({
-      published: true,
-      message: result?.message || "Changes published successfully",
-    });
-  } catch (err) {
-    logger.error("Publish Blog changes failed:", err);
-    // Common non-fast-forward hint
-    const msg = String(err?.message || err);
-    const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
-      ? "Remote has new commits. Pull/rebase then try again."
-      : undefined;
-    return res
-      .status(500)
-      .json({ error: "Failed to publish changes", hint, detail: msg });
   }
 }
