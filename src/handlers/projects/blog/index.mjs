@@ -6,7 +6,7 @@ import {
   getGitManager,
   getOrInitGitManager,
 } from "../../../libs/git/registry.mjs";
-import FileManager from "../../../libs/git/fs.mjs";
+import FileManager from "../../../libs/fs.mjs";
 
 export async function viewPostEdit(req, res) {
   try {
