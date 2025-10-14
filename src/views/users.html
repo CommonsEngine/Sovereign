@@ -78,15 +78,14 @@
               <thead>
                 <tr>
                   <th style="width: 28%">User</th>
-                  <th style="width: 12%">Role</th>
-                  <th style="width: 18%">Projects</th>
+                  <th style="width: 15%">Role</th>
+                  <th style="width: 15%">Projects</th>
                   <th style="width: 18%">Created</th>
                   <th style="width: 1%">Actions</th>
                 </tr>
               </thead>
               <tbody id="users-tbody">
-                {{!-- removed stray ">" that broke the table --}} {{#each
-                users}}
+                {{#each users}}
                 <tr
                   data-id="{{id}}"
                   data-name="{{displayName}}"

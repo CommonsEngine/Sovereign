@@ -392,7 +392,7 @@ export async function viewRegister(req, res) {
   if (!token) {
     return res.status(403).render("register", {
       // error: "Registration is by invitation only.",
-      values: { display_name: "", username: "", email: "" },
+      values: { first_name: "", last_name: "", email: "" },
     });
   }
 
@@ -411,21 +411,30 @@ export async function viewRegister(req, res) {
     if (!valid) {
       return res.status(400).render("register", {
         error: "Invalid or expired invite link.",
-        values: { display_name: "", username: "", email: "" },
+        values: { first_name: "", last_name: "", email: "" },
       });
     }
 
+    // Load invited user and their primary email according to current schema
     const invitedUser = await prisma.user.findUnique({
       where: { id: invite.userId },
-      select: { email: true, username: true, displayName: true },
+      select: {
+        name: true,
+        firstName: true,
+        lastName: true,
+        primaryEmail: { select: { email: true } },
+      },
     });
 
     if (!invitedUser) {
       return res.status(400).render("register", {
         error: "Invalid invite.",
-        values: { display_name: "", username: "", email: "" },
+        values: { first_name: "", last_name: "", email: "" },
       });
     }
+
+    // primary email (may be undefined)
+    const email = invitedUser.primaryEmail?.email || "";
 
     // Prefill email (readonly in template) and display name if present
     return res.render("register", {
@@ -433,9 +442,9 @@ export async function viewRegister(req, res) {
       token,
       success: "Invitation accepted. Please complete your registration.",
       values: {
-        display_name: invitedUser.displayName || "",
-        username: invitedUser.username || "",
-        email: invitedUser.email,
+        first_name: invitedUser.firstName || "",
+        last_name: invitedUser.lastName || "",
+        email,
       },
     });
   } catch (err) {

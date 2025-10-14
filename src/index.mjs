@@ -114,8 +114,8 @@ app.get("/register", disallowIfAuthed, authHandler.viewRegister);
 app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 
-app.use(webRouter);
-app.use("/auth", authRouter);
+app.use("/", webRouter);
+app.use("/", authRouter);
 app.use("/api", apiRouter);
 
 // 404
