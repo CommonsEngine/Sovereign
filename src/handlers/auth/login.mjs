@@ -144,7 +144,11 @@ export default async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    await createSession(req, res, { ...user, email });
+    await createSession(req, res, {
+      ...user,
+      sessionEmail: userEmailRec.email,
+      sessionEmailId: userEmailRec.id,
+    });
 
     if (isFormContent) {
       const dest =

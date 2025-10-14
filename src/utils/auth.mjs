@@ -193,7 +193,15 @@ export async function getSessionWithUser(token) {
   if (!token) return null;
   const s = await prisma.session.findUnique({
     where: { token },
-    include: { user: true },
+    include: {
+      user: {
+        include: {
+          primaryEmail: {
+            select: { id: true, email: true, isVerified: true },
+          },
+        },
+      },
+    },
   });
   if (!s || s.expiresAt < new Date()) {
     if (s) {
@@ -205,6 +213,8 @@ export async function getSessionWithUser(token) {
     }
     return null;
   }
+  const { passwordHash, ...safeUser } = s.user || {};
+
   return {
     id: s.id,
     userId: s.userId,
@@ -214,7 +224,7 @@ export async function getSessionWithUser(token) {
     createdAt: s.createdAt,
     expiresAt: s.expiresAt,
     user: {
-      ...s.user,
+      ...safeUser,
       roles: s.roles || [],
       capabilities: s.capabilities || {},
     },

@@ -11,20 +11,33 @@ function userHasAllowedRole(user, allowedSet) {
   if (allowedSet.size === 0) return !!user;
 
   // prefer role snapshot if present
-  const roleObj = user.role || null;
-  if (!roleObj) return false; // not logged in
+  const roleCandidates = [];
+
+  if (Array.isArray(user.roles) && user.roles.length > 0) {
+    roleCandidates.push(...user.roles);
+  }
+
+  if (user.role) {
+    roleCandidates.push(user.role);
+  }
+
+  if (roleCandidates.length === 0) return false;
 
   // allow wildcard / any
   if (allowedSet.has("any") || allowedSet.has("*")) return true;
 
-  // normalize candidates
-  const roleId = roleObj.id !== undefined ? String(roleObj.id) : null;
-  const roleKey = roleObj.key ? String(roleObj.key).toLowerCase() : null;
-  const roleLabel = roleObj.label ? String(roleObj.label).toLowerCase() : null;
+  for (const roleObj of roleCandidates) {
+    if (!roleObj) continue;
+    const roleId = roleObj.id !== undefined ? String(roleObj.id) : null;
+    const roleKey = roleObj.key ? String(roleObj.key).toLowerCase() : null;
+    const roleLabel = roleObj.label
+      ? String(roleObj.label).toLowerCase()
+      : null;
 
-  if (roleId && allowedSet.has(roleId)) return true;
-  if (roleKey && allowedSet.has(roleKey)) return true;
-  if (roleLabel && allowedSet.has(roleLabel)) return true;
+    if (roleId && allowedSet.has(roleId)) return true;
+    if (roleKey && allowedSet.has(roleKey)) return true;
+    if (roleLabel && allowedSet.has(roleLabel)) return true;
+  }
 
   // TODO: Extend this middleware to consider capabilities as well
 
