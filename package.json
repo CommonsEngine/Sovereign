@@ -11,6 +11,8 @@
     "start": "node src/index.mjs",
     "dev": "nodemon",
     "reset": "yarn prisma:reset",
+    "test": "node --test --import tests/setup.mjs tests",
+    "test:watch": "node --test --watch --import tests/setup.mjs tests",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed/index.mjs",
