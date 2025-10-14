@@ -13,33 +13,175 @@ export { default as login, guestLogin, viewLogin } from "./login.mjs";
 export async function inviteUser(req, res) {
   try {
     const { email, displayName, role } = req.body || {};
-    if (!email || !displayName || !Number.isInteger(role)) {
+    if (!email || !displayName || role === undefined || role === null) {
       return res.status(400).json({ error: "Invalid payload" });
     }
 
-    const username = displayName.toLowerCase().replace(/\s+/g, "_");
+    const emailNorm = String(email).trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm)) {
+      return res.status(400).json({ error: "Invalid email" });
+    }
 
-    // Create or find user as invited
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: { displayName, role, username },
-      create: { email, displayName, role, status: "invited", username },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        name: true,
-        role: true,
-      },
+    const names = String(displayName || "")
+      .trim()
+      .split(/\s+/);
+    const firstName = names.shift() || "";
+    const lastName = names.join(" ") || "";
+
+    // Resolve role input: allow numeric id or role name string
+    let roleId = null;
+    if (typeof role === "number" && Number.isInteger(role)) {
+      roleId = role;
+    } else if (typeof role === "string" && /^\d+$/.test(role)) {
+      roleId = Number(role);
+    } else if (typeof role === "string") {
+      // Resolve by key (preferred) or label (case-insensitive)
+      let roleRec = await prisma.userRole.findUnique({ where: { key: role } });
+      if (!roleRec) {
+        roleRec = await prisma.userRole.findFirst({
+          where: {
+            OR: [
+              { key: { equals: role, mode: "insensitive" } },
+              { label: { equals: role, mode: "insensitive" } },
+            ],
+          },
+        });
+      }
+      if (!roleRec) return res.status(400).json({ error: "Unknown role" });
+      roleId = roleRec.id;
+    } else {
+      return res.status(400).json({ error: "Invalid role" });
+    }
+
+    // ensure roleId is an integer now
+    if (!Number.isInteger(roleId))
+      return res.status(400).json({ error: "Invalid role" });
+
+    // Try to find an existing user by email
+    const existingEmail = await prisma.userEmail.findUnique({
+      where: { email: emailNorm },
+      include: { user: true },
     });
 
-    // Generate a one-time token (persist using your existing token model)
+    let user = null;
+
+    if (existingEmail && existingEmail.user) {
+      // Update user details without clobbering the unique 'name' field
+      const updates = {};
+      if (!existingEmail.user.firstName && firstName)
+        updates.firstName = firstName;
+      if (!existingEmail.user.lastName && lastName) updates.lastName = lastName;
+      // only set status to invited if user is not already active
+      if (existingEmail.user.status !== "active") updates.status = "invited";
+
+      if (Object.keys(updates).length > 0) {
+        user = await prisma.user.update({
+          where: { id: existingEmail.user.id },
+          data: updates,
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            lastName: true,
+            status: true,
+            primaryEmail: { select: { email: true } },
+          },
+        });
+      } else {
+        user = await prisma.user.findUnique({
+          where: { id: existingEmail.user.id },
+          select: {
+            id: true,
+            name: true,
+            firstName: true,
+            lastName: true,
+            status: true,
+            primaryEmail: { select: { email: true } },
+          },
+        });
+      }
+    } else {
+      // Create a unique user.name (slug) based on displayName
+      const baseName = String(displayName)
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .replace(/[^a-z0-9_]/g, "");
+      let candidate = baseName || `user_${Math.floor(Math.random() * 10000)}`;
+      let suffix = 0;
+      // Ensure uniqueness of name
+      // Note: small loop, fine for invites
+      while (await prisma.user.findUnique({ where: { name: candidate } })) {
+        suffix += 1;
+        candidate = `${baseName}_${suffix}`;
+      }
+
+      const createdUser = await prisma.user.create({
+        data: {
+          name: candidate,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          status: "invited",
+        },
+      });
+
+      const createdEmail = await prisma.userEmail.create({
+        data: {
+          userId: createdUser.id,
+          email: emailNorm,
+          isPrimary: true,
+          isVerified: false,
+        },
+      });
+
+      // set primaryEmailId on user
+      await prisma.user.update({
+        where: { id: createdUser.id },
+        data: { primaryEmailId: createdEmail.id },
+      });
+
+      user = await prisma.user.findUnique({
+        where: { id: createdUser.id },
+        select: {
+          id: true,
+          name: true,
+          firstName: true,
+          lastName: true,
+          status: true,
+          primaryEmail: { select: { email: true } },
+        },
+      });
+    }
+
+    // Assign role via UserRoleAssignment (idempotent)
+    try {
+      await prisma.userRoleAssignment.upsert({
+        where: { userId_roleId: { userId: user.id, roleId } },
+        create: { userId: user.id, roleId },
+        update: {}, // nothing to change if exists
+      });
+    } catch {
+      // If upsert fails because composite unique key naming differs, fallback to safe create if not exists
+      // ignore unique constraint errors
+      try {
+        const exists = await prisma.userRoleAssignment.findFirst({
+          where: { userId: user.id, roleId },
+        });
+        if (!exists) {
+          await prisma.userRoleAssignment.create({
+            data: { userId: user.id, roleId },
+          });
+        }
+      } catch (e) {
+        logger.warn("Failed to assign role during invite", e);
+      }
+    }
+
+    // Generate a one-time token and persist (clean previous invite tokens)
     const token = crypto.randomUUID().replace(/-/g, "");
-    // Clear any previous invite tokens for this user
     await prisma.verificationToken.deleteMany({
       where: { userId: user.id, purpose: "invite" },
     });
-    // Persist invite token (48h)
     await prisma.verificationToken.create({
       data: {
         userId: user.id,
@@ -49,11 +191,22 @@ export async function inviteUser(req, res) {
       },
     });
 
-    // Build invite URL that lands on your registration completion page
+    // Build invite URL
     const base = String(APP_URL).replace(/\/+$/, "");
     const inviteUrl = `${base}/register?token=${token}`;
 
-    return res.status(201).json({ user, inviteUrl });
+    // Return user + invite URL (include primary email)
+    return res.status(201).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.primaryEmail?.email || emailNorm,
+        status: user.status,
+      },
+      inviteUrl,
+    });
   } catch (err) {
     logger.error("Invite user failed:", err);
     return res.status(500).json({ error: "Failed to create user invite" });

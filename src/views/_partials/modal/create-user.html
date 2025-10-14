@@ -44,10 +44,9 @@
           <label class="modal__label" for="user-role-select">Role</label>
           <select id="user-role-select" class="modal__input input" required>
             <option value="" selected disabled>Select a role…</option>
-            <option value="1">Admin</option>
-            <option value="2">Editor</option>
-            <option value="3">Contributor</option>
-            <option value="4">Viewer</option>
+            {{#each data.roles}}
+            <option value="{{this.value}}">{{this.label}}</option>
+            {{/each}}
           </select>
         </div>
 
@@ -73,9 +72,8 @@
     <footer class="modal__footer">
       <button type="button" class="chip button" data-modal-close>Close</button>
       <button
-        type="submit"
+        type="button"
         class="chip chip--primary button button--primary"
-        formnovalidate
         data-modal-submit
       >
         Create
@@ -100,18 +98,71 @@
       const inviteInput = root.querySelector("[data-invite-url]");
       const copyBtn = root.querySelector("[data-copy-invite]");
 
-      function resetForm() {
-        form?.reset();
-        if (err) {
-          err.textContent = "";
-          err.style.display = "none";
-        }
-        submitBtn?.removeAttribute("disabled");
-        if (resultBox) {
-          resultBox.style.display = "none";
-          if (inviteInput) inviteInput.value = "";
+      // Ensure pressing Enter (form submit) triggers the same flow as clicking the button
+      async function doSubmit(originEvent) {
+        // debug: ensure handler is invoked
+        console.debug("create-user: doSubmit invoked", {
+          originEventType: originEvent?.type,
+        });
+        try {
+          originEvent?.preventDefault?.();
+          if (err) {
+            err.style.display = "none";
+            err.textContent = "";
+          }
+
+          const email = (emailEl?.value || "").trim();
+          const displayName = (displayNameEl?.value || "").trim();
+          const role = roleEl?.value || "";
+
+          console.debug("create-user: form values", {
+            email,
+            displayName,
+            role,
+          });
+
+          // Basic validation
+          if (!displayName) {
+            displayNameEl?.focus();
+            return;
+          }
+          if (!email) {
+            emailEl?.focus();
+            return;
+          }
+          if (!role) {
+            roleEl?.focus();
+            return;
+          }
+
+          submitBtn?.setAttribute("disabled", "true");
+
+          const resp = await fetch("/auth/invite", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ email, displayName, role }),
+            credentials: "same-origin",
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+
+          if (inviteInput) inviteInput.value = data?.inviteUrl || "";
+          if (resultBox) resultBox.style.display = "block";
+        } catch (ex) {
+          console.error("Invite user failed:", ex);
+          if (err) {
+            err.textContent = ex?.message || "Failed to create user invite";
+            err.style.display = "block";
+          }
+        } finally {
+          submitBtn?.removeAttribute("disabled");
         }
       }
+
+      form?.addEventListener("submit", (e) => doSubmit(e));
 
       const obs = new MutationObserver((ml) => {
         for (const m of ml) {
@@ -135,61 +186,10 @@
         } catch {}
       });
 
-      root.addEventListener("click", async (e) => {
+      root.addEventListener("click", (e) => {
         const submit = e.target.closest("[data-modal-submit]");
         if (!submit) return;
-        e.preventDefault();
-        if (err) {
-          err.style.display = "none";
-          err.textContent = "";
-        }
-
-        const email = (emailEl?.value || "").trim();
-        const displayName = (displayNameEl?.value || "").trim();
-        const role = Number(roleEl?.value || "");
-
-        // Basic validation
-        if (!displayName) {
-          displayNameEl?.focus();
-          return;
-        }
-        if (!email) {
-          emailEl?.focus();
-          return;
-        }
-        if (!Number.isInteger(role) || role < 1 || role > 4) {
-          roleEl?.focus();
-          return;
-        }
-
-        submitBtn?.setAttribute("disabled", "true");
-
-        try {
-          // Expect backend to return: { user: {...}, inviteUrl: "https://.../register?token=..." }
-          const resp = await fetch("/auth/invite", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({ email, displayName, role }),
-            credentials: "same-origin",
-          });
-          const data = await resp.json().catch(() => ({}));
-          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
-
-          // Show invite URL result in place
-          if (inviteInput) inviteInput.value = data?.inviteUrl || "";
-          if (resultBox) resultBox.style.display = "block";
-          // Keep modal open; admin can copy the link
-        } catch (ex) {
-          console.error("Invite user failed:", ex);
-          if (err) {
-            err.textContent = ex?.message || "Failed to create user invite";
-            err.style.display = "block";
-          }
-          submitBtn?.removeAttribute("disabled");
-        }
+        doSubmit(e);
       });
     })();
   </script>
