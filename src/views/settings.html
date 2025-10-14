@@ -295,6 +295,254 @@ en-US,en-GB</textarea
     </main>
 
     <script>
+      const SETTINGS_FIELD_MAP = {
+        "env.app.name": { id: "appName" },
+        "env.app.tagline": { id: "appTagline" },
+        "env.app.description": { id: "appDescription" },
+        "env.app.version": { id: "appVersion" },
+        "env.app.url": { id: "baseUrl" },
+        "default.user.role": { id: "defaultUserRole" },
+        "signup.policy": { id: "signupPolicy" },
+        "auth.password.min_length": { id: "passwordMinLength" },
+        "auth.session.ttl_ms": { id: "sessionTtlMs" },
+        "auth.cookie.name": { id: "cookieName" },
+        "feature.guest.login.enabled": { id: "allowGuest" },
+        "feature.guest.login.enabled.bypass": { id: "guestBypass" },
+        "feature.terms.require_acceptance": { id: "requireTerms" },
+        "ui.date.format": { id: "dateFormat" },
+        "env.locale.default": { id: "defaultLocale" },
+        "env.locale.supported": {
+          id: "supportedLocales",
+          toInput: (value) =>
+            Array.isArray(value) ? value.join(",") : String(value ?? ""),
+        },
+        "env.currency.default": {
+          id: "defaultCurrency",
+          toInput: (value) =>
+            typeof value === "string"
+              ? value.toUpperCase()
+              : String(value ?? ""),
+        },
+        "env.timezone.default": { id: "timeZone" },
+      };
+
+      const LOCALE_PATTERN = /^[a-z]{2,3}(?:[-_][a-z0-9]+)*$/i;
+
+      function normalizeLocaleInput(value) {
+        if (value === null || value === undefined) return "";
+        const raw = String(value).trim();
+        if (!raw) return "";
+        const normalized = raw.replace(/_/g, "-");
+        if (!LOCALE_PATTERN.test(normalized)) return null;
+        const segments = normalized.split("-");
+        const base = segments.shift().toLowerCase();
+        const formatted = segments.map((segment) => {
+          if (!segment) return segment;
+          if (segment.length <= 2) return segment.toUpperCase();
+          return segment[0].toUpperCase() + segment.slice(1);
+        });
+        return [base, ...formatted].filter(Boolean).join("-");
+      }
+
+      function toBoolean(value) {
+        if (typeof value === "boolean") return value;
+        if (typeof value === "number") return value !== 0;
+        if (typeof value === "string") {
+          const normalized = value.trim().toLowerCase();
+          return ["true", "1", "yes", "on"].includes(normalized);
+        }
+        return Boolean(value);
+      }
+
+      function setFieldValue(id, rawValue, config = {}) {
+        const field = document.getElementById(id);
+        if (!field) return;
+
+        const value =
+          typeof config.toInput === "function"
+            ? config.toInput(rawValue)
+            : rawValue;
+
+        if (field.type === "checkbox") {
+          field.checked = toBoolean(value);
+          return;
+        }
+
+        if (field.tagName === "SELECT") {
+          const selectValue = Array.isArray(value)
+            ? String(value[0] ?? "")
+            : (value ?? "");
+          if (typeof selectValue === "string" && selectValue) {
+            const hasOption = Array.from(field.options).some(
+              (opt) => opt.value === selectValue,
+            );
+            if (!hasOption) {
+              const opt = document.createElement("option");
+              opt.value = selectValue;
+              opt.textContent = selectValue;
+              field.appendChild(opt);
+            }
+            field.value = selectValue;
+          }
+          return;
+        }
+
+        if (field.type === "number") {
+          const num = Number(value);
+          if (!Number.isNaN(num)) {
+            field.value = num;
+          }
+          return;
+        }
+
+        if (field.tagName === "TEXTAREA") {
+          field.value = value ?? "";
+          return;
+        }
+
+        field.value = value ?? "";
+      }
+
+      async function loadSettings() {
+        try {
+          const res = await fetch("/api/settings");
+          if (!res.ok) {
+            throw new Error(`Failed to load settings (status ${res.status})`);
+          }
+          const data = await res.json();
+          const settings = data?.settings || {};
+
+          for (const [key, config] of Object.entries(SETTINGS_FIELD_MAP)) {
+            if (!(key in settings)) continue;
+            setFieldValue(config.id, settings[key], config);
+          }
+        } catch (err) {
+          console.error("Failed to load settings", err);
+        }
+      }
+
+      function markFieldError(field, hasError) {
+        if (!field) return;
+        field.classList.toggle("input--error", hasError);
+        const messageEl =
+          field.parentElement?.querySelector(".help.help--error");
+        if (messageEl) {
+          messageEl.style.display = hasError ? "block" : "none";
+        }
+      }
+
+      function validateAppForm() {
+        const errors = [];
+
+        const nameField = document.getElementById("appName");
+        const nameValue = nameField.value.trim();
+        markFieldError(nameField, false);
+        if (!nameValue) {
+          errors.push("App name is required.");
+          markFieldError(nameField, true);
+        } else {
+          nameField.value = nameValue;
+        }
+
+        const urlField = document.getElementById("baseUrl");
+        const urlValue = urlField.value.trim();
+        markFieldError(urlField, false);
+        if (urlValue && !/^https?:\/\/[^ ]+$/i.test(urlValue)) {
+          errors.push("Base URL must be a valid http(s) URL.");
+          markFieldError(urlField, true);
+        } else {
+          urlField.value = urlValue;
+        }
+
+        const passwordField = document.getElementById("passwordMinLength");
+        const passValue = Number(passwordField.value);
+        markFieldError(passwordField, false);
+        if (!Number.isFinite(passValue) || passValue < 4) {
+          errors.push("Password minimum length must be at least 4.");
+          markFieldError(passwordField, true);
+        } else {
+          passwordField.value = String(Math.floor(passValue));
+        }
+
+        const ttlField = document.getElementById("sessionTtlMs");
+        const ttlValue = Number(ttlField.value);
+        markFieldError(ttlField, false);
+        if (!Number.isFinite(ttlValue) || ttlValue < 60000) {
+          errors.push("Session TTL must be at least 60000 ms (1 minute).");
+          markFieldError(ttlField, true);
+        } else {
+          ttlField.value = String(Math.floor(ttlValue));
+        }
+
+        const cookieField = document.getElementById("cookieName");
+        const cookieValue = cookieField.value.trim();
+        markFieldError(cookieField, false);
+        if (!cookieValue) {
+          errors.push("Session cookie name is required.");
+          markFieldError(cookieField, true);
+        } else {
+          cookieField.value = cookieValue;
+        }
+
+        return errors;
+      }
+
+      function validateLocalizationForm() {
+        const errors = [];
+
+        const currencyField = document.getElementById("defaultCurrency");
+        const currencyValue = currencyField.value.trim();
+        markFieldError(currencyField, false);
+        if (!currencyValue || currencyValue.length !== 3) {
+          errors.push("Default currency must be a 3-letter ISO code.");
+          markFieldError(currencyField, true);
+        } else {
+          currencyField.value = currencyValue.toUpperCase();
+        }
+
+        const defaultLocaleField = document.getElementById("defaultLocale");
+        markFieldError(defaultLocaleField, false);
+        const normalizedDefaultLocale = normalizeLocaleInput(
+          defaultLocaleField.value,
+        );
+        if (!normalizedDefaultLocale) {
+          errors.push(
+            "Default locale must be a valid locale code (e.g., en-US).",
+          );
+          markFieldError(defaultLocaleField, true);
+        } else {
+          defaultLocaleField.value = normalizedDefaultLocale;
+        }
+
+        const supportedField = document.getElementById("supportedLocales");
+        markFieldError(supportedField, false);
+        const rawLocales = supportedField.value
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const normalizedLocales = [];
+        const invalidLocales = [];
+
+        for (const locale of rawLocales) {
+          const normalized = normalizeLocaleInput(locale);
+          if (!normalized) {
+            invalidLocales.push(locale);
+          } else {
+            normalizedLocales.push(normalized);
+          }
+        }
+
+        if (invalidLocales.length > 0) {
+          errors.push(`Invalid locale codes: ${invalidLocales.join(", ")}`);
+          markFieldError(supportedField, true);
+        } else if (normalizedLocales.length > 0) {
+          supportedField.value = normalizedLocales.join(",");
+        }
+
+        return errors;
+      }
+
       async function sendSettings(entries, submitter, successMessage) {
         if (!Array.isArray(entries) || entries.length === 0) return;
         if (submitter) {
@@ -323,7 +571,11 @@ en-US,en-GB</textarea
             const errMsg =
               (data && data.error) ||
               `Failed to save settings (status ${res.status})`;
-            throw new Error(errMsg);
+            const details =
+              Array.isArray(data?.details) && data.details.length
+                ? `\n${data.details.join("\n")}`
+                : "";
+            throw new Error(`${errMsg}${details}`);
           }
 
           alert(successMessage || "Settings saved.");
@@ -348,6 +600,12 @@ en-US,en-GB</textarea
           const submitter =
             e.submitter || form.querySelector('[type="submit"]');
 
+          const errors = validateAppForm();
+          if (errors.length > 0) {
+            alert(errors.join("\n"));
+            return;
+          }
+
           const appName = document.getElementById("appName").value.trim();
           const appTagline = document.getElementById("appTagline").value.trim();
           const appDescription = document
@@ -365,7 +623,7 @@ en-US,en-GB</textarea
             10,
           );
           const passwordMinLength = Number.isFinite(passwordMinLengthRaw)
-            ? Math.max(1, passwordMinLengthRaw)
+            ? Math.max(4, passwordMinLengthRaw)
             : 8;
           const sessionTtlRaw = Number.parseInt(
             document.getElementById("sessionTtlMs").value,
@@ -381,7 +639,7 @@ en-US,en-GB</textarea
           const dateFormat = document.getElementById("dateFormat").value;
 
           const entries = [
-            { key: "env.app.name", value: appName || null },
+            { key: "env.app.name", value: appName },
             { key: "env.app.tagline", value: appTagline || null },
             { key: "env.app.description", value: appDescription || null },
             { key: "env.app.version", value: appVersion || null },
@@ -416,16 +674,24 @@ en-US,en-GB</textarea
           const form = e.currentTarget;
           const submitter =
             e.submitter || form.querySelector('[type="submit"]');
+          const errors = validateLocalizationForm();
+          if (errors.length > 0) {
+            alert(errors.join("\n"));
+            return;
+          }
           const defaultLocale = document.getElementById("defaultLocale").value;
           const supportedLocalesRaw =
             document.getElementById("supportedLocales").value;
           const supportedLocales = supportedLocalesRaw
             .split(",")
             .map((s) => s.trim())
+            .filter(Boolean)
+            .map((locale) => normalizeLocaleInput(locale))
             .filter(Boolean);
           const defaultCurrency = document
             .getElementById("defaultCurrency")
-            .value.trim();
+            .value.trim()
+            .toUpperCase();
           const timeZone = document.getElementById("timeZone").value;
 
           const entries = [
@@ -443,6 +709,8 @@ en-US,en-GB</textarea
 
           await sendSettings(entries, submitter, "Localization saved.");
         });
+
+      loadSettings();
 
       // Reset buttons
       document.getElementById("reset-app").addEventListener("click", () => {

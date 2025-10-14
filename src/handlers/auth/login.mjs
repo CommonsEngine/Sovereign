@@ -51,6 +51,9 @@ export default async function login(req, res) {
             status: true,
             passwordHash: true,
             primaryEmailId: true,
+            primaryEmail: {
+              select: { id: true, email: true, isVerified: true },
+            },
             roleAssignments: {
               select: {
                 id: true,
@@ -144,7 +147,11 @@ export default async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    await createSession(req, res, { ...user, email });
+    await createSession(req, res, {
+      ...user,
+      sessionEmail: userEmailRec.email,
+      sessionEmailId: userEmailRec.id,
+    });
 
     if (isFormContent) {
       const dest =

@@ -9,6 +9,83 @@ import logger from "./logger.mjs";
 
 const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS } = env();
 
+async function resolvePrimaryEmailSnapshot(user) {
+  if (!user) return null;
+
+  const normalizeRecord = (record) => {
+    if (!record) return null;
+    return {
+      id: record.id ?? null,
+      email: record.email ?? null,
+      isVerified: record.isVerified ?? record.is_verified ?? false,
+    };
+  };
+
+  if (user.primaryEmail && user.primaryEmail.email) {
+    return normalizeRecord(user.primaryEmail);
+  }
+
+  if (user.primaryEmail && typeof user.primaryEmail === "string") {
+    return {
+      id: user.primaryEmailId ?? null,
+      email: user.primaryEmail,
+      isVerified: !!user.primaryEmailVerified,
+    };
+  }
+
+  if (typeof user.sessionEmail === "string" && user.sessionEmail) {
+    return {
+      id: user.sessionEmailId ?? null,
+      email: user.sessionEmail,
+      isVerified: true,
+    };
+  }
+
+  if (Array.isArray(user.emails) && user.emails.length > 0) {
+    const primary = user.emails.find((e) => e && e.isPrimary) || user.emails[0];
+    return normalizeRecord(primary);
+  }
+
+  if (user.primaryEmailId) {
+    const emailRecord = await prisma.userEmail.findUnique({
+      where: { id: user.primaryEmailId },
+      select: { id: true, email: true, isVerified: true },
+    });
+    if (emailRecord) return normalizeRecord(emailRecord);
+  }
+
+  if (user.email) {
+    return {
+      id: user.primaryEmailId ?? null,
+      email: user.email,
+      isVerified: true,
+    };
+  }
+
+  return null;
+}
+
+function buildUserSnapshot(user, primaryEmail) {
+  const safePrimary = primaryEmail
+    ? {
+        id: primaryEmail.id ?? null,
+        email: primaryEmail.email ?? null,
+        isVerified: !!primaryEmail.isVerified,
+      }
+    : null;
+
+  return {
+    id: user.id,
+    name: user.name ?? null,
+    firstName: user.firstName ?? null,
+    lastName: user.lastName ?? null,
+    pictureUrl: user.pictureUrl ?? null,
+    primaryEmail: safePrimary,
+    primaryEmailId:
+      safePrimary?.id ?? user.primaryEmailId ?? user.sessionEmailId ?? null,
+  };
+}
+
 export async function hashPassword(pwd) {
   return argon2.hash(pwd, {
     type: argon2.argon2id,
@@ -172,6 +249,9 @@ export async function createSession(req, res, user) {
     logger.warn("Failed to fetch roles/capabilities for session snapshot", err);
   }
 
+  const primaryEmail = await resolvePrimaryEmailSnapshot(user);
+  const userSnapshot = buildUserSnapshot(user, primaryEmail);
+
   await prisma.session.create({
     data: {
       userId: user.id,
@@ -181,6 +261,7 @@ export async function createSession(req, res, user) {
       expiresAt,
       roles,
       capabilities,
+      userSnapshot,
     },
   });
   res.cookie(AUTH_SESSION_COOKIE_NAME, token, {
@@ -193,7 +274,6 @@ export async function getSessionWithUser(token) {
   if (!token) return null;
   const s = await prisma.session.findUnique({
     where: { token },
-    include: { user: true },
   });
   if (!s || s.expiresAt < new Date()) {
     if (s) {
@@ -205,6 +285,46 @@ export async function getSessionWithUser(token) {
     }
     return null;
   }
+  let snapshot = s.userSnapshot || null;
+
+  if (!snapshot) {
+    const user = await prisma.user.findUnique({
+      where: { id: s.userId },
+      select: {
+        id: true,
+        name: true,
+        firstName: true,
+        lastName: true,
+        pictureUrl: true,
+        primaryEmailId: true,
+        primaryEmail: {
+          select: { id: true, email: true, isVerified: true },
+        },
+      },
+    });
+
+    if (!user) {
+      try {
+        await prisma.session.delete({ where: { token } });
+      } catch (err) {
+        logger.warn("Failed to delete session for missing user", err);
+      }
+      return null;
+    }
+
+    const primaryEmail = await resolvePrimaryEmailSnapshot(user);
+    snapshot = buildUserSnapshot(user, primaryEmail);
+
+    try {
+      await prisma.session.update({
+        where: { token },
+        data: { userSnapshot: snapshot },
+      });
+    } catch (err) {
+      logger.warn("Failed to persist session user snapshot", err);
+    }
+  }
+
   return {
     id: s.id,
     userId: s.userId,
@@ -214,7 +334,7 @@ export async function getSessionWithUser(token) {
     createdAt: s.createdAt,
     expiresAt: s.expiresAt,
     user: {
-      ...s.user,
+      ...snapshot,
       roles: s.roles || [],
       capabilities: s.capabilities || {},
     },

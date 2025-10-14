@@ -16,6 +16,11 @@ export async function requireAuth(req, res, next) {
   const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
 
+  const primaryEmail = session?.user?.primaryEmail?.email || null;
+  const roles = Array.isArray(session?.user?.roles) ? session.user.roles : [];
+  const capabilities =
+    (session && session.user && session.user.capabilities) || {};
+
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     // API Auth Block Starts here
     if (!session || !session.user) {
@@ -25,10 +30,13 @@ export async function requireAuth(req, res, next) {
 
     req.user = {
       id: session.userId,
-      username: session.user.username,
-      email: session.user.primaryEmailId,
-      role: session.user.roles[0],
-      capabilities: session.user.capabilities,
+      name: session.user.name,
+      email: primaryEmail,
+      primaryEmailId:
+        session.user.primaryEmail?.id || session.user.primaryEmailId || null,
+      roles,
+      role: roles[0] || null,
+      capabilities,
     };
     req.sessionToken = token;
     next();
@@ -39,10 +47,21 @@ export async function requireAuth(req, res, next) {
         // Auto guest login (singleton)
         const guest = await getOrCreateSingletonGuestUser();
         await createSession(req, res, guest);
+        const guestEmail = Array.isArray(guest.emails)
+          ? guest.emails.find((e) => e.isPrimary)?.email ||
+            guest.emails[0]?.email
+          : null;
+        const guestEmailId = Array.isArray(guest.emails)
+          ? guest.emails.find((e) => e.isPrimary)?.id || guest.emails[0]?.id
+          : null;
         req.user = {
           id: guest.id,
-          username: guest.username,
-          email: guest.primaryEmailId,
+          name: guest.name,
+          email: guestEmail || null,
+          primaryEmailId: guestEmailId || guest.primaryEmailId || null,
+          roles: [],
+          role: null,
+          capabilities: {},
         };
         return next();
       }
@@ -55,9 +74,12 @@ export async function requireAuth(req, res, next) {
       req.user = {
         id: session.userId,
         name: session.user.name,
-        email: session.user.primaryEmailId,
-        role: session.user.roles[0],
-        capabilities: session.user.capabilities,
+        email: primaryEmail,
+        primaryEmailId:
+          session.user.primaryEmail?.id || session.user.primaryEmailId || null,
+        roles,
+        role: roles[0] || null,
+        capabilities,
       };
       req.sessionToken = token;
       next();

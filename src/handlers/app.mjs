@@ -4,6 +4,234 @@ import logger from "../utils/logger.mjs";
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;
 
+const TRUE_VALUES = new Set(["true", "1", "yes", "on"]);
+const FALSE_VALUES = new Set(["false", "0", "no", "off"]);
+const LOCALE_REGEX = /^[a-z]{2,3}(?:[-_][a-z0-9]+)*$/i;
+const ALLOWED_DATE_FORMATS = new Set(["locale", "iso", "ymd", "mdy"]);
+const ALLOWED_SIGNUP_POLICIES = new Set(["invite", "open"]);
+const BOOLEAN_KEYS = new Set([
+  "feature.guest.login.enabled",
+  "feature.guest.login.enabled.bypass",
+  "feature.terms.require_acceptance",
+]);
+
+function parseBooleanLike(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (TRUE_VALUES.has(normalized)) return true;
+    if (FALSE_VALUES.has(normalized)) return false;
+  }
+  return null;
+}
+
+function normalizeString(value, { allowEmpty = true } = {}) {
+  if (value === null || value === undefined) return allowEmpty ? null : "";
+  const str = String(value).trim();
+  if (!str && !allowEmpty) {
+    throw new Error("Value cannot be empty");
+  }
+  return str || (allowEmpty ? null : str);
+}
+
+function normalizeRequiredString(value, fieldLabel) {
+  if (value === null || value === undefined) {
+    throw new Error(`${fieldLabel} is required`);
+  }
+  const str = String(value).trim();
+  if (!str) {
+    throw new Error(`${fieldLabel} is required`);
+  }
+  return str;
+}
+
+function normalizeHttpUrl(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const str = String(value).trim();
+  try {
+    const url = new URL(str);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error("Only http(s) URLs are supported");
+    }
+    return url.toString();
+  } catch (err) {
+    throw new Error("Value must be a valid http(s) URL");
+  }
+}
+
+function normalizeInteger(value, { min, field }) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || !Number.isInteger(num)) {
+    throw new Error(`${field} must be an integer`);
+  }
+  if (typeof min === "number" && num < min) {
+    throw new Error(`${field} must be at least ${min}`);
+  }
+  return num;
+}
+
+function normalizeBoolean(value, field) {
+  if (value === null || value === undefined) return false;
+  const parsed = parseBooleanLike(value);
+  if (parsed === null) {
+    throw new Error(`${field} must be a boolean`);
+  }
+  return parsed;
+}
+
+function normalizeLocale(value, field) {
+  const raw = normalizeString(value, { allowEmpty: false });
+  const normalized = raw.replace(/_/g, "-");
+  if (!LOCALE_REGEX.test(normalized)) {
+    throw new Error(`${field} must be a valid locale code (e.g., en-US)`);
+  }
+  const segments = normalized.split("-");
+  const base = segments.shift().toLowerCase();
+  const formatted = segments.map((segment) => {
+    if (!segment) return segment;
+    if (segment.length <= 2) return segment.toUpperCase();
+    return segment[0].toUpperCase() + segment.slice(1);
+  });
+  return [base, ...formatted].filter(Boolean).join("-");
+}
+
+function normalizeLocaleList(value) {
+  if (Array.isArray(value)) {
+    const locales = value
+      .map((v) => normalizeLocale(v, "Supported locale"))
+      .filter(Boolean);
+    if (locales.length === 0) {
+      throw new Error("Supported locales cannot be empty");
+    }
+    return locales;
+  }
+
+  if (value === null || value === undefined) {
+    throw new Error("Supported locales cannot be empty");
+  }
+  const str = String(value).trim();
+  if (!str) {
+    throw new Error("Supported locales cannot be empty");
+  }
+  const locales = str
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((locale) => normalizeLocale(locale, "Supported locale"));
+
+  if (locales.length === 0) {
+    throw new Error("Supported locales cannot be empty");
+  }
+
+  return locales;
+}
+
+function normalizeCurrency(value) {
+  const str = normalizeString(value, { allowEmpty: false });
+  if (str.length !== 3) {
+    throw new Error("Default currency must be a 3-letter ISO code");
+  }
+  return str.toUpperCase();
+}
+
+function normalizeSettingValue(key, rawValue) {
+  const value = rawValue ?? null;
+
+  switch (key) {
+    case "env.app.name":
+      return normalizeRequiredString(value, "App name");
+    case "env.app.tagline":
+    case "env.app.description":
+    case "env.app.version":
+      return normalizeString(value);
+    case "env.app.url":
+      return normalizeHttpUrl(value);
+    case "default.user.role":
+      return normalizeString(value);
+    case "signup.policy": {
+      const normalized = normalizeRequiredString(value, "Signup policy");
+      if (!ALLOWED_SIGNUP_POLICIES.has(normalized)) {
+        throw new Error(
+          "Signup policy must be one of: " +
+            Array.from(ALLOWED_SIGNUP_POLICIES).join(", "),
+        );
+      }
+      return normalized;
+    }
+    case "auth.password.min_length":
+      return normalizeInteger(value, {
+        min: 4,
+        field: "Password minimum length",
+      });
+    case "auth.session.ttl_ms":
+      return normalizeInteger(value, {
+        min: 60000,
+        field: "Session TTL (ms)",
+      });
+    case "auth.cookie.name":
+      return normalizeRequiredString(value, "Session cookie name");
+    case "feature.guest.login.enabled":
+      return normalizeBoolean(value, "Guest login toggle");
+    case "feature.guest.login.enabled.bypass":
+      return normalizeBoolean(value, "Guest login bypass toggle");
+    case "feature.terms.require_acceptance":
+      return normalizeBoolean(value, "Terms acceptance toggle");
+    case "ui.date.format": {
+      const normalized = normalizeString(value, { allowEmpty: false });
+      if (!ALLOWED_DATE_FORMATS.has(normalized)) {
+        throw new Error(
+          "Date format must be one of: " +
+            Array.from(ALLOWED_DATE_FORMATS).join(", "),
+        );
+      }
+      return normalized;
+    }
+    case "env.locale.default":
+      return normalizeLocale(value, "Default locale");
+    case "env.locale.supported":
+      return normalizeLocaleList(value);
+    case "env.currency.default":
+      return normalizeCurrency(value);
+    case "env.timezone.default":
+      return normalizeRequiredString(value, "Default timezone");
+    default: {
+      if (BOOLEAN_KEYS.has(key)) {
+        return normalizeBoolean(value, key);
+      }
+      return value;
+    }
+  }
+}
+
+export async function getAppSettings(_req, res) {
+  try {
+    const settings = await prisma.appSetting.findMany({
+      where: { scope: DEFAULT_SCOPE },
+      select: { key: true, value: true },
+    });
+
+    const payload = {};
+    for (const entry of settings) {
+      payload[entry.key] = entry.value ?? null;
+    }
+
+    const version = await prisma.versionRegistry.findUnique({
+      where: { id: "appsettings" },
+      select: { v: true },
+    });
+
+    return res.json({
+      settings: payload,
+      version: version?.v ?? 0,
+    });
+  } catch (err) {
+    logger.error("getAppSettings failed", err);
+    return res.status(500).json({ error: "Failed to load settings" });
+  }
+}
+
 export async function updateAppSettings(req, res) {
   const payload = req.body;
 
@@ -22,6 +250,7 @@ export async function updateAppSettings(req, res) {
     DEFAULT_SCOPE;
 
   const updates = [];
+  const errors = [];
 
   for (let idx = 0; idx < rawUpdates.length; idx += 1) {
     const entry = rawUpdates[idx];
@@ -48,18 +277,34 @@ export async function updateAppSettings(req, res) {
         ? entry.scope.trim()
         : defaultScope;
 
-    updates.push({
-      scope,
-      key,
-      value: entry.value === undefined ? null : entry.value,
+    try {
+      const normalizedValue = normalizeSettingValue(key, entry.value);
+      updates.push({
+        scope,
+        key,
+        value: normalizedValue,
+      });
+    } catch (err) {
+      errors.push(`Key "${key}": ${err?.message || "Invalid value provided"}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      error: "Validation failed",
+      details: errors,
     });
+  }
+
+  if (updates.length === 0) {
+    return res.status(400).json({ error: "No valid settings provided" });
   }
 
   try {
     const updatedSettings = await prisma.$transaction(
       updates.map(({ scope, key, value }) =>
         prisma.appSetting.upsert({
-          where: { key },
+          where: { scope_key: { scope, key } },
           update: { value },
           create: { scope, key, value },
           select: { key: true, scope: true, value: true },

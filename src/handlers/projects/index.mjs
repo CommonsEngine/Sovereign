@@ -276,7 +276,7 @@ export async function viewProjectConfigure(req, res) {
       return res.redirect(302, `/p/${project.id}`);
     }
 
-    return res.render("project/configure", { project });
+    return res.render("project/blog/configure", { project });
   } catch (err) {
     logger.error("Load project configure failed:", err);
     return res.status(500).render("error", {

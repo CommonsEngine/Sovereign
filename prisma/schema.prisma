@@ -167,6 +167,7 @@ model Session {
   userAgent    String? @map("user_agent")
   roles        Json?   @map("roles")
   capabilities Json?   @map("capabilities")
+  userSnapshot Json?   @map("user_snapshot")
 
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")

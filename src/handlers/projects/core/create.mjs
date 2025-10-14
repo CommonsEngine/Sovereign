@@ -3,6 +3,25 @@ import logger from "../../../utils/logger.mjs";
 import { flags } from "../../../config/flags.mjs";
 import prisma from "../../../prisma.mjs";
 
+const MAX_SLUG_ATTEMPTS = 10;
+
+function slugifyName(name) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 64);
+}
+
+function buildSlug(base, attempt) {
+  if (!base) return uuid("s_");
+  if (attempt === 0) return base;
+  const suffix = attempt === 1 ? uuid("s_").slice(-6) : attempt;
+  const candidate = `${base}-${suffix}`;
+  return candidate.slice(0, 72) || uuid("s_");
+}
+
 export default async function create(req, res) {
   try {
     const userId = req.user?.id;
@@ -36,49 +55,79 @@ export default async function create(req, res) {
     }
 
     // optional: slugify name and ensure uniqueness (simple example)
-    const slugBase = name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-    let slug = slugBase || uuid("s_");
-    // ensure unique slug (within transaction or with unique constraint)
-    // Create project + blog in transaction
-    const project = await prisma.$transaction(async (tx) => {
-      const p = await tx.project.create({
-        data: {
-          id: uuid("p_"),
-          name,
-          desc,
-          type,
-          scope,
-          ownerId: userId,
-          slug,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const slugBase = slugifyName(name);
 
-      if (type === "blog") {
-        await tx.blog.create({
-          data: {
-            id: uuid(),
-            projectId: p.id,
-            title: name, // use local variable 'name' (not p.name when p was selected limited)
-          },
+    let createdProject = null;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt += 1) {
+      const candidateSlug = buildSlug(slugBase, attempt);
+
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          const projectRecord = await tx.project.create({
+            data: {
+              id: uuid("p_"),
+              name,
+              desc,
+              type,
+              scope,
+              ownerId: userId,
+              slug: candidateSlug,
+            },
+            select: {
+              id: true,
+            },
+          });
+
+          if (type === "blog") {
+            await tx.blog.create({
+              data: {
+                id: uuid(),
+                projectId: projectRecord.id,
+                title: name,
+              },
+            });
+          }
+
+          return {
+            project: projectRecord,
+            slug: candidateSlug,
+          };
         });
-      }
 
-      return p;
-    });
+        createdProject = result;
+        break;
+      } catch (err) {
+        if (err?.code === "P2002") {
+          lastError = err;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!createdProject) {
+      logger.warn("Failed to generate unique project slug", {
+        base: slugBase,
+        ownerId: userId,
+        error: lastError,
+      });
+      return res
+        .status(409)
+        .json({ error: "Unable to generate unique project slug" });
+    }
 
     // TODO: Use slug in URL if desired
     const url =
-      type === "blog" ? `/p/${project.id}/configure` : `/p/${project.id}`;
+      type === "blog"
+        ? `/p/${createdProject.project.id}/configure`
+        : `/p/${createdProject.project.id}`;
 
     return res.status(201).json({
       ok: true,
-      id: project.id,
+      id: createdProject.project.id,
+      slug: createdProject.slug,
       url,
     });
   } catch (err) {
