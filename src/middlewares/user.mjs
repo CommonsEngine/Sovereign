@@ -1,30 +1,43 @@
-function normalizeInputAllowed(v) {
-  if (typeof v === "number") return String(v);
-  if (typeof v === "string") return v.toLowerCase();
+const CAPABILITY_PREFIX = "cap:";
+
+function normalizeAllowedValue(value) {
+  if (typeof value === "number") return String(value);
+  if (typeof value === "string") return value.trim().toLowerCase();
   return null;
 }
 
-function userHasAllowedRole(user, allowedSet) {
-  if (!user || !allowedSet) return false;
+function splitAllowedSet(allowedSet) {
+  const roles = new Set();
+  const capabilities = new Set();
 
-  // If no restrictions specified, allow any authenticated user
-  if (allowedSet.size === 0) return !!user;
+  for (const entry of allowedSet) {
+    if (!entry) continue;
+    if (entry.startsWith(CAPABILITY_PREFIX)) {
+      const key = entry.slice(CAPABILITY_PREFIX.length);
+      if (key) capabilities.add(key);
+      continue;
+    }
+    roles.add(entry);
+  }
 
-  // prefer role snapshot if present
+  return { roles, capabilities };
+}
+
+function userHasRole(user, allowedRoles) {
+  if (!user || !allowedRoles) return false;
+  if (allowedRoles.size === 0) return !!user;
+
+  if (allowedRoles.has("any") || allowedRoles.has("*")) return true;
+
   const roleCandidates = [];
-
   if (Array.isArray(user.roles) && user.roles.length > 0) {
     roleCandidates.push(...user.roles);
   }
-
   if (user.role) {
     roleCandidates.push(user.role);
   }
 
   if (roleCandidates.length === 0) return false;
-
-  // allow wildcard / any
-  if (allowedSet.has("any") || allowedSet.has("*")) return true;
 
   for (const roleObj of roleCandidates) {
     if (!roleObj) continue;
@@ -34,12 +47,26 @@ function userHasAllowedRole(user, allowedSet) {
       ? String(roleObj.label).toLowerCase()
       : null;
 
-    if (roleId && allowedSet.has(roleId)) return true;
-    if (roleKey && allowedSet.has(roleKey)) return true;
-    if (roleLabel && allowedSet.has(roleLabel)) return true;
+    if (roleId && allowedRoles.has(roleId)) return true;
+    if (roleKey && allowedRoles.has(roleKey)) return true;
+    if (roleLabel && allowedRoles.has(roleLabel)) return true;
   }
 
-  // TODO: Extend this middleware to consider capabilities as well
+  return false;
+}
+
+function userHasCapability(user, allowedCapabilities) {
+  if (!user || !allowedCapabilities || allowedCapabilities.size === 0) {
+    return false;
+  }
+
+  const caps = user.capabilities || {};
+
+  for (const key of allowedCapabilities) {
+    const value = caps[key];
+    if (!value) continue;
+    if (value === "allow") return true;
+  }
 
   return false;
 }
@@ -58,8 +85,10 @@ function userHasAllowedRole(user, allowedSet) {
 export function requireRole(allowed = []) {
   const raw = Array.isArray(allowed) ? allowed : [allowed];
   const allowedSet = new Set(
-    raw.map(normalizeInputAllowed).filter((v) => v !== null),
+    raw.map(normalizeAllowedValue).filter((v) => v !== null),
   );
+  const { roles: allowedRoles, capabilities: allowedCaps } =
+    splitAllowedSet(allowedSet);
 
   return function roleGuard(req, res, next) {
     if (!req.user) {
@@ -73,9 +102,10 @@ export function requireRole(allowed = []) {
       });
     }
 
-    // Check RBAC snapshot or legacy fields
-    const allowed = userHasAllowedRole(req.user, allowedSet);
-    if (!allowed) {
+    const roleAllowed = userHasRole(req.user, allowedRoles);
+    const capabilityAllowed = userHasCapability(req.user, allowedCaps);
+
+    if (!roleAllowed && !capabilityAllowed) {
       if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
         return res.status(403).json({ error: "Forbidden" });
       }
