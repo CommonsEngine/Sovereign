@@ -61,11 +61,19 @@ function userHasCapability(user, allowedCapabilities) {
   }
 
   const caps = user.capabilities || {};
+  const precedence = {
+    allow: 5,
+    consent: 4,
+    compliance: 3,
+    scoped: 2,
+    anonymized: 2,
+    deny: 1,
+  };
 
   for (const key of allowedCapabilities) {
     const value = caps[key];
     if (!value) continue;
-    if (value === "allow") return true;
+    if ((precedence[value] || 0) > precedence.deny) return true;
   }
 
   return false;
