@@ -51,6 +51,9 @@ export default async function login(req, res) {
             status: true,
             passwordHash: true,
             primaryEmailId: true,
+            primaryEmail: {
+              select: { id: true, email: true, isVerified: true },
+            },
             roleAssignments: {
               select: {
                 id: true,
