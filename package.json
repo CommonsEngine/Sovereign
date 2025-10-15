@@ -8,8 +8,10 @@
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "start": "node dist/index.mjs",
+    "start:src": "node --import ./scripts/register-alias.mjs src/index.mjs",
     "dev": "nodemon",
+    "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
     "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
     "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
@@ -18,7 +20,7 @@
     "prisma:seed": "node prisma/seed/index.mjs",
     "prisma:reset": "prisma/reset.sh",
     "format:check": "prettier --check .",
-    "format": "prettier --write .",
+    "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
     "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format"
@@ -29,7 +31,7 @@
       "public",
       "data"
     ],
-    "ext": "mjs,js,json,html,css",
+    "ext": "mjs,js,jsx,json,html,css",
     "exec": "node --import ./scripts/register-alias.mjs src/index.mjs",
     "signal": "SIGTERM"
   },
@@ -77,12 +79,17 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4",
     "sharp": "^0.34.3",
     "simple-git": "^3.28.0",
     "unzipper": "^0.12.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "esbuild": "^0.21.5",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
@@ -91,6 +98,7 @@
     "globals": "^16.4.0",
     "nodemon": "^3.1.10",
     "prettier": "^3.3.3",
-    "prisma": "^6.16.3"
+    "prisma": "^6.16.3",
+    "vite": "^7.1.10"
   }
 }

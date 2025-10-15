@@ -1,14 +1,14 @@
 # Sovereign — reclaim your digital freedom.
 
-Sovereign is to develop as a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign will enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.
+Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign will enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.
+
+The platform is still in its early stages of development. While the plan has been mapped out, the documentation remains incomplete and is actively being developed.
 
 ## Getting Started
 
-We use Node.js/Express with the Handlebars template engine as the core stack for this application. SQLite serves as the primary database in MVP stage with straightforward extensibility to PostgreSQL (or any other SQL database) through Prisma.
+We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with the [Handlebars](https://handlebarsjs.com/) template engine as the core stack for this application, with optional [React](https://react.dev/) SSR/JSX support. SQLite serves as the primary database during the MVP stage, with straightforward extensibility to PostgreSQL (or any other SQL database) through [Prisma](https://www.prisma.io/), as an intermediate abstraction layer between the app code and the database.
 
-We use [Prisma](https://www.prisma.io/) as intermediate abstraction layer between the app code and the database.
-
-Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) for extended (evolving) documentation.
+Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
 
 ### Development
 
@@ -69,6 +69,134 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
    - Update `prisma/schema.prisma` first
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
    - Run the migration command to log the change with `yarn prisma migrate dev --name <migration-name-in-snake-case>`
+
+#### React / JSX Support (Server-Side Rendering + Client Hydration)
+
+The Sovereign Express/Handlebars stack also supports for **React / JSX views** (alonegside Handlebars) rendered via **server-side rendering (SSR)** with optional **client-side hydration** using [Vite](https://vite.dev/) middleware.
+
+This hybrid setup allows you to:
+
+- Keep using Handlebars for static pages, layouts, and emails.
+- Add React components or entire pages where interactivity or component reuse is needed.
+- Render React SSR directly from Express routes using `res.renderJSX()`.
+
+##### How It Works
+
+A custom Express helper/middleware, `res.renderJSX(viewPath, props)`, is available to render React components server-side:
+
+- It automatically resolves the module under `/src/views/${viewPath}.{jsx,tsx,ts,js}`.
+- Uses React's SSR API to generate HTML and embed initial props.
+- Automatically injects a matching client bundle (e.g. `.client.jsx`) for hydration during development.
+
+##### Creating a JSX Route
+
+Example route (from `src/index.mjs`):
+
+```js
+app.get(
+  "/example/react/*",
+  requireAuth,
+  exposeGlobals,
+  async (req, res, next) => {
+    try {
+      await res.renderJSX("example/react/index", {
+        path: req.params[0] || "",
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+```
+
+The above renders the React component from `src/views/example/react/index.jsx`.
+
+##### Creating a React / JSX View
+
+Example file: `src/views/example/react/index.jsx`
+
+```jsx
+import React from "react";
+import { Routes, Route, useParams, StaticRouter } from "react-router";
+import { BrowserRouter, Link } from "react-router-dom";
+
+function IndexPage() {
+  return (
+    <section>
+      <h2>Index Page (React App)</h2>
+      <p>
+        <Link to="/page/123">Go to Page 123</Link>
+      </p>
+    </section>
+  );
+}
+
+function PageById() {
+  const { id } = useParams();
+  return (
+    <section>
+      <h2>Page {id}</h2>
+      <p>Welcome!</p>
+    </section>
+  );
+}
+
+export default function ReactApp({ url }) {
+  const basename = "/example/react";
+  const isServer = typeof window === "undefined";
+
+  const content = (
+    <>
+      <header>
+        <h1>React App</h1>
+        <nav style={{ display: "flex", gap: 12 }}>
+          <Link to="/">Index Page</Link>
+          <Link to="/page/123">Page 123</Link>
+        </nav>
+      </header>
+
+      <Routes>
+        <Route path="/" element={<IndexPage />} />
+        <Route path="/page/:id" element={<PageById />} />
+      </Routes>
+    </>
+  );
+
+  return isServer ? (
+    <StaticRouter location={url} basename={basename}>
+      {content}
+    </StaticRouter>
+  ) : (
+    <BrowserRouter basename={basename}>{content}</BrowserRouter>
+  );
+}
+```
+
+##### Adding Client Hydration (Optional)
+
+To hydrate the JSX page on the client, create a matching `.client.jsx` file in the same folder:
+
+```jsx
+// src/views/example/react/index.client.jsx
+import React from "react";
+import { hydrateRoot } from "react-dom/client";
+import ReactApp from "./index.jsx";
+
+hydrateRoot(
+  document.getElementById("app"),
+  <ReactApp {...window.__SSR_PROPS__} />,
+);
+```
+
+When running in development (`yarn dev`), Vite automatically loads this client entry to hydrate the SSR HTML.
+
+##### Notes
+
+- JSX/TSX files are stored under `/src/views/`, mirroring the Handlebars template structure.
+- In development, Vite runs in middleware mode (with HMR and JSX/TSX support).
+- Production builds can extend Vite configuration to include client bundles for hydration.
+- React Router v7+ is supported (`StaticRouter` from `react-router`, `BrowserRouter` from `react-router-dom`).
+- Handlebars and React can be mixed — e.g., Handlebars layout wrapping a React-rendered `<div id="app">` island.
 
 ### Testing
 
@@ -183,6 +311,7 @@ git push origin v1.2.0
 
 > **Notes:**
 >
+> - Always branch out from `develop`.
 > - Do not rebase shared branches (`main`, `develop`).
 > - Rebase your local feature branches before opening a PR to keep history linear.
 > - Squash merges ensure each feature is a single, clean commit in history.
