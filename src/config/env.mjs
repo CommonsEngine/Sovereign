@@ -90,7 +90,7 @@ export default function env() {
     DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
     // Feature toggles (booleans)
-    FT_PROJECT_TYPE_GITCMS: toBool(process.env.FT_PROJECT_TYPE_GITCMS, true),
+    FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
     FT_PROJECT_TYPE_PAPERTRAIL: toBool(
       process.env.FT_PROJECT_TYPE_PAPERTRAIL,
       false,

@@ -29,7 +29,7 @@ export default async function create(req, res) {
 
     // feature flags (assume flags object available)
     const allowedTypes = new Set();
-    if (flags?.gitcms) allowedTypes.add("blog");
+    if (flags?.blog) allowedTypes.add("blog");
     // add other types conditionally...
     // allowed scopes
     const allowedScopes = new Set(["private", "org", "public"]);

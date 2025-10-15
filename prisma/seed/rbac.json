@@ -58,7 +58,7 @@
     },
     {
       "key": "project_types_manage",
-      "description": "Enable/manage project types (GitCMS, Docs, Sheets, Forms, Kanban, PaperTrail, etc.)."
+      "description": "Enable/manage project types (Blog, Docs, Sheets, Forms, Kanban, PaperTrail, etc.)."
     },
     {
       "key": "comment_collaborate",
