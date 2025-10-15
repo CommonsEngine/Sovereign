@@ -70,6 +70,20 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
    - Run the migration command to log the change with `yarn prisma migrate dev --name <migration-name-in-snake-case>`
 
+### Testing
+
+Run the Node.js built-in test runner:
+
+```bash
+yarn test
+```
+
+Keep tests running in watch mode during development:
+
+```bash
+yarn test:watch
+```
+
 #### Key implementation notes
 
 - AppSetting.value is a JSON column — it accepts objects, arrays, primitives and strings. Plain strings are stored as JSON strings.
