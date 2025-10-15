@@ -111,24 +111,58 @@ export async function useJSX(req, res, next) {
         // hydrateScript = `<script type="module" src="/assets/${viewPath}.client.js"></script>`;
       }
 
-      // Send a minimal HTML shell. If you prefer HBS layout wrapping, adapt to call res.render() instead.
+      const headHtml = await renderHead(res);
+      const htmlLang = escapeAttr(
+        res.locals?.head?.lang?.short || res.locals?.head?.lang || "en",
+      );
+
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.send(`<!doctype html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8"/>
-      <meta name="viewport" content="width=device-width, initial-scale=1"/>
-      <title>Sovereign</title>
-    </head>
-    <body>
-      <div id="app">${appHTML}</div>
-      <script>window.__SSR_PROPS__ = ${JSON.stringify(componentProps).replace(/</g, "\\u003c")}</script>
-      ${hydrateScript}
-    </body>
-  </html>`);
+<html lang="${htmlLang}">
+  <head>
+${headHtml.trimEnd()}
+  </head>
+  <body>
+    <div id="app">${appHTML}</div>
+    <script>window.__SSR_PROPS__ = ${JSON.stringify(componentProps).replace(/</g, "\\u003c")}</script>
+    ${hydrateScript}
+  </body>
+</html>`);
     } catch (err) {
       next(err);
     }
   };
   next();
+}
+
+function escapeAttr(value) {
+  return String(value ?? "").replace(/"/g, "&quot;");
+}
+
+async function renderHead(res) {
+  const locals = {
+    ...res.locals,
+  };
+
+  return new Promise((resolve, reject) => {
+    res.app.render(
+      "_partials/layout/head",
+      { ...locals, layout: false },
+      (err, rendered) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(rendered || "");
+        }
+      },
+    );
+  }).catch(() => {
+    const title = (locals.head && locals.head.title) || "Sovereign";
+    const version = locals.app?.version || "0.0.0";
+    return `<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>${title}</title>
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/global.css?v=${version}" />`;
+  });
 }
