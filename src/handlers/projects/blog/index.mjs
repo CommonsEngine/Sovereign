@@ -1043,7 +1043,7 @@ export async function viewPostCreate(req, res) {
   }
 }
 
-export async function retryBlogConnection(req, res) {
+export async function retryConnection(req, res) {
   try {
     const projectId = req.params?.id || req.params?.projectId;
     if (!projectId)

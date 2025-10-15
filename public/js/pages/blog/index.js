@@ -297,10 +297,13 @@
       }
       retryConnectionBtn.disabled = true;
       retryConnectionBtn.textContent = "Retrying…";
-      fetch(`/api/projects/${encodeURIComponent(projectId)}/retry-connection`, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-      })
+      fetch(
+        `/api/projects/${encodeURIComponent(projectId)}/blog/retry-connection`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        },
+      )
         .then((resp) => {
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           return resp.json().catch(() => ({}));

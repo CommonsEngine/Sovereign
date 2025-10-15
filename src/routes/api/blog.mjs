@@ -21,8 +21,8 @@ router.post(
   projectsHandler.blog.publishPost,
 );
 router.post(
-  "/projects/:id/retry-connection",
-  projectsHandler.blog.retryBlogConnection,
+  "/projects/:projectId/blog/retry-connection",
+  projectsHandler.blog.retryConnection,
 );
 
 export default router;
