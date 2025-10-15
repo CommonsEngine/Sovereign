@@ -1,5 +1,5 @@
-import prisma from "../prisma.mjs";
-import logger from "../utils/logger.mjs";
+import prisma from "$/prisma.mjs";
+import logger from "$/utils/logger.mjs";
 
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;

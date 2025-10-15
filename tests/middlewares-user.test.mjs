@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { requireRole } from "../src/middlewares/user.mjs";
+import { requireRole } from "$/middlewares/user.mjs";
 
 function buildReq(user) {
   return {

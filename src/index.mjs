@@ -10,9 +10,9 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
-import authRouter from "./routes/auth.mjs";
-import apiRouter from "./routes/api/index.mjs";
-import webRouter from "./routes/web.mjs";
+import authRouter from "$/routes/auth.mjs";
+import apiRouter from "$/routes/api/index.mjs";
+import webRouter from "$/routes/web.mjs";
 
 import { secure } from "./middlewares/security.mjs";
 // import { requireFeature } from "./middlewares/feature.mjs";
