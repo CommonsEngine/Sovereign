@@ -37,7 +37,21 @@ const DEFAULT_SELECT = {
   createdAt: true,
   updatedAt: true,
   ownerId: true,
-  Blog: { select: { id: true, projectId: true, gitConfig: true } },
+  Blog: {
+    select: {
+      id: true,
+      projectId: true,
+      gitConfig: {
+        select: {
+          repoUrl: true,
+          branch: true,
+          contentDir: true,
+          userName: true,
+          userEmail: true,
+        },
+      },
+    },
+  },
 };
 
 // TODO: Maybe we can isolate these functions in a separate utils file if they are needed elsewhere
@@ -151,6 +165,63 @@ export async function configureProject(req, res) {
   }
 }
 
+export async function retryBlogConnection(req, res) {
+  try {
+    const projectId = req.params?.id || req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        ownerId: true,
+        type: true,
+        Blog: {
+          select: {
+            id: true,
+            gitConfig: {
+              select: {
+                repoUrl: true,
+                branch: true,
+                contentDir: true,
+                userName: true,
+                userEmail: true,
+                authSecret: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!project || project.type !== "blog") {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    if (!ensureAccess({ ownerId: project.ownerId }, req)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const cfg = project.Blog?.gitConfig;
+    if (!cfg) {
+      return res.status(400).json({ error: "Blog configuration is missing." });
+    }
+
+    disposeGitManager(projectId);
+    await getOrInitGitManager(projectId, {
+      repoUrl: cfg.repoUrl,
+      branch: cfg.branch,
+      userName: cfg.userName,
+      userEmail: cfg.userEmail,
+      authToken: cfg.authSecret || null,
+    });
+
+    return res.json({ connected: true });
+  } catch (err) {
+    logger.error("Retry blog connection failed:", err);
+    return res.status(500).json({ error: "Failed to reconnect" });
+  }
+}
+
 export async function viewProject(req, res) {
   try {
     const projectId = req.params.projectId;
@@ -243,6 +314,8 @@ export async function viewProject(req, res) {
         repoUrl: gitConfig?.repoUrl || "",
         branch: gitConfig?.branch || "main",
         contentDir: gitConfig?.contentDir || "",
+        gitUserName: gitConfig?.userName || "",
+        gitUserEmail: gitConfig?.userEmail || "",
         createdAtISO: created.iso,
         createdAtDisplay: created.label,
         updatedAtISO: updated.iso,
@@ -287,7 +360,21 @@ export async function viewProjectConfigure(req, res) {
       id: true,
       name: true,
       type: true,
-      Blog: { select: { id: true, projectId: true, gitConfig: true } },
+      Blog: {
+        select: {
+          id: true,
+          projectId: true,
+          gitConfig: {
+            select: {
+              repoUrl: true,
+              branch: true,
+              contentDir: true,
+              userName: true,
+              userEmail: true,
+            },
+          },
+        },
+      },
     });
 
     if (!project) {
@@ -312,7 +399,10 @@ export async function viewProjectConfigure(req, res) {
       return res.redirect(302, `/p/${project.id}`);
     }
 
-    return res.render("project/blog/configure", { project });
+    return res.render("project/blog/configure", {
+      project,
+      gitConfig: project.Blog?.gitConfig || null,
+    });
   } catch (err) {
     logger.error("Load project configure failed:", err);
     return res.status(500).render("error", {

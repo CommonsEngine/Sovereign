@@ -5,6 +5,7 @@ import prisma from "../../../prisma.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
+  disposeGitManager,
 } from "../../../libs/git/registry.mjs";
 import FileManager from "../../../libs/fs.mjs";
 
@@ -729,14 +730,28 @@ export async function deletePost(req, res) {
 
     // Commit and push
     let pushed = true;
+    let publishError = null;
     try {
       await gm.publish(`Delete post: ${filename}`);
     } catch (err) {
       pushed = false;
+      publishError = err;
       logger.warn("Publish failed after deletion:", err?.message || err);
     }
 
-    return res.status(200).json({ deleted: true, filename, pushed });
+    const responsePayload = { deleted: true, filename, pushed };
+    if (!pushed && publishError) {
+      const msg = String(publishError?.message || publishError);
+      if (/non-fast-forward|fetch first|rejected/i.test(msg)) {
+        responsePayload.hint =
+          "Remote has new commits. Pull/rebase locally then retry publish.";
+      }
+      responsePayload.error = "Repository push failed";
+      responsePayload.detail = msg;
+      return res.status(202).json(responsePayload);
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (err) {
     logger.error("Delete Blog post failed:", err);
     return res.status(500).json({ error: "Failed to delete post" });
@@ -834,12 +849,15 @@ export async function publishPost(req, res) {
     logger.error("Publish Blog changes failed:", err);
     // Common non-fast-forward hint
     const msg = String(err?.message || err);
-    const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
+    const nonFastForward = /non-fast-forward|fetch first|rejected/i.test(msg);
+    const hint = nonFastForward
       ? "Remote has new commits. Pull/rebase then try again."
       : undefined;
-    return res
-      .status(500)
-      .json({ error: "Failed to publish changes", hint, detail: msg });
+    return res.status(nonFastForward ? 409 : 500).json({
+      error: "Failed to publish changes",
+      hint,
+      detail: msg,
+    });
   }
 }
 

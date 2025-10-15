@@ -28,6 +28,9 @@
   const emptyRow = tbody?.querySelector(".empty-row");
   const loadingRow = tbody?.querySelector(".loading-row");
   const errorRow = tbody?.querySelector(".error-row");
+  const retryConnectionBtn = document.querySelector(
+    '[data-action="retry-connection"]',
+  );
 
   let rows = [];
 
@@ -286,6 +289,34 @@
   document.addEventListener("DOMContentLoaded", async () => {
     wireLoader();
     search?.addEventListener("input", applySearch);
+    retryConnectionBtn?.addEventListener("click", () => {
+      const projectId = resolveProjectId();
+      if (!projectId) {
+        window.location.reload();
+        return;
+      }
+      retryConnectionBtn.disabled = true;
+      retryConnectionBtn.textContent = "Retrying…";
+      fetch(`/api/projects/${encodeURIComponent(projectId)}/retry-connection`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      })
+        .then((resp) => {
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          return resp.json().catch(() => ({}));
+        })
+        .then(() => window.location.reload())
+        .catch((err) => {
+          console.error("Retry connection failed", err);
+          window.alert(
+            err?.message || "Failed to reconnect. Please try again later.",
+          );
+        })
+        .finally(() => {
+          retryConnectionBtn.disabled = false;
+          retryConnectionBtn.textContent = "Retry connection";
+        });
+    });
     // run page startup tasks
     try {
       await SM.runAll({ parallel: true });

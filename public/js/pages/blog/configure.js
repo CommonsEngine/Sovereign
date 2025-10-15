@@ -9,6 +9,29 @@
   const errEl = document.getElementById("form-error");
   const saveBtn = document.getElementById("save-btn");
 
+  function populateDefaults() {
+    if (!form) return;
+    const defaults = {
+      repoUrl: form.dataset.repoUrl || "",
+      branch: form.dataset.branch || "main",
+      gitUserName: form.dataset.gitUserName || "",
+      gitUserEmail: form.dataset.gitUserEmail || "",
+      contentDir: form.dataset.contentDir || "",
+    };
+
+    const repo = document.getElementById("repo-url-input");
+    const branch = document.getElementById("branch-input");
+    const userName = document.getElementById("git-user-name-input");
+    const userEmail = document.getElementById("git-user-email-input");
+    const contentDir = document.getElementById("content-dir-input");
+
+    if (repo && !repo.value) repo.value = defaults.repoUrl;
+    if (branch && !branch.value) branch.value = defaults.branch;
+    if (userName && !userName.value) userName.value = defaults.gitUserName;
+    if (userEmail && !userEmail.value) userEmail.value = defaults.gitUserEmail;
+    if (contentDir && !contentDir.value) contentDir.value = defaults.contentDir;
+  }
+
   function showError(msg) {
     if (!errEl) return;
     errEl.textContent = msg || "Failed to save configuration";
@@ -94,6 +117,7 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     wireLoader();
+    populateDefaults();
     try {
       await SM.runAll({ parallel: true });
     } catch (e) {

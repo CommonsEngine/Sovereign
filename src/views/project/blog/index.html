@@ -207,6 +207,11 @@
         background: color-mix(in oklab, var(--color-danger), white 85%);
         color: color-mix(in oklab, var(--color-danger), black 25%);
       }
+      .notice__link {
+        color: inherit;
+        text-decoration: underline;
+        font-weight: 600;
+      }
       .empty,
       .error-row .empty {
         text-align: center;
@@ -256,10 +261,20 @@
       {{#connect_error}}
       <div class="notice notice--error" role="alert">
         <strong>Repository connection failed.</strong>
-        <span
-          >We couldn’t sync the repo. Review your credentials and
-          <a href="/p/{{project.id}}/configure">reconfigure the blog</a>.</span
+        <span>
+          We couldn’t sync the repo. Review your credentials and
+          <a class="notice__link" href="/p/{{project.id}}/configure"
+            >reconfigure the blog</a
+          >.
+        </span>
+        <button
+          id="retry-connection"
+          class="chip button"
+          type="button"
+          data-action="retry-connection"
         >
+          Retry connection
+        </button>
       </div>
       {{/connect_error}}
 
