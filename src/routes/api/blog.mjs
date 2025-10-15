@@ -22,7 +22,7 @@ router.post(
 );
 router.post(
   "/projects/:id/retry-connection",
-  projectsHandler.retryBlogConnection,
+  projectsHandler.blog.retryBlogConnection,
 );
 
 export default router;

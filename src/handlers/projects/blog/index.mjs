@@ -9,6 +9,13 @@ import {
 } from "../../../libs/git/registry.mjs";
 import FileManager from "../../../libs/fs.mjs";
 
+function ensureAccess(project, req) {
+  const userId = req.user?.id ?? null;
+  // if ownerId set and doesn't match current user -> forbidden
+  if (project.ownerId && project.ownerId !== userId) return false;
+  return true;
+}
+
 const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 
 function parseFrontmatter(src) {
@@ -1033,5 +1040,62 @@ export async function viewPostCreate(req, res) {
       description: "Failed to create a new post",
       error: err?.message || String(err),
     });
+  }
+}
+
+export async function retryBlogConnection(req, res) {
+  try {
+    const projectId = req.params?.id || req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        ownerId: true,
+        type: true,
+        Blog: {
+          select: {
+            id: true,
+            gitConfig: {
+              select: {
+                repoUrl: true,
+                branch: true,
+                contentDir: true,
+                userName: true,
+                userEmail: true,
+                authSecret: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!project || project.type !== "blog") {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    if (!ensureAccess({ ownerId: project.ownerId }, req)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const cfg = project.Blog?.gitConfig;
+    if (!cfg) {
+      return res.status(400).json({ error: "Blog configuration is missing." });
+    }
+
+    disposeGitManager(projectId);
+    await getOrInitGitManager(projectId, {
+      repoUrl: cfg.repoUrl,
+      branch: cfg.branch,
+      userName: cfg.userName,
+      userEmail: cfg.userEmail,
+      authToken: cfg.authSecret || null,
+    });
+
+    return res.json({ connected: true });
+  } catch (err) {
+    logger.error("Retry blog connection failed:", err);
+    return res.status(500).json({ error: "Failed to reconnect" });
   }
 }

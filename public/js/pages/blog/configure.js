@@ -84,20 +84,36 @@
       saveBtn.disabled = true;
       saveBtn.setAttribute("aria-busy", "true");
 
+      async function postConfigWithRetry(attempt = 0) {
+        try {
+          const resp = await fetch(
+            `/api/projects/${encodeURIComponent(projectId)}/configure`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            },
+          );
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || "Save failed");
+          window.location.replace(`/p/${encodeURIComponent(projectId)}`);
+        } catch (ex) {
+          if (ex instanceof TypeError && attempt === 0) {
+            // transient network error, retry once
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            return postConfigWithRetry(attempt + 1);
+          }
+          showError(ex?.message || "Failed to save configuration");
+        } finally {
+          saveBtn.disabled = false;
+          saveBtn.removeAttribute("aria-busy");
+        }
+      }
+
       try {
-        const resp = await fetch(
-          `/api/projects/${encodeURIComponent(projectId)}/configure`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-        );
-        const data = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error(data?.error || "Save failed");
-        window.location.replace(`/p/${encodeURIComponent(projectId)}`);
-      } catch (ex) {
-        showError(ex?.message || "Failed to save configuration");
+        await postConfigWithRetry();
+      } catch {
+        // handled in postConfigWithRetry
       } finally {
         saveBtn.disabled = false;
         saveBtn.removeAttribute("aria-busy");
