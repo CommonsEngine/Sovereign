@@ -32,6 +32,20 @@
     return dir ? `${dir}/${fname}` : fname;
   }
 
+  function escapeHtml(str) {
+    return String(str || "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  }
+
   function markdownToHtml(md) {
     if (!md) return "";
     let html = md;
@@ -144,6 +158,7 @@
     const rtToolbar = $("rt-toolbar");
     const excerptEl = $("excerpt");
     const tagsEl = $("tags");
+    const tagPreviewEl = $("tag-preview");
     const pubDateEl = $("pubDate");
     const draftEl = $("draft");
     const saveDraftBtn = $("save-draft-btn");
@@ -151,6 +166,15 @@
     const deleteBtn = $("delete-btn");
     const modeMdBtn = $("mode-md");
     const modeRtfBtn = $("mode-rtf");
+    const previewPane = $("preview-pane");
+    const previewTimestamp = $("preview-timestamp");
+    const previewRefreshBtn = $("preview-refresh");
+    const visibilityDraftBtn = $("visibility-draft");
+    const visibilityPublishedBtn = $("visibility-published");
+
+    const state = {
+      lastPreviewRendered: null,
+    };
 
     if (!mdEditorEl || !titleEl) return { attached: false };
 
@@ -195,6 +219,8 @@
       mdWrap.hidden = !isMd;
       rtfWrap.hidden = isMd;
       updateModeButtons(isMd);
+      markPreviewStale();
+      renderPreview();
     }
 
     // initial slug
@@ -288,6 +314,10 @@
     }
     updateModeButtons(true);
     setMode("markdown");
+    setupEventBindings();
+    updateTagPreview();
+    renderPreview();
+    setDraftState(draftEl?.checked);
 
     (function initPubDateFromIso() {
       const iso = pubDateEl?.dataset?.iso;
@@ -301,6 +331,70 @@
         } catch {}
       }
     })();
+
+    function collectTags() {
+      const raw = tagsEl?.value || "";
+      return raw
+        .split(/[,\n]/)
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+
+    function updateTagPreview() {
+      if (!tagPreviewEl) return;
+      const tags = collectTags();
+      if (tags.length === 0) {
+        tagPreviewEl.innerHTML = "";
+        return;
+      }
+      tagPreviewEl.innerHTML = tags
+        .map((tag) => `<span class="pill">${escapeHtml(tag)}</span>`)
+        .join(" ");
+    }
+
+    function setPreviewStatus(text) {
+      if (previewTimestamp) previewTimestamp.textContent = text;
+    }
+
+    function markPreviewStale() {
+      state.lastPreviewRendered = null;
+      setPreviewStatus("Preview out of date");
+    }
+
+    function touchPreviewTimestamp() {
+      state.lastPreviewRendered = new Date();
+      setPreviewStatus(
+        `Preview updated ${state.lastPreviewRendered.toLocaleTimeString()}`,
+      );
+    }
+
+    function renderPreview() {
+      if (!previewPane) return;
+      const markdown =
+        editorMode === "markdown"
+          ? mdEditorEl.value
+          : htmlToMarkdown(editorEl.innerHTML);
+      const html = markdownToHtml(markdown);
+      previewPane.innerHTML =
+        html || '<p class="help">Start typing to see a rendered preview.</p>';
+      touchPreviewTimestamp();
+    }
+
+    function setDraftState(isDraft) {
+      if (draftEl) {
+        draftEl.checked = !!isDraft;
+      }
+      if (visibilityDraftBtn && visibilityPublishedBtn) {
+        visibilityDraftBtn.setAttribute(
+          "aria-pressed",
+          isDraft ? "true" : "false",
+        );
+        visibilityPublishedBtn.setAttribute(
+          "aria-pressed",
+          isDraft ? "false" : "true",
+        );
+      }
+    }
 
     function collectPayload(overrides = {}) {
       let pubISO = null;
@@ -325,7 +419,7 @@
         description: excerptEl.value.trim(),
         pubDate: pubISO,
         draft: !!draftEl.checked,
-        tags: tagsEl.value.trim(),
+        tags: collectTags(),
         contentHtml,
         contentMarkdown,
         editorMode,
@@ -375,8 +469,11 @@
           if (data?.error) msg = data.error;
           throw new Error(msg);
         }
-        if (resp.status === 200 && data?.renamed)
-          return (location.href = data?.redirect);
+        if (resp.status === 200 && data?.renamed) {
+          location.href = data?.redirect;
+          return;
+        }
+        renderPreview();
         btn.textContent = "Saved";
         setTimeout(() => (btn.textContent = prevText), 1000);
       } catch (err) {
@@ -424,6 +521,7 @@
           (data?.published === false
             ? "No changes to publish."
             : "Published successfully.");
+        renderPreview();
         alert(msg);
       } catch (err) {
         console.error("Publish failed:", err);
@@ -433,6 +531,21 @@
         btn.textContent = prevText;
       }
     });
+
+    function setupEventBindings() {
+      tagsEl?.addEventListener("input", updateTagPreview);
+      tagsEl?.addEventListener("blur", updateTagPreview);
+      previewRefreshBtn?.addEventListener("click", renderPreview);
+      visibilityDraftBtn?.addEventListener("click", () => setDraftState(true));
+      visibilityPublishedBtn?.addEventListener("click", () =>
+        setDraftState(false),
+      );
+      modeMdBtn?.addEventListener("click", () => setMode("markdown"));
+      modeRtfBtn?.addEventListener("click", () => setMode("rtf"));
+      mdEditorEl?.addEventListener("input", markPreviewStale);
+      editorEl?.addEventListener("input", markPreviewStale);
+      excerptEl?.addEventListener("input", () => setPreviewStatus(""));
+    }
 
     deleteBtn?.addEventListener("click", async () => {
       if (!confirm("Delete this post? This cannot be undone.")) return;

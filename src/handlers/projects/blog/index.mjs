@@ -577,6 +577,30 @@ export async function updatePost(req, res) {
       return res.status(500).json({ error: "Failed to update file" });
     }
 
+    const [latestMetaRaw] = parseFrontmatter(finalText);
+    const latestMeta = {
+      title:
+        typeof latestMetaRaw.title === "string"
+          ? latestMetaRaw.title.trim()
+          : (updates.title ?? ""),
+      description:
+        typeof latestMetaRaw.description === "string"
+          ? latestMetaRaw.description
+          : (updates.description ?? ""),
+      tags: normalizeTags(latestMetaRaw.tags),
+      draft: latestMetaRaw.draft === true,
+      pubDate:
+        typeof latestMetaRaw.pubDate === "string"
+          ? latestMetaRaw.pubDate
+          : (updates.pubDate ?? null),
+      updatedDate:
+        typeof latestMetaRaw.updatedDate === "string"
+          ? latestMetaRaw.updatedDate
+          : (updates.updatedDate ?? null),
+    };
+
+    let resultingFilename = filename;
+
     // Handle slug/path rename AFTER saving content
     try {
       const desiredPathRaw =
@@ -612,15 +636,22 @@ export async function updatePost(req, res) {
 
           logger.log(`Renamed post ${filename} -> ${desiredBase}`);
 
-          // Respond with redirect info for the client to navigate
+          resultingFilename = desiredBase;
           const redirectUrl = `/p/${encodeURIComponent(
             projectId,
           )}/blog/post/${encodeURIComponent(desiredBase)}?edit=true`;
+          const relativeDir = (cfg.contentDir || "").trim();
+          const finalPath = relativeDir
+            ? `${relativeDir}/${desiredBase}`
+            : desiredBase;
+
           return res.status(200).json({
             updated: true,
             renamed: true,
             filename: desiredBase,
+            path: finalPath,
             redirect: redirectUrl,
+            meta: latestMeta,
           });
         }
       }
@@ -629,8 +660,18 @@ export async function updatePost(req, res) {
       // Fall through to normal success if rename failed silently
     }
 
+    const relativeDir = (cfg.contentDir || "").trim();
+    const finalPath = relativeDir
+      ? `${relativeDir}/${resultingFilename}`
+      : resultingFilename;
+
     // Normal success (no rename)
-    return res.status(200).json({ updated: true, filename });
+    return res.status(200).json({
+      updated: true,
+      filename: resultingFilename,
+      path: finalPath,
+      meta: latestMeta,
+    });
   } catch (err) {
     logger.error("Update Blog post failed:", err);
     return res.status(500).json({ error: "Failed to update post" });
