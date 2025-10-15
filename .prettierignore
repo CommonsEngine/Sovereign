@@ -1,3 +1,9 @@
+dist/
+data/
+prisma/data/*
+prisma/migrations/*
+prisma/reset.sh
+prisma/schema.prisma
 # Ignore Handlebars templates that use conditional attrs
 src/views/_partials/layout/head.html
 src/views/register.html
