@@ -98,6 +98,17 @@
       const inviteInput = root.querySelector("[data-invite-url]");
       const copyBtn = root.querySelector("[data-copy-invite]");
 
+      function resetForm() {
+        if (form) form.reset();
+        if (err) {
+          err.style.display = "none";
+          err.textContent = "";
+        }
+        if (resultBox) resultBox.style.display = "none";
+        if (inviteInput) inviteInput.value = "";
+        submitBtn?.removeAttribute("disabled");
+      }
+
       // Ensure pressing Enter (form submit) triggers the same flow as clicking the button
       async function doSubmit(originEvent) {
         // debug: ensure handler is invoked

@@ -1,0 +1,187 @@
+.page--users .users-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-m);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-l);
+}
+
+.page--users .users-page__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-width: 540px;
+}
+
+.page--users .page__subtitle {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-m);
+  line-height: var(--line-height-normal);
+}
+
+.page--users .users-page__invite {
+  box-shadow: var(--shadow-s);
+  white-space: nowrap;
+}
+
+.page--users .users-summary {
+  margin: var(--space-l) 0;
+  display: grid;
+  gap: var(--space-m);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.users-summary__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-l);
+  padding: var(--space-l);
+  box-shadow: var(--shadow-s);
+}
+
+.users-summary__label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.users-summary__value {
+  font-size: clamp(1.8rem, 1.3rem + 1vw, 2.4rem);
+  line-height: 1.1;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.users-summary__caption {
+  font-size: var(--font-size-s);
+  color: var(--color-text-secondary);
+}
+
+.page--users .users-card {
+  grid-column: 1 / -1;
+}
+
+.users-card__bar {
+  align-items: center;
+}
+
+.users-card__bar-caption {
+  margin-left: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-s);
+}
+
+.users-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.users-card__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.users-card__filters .badge {
+  font-size: var(--font-size-xs);
+}
+
+.users-table__identity {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  align-items: center;
+}
+
+.users-table__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.users-table__roles .badge {
+  font-size: var(--font-size-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 4px 10px;
+}
+
+.users-table__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-s);
+}
+
+.users-table__meta time {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  margin-left: var(--space-2xs);
+}
+
+.col-actions {
+  text-align: right;
+}
+
+table td:last-child .row-actions {
+  justify-content: flex-end;
+}
+
+.badge--soft {
+  background: var(--color-bg-muted);
+  border: 1px solid transparent;
+  color: var(--color-text-secondary);
+}
+
+.badge--tone-success {
+  background: color-mix(in oklab, var(--color-success) 18%, white 82%);
+  border-color: color-mix(in oklab, var(--color-success) 30%, white 70%);
+  color: color-mix(in oklab, var(--color-success) 70%, black 20%);
+}
+
+.badge--tone-warning {
+  background: color-mix(in oklab, var(--color-warning) 25%, white 75%);
+  border-color: color-mix(in oklab, var(--color-warning) 35%, white 65%);
+  color: color-mix(in oklab, var(--color-warning) 65%, black 25%);
+}
+
+.badge--tone-danger {
+  background: color-mix(in oklab, var(--color-danger) 18%, white 82%);
+  border-color: color-mix(in oklab, var(--color-danger) 30%, white 70%);
+  color: color-mix(in oklab, var(--color-danger) 70%, black 20%);
+}
+
+.badge--tone-neutral {
+  background: var(--color-bg-muted);
+  border-color: var(--color-border-primary);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .page--users .users-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-m);
+  }
+
+  .page--users .users-page__invite {
+    align-self: flex-start;
+  }
+
+  .col-actions,
+  table td:last-child .row-actions {
+    text-align: left;
+    justify-content: flex-start;
+  }
+}
