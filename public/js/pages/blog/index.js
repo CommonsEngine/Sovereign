@@ -36,7 +36,7 @@
     let shown = 0;
     rows.forEach((tr) => {
       const hay =
-        `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags || ""} ${tr.dataset.excerpt || ""}`.toLowerCase();
+        `${tr.dataset.title} ${tr.dataset.path} ${tr.dataset.tags || ""} ${tr.dataset.excerpt || ""} ${tr.dataset.status || ""}`.toLowerCase();
       const match = !q || hay.includes(q);
       tr.hidden = !match;
       if (match) shown++;
@@ -45,8 +45,10 @@
   }
 
   function fmtDate(d) {
+    if (!d) return { iso: "", label: "—" };
     try {
       const dt = new Date(d);
+      if (Number.isNaN(dt.getTime())) return { iso: "", label: "—" };
       return { iso: dt.toISOString(), label: dt.toLocaleString() };
     } catch {
       return { iso: "", label: "—" };
@@ -54,26 +56,38 @@
   }
 
   function makePostRow(projectId, post) {
-    const title = (post.filename || "").replace(/\.md$/i, "");
+    const title =
+      (post.title && post.title.trim()) ||
+      (post.filename || "").replace(/\.md$/i, "");
+    const description =
+      (typeof post.description === "string" && post.description) || "";
+    const tagsText = Array.isArray(post.tags)
+      ? post.tags.join(", ")
+      : post.tags || "";
+    const statusLabel = post.status || (post.draft ? "Draft" : "Published");
     const hrefEdit = `/p/${projectId}/blog/post/${encodeURIComponent(post.filename)}?edit=true`;
-    const { iso, label } = post.modified
-      ? fmtDate(post.modified)
+    const publishSource = post.pubDate || post.modified;
+    const { iso, label } = publishSource
+      ? fmtDate(publishSource)
       : { iso: "", label: "—" };
+    const excerpt =
+      typeof post.excerpt === "string" ? post.excerpt : description;
 
     const tr = document.createElement("tr");
     tr.dataset.title = title;
     tr.dataset.path = post.filename || "";
-    tr.dataset.tags = (post.tags || []).join(", ");
-    tr.dataset.excerpt = post.excerpt || "";
+    tr.dataset.tags = tagsText;
+    tr.dataset.excerpt = excerpt || "";
+    tr.dataset.status = statusLabel;
 
     tr.innerHTML = `
       <td>
         <div class="title">${escapeHtml(title)}</div>
-        <div class="subtle">${escapeHtml(post.description || "")}</div>
+        <div class="subtle">${escapeHtml(description)}</div>
       </td>
       <td>${escapeHtml(post.filename || "")}</td>
-      <td>${escapeHtml((post.tags || []).join(", "))}</td>
-      <td><span class="badge">${escapeHtml(post.status || "Published")}</span></td>
+      <td>${escapeHtml(tagsText)}</td>
+      <td><span class="badge">${escapeHtml(statusLabel)}</span></td>
       <td>${iso ? `<time datetime="${iso}">${escapeHtml(label)}</time>` : "—"}</td>
       <td>
         <div class="row-actions">

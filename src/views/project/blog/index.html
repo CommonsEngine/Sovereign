@@ -191,6 +191,22 @@
         gap: 8px;
         align-items: center;
       }
+      .notice {
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
+        background: var(--color-bg-muted, #f3f4f6);
+        color: var(--color-text-secondary, #374151);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .notice--error {
+        border-color: color-mix(in oklab, var(--color-danger), white 20%);
+        background: color-mix(in oklab, var(--color-danger), white 85%);
+        color: color-mix(in oklab, var(--color-danger), black 25%);
+      }
       .empty,
       .error-row .empty {
         text-align: center;
@@ -221,15 +237,31 @@
 
     {{> sidebar}} {{> userbar show_user_menu=true}}
     <!-- expose project id to client via data attribute for simpler resolution -->
-    <main class="page__wrap" data-project-id="{{project.id}}">
+    <main
+      class="page__wrap"
+      data-project-id="{{project.id}}"
+      data-project-status="{{project.status}}"
+      data-connected="{{connected}}"
+    >
       <header class="page__header">
         <div class="title__wrap">
-          <h1 id="project-title" class="title__name">Sovereign Demo</h1>
+          <h1 id="project-title" class="title__name">{{project.name}}</h1>
           <div id="project-sub" class="title__desc">
-            Public demo project seeded by prisma/seed.mjs
+            {{#project.desc}}{{project.desc}}{{/project.desc}}
+            {{^project.desc}}&nbsp;{{/project.desc}}
           </div>
         </div>
       </header>
+
+      {{#connect_error}}
+      <div class="notice notice--error" role="alert">
+        <strong>Repository connection failed.</strong>
+        <span
+          >We couldn’t sync the repo. Review your credentials and
+          <a href="/p/{{project.id}}/configure">reconfigure the blog</a>.</span
+        >
+      </div>
+      {{/connect_error}}
 
       <section class="grid">
         <!-- Posts -->
@@ -362,42 +394,55 @@
               "
             >
               <div class="subtle">Name</div>
-              <div id="m-name">Sovereign Demo</div>
+              <div id="m-name">{{project.name}}</div>
 
               <div class="subtle">Status</div>
-              <div id="m-status"><span class="badge">published</span></div>
+              <div id="m-status">
+                <span class="badge">{{project.status}}</span>
+              </div>
 
               <div class="subtle">Posts</div>
-              <div id="m-count">2</div>
+              <div id="m-count">0</div>
 
               <div class="subtle">Repo</div>
               <div id="m-repo">
-                <a
-                  href="{{project.blog.repoUrl}}"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  link
+                {{#project.repoUrl}}
+                <a href="{{project.repoUrl}}" target="_blank" rel="noopener">
+                  {{project.repoUrl}}
                 </a>
+                {{/project.repoUrl}} {{^project.repoUrl}}—{{/project.repoUrl}}
               </div>
 
               <div class="subtle">Branch</div>
-              <div id="m-branch">main</div>
+              <div id="m-branch">{{project.branch}}</div>
 
               <div class="subtle">Content Dir</div>
-              <div id="m-dir">src/content/blog</div>
+              <div id="m-dir">
+                {{#project.contentDir}}{{project.contentDir}}{{/project.contentDir
+                }}{{^project.contentDir}}(repo root){{/project.contentDir}}
+              </div>
 
               <div class="subtle">Live URL</div>
               <div id="m-live">—</div>
 
               <div class="subtle">Created</div>
               <div id="m-created">
-                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+                {{#project.createdAtISO}}
+                <time datetime="{{project.createdAtISO}}"
+                  >{{project.createdAtDisplay}}</time
+                >
+                {{/project.createdAtISO}} {{^project.createdAtISO}}—{{/project
+                .createdAtISO}}
               </div>
 
               <div class="subtle">Updated</div>
               <div id="m-updated">
-                <time datetime="2025-10-04T12:00:00Z">Oct 4, 2025, 12:00</time>
+                {{#project.updatedAtISO}}
+                <time datetime="{{project.updatedAtISO}}"
+                  >{{project.updatedAtDisplay}}</time
+                >
+                {{/project.updatedAtISO}} {{^project.updatedAtISO}}—{{/project
+                .updatedAtISO}}
               </div>
             </div>
           </div>

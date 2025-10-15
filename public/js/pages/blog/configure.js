@@ -30,7 +30,7 @@
 
       const projectId = form.getAttribute("data-project-id");
       const repoUrl = document.getElementById("repo-url-input").value.trim();
-      const defaultBranch =
+      const branch =
         (document.getElementById("branch-input").value || "main").trim() ||
         "main";
       const contentDir = document
@@ -52,7 +52,7 @@
         return;
       }
 
-      const payload = { repoUrl, defaultBranch };
+      const payload = { repoUrl, branch };
       if (contentDir) payload.contentDir = contentDir;
       if (gitUserName) payload.gitUserName = gitUserName;
       if (gitUserEmail) payload.gitUserEmail = gitUserEmail;

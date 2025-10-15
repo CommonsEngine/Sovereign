@@ -13,9 +13,25 @@ export { default as remove } from "./core/remove.mjs";
 
 export * as blog from "./blog/index.mjs";
 
+const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+function formatDate(value) {
+  try {
+    const dt = new Date(value);
+    if (Number.isNaN(dt.getTime())) return { iso: "", label: "" };
+    return { iso: dt.toISOString(), label: DATE_FORMAT.format(dt) };
+  } catch {
+    return { iso: "", label: "" };
+  }
+}
+
 const DEFAULT_SELECT = {
   id: true,
   name: true,
+  desc: true,
   type: true,
   status: true,
   createdAt: true,
@@ -75,7 +91,9 @@ export async function configureProject(req, res) {
     if (!repoUrl)
       return res.status(400).json({ error: "Repository URL is required" });
 
-    const branch = (String(raw.branch || "main").trim() || "main").slice(0, 80);
+    const branch = (
+      String(raw.branch || raw.defaultBranch || "main").trim() || "main"
+    ).slice(0, 80);
     const contentDirRaw =
       typeof raw.contentDir === "string" ? raw.contentDir : "";
     const contentDir = contentDirRaw.trim().slice(0, 200) || null;
@@ -214,8 +232,26 @@ export async function viewProject(req, res) {
         // return res.redirect(302, `/p/${project.id}/configure`);
       }
 
+      const gitConfig = project.Blog?.gitConfig || null;
+      const created = formatDate(project.createdAt);
+      const updated = formatDate(project.updatedAt);
+      const projectView = {
+        id: project.id,
+        name: project.name,
+        desc: project.desc || "",
+        status: project.status || "draft",
+        repoUrl: gitConfig?.repoUrl || "",
+        branch: gitConfig?.branch || "main",
+        contentDir: gitConfig?.contentDir || "",
+        createdAtISO: created.iso,
+        createdAtDisplay: created.label,
+        updatedAtISO: updated.iso,
+        updatedAtDisplay: updated.label,
+      };
+
       return res.render("project/blog/index", {
-        project,
+        project: projectView,
+        connected,
         connect_error: !connected,
       });
     }
