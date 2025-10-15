@@ -7,7 +7,7 @@ let pkg = {};
 try {
   const contents = fs.readFileSync(pkgPath, "utf8");
   pkg = JSON.parse(contents);
-} catch (err) {
+} catch {
   pkg = {};
 }
 

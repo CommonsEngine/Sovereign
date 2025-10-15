@@ -56,7 +56,7 @@ function normalizeHttpUrl(value) {
       throw new Error("Only http(s) URLs are supported");
     }
     return url.toString();
-  } catch (err) {
+  } catch {
     throw new Error("Value must be a valid http(s) URL");
   }
 }

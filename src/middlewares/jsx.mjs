@@ -51,7 +51,7 @@ export async function useJSX(req, res, next) {
           }
           resolvedPath = p;
           break;
-        } catch (e) {
+        } catch {
           // try next extension
         }
       }
@@ -101,7 +101,7 @@ export async function useJSX(req, res, next) {
             await res.app.locals.vite.transformRequest(cand);
             hydrateScript = `<script type="module" src="${cand}"></script>`;
             break;
-          } catch (_) {
+          } catch {
             // ignore
           }
         }

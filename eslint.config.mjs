@@ -26,6 +26,8 @@ export default [
       "**/node_modules/**",
       "public/**",
       "data/**",
+      "dist/**",
+      "tests/**",
       "prisma/data/**",
       "prisma/migrations/**",
       "prisma/schema.prisma",

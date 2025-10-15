@@ -23,7 +23,7 @@ const resolveFirstExisting = (candidates, fallback) => {
   for (const candidate of candidates) {
     try {
       if (fs.existsSync(candidate)) return candidate;
-    } catch (err) {
+    } catch {
       // ignore
     }
   }
