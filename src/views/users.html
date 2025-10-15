@@ -6,19 +6,28 @@
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/modal.css" />
-    <style>
-      .users__card {
-        grid-column: 1 / -1;
-      }
-    </style>
+    <link rel="stylesheet" href="/css/pages/users.css" />
   </head>
   <body class="page page--users">
     {{> sidebar users_active=true}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
-      <h2 class="page__title">Users</h2>
+      <header class="page__header users-page__header">
+        <div class="users-page__heading">
+          <h2 class="page__title">Users</h2>
+          <p class="page__subtitle">
+            Manage access, invitations, and roles across your workspace.
+          </p>
+        </div>
+        <button
+          class="chip button users-page__invite"
+          type="button"
+          data-modal-open="create-user"
+        >
+          Invite user
+        </button>
+      </header>
 
-      <!-- Breadcrumb -->
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <ol class="breadcrumb__list">
           <li class="breadcrumb__item">
@@ -30,58 +39,56 @@
         </ol>
       </nav>
 
-      {{> modal/modal-runtime}} {{> modal/create-user}}
+      {{#if stats}}
+      <section class="users-summary" aria-label="User overview">
+        {{#each stats}}
+        <article class="users-summary__card">
+          <span class="users-summary__label">{{label}}</span>
+          <span class="users-summary__value">{{value}}</span>
+          <span class="users-summary__caption">{{caption}}</span>
+        </article>
+        {{/each}}
+      </section>
+      {{/if}} {{> modal/modal-runtime}} {{> modal/create-user}}
 
-      <section class="users__grid">
-        <article class="card users__card">
-          <div class="card__bar">
-            <div class="card__bar-left">
-              <strong>All Users</strong>
-            </div>
-            <div class="card__bar-right">
-              <input
-                id="user-search"
-                class="card__bar-search-input"
-                type="search"
-                placeholder="Search users…"
-                autocomplete="off"
-              />
-              <button
-                class="card__bar-icon"
-                type="button"
-                aria-label="Create new user"
-                title="Create new user"
-                data-modal-open="create-user"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  width="22"
-                  height="22"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.766Z"
-                  />
-                </svg>
-              </button>
-            </div>
+      <section class="card users-card">
+        <div class="card__bar users-card__bar">
+          <div class="card__bar-left">
+            <strong>Directory</strong>
+            <span class="users-card__bar-caption">{{users.length}} people</span>
           </div>
+          <div class="card__bar-right users-card__actions">
+            <input
+              id="user-search"
+              class="card__bar-search-input"
+              type="search"
+              placeholder="Search users…"
+              autocomplete="off"
+            />
+          </div>
+        </div>
 
-          <div class="card__body table-wrap">
+        <div class="card__body">
+          {{#if statusFilters}}
+          <div class="users-card__filters" aria-hidden="true">
+            {{#each statusFilters}}
+            <span class="badge badge--soft badge--tone-{{tone}}"
+              >{{label}}</span
+            >
+            {{/each}}
+          </div>
+          {{/if}}
+
+          <div class="table-wrap">
             <table aria-label="Users">
               <thead>
                 <tr>
-                  <th style="width: 28%">User</th>
-                  <th style="width: 15%">Role</th>
-                  <th style="width: 15%">Projects</th>
-                  <th style="width: 18%">Created</th>
-                  <th style="width: 1%">Actions</th>
+                  <th>User</th>
+                  <th>Roles</th>
+                  <th>Status</th>
+                  <th>Activity</th>
+                  <th>Projects</th>
+                  <th class="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody id="users-tbody">
@@ -90,20 +97,85 @@
                   data-id="{{id}}"
                   data-name="{{displayName}}"
                   data-email="{{email}}"
-                  data-role="{{roleLabel}}"
+                  data-roles="{{roleLabels}}"
+                  data-status="{{status}}"
                 >
                   <td>
                     <div class="strong">{{displayName}}</div>
-                    <div class="subtle">{{email}}</div>
+                    <div class="subtle users-table__identity">
+                      <span>{{email}}</span>
+                      {{#if emailVerified}}
+                      <span class="badge badge--soft badge--tone-success"
+                        >Verified</span
+                      >
+                      {{else}}
+                      <span class="badge badge--soft">Unverified</span>
+                      {{/if}}
+                    </div>
                   </td>
-                  <td><span class="badge">{{roleLabel}}</span></td>
                   <td>
-                    <span class="subtle">{{projectsAssigned}} assigned</span>
+                    {{#if hasRoles}}
+                    <div class="users-table__roles">
+                      <span class="badge badge--soft badge--tone-neutral">
+                        {{primaryRoleLabel}}
+                      </span>
+                      {{#if extraRoleCount}}
+                      <span class="badge badge--soft">
+                        +{{extraRoleCount}} more
+                      </span>
+                      {{/if}}
+                    </div>
+                    {{else}}
+                    <span class="subtle">None</span>
+                    {{/if}}
                   </td>
                   <td>
-                    <time datetime="{{createdAtISO}}"
-                      >{{createdAtDisplay}}</time
-                    >
+                    <span class="badge badge--soft badge--tone-{{statusTone}}">
+                      {{statusLabel}}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="users-table__meta">
+                      <div>
+                        Created
+                        <time
+                          datetime="{{createdAtISO}}"
+                          title="{{createdAtDisplay}}"
+                        >
+                          {{#if createdAtRelative}} {{createdAtRelative}}
+                          {{else}} {{createdAtDisplay}} {{/if}}
+                        </time>
+                      </div>
+                      {{#if lastSeenRelative}}
+                      <div>
+                        Last active
+                        <time
+                          datetime="{{lastSeenISO}}"
+                          title="{{lastSeenDisplay}}"
+                        >
+                          {{lastSeenRelative}}
+                        </time>
+                      </div>
+                      {{else if inviteSentRelative}}
+                      <div>
+                        Invite sent
+                        <time
+                          datetime="{{inviteSentISO}}"
+                          title="{{inviteSentDisplay}}"
+                        >
+                          {{inviteSentRelative}}
+                        </time>
+                        {{#if inviteExpired}}
+                        <span class="badge badge--soft badge--tone-warning"
+                          >Expired</span
+                        >
+                        {{/if}}
+                      </div>
+                      {{/if}}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="subtle">{{projectsSummary}}</span>
                   </td>
                   <td>
                     <div class="row-actions">
@@ -132,7 +204,7 @@
                       </button>
                       <button
                         class="chip"
-                        href="javascript:void(0)"
+                        type="button"
                         aria-label="Manage roles"
                         title="Manage roles"
                       >
@@ -155,7 +227,7 @@
                       </button>
                       <button
                         class="chip"
-                        href="javascript:void(0)"
+                        type="button"
                         aria-label="Manage projects"
                         title="Manage projects"
                       >
@@ -206,14 +278,13 @@
                 </tr>
                 {{/each}}
 
-                <!-- Empty state row (shown when search filters out all rows) -->
                 <tr class="empty-row" hidden>
                   <td colspan="6" class="empty">No users found</td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </article>
+        </div>
       </section>
     </main>
 
@@ -239,7 +310,12 @@
 
           for (const tr of rows) {
             const haystack = normalize(
-              [tr.dataset.name, tr.dataset.email, tr.dataset.role].join(" "),
+              [
+                tr.dataset.name,
+                tr.dataset.email,
+                tr.dataset.roles,
+                tr.dataset.status,
+              ].join(" "),
             );
             const match = !q || haystack.includes(q);
             tr.hidden = !match;
@@ -249,10 +325,7 @@
           if (emptyRow) emptyRow.hidden = visible !== 0;
         };
 
-        // Filter as the user types
         input.addEventListener("input", applyFilter);
-
-        // ESC to clear
         input.addEventListener("keydown", (e) => {
           if (e.key === "Escape") {
             input.value = "";
@@ -261,8 +334,47 @@
           }
         });
 
-        // Initial run (handles back/forward cache or prefilled values)
         applyFilter();
+
+        document.addEventListener("click", async (event) => {
+          const deleteBtn = event.target.closest(
+            'button[data-action="delete"]',
+          );
+          if (!deleteBtn) return;
+          const userId = deleteBtn.dataset.id;
+          if (!userId) return;
+          const row = deleteBtn.closest("tr");
+          const name = row?.dataset?.name || "this user";
+          const confirmed = window.confirm(
+            `Remove ${name}? This action cannot be undone.`,
+          );
+          if (!confirmed) return;
+
+          deleteBtn.setAttribute("disabled", "true");
+          try {
+            const resp = await fetch(
+              `/api/users/${encodeURIComponent(userId)}`,
+              {
+                method: "DELETE",
+                headers: { Accept: "application/json" },
+              },
+            );
+            if (!resp.ok && resp.status !== 204) {
+              const data = await resp.json().catch(() => ({}));
+              throw new Error(data?.error || `HTTP ${resp.status}`);
+            }
+            row?.remove();
+            // Trigger filter recalculation to update empty state.
+            applyFilter();
+          } catch (error) {
+            console.error("Failed to delete user:", error);
+            window.alert(
+              error?.message || "Failed to delete user. Please try again.",
+            );
+          } finally {
+            deleteBtn.removeAttribute("disabled");
+          }
+        });
       })();
     </script>
   </body>
