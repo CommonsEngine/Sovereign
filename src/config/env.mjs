@@ -7,8 +7,18 @@ import { toBool } from "./utils.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Repo root (two levels up from src/config)
-const __rootdir = path.resolve(__dirname, "../..");
+const resolveRoot = () => {
+  if (process.env.APP_ROOT) {
+    return path.resolve(process.env.APP_ROOT);
+  }
+  const cwd = process.cwd();
+  if (cwd && path.isAbsolute(cwd)) {
+    return cwd;
+  }
+  return path.resolve(__dirname, "../..");
+};
+
+const __rootdir = resolveRoot();
 const resolveFirstExisting = (candidates, fallback) => {
   for (const candidate of candidates) {
     try {

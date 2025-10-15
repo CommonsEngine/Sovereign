@@ -1,9 +1,6 @@
-import { createRequire } from "module";
+// TODO: Utilize config/head.mjs for these
 
-// TODO: Utilize confg/head.mjs for these
-
-const require = createRequire(import.meta.url);
-const pkg = require("../../package.json");
+import pkg from "$/config/pkg.mjs";
 
 export function exposeGlobals(req, res, next) {
   // TODO: Expose api level globals too

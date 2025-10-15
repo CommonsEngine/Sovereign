@@ -9,41 +9,16 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
 const srcDir = path.join(rootDir, "src");
 const outDir = path.join(rootDir, "dist");
+const pkgPath = path.join(rootDir, "package.json");
 
 const aliasPlugin = {
   name: "alias-dollar",
   setup(buildCtx) {
-    buildCtx.onResolve({ filter: /^\$\// }, (args) => {
-      const absolutePath = path.join(srcDir, args.path.slice(2));
-      const relativeToImporter = path.relative(args.resolveDir, absolutePath);
-
-      const normalized = relativeToImporter.startsWith(".")
-        ? relativeToImporter
-        : `./${relativeToImporter}`;
-
-      return {
-        path: normalized.split(path.sep).join("/"),
-      };
-    });
+    buildCtx.onResolve({ filter: /^\$\// }, (args) => ({
+      path: path.join(srcDir, args.path.slice(2)),
+    }));
   },
 };
-
-async function collectEntryPoints(dir) {
-  const dirents = await fs.readdir(dir, { withFileTypes: true });
-  const entries = [];
-
-  for (const dirent of dirents) {
-    if (dirent.name.startsWith(".")) continue;
-    const fullPath = path.join(dir, dirent.name);
-    if (dirent.isDirectory()) {
-      entries.push(...(await collectEntryPoints(fullPath)));
-    } else if (dirent.isFile() && dirent.name.endsWith(".mjs")) {
-      entries.push(fullPath);
-    }
-  }
-
-  return entries;
-}
 
 async function ensureCleanOutDir() {
   await fs.rm(outDir, { recursive: true, force: true });
@@ -54,11 +29,18 @@ async function copyStaticAssets() {
   const assets = [
     { from: path.join(rootDir, "public"), to: path.join(outDir, "public") },
     { from: path.join(srcDir, "views"), to: path.join(outDir, "views") },
+    { from: pkgPath, to: path.join(outDir, "package.json") },
   ];
 
   for (const { from, to } of assets) {
     try {
-      await cp(from, to, { recursive: true });
+      const stats = await fs.stat(from);
+      if (stats.isDirectory()) {
+        await cp(from, to, { recursive: true });
+      } else {
+        await fs.mkdir(path.dirname(to), { recursive: true });
+        await fs.copyFile(from, to);
+      }
     } catch (err) {
       if (err.code === "ENOENT") continue;
       throw err;
@@ -69,18 +51,23 @@ async function copyStaticAssets() {
 async function main() {
   await ensureCleanOutDir();
 
-  const entryPoints = await collectEntryPoints(srcDir);
+  const pkg = JSON.parse(await fs.readFile(pkgPath, "utf8"));
+  const externals = Object.keys(pkg.dependencies || {});
 
   await build({
-    entryPoints,
-    outdir: outDir,
-    outbase: srcDir,
+    entryPoints: [path.join(srcDir, "index.mjs")],
+    outfile: path.join(outDir, "index.mjs"),
     format: "esm",
     platform: "node",
-    bundle: false,
+    bundle: true,
     sourcemap: true,
     logLevel: "info",
     allowOverwrite: true,
+    external: [
+      ...externals,
+      "@prisma/client",
+      "dotenv/config",
+    ],
     plugins: [aliasPlugin],
   });
 
