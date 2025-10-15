@@ -8,8 +8,10 @@
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "start": "node dist/index.mjs",
+    "start:src": "node --import ./scripts/register-alias.mjs src/index.mjs",
     "dev": "nodemon",
+    "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
     "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
     "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
@@ -90,6 +92,7 @@
     "eslint-plugin-promise": "^7.2.1",
     "globals": "^16.4.0",
     "nodemon": "^3.1.10",
+    "esbuild": "^0.21.5",
     "prettier": "^3.3.3",
     "prisma": "^6.16.3"
   }

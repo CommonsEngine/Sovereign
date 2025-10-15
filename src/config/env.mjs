@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -8,9 +9,32 @@ const __dirname = path.dirname(__filename);
 
 // Repo root (two levels up from src/config)
 const __rootdir = path.resolve(__dirname, "../..");
-const __publicdir = path.join(__rootdir, "public");
-// Views live under src/views
-const __templatedir = path.join(__rootdir, "src", "views");
+const resolveFirstExisting = (candidates, fallback) => {
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch (err) {
+      // ignore
+    }
+  }
+  return fallback;
+};
+
+const __publicdir = resolveFirstExisting(
+  [
+    path.join(__rootdir, "dist", "public"),
+    path.join(__rootdir, "public"),
+  ],
+  path.join(__rootdir, "public"),
+);
+// Views live under src/views (fallback) with dist support
+const __templatedir = resolveFirstExisting(
+  [
+    path.join(__rootdir, "dist", "views"),
+    path.join(__rootdir, "src", "views"),
+  ],
+  path.join(__rootdir, "src", "views"),
+);
 
 // Data dir defaults to <repo>/data unless overridden by env
 const __datadir = path.resolve(

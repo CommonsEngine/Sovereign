@@ -60,10 +60,18 @@ Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) f
 
 6. Run app (example)
    ```bash
-   yarn dev // or yarn start
+   yarn dev // auto-reload for development
    ```
 
-Use `yarn dev` to launch the development server with automatic file watching. For the production build, use `yarn start`.
+To prepare a production build:
+
+```bash
+yarn build
+yarn start      # runs dist/index.mjs
+
+# Optional: run the source version without building
+yarn start:src
+```
 
 7. Updating Prisma schema and apply migrations
    - Update `prisma/schema.prisma` first
