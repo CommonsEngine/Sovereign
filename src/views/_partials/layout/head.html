@@ -1,11 +1,28 @@
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>{{head.title}}</title>
-{{#head.link}}
-<link rel="{{rel}}" href="{{href}}" />
-{{/head.link}}
-{{#head.meta}}
-{{#name}}<meta name="{{.}}" content="{{../content}}" />{{/name}}{{#property}}<meta property="{{.}}" content="{{../content}}" />{{/property}}
-{{/head.meta}}
+
+{{#if head.meta}}
+  {{#each head.meta}}
+    {{#if name}}
+<meta name="{{name}}" content="{{content}}"{{#if media}} media="{{media}}"{{/if}}{{#if id}} id="{{id}}"{{/if}} />
+    {{else}}
+      {{#if property}}
+<meta property="{{property}}" content="{{content}}"{{#if media}} media="{{media}}"{{/if}}{{#if id}} id="{{id}}"{{/if}} />
+      {{else}}
+        {{#if httpEquiv}}
+<meta http-equiv="{{httpEquiv}}" content="{{content}}"{{#if media}} media="{{media}}"{{/if}}{{#if id}} id="{{id}}"{{/if}} />
+        {{/if}}
+      {{/if}}
+    {{/if}}
+  {{/each}}
+{{/if}}
+
+{{#if head.link}}
+  {{#each head.link}}
+<link rel="{{rel}}" href="{{href}}"{{#if as}} as="{{as}}"{{/if}}{{#if type}} type="{{type}}"{{/if}}{{#if hreflang}} hreflang="{{hreflang}}"{{/if}}{{#if media}} media="{{media}}"{{/if}}{{#if sizes}} sizes="{{sizes}}"{{/if}}{{#if crossorigin}} crossorigin="{{crossorigin}}"{{/if}}{{#if referrerpolicy}} referrerpolicy="{{referrerpolicy}}"{{/if}}{{#if integrity}} integrity="{{integrity}}"{{/if}}{{#if fetchpriority}} fetchpriority="{{fetchpriority}}"{{/if}}{{#if title}} title="{{title}}"{{/if}} />
+  {{/each}}
+{{/if}}
+
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
 <link rel="stylesheet" href="/css/global.css?v={{app.version}}" />
