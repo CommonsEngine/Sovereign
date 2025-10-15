@@ -314,8 +314,23 @@ export async function deleteUser(req, res) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    await prisma.session.deleteMany({ where: { userId } });
-    await prisma.user.delete({ where: { id: userId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.project.updateMany({
+        where: { ownerId: userId },
+        data: { ownerId: null },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: { primaryEmailId: null },
+      });
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.userRoleAssignment.deleteMany({ where: { userId } });
+      await tx.verificationToken.deleteMany({ where: { userId } });
+      await tx.passwordResetToken.deleteMany({ where: { userId } });
+      await tx.userEmail.deleteMany({ where: { userId } });
+      await tx.userProfile.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+    });
 
     return res.status(204).end();
   } catch (err) {

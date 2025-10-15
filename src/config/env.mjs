@@ -30,13 +30,30 @@ const resolveFirstExisting = (candidates, fallback) => {
   return fallback;
 };
 
+const preferDist =
+  (process.env.NODE_ENV || "development") === "production" ||
+  process.env.PREFER_DIST_BUILD === "true";
+
+const publicCandidates = preferDist
+  ? [path.join(__rootdir, "dist", "public"), path.join(__rootdir, "public")]
+  : [path.join(__rootdir, "public"), path.join(__rootdir, "dist", "public")];
+
 const __publicdir = resolveFirstExisting(
-  [path.join(__rootdir, "dist", "public"), path.join(__rootdir, "public")],
+  publicCandidates,
   path.join(__rootdir, "public"),
 );
-// Views live under src/views (fallback) with dist support
+
+const templateCandidates = preferDist
+  ? [
+      path.join(__rootdir, "dist", "views"),
+      path.join(__rootdir, "src", "views"),
+    ]
+  : [
+      path.join(__rootdir, "src", "views"),
+      path.join(__rootdir, "dist", "views"),
+    ];
 const __templatedir = resolveFirstExisting(
-  [path.join(__rootdir, "dist", "views"), path.join(__rootdir, "src", "views")],
+  templateCandidates,
   path.join(__rootdir, "src", "views"),
 );
 
