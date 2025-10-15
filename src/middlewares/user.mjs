@@ -23,9 +23,9 @@ function splitAllowedSet(allowedSet) {
   return { roles, capabilities };
 }
 
-function userHasRole(user, allowedRoles) {
+function userHasRole(user, allowedRoles, allowIfEmpty = true) {
   if (!user || !allowedRoles) return false;
-  if (allowedRoles.size === 0) return !!user;
+  if (allowedRoles.size === 0) return allowIfEmpty ? !!user : false;
 
   if (allowedRoles.has("any") || allowedRoles.has("*")) return true;
 
@@ -97,6 +97,7 @@ export function requireRole(allowed = []) {
   );
   const { roles: allowedRoles, capabilities: allowedCaps } =
     splitAllowedSet(allowedSet);
+  const allowRolesIfEmpty = allowedCaps.size === 0;
 
   return function roleGuard(req, res, next) {
     if (!req.user) {
@@ -110,7 +111,7 @@ export function requireRole(allowed = []) {
       });
     }
 
-    const roleAllowed = userHasRole(req.user, allowedRoles);
+    const roleAllowed = userHasRole(req.user, allowedRoles, allowRolesIfEmpty);
     const capabilityAllowed = userHasCapability(req.user, allowedCaps);
 
     if (!roleAllowed && !capabilityAllowed) {
