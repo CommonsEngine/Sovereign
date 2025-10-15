@@ -1,3 +1,6 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
 import js from "@eslint/js";
 import globals from "globals";
 import pluginImport from "eslint-plugin-import";
@@ -13,6 +16,9 @@ const nodeLanguageOptions = {
     ...globals.node,
   },
 };
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SRC_PATH = path.resolve(__dirname, "src");
 
 export default [
   {
@@ -36,7 +42,16 @@ export default [
   {
     files: nodeFiles,
     languageOptions: nodeLanguageOptions,
+    settings: {
+      "import/internal-regex": "^\\$/",
+    },
     rules: {
+      "import/no-unresolved": [
+        "error",
+        {
+          ignore: ["^\\$/"],
+        },
+      ],
       "import/order": [
         "error",
         {
@@ -57,6 +72,15 @@ export default [
         "error",
         {
           tryExtensions: [".js", ".mjs", ".cjs", ".json"],
+          resolverConfig: {
+            alias: [
+              {
+                name: "$",
+                alias: SRC_PATH,
+                onlyModule: false,
+              },
+            ],
+          },
         },
       ],
       "n/no-process-exit": "off",

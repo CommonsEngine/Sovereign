@@ -5,7 +5,7 @@ import {
   slugifyName,
   buildSlug,
   MAX_SLUG_ATTEMPTS,
-} from "../src/handlers/projects/core/create.mjs";
+} from "$/handlers/projects/core/create.mjs";
 
 test("slugifyName trims, lowercases and strips invalid characters", () => {
   assert.equal(slugifyName("   Hello World!  "), "hello-world");

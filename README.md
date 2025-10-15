@@ -84,6 +84,22 @@ Keep tests running in watch mode during development:
 yarn test:watch
 ```
 
+### Module aliases
+
+The project uses a simple `$` alias that points to the `src/` directory. Instead of long relative paths like:
+
+```js
+import logger from "../../utils/logger.mjs";
+```
+
+use:
+
+```js
+import logger from "$/utils/logger.mjs";
+```
+
+The alias works for app code, tests, and development scripts (configured via a custom loader in `scripts/alias-loader.mjs`).
+
 #### Key implementation notes
 
 - AppSetting.value is a JSON column — it accepts objects, arrays, primitives and strings. Plain strings are stored as JSON strings.

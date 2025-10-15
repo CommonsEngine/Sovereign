@@ -8,11 +8,11 @@
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node src/index.mjs",
+    "start": "node --import ./scripts/register-alias.mjs src/index.mjs",
     "dev": "nodemon",
     "reset": "yarn prisma:reset",
-    "test": "node --test --import ./tests/setup.mjs ./tests/*.test.mjs",
-    "test:watch": "node --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed/index.mjs",
@@ -30,7 +30,7 @@
       "data"
     ],
     "ext": "mjs,js,json,html,css",
-    "exec": "node src/index.mjs",
+    "exec": "node --import ./scripts/register-alias.mjs src/index.mjs",
     "signal": "SIGTERM"
   },
   "keywords": [
