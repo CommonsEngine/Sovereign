@@ -3,9 +3,9 @@ import logger from "../../../utils/logger.mjs";
 import { flags } from "../../../config/flags.mjs";
 import prisma from "../../../prisma.mjs";
 
-const MAX_SLUG_ATTEMPTS = 10;
+export const MAX_SLUG_ATTEMPTS = 10;
 
-function slugifyName(name) {
+export function slugifyName(name) {
   return name
     .trim()
     .toLowerCase()
@@ -14,7 +14,7 @@ function slugifyName(name) {
     .slice(0, 64);
 }
 
-function buildSlug(base, attempt) {
+export function buildSlug(base, attempt) {
   if (!base) return uuid("s_");
   if (attempt === 0) return base;
   const suffix = attempt === 1 ? uuid("s_").slice(-6) : attempt;
