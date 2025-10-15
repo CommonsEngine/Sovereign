@@ -73,6 +73,23 @@ yarn start      # runs dist/index.mjs
 yarn start:src
 ```
 
+#### Production deployment notes
+
+1. Install dependencies on the server:
+   ```bash
+   yarn install --production
+   ```
+2. Build the production bundle:
+   ```bash
+   yarn build
+   ```
+3. Start the app (set your environment variables first):
+   ```bash
+   NODE_ENV=production yarn start
+   ```
+
+Make sure the process has write access to the `data/` directory (or override `__datadir` via the `__datadir` env variable) so SQLite can persist the database file.
+
 7. Updating Prisma schema and apply migrations
    - Update `prisma/schema.prisma` first
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes

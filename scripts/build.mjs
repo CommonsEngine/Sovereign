@@ -63,11 +63,7 @@ async function main() {
     sourcemap: true,
     logLevel: "info",
     allowOverwrite: true,
-    external: [
-      ...externals,
-      "@prisma/client",
-      "dotenv/config",
-    ],
+    external: [...externals, "@prisma/client", "dotenv/config"],
     plugins: [aliasPlugin],
   });
 

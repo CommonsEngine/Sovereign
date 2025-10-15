@@ -31,18 +31,12 @@ const resolveFirstExisting = (candidates, fallback) => {
 };
 
 const __publicdir = resolveFirstExisting(
-  [
-    path.join(__rootdir, "dist", "public"),
-    path.join(__rootdir, "public"),
-  ],
+  [path.join(__rootdir, "dist", "public"), path.join(__rootdir, "public")],
   path.join(__rootdir, "public"),
 );
 // Views live under src/views (fallback) with dist support
 const __templatedir = resolveFirstExisting(
-  [
-    path.join(__rootdir, "dist", "views"),
-    path.join(__rootdir, "src", "views"),
-  ],
+  [path.join(__rootdir, "dist", "views"), path.join(__rootdir, "src", "views")],
   path.join(__rootdir, "src", "views"),
 );
 
