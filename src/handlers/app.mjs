@@ -1,5 +1,6 @@
 import prisma from "$/prisma.mjs";
 import logger from "$/utils/logger.mjs";
+import { refreshEnvCache } from "$/config/env.mjs";
 
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;
@@ -318,6 +319,8 @@ export async function updateAppSettings(req, res) {
       create: { id: "appsettings", v: 1 },
       select: { v: true },
     });
+
+    await refreshEnvCache({ force: true });
 
     return res.json({
       updated: updatedSettings,
