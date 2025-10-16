@@ -151,9 +151,9 @@ app.get(
 );
 
 app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
-app.get("/login", disallowIfAuthed, authHandler.viewLogin);
+app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
 app.post("/login", authHandler.login);
-app.get("/register", disallowIfAuthed, authHandler.viewRegister);
+app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
 app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 
