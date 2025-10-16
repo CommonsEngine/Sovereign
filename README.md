@@ -258,6 +258,7 @@ We follow a [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
 - `hotfix/` → urgent fixes branched from main.
 - `fix/` → bug fixes branched from develop.
 - `chore/` → maintenance tasks (docs, tooling, dependencies, CI), no product changes.
+- `improv/` → improvements
 
 ##### Workflow
 
@@ -315,6 +316,38 @@ git push origin v1.2.0
 > - Do not rebase shared branches (`main`, `develop`).
 > - Rebase your local feature branches before opening a PR to keep history linear.
 > - Squash merges ensure each feature is a single, clean commit in history.
+
+##### Conventional Commits (recommended)
+
+We encourage following [Conventional Commits 1.0.0](https://www.conventionalcommits.org/en/v1.0.0/) for commit messages. Short guidelines:
+
+- Format: type(scope?): subject
+  - type: `feat` | `fix` | `docs` | `style` | `refactor` | `perf` | `test` | `chore` | `build` | `ci` | `revert`
+  - scope: optional, single token describing area (e.g. auth, db, ui)
+  - subject: short, imperative, lowercase, no trailing period
+- Optional body: blank line then detailed description (wrap ~72 chars)
+- Footer: use for `BREAKING CHANGE:` descriptions and issue references (e.g. "Refs: #123")
+
+Examples:
+
+- feat(auth): add invite token verification
+- fix(register): validate invite token expiry
+- docs(readme): clarify setup steps
+- chore(deps): bump prisma to v6
+- perf(cache): reduce redundant DB queries
+- revert: Revert "feat(x): ..." (when reverting a previous commit)
+
+Breaking change example (footer):
+
+- feat(api): change user payload
+- BREAKING CHANGE: "email" field moved from User -> UserEmail; update clients.
+
+<!--
+Tooling:
+
+- Use commitlint / husky if you want to enforce messages in CI.
+- A "prepare" script can run a commit template or interactive prompt (optional).
+-->
 
 ## Contributing
 

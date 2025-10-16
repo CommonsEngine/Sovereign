@@ -128,6 +128,12 @@ app.use(
 // Security headers
 app.use(secure);
 
+// TODO: Transform the API to mount based on file system (like Next.js API routes)
+// This would make it easier to manage and scale the API surface.
+
+// JSX/TSX SSR handler
+app.use(useJSX);
+
 // --- Demo routes ---
 // Example route for React-SSR handled view (captures any subpath)
 app.get(
