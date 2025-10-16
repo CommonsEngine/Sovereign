@@ -14,6 +14,7 @@
   --color-text-primary: #0f172a;
   --color-text-secondary: #475569;
   --color-text-muted: #6b7280;
+  --color-text-inverse: #ffffff;
 
   /* Brand & accent */
   --color-primary: #0f172a;
@@ -813,7 +814,7 @@
   .button--primary {
     border: none;
     background-color: var(--color-primary);
-    color: var(--color-border-tertiary);
+    color: var(--color-text-inverse);
   }
   .button--primary:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
