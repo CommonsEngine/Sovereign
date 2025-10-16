@@ -17,12 +17,13 @@ import webRouter from "$/routes/web.mjs";
 import { secure } from "$/middlewares/security.mjs";
 // import { requireFeature } from "$/middlewares/feature.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
-import { exposeGlobals } from "$/middlewares/misc.mjs";
+import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import { useJSX } from "$/middlewares/jsx.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
 
+import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import logger from "$/utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
 
@@ -81,6 +82,7 @@ app.engine(
     extname: ".html",
     defaultLayout: false,
     partialsDir: path.join(__templatedir, "_partials"),
+    helpers: hbsHelpers,
   }),
 );
 app.set("view engine", "html");
