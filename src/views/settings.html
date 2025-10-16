@@ -2,10 +2,32 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <link rel="stylesheet" href="/css/pages/settings.css" />
+    <!-- <link rel="stylesheet" href="/css/pages/settings.css" /> -->
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+
+    <style>
+      /* Ensure checkbox + label text stay on one line */
+      .checkbox-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        white-space: nowrap; /* prevent label text wrapping to next line */
+      }
+      .checkbox-inline input[type="checkbox"] {
+        margin: 0;
+        flex: 0 0 auto;
+        width: auto;
+        height: auto;
+      }
+      /* allow the row to wrap if viewport is narrow, but keep each label inline */
+      .row.gap-xs {
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+    </style>
   </head>
   <body class="page page--settings">
     {{> sidebar settings_active=true}} {{> userbar show_user_menu=true}}
@@ -31,7 +53,7 @@
           <div class="card__bar"><strong>App Settings</strong></div>
           <div class="card__body">
             <form id="app-form" class="form card__form">
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="appName">App Name</label>
                   <input
@@ -54,7 +76,7 @@
                 </div>
               </div>
 
-              <div class="row row--single">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="appDescription">Description</label>
                   <textarea
@@ -68,7 +90,7 @@ A Sovereign application</textarea
                 </div>
               </div>
 
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="baseUrl">Base URL</label>
                   <input
@@ -91,7 +113,7 @@ A Sovereign application</textarea
                 </div>
               </div>
 
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="defaultUserRole"
                     >Default User Role</label
@@ -113,7 +135,7 @@ A Sovereign application</textarea
                 </div>
               </div>
 
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="passwordMinLength"
                     >Password Min Length</label
@@ -141,7 +163,7 @@ A Sovereign application</textarea
                 </div>
               </div>
 
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="cookieName"
                     >Session Cookie Name</label
@@ -165,38 +187,34 @@ A Sovereign application</textarea
                 </div>
               </div>
 
-              <div class="row row--single">
-                <div class="field">
-                  <label class="label">Access & Compliance</label>
-                  <div
-                    style="
-                      display: flex;
-                      gap: 18px;
-                      align-items: center;
-                      flex-wrap: wrap;
-                    "
-                  >
-                    <label style="display: flex; gap: 8px; align-items: center">
-                      <input id="allowGuest" type="checkbox" />
-                      <span>Enable guest mode</span>
-                    </label>
-                    <label style="display: flex; gap: 8px; align-items: center">
-                      <input id="guestBypass" type="checkbox" />
-                      <span>Guest login bypass</span>
-                    </label>
-                    <label style="display: flex; gap: 8px; align-items: center">
-                      <input id="requireTerms" type="checkbox" />
-                      <span>Require terms acceptance</span>
-                    </label>
-                  </div>
+              <div class="col gap-2xs">
+                <label class="label">Access & Compliance</label>
+                <div class="row gap-xs" style="align-items: center">
+                  <label class="checkbox-inline">
+                    <input id="allowGuest" type="checkbox" />
+                    <span>Enable guest mode</span>
+                  </label>
+                  <label class="checkbox-inline">
+                    <input id="guestBypass" type="checkbox" />
+                    <span>Guest login bypass</span>
+                  </label>
+                  <label class="checkbox-inline">
+                    <input id="requireTerms" type="checkbox" />
+                    <span>Require terms acceptance</span>
+                  </label>
                 </div>
               </div>
 
-              <div class="actions">
-                <span class="spacer"></span>
-                <button id="reset-app" class="chip" type="button">Reset</button>
-                <button id="save-app" class="chip chip--primary" type="submit">
+              <div class="row row-reverse gap-2xs actions">
+                <button
+                  id="save-app"
+                  class="button button--primary chip chip--primary"
+                  type="submit"
+                >
                   Save changes
+                </button>
+                <button id="reset-app" class="button chip" type="button">
+                  Reset
                 </button>
               </div>
             </form>
@@ -208,7 +226,7 @@ A Sovereign application</textarea
           <div class="card__bar"><strong>Localization</strong></div>
           <div class="card__body">
             <form id="loc-form" class="form card__form">
-              <div class="row">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="defaultLocale"
                     >Default Locale</label
@@ -216,13 +234,13 @@ A Sovereign application</textarea
                   <select id="defaultLocale" class="input" data-default="en-US">
                     <option value="en-US" selected>English (US)</option>
                     <option value="en-GB">English (UK)</option>
-                    <option value="en-CA">English (Canada)</option>
+                    <!-- <option value="en-CA">English (Canada)</option>
                     <option value="fr-FR">French (France)</option>
                     <option value="de-DE">German (Germany)</option>
                     <option value="es-ES">Spanish (Spain)</option>
                     <option value="es-MX">Spanish (Mexico)</option>
                     <option value="pt-BR">Portuguese (Brazil)</option>
-                    <option value="ja-JP">Japanese</option>
+                    <option value="ja-JP">Japanese</option> -->
                   </select>
                 </div>
                 <div class="field">
@@ -236,11 +254,12 @@ A Sovereign application</textarea
                     placeholder="USD"
                     value="USD"
                     data-default="USD"
+                    readonly
                   />
                 </div>
               </div>
 
-              <div class="row row--single">
+              <div class="col gap-xs">
                 <div class="field">
                   <label class="label" for="supportedLocales"
                     >Supported Locales</label
@@ -251,19 +270,22 @@ A Sovereign application</textarea
                     rows="2"
                     placeholder="en-US,en-GB"
                     data-default="en-US,en-GB"
+                    readonly
                   >
-en-US,en-GB</textarea
+en-US</textarea
                   >
-                  <div class="help">Comma separated list of locale codes.</div>
+                  <div class="form__helptext">
+                    Comma separated list of locale codes.
+                  </div>
                 </div>
               </div>
 
-              <div class="row">
+              <div class="col">
                 <div class="field">
                   <label class="label" for="timeZone">Time Zone</label>
                   <select id="timeZone" class="input" data-default="UTC">
                     <option value="UTC" selected>UTC</option>
-                    <option value="Europe/London">Europe/London</option>
+                    <!-- <option value="Europe/London">Europe/London</option>
                     <option value="Europe/Berlin">Europe/Berlin</option>
                     <option value="Europe/Paris">Europe/Paris</option>
                     <option value="America/New_York">America/New_York</option>
@@ -273,19 +295,24 @@ en-US,en-GB</textarea
                     <option value="Asia/Colombo">Asia/Colombo</option>
                     <option value="Asia/Kolkata">Asia/Kolkata</option>
                     <option value="Asia/Tokyo">Asia/Tokyo</option>
-                    <option value="Australia/Sydney">Australia/Sydney</option>
+                    <option value="Australia/Sydney">Australia/Sydney</option> -->
                   </select>
-                  <div class="help">
+                  <div class="form__helptext">
                     Used for displaying dates/times across the app.
                   </div>
                 </div>
               </div>
 
-              <div class="actions">
-                <span class="spacer"></span>
-                <button id="reset-loc" class="chip" type="button">Reset</button>
-                <button id="save-loc" class="chip chip--primary" type="submit">
+              <div class="row gap-2xs row-reverse">
+                <button
+                  id="save-loc"
+                  class="button button--primary chip chip--primary"
+                  type="submit"
+                >
                   Save changes
+                </button>
+                <button id="reset-loc" class="button chip" type="button">
+                  Reset
                 </button>
               </div>
             </form>
