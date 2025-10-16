@@ -28,8 +28,7 @@
   "nodemonConfig": {
     "watch": [
       "src",
-      "public",
-      "data"
+      "public"
     ],
     "ext": "mjs,js,jsx,json,html,css",
     "exec": "node --import ./scripts/register-alias.mjs src/index.mjs",

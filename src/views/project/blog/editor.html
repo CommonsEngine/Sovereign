@@ -2,15 +2,246 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
+    <link rel="stylesheet" href="/css/global.css" />
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
-    <!-- expose filename for external script -->
+    <style>
+      .page__wrap {
+        max-width: 1240px;
+        width: 100%;
+        margin: 32px auto 80px;
+        padding: 0 24px;
+        box-sizing: border-box;
+      }
+      .page__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+      .title__wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 260px;
+      }
+      .meta__summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-size: 0.8rem;
+      }
+      .badge--draft {
+        background: color-mix(in oklab, var(--color-warning), white 82%);
+        color: color-mix(in oklab, var(--color-warning), black 30%);
+        border-color: color-mix(in oklab, var(--color-warning), white 65%);
+      }
+      .badge--published {
+        background: color-mix(in oklab, var(--color-success), white 80%);
+        color: color-mix(in oklab, var(--color-success), black 20%);
+        border-color: color-mix(in oklab, var(--color-success), white 60%);
+      }
+      .actions {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 0.9fr);
+        gap: 24px;
+        align-items: start;
+      }
+      @media (max-width: 1024px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border-primary);
+        border-radius: var(--radius-l);
+        box-shadow: var(--shadow-s);
+        overflow: hidden;
+      }
+      .card__bar {
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--color-border-primary);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+      .card__body {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .segmented {
+        border: 1px solid var(--color-border-primary);
+        border-radius: 999px;
+        padding: 4px;
+        display: inline-flex;
+        gap: 6px;
+        background: var(--color-bg-muted);
+      }
+      .segmented button {
+        border-radius: 999px;
+        padding: 6px 14px;
+        border: none;
+        background: transparent;
+        color: var(--color-text-secondary);
+      }
+      .segmented button[aria-pressed="true"] {
+        background: var(--color-accent);
+        color: #fff;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .field.inline {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .label {
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+      .help {
+        font-size: 0.85rem;
+        color: var(--color-text-muted);
+      }
+      .row-compact {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .editor-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        background: var(--color-bg-muted);
+        border: 1px solid var(--color-border-primary);
+        padding: 8px;
+        border-radius: var(--radius-m);
+      }
+      .editor-area,
+      .textarea {
+        min-height: 320px;
+        padding: 14px;
+        border-radius: var(--radius-m);
+        border: 1px solid var(--color-border-primary);
+        background: var(--color-bg-primary);
+        color: var(--color-text-primary);
+        resize: vertical;
+      }
+      .preview-card {
+        margin-top: 24px;
+      }
+      .preview-pane {
+        border: 1px dashed var(--color-border-primary);
+        border-radius: var(--radius-m);
+        padding: 16px;
+        min-height: 260px;
+        background: var(--color-bg-primary);
+        color: var(--color-text-primary);
+        overflow-x: auto;
+      }
+      .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+      .preview-timestamp {
+        color: var(--color-text-muted);
+        font-size: 0.85rem;
+      }
+      .meta-panel {
+        position: sticky;
+        top: 24px;
+      }
+      .meta-grid {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px 16px;
+        font-size: 0.9rem;
+      }
+      .meta-grid .subtle {
+        color: var(--color-text-muted);
+      }
+      .pill-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--color-bg-muted);
+        border: 1px solid var(--color-border-primary);
+        font-size: 0.75rem;
+        color: var(--color-text-secondary);
+      }
+      .segmented-toggle {
+        display: inline-flex;
+        gap: 6px;
+        border: 1px solid var(--color-border-primary);
+        border-radius: 999px;
+        padding: 4px;
+        background: var(--color-bg-muted);
+      }
+      .segmented-toggle button {
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: none;
+        background: transparent;
+        color: var(--color-text-secondary);
+      }
+      .segmented-toggle button[aria-pressed="true"] {
+        background: var(--color-text-primary);
+        color: var(--color-bg-primary);
+      }
+      .danger-zone {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 16px;
+        border-top: 1px solid var(--color-border-primary);
+      }
+      @media (max-width: 640px) {
+        .page__header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .actions {
+          justify-content: flex-start;
+        }
+      }
+    </style>
     <script>
       window.__FILENAME__ = "{{filename}}";
     </script>
   </head>
   <body class="page post-page" data-project-id="{{projectId}}">
-    <!-- top loading spinner -->
     <div data-startup-spinner class="loading-bar" style="display: none"></div>
 
     {{> sidebar}} {{> userbar show_user_menu=true}}
@@ -18,22 +249,21 @@
       <header class="page__header">
         <div class="title__wrap">
           <h1 id="page-title" class="title__name">{{title}}</h1>
-          <div id="page-desc" class="title__desc">
-            Editing {{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}
+          <div class="meta__summary">
+            <span id="page-desc"
+              >{{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}</span
+            >
+            {{#meta.draft}}
+            <span class="badge badge--draft">Draft</span>
+            {{/meta.draft}} {{^meta.draft}}
+            <span class="badge badge--published">Published</span>
+            {{/meta.draft}}
           </div>
         </div>
         <div class="actions">
           <a class="chip" href="/p/{{projectId}}" title="Back to project"
             >Back</a
           >
-          <!-- <a
-            id="preview-btn"
-            class="chip chip--ghost"
-            href="#"
-            target="_blank"
-            rel="noopener"
-            >Preview</a
-          > -->
           <button id="save-draft-btn" class="chip" type="button">
             Save Draft
           </button>
@@ -43,39 +273,21 @@
         </div>
       </header>
 
-      <section class="grid">
-        <article class="card">
-          <div
-            class="card__bar"
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              gap: 12px;
-            "
-          >
-            <strong>Editor</strong>
-            <div class="segmented" role="group" aria-label="Editor mode">
-              <button
-                id="mode-md"
-                class="chip chip--ghost"
-                type="button"
-                aria-pressed="true"
-              >
-                Markdown
-              </button>
-              <button
-                id="mode-rtf"
-                class="chip chip--ghost"
-                type="button"
-                aria-pressed="false"
-              >
-                Rich Text
-              </button>
+      <section class="layout">
+        <div class="content-column">
+          <article class="card">
+            <div class="card__bar">
+              <strong>Editor</strong>
+              <div class="segmented" role="group" aria-label="Editor mode">
+                <button id="mode-md" type="button" aria-pressed="true">
+                  Markdown
+                </button>
+                <button id="mode-rtf" type="button" aria-pressed="false">
+                  Rich Text
+                </button>
+              </div>
             </div>
-          </div>
-          <div class="card__body">
-            <div class="row row--single">
+            <div class="card__body" id="editor-pane" aria-busy="false">
               <div class="field">
                 <label class="label" for="title">Title</label>
                 <input
@@ -86,168 +298,197 @@
                   value="{{title}}"
                 />
               </div>
-            </div>
 
-            <div class="row">
-              <div class="field">
-                <label class="label" for="slug">Slug</label>
-                <input
-                  id="slug"
-                  class="input"
-                  type="text"
-                  placeholder="e.g., getting-started"
-                  value=""
-                />
-                <div class="help">Used to build the file path and URL.</div>
-              </div>
-              <div class="field">
-                <label class="label">Path</label>
-                <div id="pathPreview" class="help">
-                  {{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}
+              <div class="row-compact">
+                <div class="field">
+                  <label class="label" for="slug">Slug</label>
+                  <input
+                    id="slug"
+                    class="input"
+                    type="text"
+                    placeholder="e.g., getting-started"
+                    value=""
+                  />
+                  <div class="help">
+                    Used for the filename and post URL. Auto-generated from the
+                    title if left blank.
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label">File Path</label>
+                  <div class="help" id="pathPreview">
+                    {{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Markdown editor (default) -->
-            <div id="md-wrap">
-              <div class="field">
-                <label class="label" for="md-editor">Markdown</label>
-                <div class="editor-toolbar" id="md-toolbar">
-                  <button class="editor-btn" data-md="h2" type="button">
-                    H2
-                  </button>
-                  <button class="editor-btn" data-md="h3" type="button">
-                    H3
-                  </button>
-                  <button class="editor-btn" data-md="bold" type="button">
-                    <strong>B</strong>
-                  </button>
-                  <button class="editor-btn" data-md="italic" type="button">
-                    <em>I</em>
-                  </button>
-                  <button class="editor-btn" data-md="ul" type="button">
-                    • List
-                  </button>
-                  <button class="editor-btn" data-md="ol" type="button">
-                    1. List
-                  </button>
-                  <button class="editor-btn" data-md="code" type="button">
-                    Code
-                  </button>
-                  <button class="editor-btn" data-md="quote" type="button">
-                    Quote
-                  </button>
-                  <span class="spacer"></span>
-                  <button class="editor-btn" data-md="link" type="button">
-                    Link
-                  </button>
-                </div>
-                <textarea
-                  id="md-editor"
-                  class="textarea"
-                  rows="16"
-                  placeholder="Write your post in Markdown…"
-                >
+              <div id="md-wrap">
+                <div class="field">
+                  <label class="label" for="md-editor">Markdown</label>
+                  <div class="editor-toolbar" id="md-toolbar">
+                    <button class="editor-btn" data-md="h2" type="button">
+                      H2
+                    </button>
+                    <button class="editor-btn" data-md="h3" type="button">
+                      H3
+                    </button>
+                    <button class="editor-btn" data-md="bold" type="button">
+                      <strong>B</strong>
+                    </button>
+                    <button class="editor-btn" data-md="italic" type="button">
+                      <em>I</em>
+                    </button>
+                    <button class="editor-btn" data-md="ul" type="button">
+                      • List
+                    </button>
+                    <button class="editor-btn" data-md="ol" type="button">
+                      1. List
+                    </button>
+                    <button class="editor-btn" data-md="code" type="button">
+                      Code
+                    </button>
+                    <button class="editor-btn" data-md="quote" type="button">
+                      Quote
+                    </button>
+                    <span class="spacer"></span>
+                    <button class="editor-btn" data-md="link" type="button">
+                      Link
+                    </button>
+                  </div>
+                  <textarea
+                    id="md-editor"
+                    class="textarea"
+                    rows="18"
+                    placeholder="Write your post in Markdown…"
+                  >
 {{{contentMarkdown}}}</textarea
-                >
-              </div>
-            </div>
-
-            <!-- Rich text editor (secondary) -->
-            <div id="rtf-wrap" hidden>
-              <div class="field">
-                <label class="label">Rich Text Editor</label>
-                <div class="editor-toolbar" id="rt-toolbar">
-                  <button class="editor-btn" data-cmd="bold" type="button">
-                    <strong>B</strong>
-                  </button>
-                  <button class="editor-btn" data-cmd="italic" type="button">
-                    <em>I</em>
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="formatBlock"
-                    data-value="H2"
-                    type="button"
                   >
-                    H2
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="formatBlock"
-                    data-value="H3"
-                    type="button"
-                  >
-                    H3
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="insertUnorderedList"
-                    type="button"
-                  >
-                    • List
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="insertOrderedList"
-                    type="button"
-                  >
-                    1. List
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="formatBlock"
-                    data-value="BLOCKQUOTE"
-                    type="button"
-                  >
-                    Quote
-                  </button>
-                  <button
-                    class="editor-btn"
-                    data-cmd="insertHTML"
-                    data-value="<pre><code></code></pre>"
-                    type="button"
-                  >
-                    Code
-                  </button>
-                  <button class="editor-btn" id="link-btn" type="button">
-                    Link
-                  </button>
-                  <span class="spacer"></span>
-                  <button class="editor-btn" data-cmd="undo" type="button">
-                    Undo
-                  </button>
-                  <button class="editor-btn" data-cmd="redo" type="button">
-                    Redo
-                  </button>
-                  <button class="editor-btn" id="clear-btn" type="button">
-                    Clear
-                  </button>
                 </div>
-                <div
-                  id="editor"
-                  class="editor-area"
-                  contenteditable="true"
-                  spellcheck="true"
-                ></div>
+              </div>
+
+              <div id="rtf-wrap" hidden>
+                <div class="field">
+                  <label class="label">Rich Text Editor</label>
+                  <div class="editor-toolbar" id="rt-toolbar">
+                    <button class="editor-btn" data-cmd="bold" type="button">
+                      <strong>B</strong>
+                    </button>
+                    <button class="editor-btn" data-cmd="italic" type="button">
+                      <em>I</em>
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="formatBlock"
+                      data-value="H2"
+                      type="button"
+                    >
+                      H2
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="formatBlock"
+                      data-value="H3"
+                      type="button"
+                    >
+                      H3
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="insertUnorderedList"
+                      type="button"
+                    >
+                      • List
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="insertOrderedList"
+                      type="button"
+                    >
+                      1. List
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="formatBlock"
+                      data-value="BLOCKQUOTE"
+                      type="button"
+                    >
+                      Quote
+                    </button>
+                    <button
+                      class="editor-btn"
+                      data-cmd="insertHTML"
+                      data-value="<pre><code></code></pre>"
+                      type="button"
+                    >
+                      Code
+                    </button>
+                    <button class="editor-btn" id="link-btn" type="button">
+                      Link
+                    </button>
+                    <span class="spacer"></span>
+                    <button class="editor-btn" data-cmd="undo" type="button">
+                      Undo
+                    </button>
+                    <button class="editor-btn" data-cmd="redo" type="button">
+                      Redo
+                    </button>
+                    <button class="editor-btn" id="clear-btn" type="button">
+                      Clear
+                    </button>
+                  </div>
+                  <div
+                    id="editor"
+                    class="editor-area"
+                    contenteditable="true"
+                    spellcheck="true"
+                  ></div>
+                </div>
               </div>
             </div>
-          </div>
-        </article>
+          </article>
 
-        <aside class="card">
-          <div class="card__bar"><strong>Post Meta</strong></div>
+          <article class="card preview-card">
+            <div class="card__bar">
+              <strong>Live Preview</strong>
+              <div class="preview-header">
+                <span class="preview-timestamp" id="preview-timestamp"
+                  >No changes yet</span
+                >
+                <button id="preview-refresh" class="chip" type="button">
+                  Refresh
+                </button>
+              </div>
+            </div>
+            <div class="card__body">
+              <div id="preview-pane" class="preview-pane">
+                <p class="help">
+                  Markdown content renders here. Click refresh to update the
+                  preview without publishing.
+                </p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="card meta-panel">
+          <div class="card__bar"><strong>Post Settings</strong></div>
           <div class="card__body">
             <div class="field">
-              <label class="label" for="excerpt">Excerpt</label>
+              <label class="label" for="excerpt">Summary</label>
               <textarea
                 id="excerpt"
                 class="textarea"
+                rows="4"
                 placeholder="Short summary…"
               >
 {{meta.description}}</textarea
               >
+              <div class="help">
+                Appears in listings and SEO snippets. Keep under 160
+                characters.
+              </div>
             </div>
+
             <div class="field">
               <label class="label" for="tags">Tags</label>
               <input
@@ -257,62 +498,74 @@
                 placeholder="comma,separated,tags"
                 value="{{tagsCsv}}"
               />
-              <div class="help">Comma-separated (e.g., demo,intro)</div>
+              <div class="help">Press enter or comma to add a tag chip.</div>
+              <div id="tag-preview" class="pill-group"></div>
             </div>
-            <div class="row">
-              <div
-                class="col"
-                style="gap: 10px; display: flex; flex-direction: column"
-              >
-                <div class="field">
-                  <label class="label" for="pubDate">Publish Date</label>
-                  <input
-                    id="pubDate"
-                    class="input"
-                    type="datetime-local"
-                    value=""
-                    data-iso="{{meta.pubDate}}"
-                  />
-                </div>
-                <div class="field">
-                  <label class="label" for="draft">Status</label>
-                  <div style="display: flex; align-items: center; gap: 8px">
-                    {{#meta.draft}}
-                    <input id="draft" type="checkbox" checked />
-                    {{/meta.draft}} {{^meta.draft}}
-                    <input id="draft" type="checkbox" />
-                    {{/meta.draft}}
-                    <span class="help">Draft</span>
-                  </div>
-                </div>
+
+            <div class="field">
+              <label class="label" for="pubDate">Publish Date</label>
+              <input
+                id="pubDate"
+                class="input"
+                type="datetime-local"
+                value=""
+                data-iso="{{meta.pubDate}}"
+              />
+              <div class="help">
+                Leave blank to set automatically the first time you publish.
               </div>
             </div>
 
-            <hr
-              style="
-                border: none;
-                border-top: 1px solid var(--color-border-card);
-                margin: 14px 0;
-              "
-            />
+            <div class="field">
+              <label class="label" for="draft">Visibility</label>
+              <div class="segmented-toggle" role="group" aria-label="Status">
+                <button
+                  id="visibility-draft"
+                  type="button"
+                  data-state="draft"
+                  aria-pressed="{{#meta.draft}}true{{/meta.draft}}{{^meta.draft}}false{{/meta.draft}}"
+                >
+                  Draft
+                </button>
+                <button
+                  id="visibility-published"
+                  type="button"
+                  data-state="published"
+                  aria-pressed="{{#meta.draft}}false{{/meta.draft}}{{^meta.draft}}true{{/meta.draft}}"
+                >
+                  Published
+                </button>
+              </div>
+              <input id="draft" type="checkbox" hidden {{#meta.draft}}checked{{/meta.draft}} />
+            </div>
 
             <div class="meta-grid">
               <div class="subtle">Project</div>
               <div id="m-project">{{projectName}}</div>
-              <div class="subtle">Repo</div>
+              <div class="subtle">Repository</div>
               <div id="m-repo">
-                <a href="{{repoUrl}}" target="_blank" rel="noopener">link</a>
+                <a href="{{repoUrl}}" target="_blank" rel="noopener"
+                  >{{repoUrl}}</a
+                >
               </div>
               <div class="subtle">Branch</div>
               <div id="m-branch">{{branch}}</div>
               <div class="subtle">Content Dir</div>
-              <div id="m-dir">{{contentDir}}</div>
+              <div id="m-dir">
+                {{#contentDir}}{{contentDir}}{{/contentDir}}{{^contentDir}}(repo
+                root){{/contentDir}}
+              </div>
+              <div class="subtle">Filename</div>
+              <div id="m-file">{{filename}}</div>
             </div>
 
-            <div id="danger-zone" class="danger-zone" style="margin-top: 14px">
-              <span class="subtle">Danger zone</span>
+            <div class="danger-zone">
+              <div>
+                <strong class="subtle">Danger zone</strong>
+                <div class="help">Delete this post from the repository.</div>
+              </div>
               <button id="delete-btn" class="chip chip--danger" type="button">
-                Delete Post
+                Delete
               </button>
             </div>
           </div>

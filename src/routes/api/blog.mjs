@@ -20,5 +20,9 @@ router.post(
   "/projects/:projectId/blog/post/:fp",
   projectsHandler.blog.publishPost,
 );
+router.post(
+  "/projects/:projectId/blog/retry-connection",
+  projectsHandler.blog.retryConnection,
+);
 
 export default router;

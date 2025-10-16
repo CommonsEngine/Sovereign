@@ -21,7 +21,7 @@ export default async function remove(req, res) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    // Cascades will remove subtype records (gitcms/papertrail/workspace) and related rows as defined in schema
+    // Cascades will remove subtype records (blog/papertrail/workspace) and related rows as defined in schema
     await prisma.project.delete({ where: { id: projectId } });
 
     return res.status(204).end();

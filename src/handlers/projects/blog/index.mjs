@@ -5,8 +5,72 @@ import prisma from "../../../prisma.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
+  disposeGitManager,
 } from "../../../libs/git/registry.mjs";
 import FileManager from "../../../libs/fs.mjs";
+
+function ensureAccess(project, req) {
+  const userId = req.user?.id ?? null;
+  // if ownerId set and doesn't match current user -> forbidden
+  if (project.ownerId && project.ownerId !== userId) return false;
+  return true;
+}
+
+const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
+
+function parseFrontmatter(src) {
+  const text = String(src || "");
+  const match = text.match(FRONTMATTER_REGEX);
+  if (!match) return [{}, text];
+  const yaml = match[1];
+  const body = match[2] || "";
+  const meta = {};
+  yaml.split(/\r?\n/).forEach((line) => {
+    const i = line.indexOf(":");
+    if (i === -1) return;
+    const key = line.slice(0, i).trim();
+    let value = line.slice(i + 1).trim();
+    value = value.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
+    if (/^(true|false)$/i.test(value)) {
+      value = /^true$/i.test(value);
+    } else if (/^\d{4}-\d{2}-\d{2}T/.test(value)) {
+      const dt = new Date(value);
+      if (!Number.isNaN(dt.getTime())) value = dt.toISOString();
+    } else if (/^\[.*\]$/.test(value)) {
+      value = value
+        .slice(1, -1)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    meta[key] = value;
+  });
+  return [meta, body];
+}
+
+function normalizeTags(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
+function makeExcerpt(body, limit = 140) {
+  if (!body) return "";
+  return String(body)
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]*`/g, " ")
+    .replace(/[#>*_\-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, limit);
+}
 
 export async function viewPostEdit(req, res) {
   try {
@@ -145,36 +209,6 @@ export async function viewPostEdit(req, res) {
       });
     }
 
-    // Parse basic YAML-like frontmatter (best-effort)
-    function parseFrontmatter(src) {
-      const m = src.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-      if (!m) return [{}, src];
-      const yaml = m[1];
-      const body = m[2] || "";
-      const meta = {};
-      yaml.split(/\r?\n/).forEach((line) => {
-        const i = line.indexOf(":");
-        if (i === -1) return;
-        const k = line.slice(0, i).trim();
-        let v = line.slice(i + 1).trim();
-        // strip quotes
-        v = v.replace(/^"(.*)"$/, "$1").replace(/^'(.*)'$/, "$1");
-        if (/^(true|false)$/i.test(v)) v = /^true$/i.test(v);
-        else if (/^\d{4}-\d{2}-\d{2}T/.test(v)) {
-          const d = new Date(v);
-          if (!isNaN(d)) v = d.toISOString();
-        } else if (/^\[.*\]$/.test(v)) {
-          v = v
-            .slice(1, -1)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-        }
-        meta[k] = v;
-      });
-      return [meta, body];
-    }
-
     const [meta, contentMarkdown] = parseFrontmatter(raw);
 
     logger.log("Post meta:", meta);
@@ -256,10 +290,10 @@ export async function getAllPosts(req, res) {
     if (!gm) {
       gm = await getOrInitGitManager(projectId, {
         repoUrl: cfg.repoUrl,
-        defaultBranch: cfg.branch,
-        gitUserName: cfg.userName,
-        gitUserEmail: cfg.userEmail,
-        gitAuthToken: cfg.authSecret || null,
+        branch: cfg.branch,
+        userName: cfg.userName,
+        userEmail: cfg.userEmail,
+        authToken: cfg.authSecret || null,
       });
     }
     // Ensure latest before reading
@@ -275,7 +309,50 @@ export async function getAllPosts(req, res) {
 
     const basePath = gm.getLocalPath();
     const fm = new FileManager(basePath, cfg.contentDir || "");
-    const posts = await fm.listMarkdownFiles();
+    const files = await fm.listMarkdownFiles();
+
+    const posts = await Promise.all(
+      files.map(async (file) => {
+        let raw = "";
+        let meta = {};
+        let body = "";
+        try {
+          raw = await fm.readFile(file.filename);
+          [meta, body] = parseFrontmatter(raw);
+        } catch (err) {
+          logger.warn(
+            `Failed to parse frontmatter for ${file.filename}: ${err?.message || err}`,
+          );
+        }
+
+        const tags = normalizeTags(meta.tags);
+        const draft = meta.draft === true;
+        const status = draft ? "Draft" : "Published";
+        const modifiedISO =
+          file.modified instanceof Date
+            ? file.modified.toISOString()
+            : file.modified || "";
+
+        return {
+          filename: file.filename,
+          title:
+            typeof meta.title === "string" && meta.title.trim()
+              ? meta.title.trim()
+              : file.filename.replace(/\.md$/i, ""),
+          description:
+            typeof meta.description === "string" ? meta.description : "",
+          tags,
+          status,
+          draft,
+          pubDate: typeof meta.pubDate === "string" ? meta.pubDate : null,
+          updatedDate:
+            typeof meta.updatedDate === "string" ? meta.updatedDate : null,
+          modified: modifiedISO,
+          size: file.size,
+          excerpt: makeExcerpt(body),
+        };
+      }),
+    );
 
     return res.status(200).json({ posts });
   } catch (e) {
@@ -500,6 +577,30 @@ export async function updatePost(req, res) {
       return res.status(500).json({ error: "Failed to update file" });
     }
 
+    const [latestMetaRaw] = parseFrontmatter(finalText);
+    const latestMeta = {
+      title:
+        typeof latestMetaRaw.title === "string"
+          ? latestMetaRaw.title.trim()
+          : (updates.title ?? ""),
+      description:
+        typeof latestMetaRaw.description === "string"
+          ? latestMetaRaw.description
+          : (updates.description ?? ""),
+      tags: normalizeTags(latestMetaRaw.tags),
+      draft: latestMetaRaw.draft === true,
+      pubDate:
+        typeof latestMetaRaw.pubDate === "string"
+          ? latestMetaRaw.pubDate
+          : (updates.pubDate ?? null),
+      updatedDate:
+        typeof latestMetaRaw.updatedDate === "string"
+          ? latestMetaRaw.updatedDate
+          : (updates.updatedDate ?? null),
+    };
+
+    let resultingFilename = filename;
+
     // Handle slug/path rename AFTER saving content
     try {
       const desiredPathRaw =
@@ -535,15 +636,22 @@ export async function updatePost(req, res) {
 
           logger.log(`Renamed post ${filename} -> ${desiredBase}`);
 
-          // Respond with redirect info for the client to navigate
+          resultingFilename = desiredBase;
           const redirectUrl = `/p/${encodeURIComponent(
             projectId,
           )}/blog/post/${encodeURIComponent(desiredBase)}?edit=true`;
+          const relativeDir = (cfg.contentDir || "").trim();
+          const finalPath = relativeDir
+            ? `${relativeDir}/${desiredBase}`
+            : desiredBase;
+
           return res.status(200).json({
             updated: true,
             renamed: true,
             filename: desiredBase,
+            path: finalPath,
             redirect: redirectUrl,
+            meta: latestMeta,
           });
         }
       }
@@ -552,8 +660,18 @@ export async function updatePost(req, res) {
       // Fall through to normal success if rename failed silently
     }
 
+    const relativeDir = (cfg.contentDir || "").trim();
+    const finalPath = relativeDir
+      ? `${relativeDir}/${resultingFilename}`
+      : resultingFilename;
+
     // Normal success (no rename)
-    return res.status(200).json({ updated: true, filename });
+    return res.status(200).json({
+      updated: true,
+      filename: resultingFilename,
+      path: finalPath,
+      meta: latestMeta,
+    });
   } catch (err) {
     logger.error("Update Blog post failed:", err);
     return res.status(500).json({ error: "Failed to update post" });
@@ -660,14 +778,28 @@ export async function deletePost(req, res) {
 
     // Commit and push
     let pushed = true;
+    let publishError = null;
     try {
       await gm.publish(`Delete post: ${filename}`);
     } catch (err) {
       pushed = false;
+      publishError = err;
       logger.warn("Publish failed after deletion:", err?.message || err);
     }
 
-    return res.status(200).json({ deleted: true, filename, pushed });
+    const responsePayload = { deleted: true, filename, pushed };
+    if (!pushed && publishError) {
+      const msg = String(publishError?.message || publishError);
+      if (/non-fast-forward|fetch first|rejected/i.test(msg)) {
+        responsePayload.hint =
+          "Remote has new commits. Pull/rebase locally then retry publish.";
+      }
+      responsePayload.error = "Repository push failed";
+      responsePayload.detail = msg;
+      return res.status(202).json(responsePayload);
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (err) {
     logger.error("Delete Blog post failed:", err);
     return res.status(500).json({ error: "Failed to delete post" });
@@ -765,12 +897,15 @@ export async function publishPost(req, res) {
     logger.error("Publish Blog changes failed:", err);
     // Common non-fast-forward hint
     const msg = String(err?.message || err);
-    const hint = /non-fast-forward|fetch first|rejected/i.test(msg)
+    const nonFastForward = /non-fast-forward|fetch first|rejected/i.test(msg);
+    const hint = nonFastForward
       ? "Remote has new commits. Pull/rebase then try again."
       : undefined;
-    return res
-      .status(500)
-      .json({ error: "Failed to publish changes", hint, detail: msg });
+    return res.status(nonFastForward ? 409 : 500).json({
+      error: "Failed to publish changes",
+      hint,
+      detail: msg,
+    });
   }
 }
 
@@ -946,5 +1081,62 @@ export async function viewPostCreate(req, res) {
       description: "Failed to create a new post",
       error: err?.message || String(err),
     });
+  }
+}
+
+export async function retryConnection(req, res) {
+  try {
+    const projectId = req.params?.id || req.params?.projectId;
+    if (!projectId)
+      return res.status(400).json({ error: "Missing project id" });
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        ownerId: true,
+        type: true,
+        Blog: {
+          select: {
+            id: true,
+            gitConfig: {
+              select: {
+                repoUrl: true,
+                branch: true,
+                contentDir: true,
+                userName: true,
+                userEmail: true,
+                authSecret: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!project || project.type !== "blog") {
+      return res.status(404).json({ error: "Project not found" });
+    }
+    if (!ensureAccess({ ownerId: project.ownerId }, req)) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const cfg = project.Blog?.gitConfig;
+    if (!cfg) {
+      return res.status(400).json({ error: "Blog configuration is missing." });
+    }
+
+    disposeGitManager(projectId);
+    await getOrInitGitManager(projectId, {
+      repoUrl: cfg.repoUrl,
+      branch: cfg.branch,
+      userName: cfg.userName,
+      userEmail: cfg.userEmail,
+      authToken: cfg.authSecret || null,
+    });
+
+    return res.json({ connected: true });
+  } catch (err) {
+    logger.error("Retry blog connection failed:", err);
+    return res.status(500).json({ error: "Failed to reconnect" });
   }
 }

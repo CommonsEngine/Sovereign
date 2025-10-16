@@ -4,7 +4,7 @@ import { toBool } from "./utils.mjs";
 // TODO: Fetch feature toggles from DB-stored config (e.g. per-tenant or per-user overrides).
 
 export const flags = {
-  gitcms: toBool(process.env.FT_PROJECT_TYPE_GITCMS, true),
+  blog: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
   papertrail: toBool(process.env.FT_PROJECT_TYPE_PAPERTRAIL, false),
   workspace: toBool(process.env.FT_PROJECT_TYPE_WORKSPACE, false),
 };
