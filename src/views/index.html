@@ -17,16 +17,32 @@
       <h2 class="page__title">Projects</h2>
 
       <section id="grid" class="projects__grid">
-        <a
-          href="javascript:void(0)"
+        <button
+          type="button"
+          class="projects__card projects__card--new"
           data-modal-open="create-project"
           aria-haspopup="dialog"
+          aria-label="Create a new project"
         >
-          <article class="projects__card projects__card--new">
-            <div class="projects__add-icon">+</div>
-            <span>Create new project</span>
-          </article>
-        </a>
+          <span class="projects__add-icon" aria-hidden="true">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 5v14m7-7H5"
+              />
+            </svg>
+          </span>
+          <span>Create new project</span>
+        </button>
 
         {{> modal/modal-runtime}} {{> modal/create-project}} {{#each projects}}
         <article
@@ -47,7 +63,9 @@
             {{else}}
             <div class="projects__card-title">{{this.name}}</div>
             {{/if}}
-            <span class="projects__card-badge projects__card-badge--status"
+            <span
+              class="projects__card-badge projects__card-badge--status"
+              aria-label="Status: {{this.status}}"
               >{{this.status}}</span
             >
           </div>
@@ -57,19 +75,28 @@
             <span
               class="projects__card-chip projects__card-chip--scope"
               title="Scope"
+              aria-label="Scope: {{this.scope}}"
               >{{this.scope}}</span
             >
             {{/if}} {{#if this.type}}
             <span
               class="projects__card-chip projects__card-chip--type"
               title="Type"
+              aria-label="Type: {{this.type}}"
               >{{this.type}}</span
             >
             {{/if}}
           </div>
 
           <div class="projects__card-meta projects__card-meta--date">
-            <time class="created-at" data-date="{{this.createdAt}}"></time>
+            <time
+              class="created-at"
+              datetime="{{this.createdAt}}"
+              data-date="{{this.createdAt}}"
+              aria-label="{{#if this.createdAt}}Created at {{this.createdAt}}{{else}}Created date loading{{/if}}"
+            >
+              {{#if this.createdAt}}{{this.createdAt}}{{else}}Loading…{{/if}}
+            </time>
           </div>
 
           <div class="projects__card-actions">
