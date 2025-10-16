@@ -3,8 +3,6 @@
 import pkg from "$/config/pkg.mjs";
 
 export default function exposeGlobals(req, res, next) {
-  console.log("res.locals.user:", req.user);
-
   // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
@@ -37,7 +35,7 @@ export default function exposeGlobals(req, res, next) {
     version: String(pkg.version || "0.0.0"),
   };
   res.locals.user = {
-    name: req.user?.name || "Guest",
+    name: req.user?.name || "guest",
     primaryRole: req.user?.role || null,
   };
   next();

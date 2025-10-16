@@ -90,7 +90,7 @@ function userHasCapability(user, allowedCapabilities) {
  *  - role keys (e.g. "platform_admin", "tenant_admin")
  *  - numeric ids (0..n)
  */
-export function requireRole(allowed = []) {
+export default function requireRole(allowed = []) {
   const raw = Array.isArray(allowed) ? allowed : [allowed];
   const allowedSet = new Set(
     raw.map(normalizeAllowedValue).filter((v) => v !== null),

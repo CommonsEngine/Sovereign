@@ -9,7 +9,7 @@ import env from "$/config/env.mjs";
 const { NODE_ENV } = env();
 
 // Attach res.renderJSX(viewPath, props)
-export async function useJSX(req, res, next) {
+export default async function useJSX(req, res, next) {
   /**
    * Server-side render a React component located under /src/views.
    * Usage: res.renderJSX("example/react/index", { ...props })

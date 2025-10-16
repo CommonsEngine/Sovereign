@@ -14,11 +14,11 @@ import authRouter from "$/routes/auth.mjs";
 import apiRouter from "$/routes/api/index.mjs";
 import webRouter from "$/routes/web.mjs";
 
-import { secure } from "$/middlewares/security.mjs";
-// import { requireFeature } from "$/middlewares/feature.mjs";
+import secure from "$/middlewares/secure.mjs";
+import requireFeature from "$/middlewares/requireFeature.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
-import { useJSX } from "$/middlewares/jsx.mjs";
+import useJSX from "$/middlewares/useJSX.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";

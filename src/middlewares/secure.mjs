@@ -1,4 +1,4 @@
-export function secure(_, res, next) {
+export default function secure(_, res, next) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "SAMEORIGIN");
   res.setHeader("Referrer-Policy", "no-referrer-when-downgrade");
