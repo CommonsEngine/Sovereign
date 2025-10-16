@@ -1,10 +1,10 @@
 import express from "express";
 
-import * as projectsHandler from "../../handlers/projects/index.mjs";
-import { getAppSettings, updateAppSettings } from "../../handlers/app.mjs";
-import { requireAuth } from "../../middlewares/auth.mjs";
-import { requireRole } from "../../middlewares/user.mjs";
-import * as usersHandler from "../../handlers/users/index.mjs";
+import * as projectsHandler from "$/handlers/projects/index.mjs";
+import { getAppSettings, updateAppSettings } from "$/handlers/app.mjs";
+import { requireAuth } from "$/middlewares/auth.mjs";
+import { requireRole } from "$/middlewares/user.mjs";
+import * as usersHandler from "$/handlers/users/index.mjs";
 
 import blogRouter from "./blog.mjs";
 

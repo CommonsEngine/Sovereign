@@ -1,4 +1,4 @@
-import { isFeatureEnabled } from "../config/flags.mjs";
+import { isFeatureEnabled } from "$/config/flags.mjs";
 
 export function requireFeature(key) {
   return (_, res, next) =>

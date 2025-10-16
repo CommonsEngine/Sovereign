@@ -1,7 +1,7 @@
 import { hashPassword, randomToken } from "$/utils/auth.mjs";
 import logger from "$/utils/logger.mjs";
-import prisma from "$/prisma.mjs";
 import env from "$/config/env.mjs";
+import prisma from "$/prisma.mjs";
 
 const { SIGNUP_POLICY } = env();
 

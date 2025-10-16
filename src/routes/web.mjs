@@ -1,11 +1,11 @@
 import express from "express";
 
-import { requireAuth } from "../middlewares/auth.mjs";
-import { requireRole } from "../middlewares/user.mjs";
-import { exposeGlobals } from "../middlewares/misc.mjs";
-import * as projectHandler from "../handlers/projects/index.mjs";
-import * as usersHandler from "../handlers/users/index.mjs";
-import * as settingsHandler from "../handlers/settings/index.mjs";
+import { requireAuth } from "$/middlewares/auth.mjs";
+import { requireRole } from "$/middlewares/user.mjs";
+import { exposeGlobals } from "$/middlewares/misc.mjs";
+import * as projectHandler from "$/handlers/projects/index.mjs";
+import * as usersHandler from "$/handlers/users/index.mjs";
+import * as settingsHandler from "$/handlers/settings/index.mjs";
 
 const router = express.Router();
 

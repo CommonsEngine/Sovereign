@@ -26,8 +26,8 @@ import * as authHandler from "$/handlers/auth/index.mjs";
 import logger from "$/utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
 
-import { connectPrismaWithRetry, gracefulShutdown } from "./prisma.mjs";
-import env from "./config/env.mjs";
+import { connectPrismaWithRetry, gracefulShutdown } from "$/prisma.mjs";
+import env from "$/config/env.mjs";
 
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = env();
 
