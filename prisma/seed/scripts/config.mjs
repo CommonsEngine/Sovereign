@@ -95,7 +95,7 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "signup.policy",
-    value: process.env.SIGNUP_POLICY ?? "invite",
+    value: process.env.SIGNUP_POLICY ?? "invite", // 'open' or 'invite'
   },
   {
     scope: "platform",

@@ -96,7 +96,7 @@ const baseTemplate = Object.freeze({
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
   DEFAULT_USER_ROLE: process.env.DEFAULT_USER_ROLE || "guest",
-  SIGNUP_POLICY: process.env.SIGNUP_POLICY || "invite",
+  SIGNUP_POLICY: process.env.SIGNUP_POLICY || "invite", // 'open' or 'invite'
 
   FEATURE_TERMS_REQUIRE_ACCEPTANCE: toBool(
     process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE,

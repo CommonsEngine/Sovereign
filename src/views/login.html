@@ -55,6 +55,7 @@
               </button>
             </div>
           </form>
+          {{#if allow_signup}}
           <div class="divider"></div>
           <div class="actions">
             <span style="color: #64748b; font-size: 13px"
@@ -62,7 +63,7 @@
               <a class="link" href="/register">Create account</a></span
             >
           </div>
-          {{#if guest_enabled}}
+          {{/if}} {{#if guest_enabled}}
           <div class="divider"></div>
           <div class="actions">
             <a class="link" href="/auth/guest">Continue as guest</a>
