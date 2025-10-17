@@ -106,9 +106,29 @@
     outline-offset: 2px;
   }
 
+  @media (max-width: 768px) {
+    .userbar {
+      position: static;
+      top: auto;
+      right: auto;
+      width: 100%;
+      justify-content: flex-end;
+      padding: var(--space-xs) var(--space-m);
+      background: var(--color-bg-primary);
+      border-bottom: 1px solid var(--color-border-primary);
+      gap: var(--space-2xs);
+    }
+    .userbar__user {
+      margin-left: 0;
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .userbar__greeting {
+      display: none;
+    }
+  }
   @media (max-width: 640px) {
     .userbar {
-      align-items: flex-start;
       padding: var(--space-xs) var(--space-s);
     }
     .userbar__greeting {

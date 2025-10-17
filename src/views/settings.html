@@ -26,9 +26,29 @@
         gap: 12px;
         flex-wrap: wrap;
       }
+      .actions {
+        gap: var(--space-xs);
+      }
+      @media (max-width: 560px) {
+        .checkbox-inline {
+          white-space: normal;
+          align-items: flex-start;
+        }
+        .checkbox-inline span {
+          line-height: 1.4;
+        }
+        .actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .actions .button {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     </style>
   </head>
-  <body class="page page--settings">
+  <body class="page page--with-sidebar page--settings">
     {{> sidebar settings_active=true}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
