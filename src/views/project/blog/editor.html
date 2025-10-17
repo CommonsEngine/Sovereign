@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <style>
       :root {
-        --editor-min-viewport-height: 80vh;
+        --editor-min-viewport-height: 78vh;
       }
       .layout {
         display: grid;
@@ -116,8 +116,11 @@
         resize: vertical;
       }
       .editor-area {
-        min-height: 280px;
+        min-height: 40vh;
         overflow: auto;
+      }
+      .md-editor {
+        min-height: 40vh;
       }
       .meta-panel {
         position: sticky;
@@ -320,8 +323,7 @@
                   </div>
                   <textarea
                     id="md-editor"
-                    class="textarea"
-                    rows="18"
+                    class="textarea md-editor"
                     placeholder="Write your post in Markdown…"
                   >
 {{{contentMarkdown}}}</textarea
