@@ -214,8 +214,7 @@ export async function viewPostEdit(req, res) {
 
     const [meta, contentMarkdown] = parseFrontmatter(raw);
 
-    logger.log("Post meta:", meta);
-    logger.log("Post contentMarkdown:", contentMarkdown);
+    console.log("Rendering editor for post:", meta);
 
     // Render editor template with context
     return res.render("project/blog/editor", {

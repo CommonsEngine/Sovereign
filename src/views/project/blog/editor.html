@@ -2,64 +2,10 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <link rel="stylesheet" href="/css/global.css" />
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <style>
-      .page__wrap {
-        max-width: 1240px;
-        width: 100%;
-        margin: 32px auto 80px;
-        padding: 0 24px;
-        box-sizing: border-box;
-      }
-      .page__header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 28px;
-      }
-      .title__wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        min-width: 260px;
-      }
-      .meta__summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        color: var(--color-text-muted);
-        font-size: 0.9rem;
-      }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 999px;
-        border: 1px solid transparent;
-        font-size: 0.8rem;
-      }
-      .badge--draft {
-        background: color-mix(in oklab, var(--color-warning), white 82%);
-        color: color-mix(in oklab, var(--color-warning), black 30%);
-        border-color: color-mix(in oklab, var(--color-warning), white 65%);
-      }
-      .badge--published {
-        background: color-mix(in oklab, var(--color-success), white 80%);
-        color: color-mix(in oklab, var(--color-success), black 20%);
-        border-color: color-mix(in oklab, var(--color-success), white 60%);
-      }
-      .actions {
-        display: inline-flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-      }
       .layout {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(280px, 0.9fr);
@@ -204,53 +150,56 @@
         padding-top: 16px;
         border-top: 1px solid var(--color-border-primary);
       }
-      @media (max-width: 640px) {
-        .page__header {
-          flex-direction: column;
-          align-items: stretch;
-        }
-        .actions {
-          justify-content: flex-start;
-        }
+      .button--danger {
+        background-color: var(--color-danger);
+        color: #fff;
+        border: none;
       }
     </style>
     <script>
       window.__FILENAME__ = "{{filename}}";
     </script>
   </head>
-  <body class="page page--with-sidebar post-page" data-project-id="{{projectId}}">
+  <body class="page page--with-sidebar page--project-blog-editor">
+     <!-- top loading spinner -->
     <div data-startup-spinner class="loading-bar" style="display: none"></div>
 
     {{> sidebar}} {{> userbar show_user_menu=true}}
-    <main class="page__wrap">
+
+    <main
+      class="page__wrap page__wrap--fullwidth"
+      data-project-id="{{projectId}}"
+      data-project-status="{{project.status}}"
+      data-connected="{{connected}}"
+    >
       <header class="page__header">
-        <div class="title__wrap">
-          <h1 id="page-title" class="title__name">{{title}}</h1>
-          <div class="meta__summary">
-            <span id="page-desc"
-              >{{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}</span
-            >
-            {{#meta.draft}}
-            <span id="status-badge" class="badge badge--draft">Draft</span>
-            {{/meta.draft}} {{^meta.draft}}
-            <span id="status-badge" class="badge badge--published"
-              >Published</span
-            >
-            {{/meta.draft}}
-          </div>
+        <div class="page__heading">
+          <h2 class="page__title">{{title}}</h2>
+          <p class="page__subtitle margin-left-2xs">{{projectName}}</p>
         </div>
-        <div class="actions">
-          <a class="chip" href="/p/{{projectId}}" title="Back to project"
-            >Back</a
-          >
-          <button id="save-draft-btn" class="chip" type="button">
+        <div>
+          <button id="save-draft-btn" class="button chip" type="button">
             Save Draft
           </button>
-          <button id="publish-btn" class="chip chip--primary" type="button">
+          <button id="publish-btn" class="button button--primary chip chip--primary" type="button">
             Publish
           </button>
         </div>
       </header>
+
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/">Projects</a>
+          </li>
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/p/{{projectId}}">Blog</a>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">{{filename}}</span>
+          </li>
+        </ol>
+      </nav>
 
       <section class="layout">
         <div class="content-column">
@@ -294,9 +243,16 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label class="label">File Path</label>
-                  <div class="help" id="pathPreview">
-                    {{#contentDir}}{{contentDir}}/{{/contentDir}}{{filename}}
+                  <label class="label" for="coverUrl">Cover Image URL</label>
+                  <input
+                    id="coverUrl"
+                    class="input"
+                    type="text"
+                    placeholder="https://example.com/image.jpg"
+                    value="{{meta.coverUrl}}"
+                  />
+                  <div class="help">
+                    Optional URL to a cover image for the post.
                   </div>
                 </div>
               </div>
@@ -476,6 +432,7 @@
 
             <div class="field">
               <label class="label" for="draft">Visibility</label>
+              <div>
               <div class="segmented-toggle" role="group" aria-label="Status">
                 <button
                   id="visibility-draft"
@@ -494,6 +451,7 @@
                   Published
                 </button>
               </div>
+              </div>
               <input id="draft" type="checkbox" hidden {{#meta.draft}}checked{{/meta.draft}} />
             </div>
 
@@ -509,20 +467,17 @@
               <div class="subtle">Branch</div>
               <div id="m-branch">{{branch}}</div>
               <div class="subtle">Content Dir</div>
-              <div id="m-dir">
-                {{#contentDir}}{{contentDir}}{{/contentDir}}{{^contentDir}}(repo
-                root){{/contentDir}}
-              </div>
+              <div id="m-dir">{{contentDir}}</div>
               <div class="subtle">Filename</div>
               <div id="m-file">{{filename}}</div>
             </div>
 
             <div class="danger-zone">
-              <div>
+              <div class="flex col gap-xs">
                 <strong class="subtle">Danger zone</strong>
                 <div class="help">Delete this post from the repository.</div>
               </div>
-              <button id="delete-btn" class="chip chip--danger" type="button">
+              <button id="delete-btn" class="button--danger" type="button">
                 Delete
               </button>
             </div>

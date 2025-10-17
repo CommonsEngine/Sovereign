@@ -706,6 +706,10 @@
   .card fieldset {
     border: none;
   }
+  /* chip */
+  .chip--danger {
+    color: var(--color-danger);
+  }
   /* table */
   .table-wrap {
     overflow: auto;
@@ -1006,6 +1010,10 @@
     }
     .gap-m {
       gap: var(--space-m);
+    }
+
+    .margin-left-2xs {
+      margin-left: var(--space-2xs);
     }
   }
 }
