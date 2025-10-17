@@ -51,6 +51,71 @@ const defaultConfigs = [
   },
   {
     scope: "platform",
+    key: "feature.email.delivery.bypass",
+    value: parseBoolLike(process.env.EMAIL_DELIVERY_BYPASS) ?? "true",
+  },
+  {
+    scope: "platform",
+    key: "email.from.name",
+    value:
+      process.env.EMAIL_FROM_NAME ??
+      process.env.APP_NAME ??
+      pkg.title ??
+      "Sovereign",
+  },
+  {
+    scope: "platform",
+    key: "email.from.address",
+    value:
+      process.env.EMAIL_FROM_ADDRESS ??
+      process.env.EMAIL_FROM ??
+      "no-reply@localhost",
+  },
+  {
+    scope: "platform",
+    key: "email.reply_to",
+    value: process.env.EMAIL_REPLY_TO ?? "",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.url",
+    value: process.env.SMTP_URL ?? "",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.host",
+    value: process.env.SMTP_HOST ?? "",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.port",
+    value:
+      process.env.SMTP_PORT && !Number.isNaN(Number(process.env.SMTP_PORT))
+        ? Number(process.env.SMTP_PORT)
+        : 587,
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.secure",
+    value: parseBoolLike(process.env.SMTP_SECURE) ?? "false",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.ignore_tls",
+    value: parseBoolLike(process.env.SMTP_IGNORE_TLS) ?? "false",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.user",
+    value: process.env.SMTP_USER ?? "",
+  },
+  {
+    scope: "platform",
+    key: "email.smtp.password",
+    value: process.env.SMTP_PASSWORD ?? "",
+  },
+  {
+    scope: "platform",
     key: "feature.guest.login.enabled.bypass",
     value:
       parseBoolLike(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN) ?? "false",

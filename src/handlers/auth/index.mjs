@@ -2,10 +2,21 @@ import crypto from "crypto";
 
 import { hashPassword, randomToken } from "$/utils/auth.mjs";
 import logger from "$/utils/logger.mjs";
+import { sendMail } from "$/utils/mailer.mjs";
 import env from "$/config/env.mjs";
 import prisma from "$/prisma.mjs";
 
-const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS } = env();
+const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
+
+const toAbsoluteUrl = (relativePath = "") => {
+  const base = String(APP_URL || "").replace(/\/+$/, "");
+  if (!relativePath) return base;
+  if (/^https?:\/\//i.test(relativePath)) return relativePath;
+  const normalized = relativePath.startsWith("/")
+    ? relativePath
+    : `/${relativePath}`;
+  return `${base}${normalized}`;
+};
 
 export { default as register, viewRegister } from "./register.mjs";
 export { default as login, guestLogin, viewLogin } from "./login.mjs";
@@ -192,8 +203,42 @@ export async function inviteUser(req, res) {
     });
 
     // Build invite URL
-    const base = String(APP_URL).replace(/\/+$/, "");
-    const inviteUrl = `${base}/register?token=${token}`;
+    const inviteUrl = toAbsoluteUrl(`/register?token=${token}`);
+
+    const safeDisplayName = String(displayName || "").trim() || emailNorm;
+    const inviteSubject = `${APP_NAME} invitation`;
+    const inviteText = [
+      `Hi ${safeDisplayName},`,
+      "",
+      `You've been invited to join ${APP_NAME}.`,
+      "Use the link below to finish setting up your account:",
+      "",
+      inviteUrl,
+      "",
+      "This link expires in 48 hours.",
+      "",
+      "If you didn't expect this invitation, you can ignore this email.",
+    ].join("\n");
+    const inviteHtml = `<p>Hi ${safeDisplayName},</p>
+<p>You've been invited to join <strong>${APP_NAME}</strong>.</p>
+<p>Use the link below to finish setting up your account:</p>
+<p><a href="${inviteUrl}" target="_blank" rel="noopener">Accept your invite</a></p>
+<p>This link expires in 48 hours.</p>
+<p>If you didn't expect this invitation, you can ignore this email.</p>`;
+
+    const inviteMailResult = await sendMail({
+      to: emailNorm,
+      subject: inviteSubject,
+      text: inviteText,
+      html: inviteHtml,
+    });
+
+    if (inviteMailResult.status === "failed") {
+      logger.warn("Failed to send invite email", {
+        email: emailNorm,
+        error: inviteMailResult.error,
+      });
+    }
 
     // Return user + invite URL (include primary email)
     return res.status(201).json({
@@ -251,11 +296,42 @@ export async function forgotPassword(req, res) {
           expiresAt: new Date(Date.now() + 1000 * 60 * 30), // 30m
         },
       });
+      const resetUrl = toAbsoluteUrl(`/login?token=${token}`);
+      const resetText = [
+        `Hi ${userEmail.user.firstName || userEmail.user.name || emailNorm || "there"},`,
+        "",
+        `We received a request to reset your ${APP_NAME} password.`,
+        "Use the link below to choose a new password:",
+        "",
+        resetUrl,
+        "",
+        "This link expires in 30 minutes.",
+        "",
+        "If you didn't request a password reset, you can ignore this email.",
+      ].join("\n");
+      const resetHtml = `<p>Hi ${userEmail.user.firstName || userEmail.user.name || emailNorm || "there"},</p>
+<p>We received a request to reset your <strong>${APP_NAME}</strong> password.</p>
+<p>Use the link below to choose a new password:</p>
+<p><a href="${resetUrl}" target="_blank" rel="noopener">Reset your password</a></p>
+<p>This link expires in 30 minutes.</p>
+<p>If you didn't request a password reset, you can ignore this email.</p>`;
+
+      const resetMailResult = await sendMail({
+        to: emailNorm,
+        subject: `Reset your ${APP_NAME} password`,
+        text: resetText,
+        html: resetHtml,
+      });
+      if (resetMailResult.status === "failed") {
+        logger.warn("Failed to send password reset email", {
+          email: emailNorm,
+          error: resetMailResult.error,
+        });
+      }
       // In development, expose the reset link to speed up testing
       if (process.env.NODE_ENV !== "production") {
         devResetUrl = `/login?token=${token}`;
       }
-      // TODO: send reset link `${process.env.APP_URL || ""}/login?token=${token}`
     }
 
     if (isFormContent) {

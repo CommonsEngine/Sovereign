@@ -14,7 +14,12 @@ const BOOLEAN_KEYS = new Set([
   "feature.guest.login.enabled",
   "feature.guest.login.enabled.bypass",
   "feature.terms.require_acceptance",
+  "feature.email.delivery.bypass",
+  "email.smtp.secure",
+  "email.smtp.ignore_tls",
 ]);
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function parseBooleanLike(value) {
   if (value === null || value === undefined) return null;
@@ -137,6 +142,45 @@ function normalizeCurrency(value) {
   return str.toUpperCase();
 }
 
+function normalizeOptionalString(value) {
+  if (value === null || value === undefined) return null;
+  const str = String(value).trim();
+  return str || null;
+}
+
+function normalizeEmailAddress(value, field, { required = false } = {}) {
+  if (value === null || value === undefined) {
+    if (required) throw new Error(`${field} is required`);
+    return null;
+  }
+
+  const str = String(value).trim();
+  if (!str) {
+    if (required) throw new Error(`${field} is required`);
+    return null;
+  }
+
+  if (!EMAIL_REGEX.test(str)) {
+    throw new Error(`${field} must be a valid email address`);
+  }
+
+  return str;
+}
+
+function normalizeSmtpUrl(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const str = String(value).trim();
+  try {
+    const url = new URL(str);
+    if (!["smtp:", "smtps:"].includes(url.protocol)) {
+      throw new Error("SMTP URL must start with smtp:// or smtps://");
+    }
+    return url.toString();
+  } catch {
+    throw new Error("SMTP URL must be a valid smtp(s) URL");
+  }
+}
+
 function normalizeSettingValue(key, rawValue) {
   const value = rawValue ?? null;
 
@@ -197,6 +241,33 @@ function normalizeSettingValue(key, rawValue) {
       return normalizeCurrency(value);
     case "env.timezone.default":
       return normalizeRequiredString(value, "Default timezone");
+    case "email.from.name":
+      return normalizeOptionalString(value);
+    case "email.from.address":
+      return normalizeEmailAddress(value, "From address");
+    case "email.reply_to":
+      return normalizeEmailAddress(value, "Reply-To address");
+    case "feature.email.delivery.bypass":
+      return normalizeBoolean(value, "Email delivery bypass toggle");
+    case "email.smtp.url":
+      return normalizeSmtpUrl(value);
+    case "email.smtp.host":
+      return normalizeOptionalString(value);
+    case "email.smtp.port": {
+      if (value === null || value === undefined || value === "") return null;
+      return normalizeInteger(value, { min: 1, field: "SMTP port" });
+    }
+    case "email.smtp.secure":
+      return normalizeBoolean(value, "SMTP secure flag");
+    case "email.smtp.ignore_tls":
+      return normalizeBoolean(value, "SMTP ignore TLS flag");
+    case "email.smtp.user":
+      return normalizeOptionalString(value);
+    case "email.smtp.password": {
+      if (value === null || value === undefined) return null;
+      const str = String(value);
+      return str.length > 0 ? str : null;
+    }
     default: {
       if (BOOLEAN_KEYS.has(key)) {
         return normalizeBoolean(value, key);

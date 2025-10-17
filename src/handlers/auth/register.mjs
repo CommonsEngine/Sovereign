@@ -1,9 +1,20 @@
 import { hashPassword, randomToken } from "$/utils/auth.mjs";
 import logger from "$/utils/logger.mjs";
+import { sendMail } from "$/utils/mailer.mjs";
 import env from "$/config/env.mjs";
 import prisma from "$/prisma.mjs";
 
-const { SIGNUP_POLICY } = env();
+const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();
+
+const toAbsoluteUrl = (relativePath = "") => {
+  const base = String(APP_URL || "").replace(/\/+$/, "");
+  if (!relativePath) return base;
+  if (/^https?:\/\//i.test(relativePath)) return relativePath;
+  const normalized = relativePath.startsWith("/")
+    ? relativePath
+    : `/${relativePath}`;
+  return `${base}${normalized}`;
+};
 
 export default async function register(req, res) {
   try {
@@ -372,7 +383,40 @@ export default async function register(req, res) {
       },
     });
 
-    // TODO: send verification email with link `${APP_URL}/auth/verify?token=${token}`
+    const verifyUrl = toAbsoluteUrl(`/auth/verify?token=${verificationToken}`);
+    const displayName =
+      `${firstName || ""} ${lastName || ""}`.trim() || emailNorm;
+    const verifyText = [
+      `Hi ${displayName},`,
+      "",
+      `Welcome to ${APP_NAME}!`,
+      "Please verify your email address by clicking the link below:",
+      "",
+      verifyUrl,
+      "",
+      "The link expires in 24 hours.",
+      "",
+      "If you didn't create this account, you can ignore this email.",
+    ].join("\n");
+    const verifyHtml = `<p>Hi ${displayName},</p>
+<p>Welcome to <strong>${APP_NAME}</strong>!</p>
+<p>Please verify your email address by clicking the link below:</p>
+<p><a href="${verifyUrl}" target="_blank" rel="noopener">Verify your email</a></p>
+<p>The link expires in 24 hours.</p>
+<p>If you didn't create this account, you can ignore this email.</p>`;
+
+    const verificationMailResult = await sendMail({
+      to: emailNorm,
+      subject: `Verify your email for ${APP_NAME}`,
+      text: verifyText,
+      html: verifyHtml,
+    });
+    if (verificationMailResult.status === "failed") {
+      logger.warn("Failed to send verification email", {
+        email: emailNorm,
+        error: verificationMailResult.error,
+      });
+    }
 
     if (isFormContent) {
       // HTML form flow → redirect to login with banner
