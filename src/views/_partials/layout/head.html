@@ -25,4 +25,7 @@
 {{/if}}
 
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/css/global.css?v={{app.version}}" />
+<link
+  rel="stylesheet"
+  href="/css/global.css?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}"
+/>
