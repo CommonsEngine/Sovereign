@@ -251,6 +251,18 @@ const SETTING_OVERRIDES = {
     const num = toPositiveInt(value);
     if (num && num > 0) config.AUTH_PASSWORD_MIN_LENGTH = num;
   },
+  "email.from.name": (config, value) => {
+    const str = toStringValue(value);
+    config.EMAIL_FROM_NAME = str ?? "";
+  },
+  "email.from.address": (config, value) => {
+    const str = toStringValue(value);
+    config.EMAIL_FROM_ADDRESS = str ?? "";
+  },
+  "email.reply_to": (config, value) => {
+    const str = toStringValue(value);
+    config.EMAIL_REPLY_TO = str ?? "";
+  },
   "feature.guest.login.enabled": (config, value) => {
     config.GUEST_LOGIN_ENABLED = toBool(
       value,
@@ -268,6 +280,36 @@ const SETTING_OVERRIDES = {
       value,
       config.EMAIL_DELIVERY_BYPASS ?? true,
     );
+  },
+  "email.smtp.url": (config, value) => {
+    const str = toStringValue(value);
+    config.SMTP_URL = str ?? "";
+  },
+  "email.smtp.host": (config, value) => {
+    const str = toStringValue(value);
+    config.SMTP_HOST = str ?? "";
+  },
+  "email.smtp.port": (config, value) => {
+    if (value === null || value === undefined || value === "") return;
+    const num = toPositiveInt(value);
+    if (num && num > 0) config.SMTP_PORT = num;
+  },
+  "email.smtp.secure": (config, value) => {
+    config.SMTP_SECURE = toBool(value, config.SMTP_SECURE ?? false);
+  },
+  "email.smtp.ignore_tls": (config, value) => {
+    config.SMTP_IGNORE_TLS = toBool(value, config.SMTP_IGNORE_TLS ?? false);
+  },
+  "email.smtp.user": (config, value) => {
+    const str = toStringValue(value);
+    config.SMTP_USER = str ?? "";
+  },
+  "email.smtp.password": (config, value) => {
+    if (value === null || value === undefined) {
+      config.SMTP_PASSWORD = "";
+    } else {
+      config.SMTP_PASSWORD = String(value);
+    }
   },
   "feature.terms.require_acceptance": (config, value) => {
     config.FEATURE_TERMS_REQUIRE_ACCEPTANCE = toBool(

@@ -240,6 +240,147 @@ A Sovereign application</textarea
           </div>
         </article>
 
+        <!-- Email -->
+        <article class="card" style="grid-column: 1 / -1">
+          <div class="card__bar"><strong>Email Settings</strong></div>
+          <div class="card__body">
+            <form id="email-form" class="form card__form">
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" for="emailFromName">From Name</label>
+                  <input
+                    id="emailFromName"
+                    class="input"
+                    type="text"
+                    placeholder="Sovereign"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="emailFromAddress"
+                    >From Address</label
+                  >
+                  <input
+                    id="emailFromAddress"
+                    class="input"
+                    type="email"
+                    placeholder="no-reply@example.com"
+                  />
+                </div>
+              </div>
+
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" for="emailReplyTo">Reply-To</label>
+                  <input
+                    id="emailReplyTo"
+                    class="input"
+                    type="email"
+                    placeholder="support@example.com"
+                  />
+                  <div class="form__helptext">
+                    Optional: leave blank to use the From address.
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label" style="display: block">Delivery</label>
+                  <label class="checkbox-inline">
+                    <input id="emailBypass" type="checkbox" />
+                    <span>Bypass outbound email (log only)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" for="smtpUrl">SMTP URL</label>
+                  <input
+                    id="smtpUrl"
+                    class="input"
+                    type="text"
+                    placeholder="smtps://user:pass@mail.example.com:465"
+                  />
+                  <div class="form__helptext">
+                    Optional: overrides host/port/user fields when provided.
+                  </div>
+                </div>
+              </div>
+
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" for="smtpHost">SMTP Host</label>
+                  <input
+                    id="smtpHost"
+                    class="input"
+                    type="text"
+                    placeholder="mail.example.com"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="smtpPort">SMTP Port</label>
+                  <input
+                    id="smtpPort"
+                    class="input"
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="587"
+                  />
+                </div>
+              </div>
+
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" style="display: block">Security</label>
+                  <div class="row gap-xs" style="align-items: center">
+                    <label class="checkbox-inline">
+                      <input id="smtpSecure" type="checkbox" />
+                      <span>Use secure connection (TLS/SSL)</span>
+                    </label>
+                    <label class="checkbox-inline">
+                      <input id="smtpIgnoreTls" type="checkbox" />
+                      <span>Ignore TLS certificate validation</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col gap-xs">
+                <div class="field">
+                  <label class="label" for="smtpUser">SMTP Username</label>
+                  <input
+                    id="smtpUser"
+                    class="input"
+                    type="text"
+                    placeholder="smtp-user"
+                  />
+                </div>
+                <div class="field">
+                  <label class="label" for="smtpPassword">SMTP Password</label>
+                  <input
+                    id="smtpPassword"
+                    class="input"
+                    type="password"
+                    autocomplete="new-password"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+
+              <div class="row gap-2xs row-reverse actions">
+                <button
+                  class="button button--primary chip chip--primary"
+                  type="submit"
+                >
+                  Save changes
+                </button>
+                <button id="reset-email" class="button chip" type="button">
+                  Reset
+                </button>
+              </div>
+            </form>
+          </div>
+        </article>
+
         <!-- Localization -->
         <article class="card" style="grid-column: 1 / -1">
           <div class="card__bar"><strong>Localization</strong></div>
@@ -356,6 +497,21 @@ en-US</textarea
         "feature.guest.login.enabled.bypass": { id: "guestBypass" },
         "feature.terms.require_acceptance": { id: "requireTerms" },
         "ui.date.format": { id: "dateFormat" },
+        "feature.email.delivery.bypass": { id: "emailBypass" },
+        "email.from.name": { id: "emailFromName" },
+        "email.from.address": { id: "emailFromAddress" },
+        "email.reply_to": { id: "emailReplyTo" },
+        "email.smtp.url": { id: "smtpUrl" },
+        "email.smtp.host": { id: "smtpHost" },
+        "email.smtp.port": { id: "smtpPort" },
+        "email.smtp.secure": { id: "smtpSecure" },
+        "email.smtp.ignore_tls": { id: "smtpIgnoreTls" },
+        "email.smtp.user": { id: "smtpUser" },
+        "email.smtp.password": {
+          id: "smtpPassword",
+          toInput: (value) =>
+            value === null || value === undefined ? "" : value,
+        },
         "env.locale.default": { id: "defaultLocale" },
         "env.locale.supported": {
           id: "supportedLocales",
@@ -373,6 +529,7 @@ en-US</textarea
       };
 
       const LOCALE_PATTERN = /^[a-z]{2,3}(?:[-_][a-z0-9]+)*$/i;
+      const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
       function normalizeLocaleInput(value) {
         if (value === null || value === undefined) return "";
@@ -434,6 +591,10 @@ en-US</textarea
         }
 
         if (field.type === "number") {
+          if (value === null || value === undefined || value === "") {
+            field.value = "";
+            return;
+          }
           const num = Number(value);
           if (!Number.isNaN(num)) {
             field.value = num;
@@ -589,6 +750,57 @@ en-US</textarea
         return errors;
       }
 
+      function validateEmailForm() {
+        const errors = [];
+
+        const fromAddressField = document.getElementById("emailFromAddress");
+        const fromAddress = fromAddressField.value.trim();
+        markFieldError(fromAddressField, false);
+        if (fromAddress && !EMAIL_PATTERN.test(fromAddress)) {
+          errors.push("From address must be a valid email address.");
+          markFieldError(fromAddressField, true);
+        } else {
+          fromAddressField.value = fromAddress;
+        }
+
+        const replyToField = document.getElementById("emailReplyTo");
+        const replyTo = replyToField.value.trim();
+        markFieldError(replyToField, false);
+        if (replyTo && !EMAIL_PATTERN.test(replyTo)) {
+          errors.push("Reply-To address must be a valid email address.");
+          markFieldError(replyToField, true);
+        } else {
+          replyToField.value = replyTo;
+        }
+
+        const smtpUrlField = document.getElementById("smtpUrl");
+        const smtpUrl = smtpUrlField.value.trim();
+        markFieldError(smtpUrlField, false);
+        if (smtpUrl && !/^smtps?:\/\//i.test(smtpUrl)) {
+          errors.push("SMTP URL must start with smtp:// or smtps://.");
+          markFieldError(smtpUrlField, true);
+        } else {
+          smtpUrlField.value = smtpUrl;
+        }
+
+        const smtpPortField = document.getElementById("smtpPort");
+        const smtpPortRaw = smtpPortField.value.trim();
+        markFieldError(smtpPortField, false);
+        if (smtpPortRaw) {
+          const smtpPort = Number.parseInt(smtpPortRaw, 10);
+          if (!Number.isFinite(smtpPort) || smtpPort < 1) {
+            errors.push("SMTP port must be a positive integer.");
+            markFieldError(smtpPortField, true);
+          } else {
+            smtpPortField.value = String(smtpPort);
+          }
+        } else {
+          smtpPortField.value = "";
+        }
+
+        return errors;
+      }
+
       async function sendSettings(entries, submitter, successMessage) {
         if (!Array.isArray(entries) || entries.length === 0) return;
         if (submitter) {
@@ -637,6 +849,67 @@ en-US</textarea
           }
         }
       }
+
+      document
+        .getElementById("email-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const form = e.currentTarget;
+          const submitter =
+            e.submitter || form.querySelector('[type="submit"]');
+
+          const errors = validateEmailForm();
+          if (errors.length > 0) {
+            alert(errors.join("\n"));
+            return;
+          }
+
+          const fromName = document
+            .getElementById("emailFromName")
+            .value.trim();
+          const fromAddress = document
+            .getElementById("emailFromAddress")
+            .value.trim();
+          const replyTo = document.getElementById("emailReplyTo").value.trim();
+          const bypass = document.getElementById("emailBypass").checked;
+          const smtpUrl = document.getElementById("smtpUrl").value.trim();
+          const smtpHost = document.getElementById("smtpHost").value.trim();
+          const smtpPortRaw = document.getElementById("smtpPort").value.trim();
+          const smtpPort = smtpPortRaw
+            ? Number.parseInt(smtpPortRaw, 10)
+            : null;
+          const smtpSecure = document.getElementById("smtpSecure").checked;
+          const smtpIgnoreTls =
+            document.getElementById("smtpIgnoreTls").checked;
+          const smtpUser = document.getElementById("smtpUser").value.trim();
+          const smtpPassword = document.getElementById("smtpPassword").value;
+
+          const entries = [
+            { key: "email.from.name", value: fromName || null },
+            { key: "email.from.address", value: fromAddress || null },
+            { key: "email.reply_to", value: replyTo || null },
+            { key: "feature.email.delivery.bypass", value: bypass },
+            { key: "email.smtp.url", value: smtpUrl || null },
+            { key: "email.smtp.host", value: smtpHost || null },
+            {
+              key: "email.smtp.port",
+              value:
+                smtpPort !== null && Number.isFinite(smtpPort)
+                  ? smtpPort
+                  : null,
+            },
+            { key: "email.smtp.secure", value: smtpSecure },
+            { key: "email.smtp.ignore_tls", value: smtpIgnoreTls },
+            { key: "email.smtp.user", value: smtpUser || null },
+            {
+              key: "email.smtp.password",
+              value:
+                smtpPassword && smtpPassword.length > 0 ? smtpPassword : null,
+            },
+          ];
+
+          await sendSettings(entries, submitter, "Email settings saved.");
+        });
 
       document
         .getElementById("app-form")
@@ -759,6 +1032,9 @@ en-US</textarea
       loadSettings();
 
       // Reset buttons
+      document.getElementById("reset-email").addEventListener("click", () => {
+        window.location.reload();
+      });
       document.getElementById("reset-app").addEventListener("click", () => {
         window.location.reload();
       });
