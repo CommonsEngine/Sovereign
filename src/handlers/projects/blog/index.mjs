@@ -63,13 +63,16 @@ function normalizeTags(value) {
 
 function makeExcerpt(body, limit = 140) {
   if (!body) return "";
-  return String(body)
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]*`/g, " ")
-    .replace(/[#>*_\-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, limit);
+  return (
+    String(body)
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/`[^`]*`/g, " ")
+      // eslint-disable-next-line no-useless-escape
+      .replace(/[#>*_\-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, limit)
+  );
 }
 
 export async function viewPostEdit(req, res) {

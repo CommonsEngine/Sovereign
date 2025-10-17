@@ -1,0 +1,124 @@
+{
+  "users": [
+    {
+      "type": "human",
+      "isTestUser": false,
+      "devOnly": false,
+      "name": "heimdallr",
+      "firstName": "Heim",
+      "lastName": "Dall",
+      "email": "heimdallr@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["platform_admin"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "platform_engineer",
+      "firstName": "Platform",
+      "lastName": "Engineer",
+      "email": "platform_engineer@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["platform_engineer"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "tenant_admin",
+      "firstName": "Tenant",
+      "lastName": "Admin",
+      "email": "tenant_admin@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["tenant_admin"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "workspace_admin",
+      "firstName": "Workspace",
+      "lastName": "Admin",
+      "email": "admin@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["admin"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "editor",
+      "firstName": "Content",
+      "lastName": "Editor",
+      "email": "editor@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["editor"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "moderator",
+      "firstName": "Mod",
+      "lastName": "Erator",
+      "email": "moderator@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["moderator"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "contributor",
+      "firstName": "Content",
+      "lastName": "Contributor",
+      "email": "contributor@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["contributor"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "viewer",
+      "firstName": "Read",
+      "lastName": "Only",
+      "email": "viewer@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["viewer"]
+    },
+    {
+      "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "guest",
+      "firstName": "Guest",
+      "lastName": "User",
+      "email": "guest@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["guest"]
+    },
+    {
+      "type": "bot",
+      "isTestUser": true,
+      "devOnly": true,
+      "name": "automationbot",
+      "firstName": "Automation",
+      "lastName": "Bot",
+      "email": "automation_bot@sovereign.local",
+      "password": "ffp@2025",
+      "status": "active",
+      "roles": ["automation_bot"]
+    }
+  ]
+}

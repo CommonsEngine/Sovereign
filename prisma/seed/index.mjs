@@ -1,10 +1,14 @@
+import "dotenv/config";
+
 import { PrismaClient } from "@prisma/client";
 
-import { seedRBAC, seedOwnerUser, seedTestUsers } from "./scripts/rbac.mjs";
-import { seedAppSettings } from "./scripts/config.mjs";
+import seedRBACData from "./scripts/seed-rbac-data.mjs";
+import seedTestUsers from "./scripts/seed-test-users.mjs";
+import seedAppSettings from "./scripts/seed-app-settings.mjs";
 
 const prisma = new PrismaClient();
 
+// Helper to clear all data from Sqlite (for dev/testing purposes)
 async function clearSqlite() {
   const tables =
     await prisma.$queryRaw`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'`;
@@ -22,8 +26,8 @@ async function clearSqlite() {
 async function main() {
   await clearSqlite();
 
-  await seedRBAC(prisma);
-  await seedOwnerUser(prisma);
+  await seedRBACData(prisma);
+  await seedTestUsers(prisma);
   await seedAppSettings(prisma);
 
   if (process.env.NODE_ENV === "development") {
