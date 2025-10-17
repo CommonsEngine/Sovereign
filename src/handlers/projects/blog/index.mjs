@@ -1,13 +1,13 @@
 import path from "path";
 
-import logger from "../../../utils/logger.mjs";
-import prisma from "../../../prisma.mjs";
+import logger from "$/utils/logger.mjs";
+import prisma from "$/prisma.mjs";
 import {
   getGitManager,
   getOrInitGitManager,
   disposeGitManager,
-} from "../../../libs/git/registry.mjs";
-import FileManager from "../../../libs/fs.mjs";
+} from "$/libs/git/registry.mjs";
+import FileManager from "$/libs/fs.mjs";
 
 function ensureAccess(project, req) {
   const userId = req.user?.id ?? null;

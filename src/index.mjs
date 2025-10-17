@@ -14,20 +14,20 @@ import authRouter from "$/routes/auth.mjs";
 import apiRouter from "$/routes/api/index.mjs";
 import webRouter from "$/routes/web.mjs";
 
-import { secure } from "$/middlewares/security.mjs";
-// import { requireFeature } from "$/middlewares/feature.mjs";
+import secure from "$/middlewares/secure.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
-import { exposeGlobals } from "$/middlewares/misc.mjs";
-import { useJSX } from "$/middlewares/jsx.mjs";
+import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
+import useJSX from "$/middlewares/useJSX.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
 
+import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import logger from "$/utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
 
-import { connectPrismaWithRetry, gracefulShutdown } from "./prisma.mjs";
-import env from "./config/env.mjs";
+import { connectPrismaWithRetry, gracefulShutdown } from "$/prisma.mjs";
+import env from "$/config/env.mjs";
 
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = env();
 
@@ -81,6 +81,7 @@ app.engine(
     extname: ".html",
     defaultLayout: false,
     partialsDir: path.join(__templatedir, "_partials"),
+    helpers: hbsHelpers,
   }),
 );
 app.set("view engine", "html");
@@ -151,9 +152,9 @@ app.get(
 );
 
 app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
-app.get("/login", disallowIfAuthed, authHandler.viewLogin);
+app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
 app.post("/login", authHandler.login);
-app.get("/register", disallowIfAuthed, authHandler.viewRegister);
+app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
 app.post("/register", authHandler.register);
 app.get("/logout", authHandler.logout);
 

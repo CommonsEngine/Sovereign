@@ -6,21 +6,108 @@
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/modal.css" />
-    <link rel="stylesheet" href="/css/pages/users.css" />
+    <link rel="stylesheet" href="/css/components/card.css" />
+
+    <style>
+      .users-table__identity {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: var(--space-2xs);
+        align-items: center;
+      }
+      .users-card__filters .badge {
+        font-size: var(--font-size-xs);
+      }
+      .users-table__identity {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: var(--space-2xs);
+        align-items: center;
+      }
+      .users-table__roles {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      .users-table__roles .badge {
+        font-size: var(--font-size-xs);
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2xs);
+        padding: 4px 10px;
+      }
+      .users-table__meta {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        color: var(--color-text-secondary);
+        font-size: var(--font-size-s);
+      }
+      .users-table__meta time {
+        color: var(--color-text-primary);
+        font-weight: var(--font-weight-medium);
+        margin-left: var(--space-2xs);
+      }
+      .col-actions {
+        text-align: right;
+      }
+      table td:last-child .row-actions {
+        justify-content: flex-end;
+      }
+      .badge--soft {
+        background: var(--color-bg-muted);
+        border: 1px solid transparent;
+        color: var(--color-text-secondary);
+      }
+      .badge--tone-success {
+        background: color-mix(in oklab, var(--color-success) 18%, white 82%);
+        border-color: color-mix(in oklab, var(--color-success) 30%, white 70%);
+        color: color-mix(in oklab, var(--color-success) 70%, black 20%);
+      }
+      .badge--tone-warning {
+        background: color-mix(in oklab, var(--color-warning) 25%, white 75%);
+        border-color: color-mix(in oklab, var(--color-warning) 35%, white 65%);
+        color: color-mix(in oklab, var(--color-warning) 65%, black 25%);
+      }
+      .badge--tone-danger {
+        background: color-mix(in oklab, var(--color-danger) 18%, white 82%);
+        border-color: color-mix(in oklab, var(--color-danger) 30%, white 70%);
+        color: color-mix(in oklab, var(--color-danger) 70%, black 20%);
+      }
+      .badge--tone-neutral {
+        background: var(--color-bg-muted);
+        border-color: var(--color-border-primary);
+        color: var(--color-text-secondary);
+      }
+
+      @media (max-width: 720px) {
+        .page--users .users-page__header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: var(--space-m);
+        }
+        .col-actions,
+        table td:last-child .row-actions {
+          text-align: left;
+          justify-content: flex-start;
+        }
+      }
+    </style>
   </head>
   <body class="page page--users">
     {{> sidebar users_active=true}} {{> userbar show_user_menu=true}}
 
     <main class="page__wrap">
-      <header class="page__header users-page__header">
-        <div class="users-page__heading">
+      <header class="page__header flex items-center justify-space-between">
+        <div class="page__heading">
           <h2 class="page__title">Users</h2>
           <p class="page__subtitle">
             Manage access, invitations, and roles across your workspace.
           </p>
         </div>
         <button
-          class="chip button users-page__invite"
+          class="chip chip--primary button button--primary"
           type="button"
           data-modal-open="create-user"
         >
@@ -40,24 +127,24 @@
       </nav>
 
       {{#if stats}}
-      <section class="users-summary" aria-label="User overview">
+      <section class="card__row" aria-label="User overview">
         {{#each stats}}
-        <article class="users-summary__card">
-          <span class="users-summary__label">{{label}}</span>
-          <span class="users-summary__value">{{value}}</span>
-          <span class="users-summary__caption">{{caption}}</span>
+        <article class="card__row--card">
+          <span class="card__row--label">{{label}}</span>
+          <span class="card__row--value">{{value}}</span>
+          <span class="card__row--caption">{{caption}}</span>
         </article>
         {{/each}}
       </section>
       {{/if}} {{> modal/modal-runtime}} {{> modal/create-user}}
 
-      <section class="card users-card">
-        <div class="card__bar users-card__bar">
-          <div class="card__bar-left">
+      <section class="card">
+        <div class="card__bar">
+          <div class="card__bar-left flex gap-xs">
             <strong>Directory</strong>
-            <span class="users-card__bar-caption">{{users.length}} people</span>
+            <span class="muted">{{users.length}} people</span>
           </div>
-          <div class="card__bar-right users-card__actions">
+          <div class="card__bar-right">
             <input
               id="user-search"
               class="card__bar-search-input"
@@ -69,7 +156,7 @@
         </div>
 
         <div class="card__body">
-          {{#if statusFilters}}
+          <!-- {{#if statusFilters}}
           <div class="users-card__filters" aria-hidden="true">
             {{#each statusFilters}}
             <span class="badge badge--soft badge--tone-{{tone}}"
@@ -77,7 +164,7 @@
             >
             {{/each}}
           </div>
-          {{/if}}
+          {{/if}} -->
 
           <div class="table-wrap">
             <table aria-label="Users">
@@ -88,7 +175,7 @@
                   <th>Status</th>
                   <th>Activity</th>
                   <th>Projects</th>
-                  <th class="col-actions">Actions</th>
+                  <th class="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody id="users-tbody">

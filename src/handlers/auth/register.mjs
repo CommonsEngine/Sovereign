@@ -1,6 +1,9 @@
-import { hashPassword, randomToken } from "../../utils/auth.mjs";
-import logger from "../../utils/logger.mjs";
-import prisma from "../../prisma.mjs";
+import { hashPassword, randomToken } from "$/utils/auth.mjs";
+import logger from "$/utils/logger.mjs";
+import env from "$/config/env.mjs";
+import prisma from "$/prisma.mjs";
+
+const { SIGNUP_POLICY } = env();
 
 export default async function register(req, res) {
   try {
@@ -16,6 +19,19 @@ export default async function register(req, res) {
 
     // Invite-only: require a valid invite token
     const token = String(req.query?.token || req.body?.token || "");
+
+    // If invite-only and no token, reject
+    if (SIGNUP_POLICY === "invite" && !token) {
+      logger.log("Registration is by invitation only.");
+      const msg = "Registration is by invitation only.";
+      if (isFormContent) {
+        return res.status(403).render("register", {
+          error: msg,
+          values: { first_name, last_name, email },
+        });
+      }
+      return res.status(403).json({ error: msg });
+    }
 
     logger.log("Register called with token:", token);
 
@@ -388,6 +404,13 @@ export async function viewRegister(req, res) {
   // if URL param ?token=? is present, show invite registration mode
   // First validate the token, and if valid populate email and display name fields
   const token = typeof req.query.token === "string" ? req.query.token : "";
+
+  if (SIGNUP_POLICY !== "open") {
+    logger.log("Registration is by invitation only.");
+    if (!token) {
+      return res.redirect(302, "/login?signup_disabled=1");
+    }
+  }
 
   if (!token) {
     return res.status(403).render("register", {

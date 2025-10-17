@@ -1,6 +1,6 @@
 import express from "express";
 
-import * as projectsHandler from "../../handlers/projects/index.mjs";
+import * as projectsHandler from "$/handlers/projects/index.mjs";
 
 const router = express.Router();
 

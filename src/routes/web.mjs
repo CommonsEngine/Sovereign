@@ -1,11 +1,12 @@
 import express from "express";
 
-import { requireAuth } from "../middlewares/auth.mjs";
-import { requireRole } from "../middlewares/user.mjs";
-import { exposeGlobals } from "../middlewares/misc.mjs";
-import * as projectHandler from "../handlers/projects/index.mjs";
-import * as usersHandler from "../handlers/users/index.mjs";
-import * as settingsHandler from "../handlers/settings/index.mjs";
+import { requireAuth } from "$/middlewares/auth.mjs";
+import requireRole from "$/middlewares/requireRole.mjs";
+import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
+import requireFeature from "$/middlewares/requireFeature.mjs";
+import * as projectHandler from "$/handlers/projects/index.mjs";
+import * as usersHandler from "$/handlers/users/index.mjs";
+import * as settingsHandler from "$/handlers/settings/index.mjs";
 
 const router = express.Router();
 
@@ -18,18 +19,21 @@ router.get(
 );
 router.get(
   "/p/:projectId/configure",
+  requireFeature("blog"),
   requireAuth,
   exposeGlobals,
   projectHandler.viewProjectConfigure,
 );
 router.get(
   "/p/:projectId/blog/post/new",
+  requireFeature("blog"),
   requireAuth,
   exposeGlobals,
   projectHandler.blog.viewPostCreate,
 );
 router.get(
   "/p/:projectId/blog/post/:fp",
+  requireFeature("blog"),
   requireAuth,
   exposeGlobals,
   projectHandler.blog.viewPostEdit,

@@ -2,12 +2,13 @@ import {
   verifyPassword,
   createSession,
   createRandomGuestUser,
-} from "../../utils/auth.mjs";
-import logger from "../../utils/logger.mjs";
-import env from "../../config/env.mjs";
-import prisma from "../../prisma.mjs";
+} from "$/utils/auth.mjs";
+import logger from "$/utils/logger.mjs";
+import env from "$/config/env.mjs";
+import prisma from "$/prisma.mjs";
 
-const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
+const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } =
+  env();
 
 export default async function login(req, res) {
   try {
@@ -214,5 +215,6 @@ export async function viewLogin(req, res) {
     reset_mode: resetMode,
     token,
     guest_enabled: GUEST_LOGIN_ENABLED && !GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
+    allow_signup: SIGNUP_POLICY === "open",
   });
 }

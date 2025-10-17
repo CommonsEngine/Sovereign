@@ -1,9 +1,9 @@
 import crypto from "crypto";
 
-import { hashPassword, randomToken } from "../../utils/auth.mjs";
-import logger from "../../utils/logger.mjs";
-import env from "../../config/env.mjs";
-import prisma from "../../prisma.mjs";
+import { hashPassword, randomToken } from "$/utils/auth.mjs";
+import logger from "$/utils/logger.mjs";
+import env from "$/config/env.mjs";
+import prisma from "$/prisma.mjs";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS } = env();
 
@@ -236,14 +236,17 @@ export async function forgotPassword(req, res) {
     }
 
     let devResetUrl = "";
-    const user = await prisma.user.findUnique({
+    // Look up by UserEmail (schema: emails live in UserEmail)
+    const userEmail = await prisma.userEmail.findUnique({
       where: { email: emailNorm },
+      include: { user: true },
     });
-    if (user) {
+
+    if (userEmail && userEmail.user) {
       const token = randomToken(32);
       await prisma.passwordResetToken.create({
         data: {
-          userId: user.id,
+          userId: userEmail.user.id,
           token,
           expiresAt: new Date(Date.now() + 1000 * 60 * 30), // 30m
         },

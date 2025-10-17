@@ -1,7 +1,7 @@
 import express from "express";
 
-import { requireAuth } from "../middlewares/auth.mjs";
-import * as authHandler from "../handlers/auth/index.mjs";
+import { requireAuth } from "$/middlewares/auth.mjs";
+import * as authHandler from "$/handlers/auth/index.mjs";
 
 const router = express.Router();
 

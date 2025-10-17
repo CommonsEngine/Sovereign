@@ -1,10 +1,10 @@
 import express from "express";
 
-import * as projectsHandler from "../../handlers/projects/index.mjs";
-import { getAppSettings, updateAppSettings } from "../../handlers/app.mjs";
-import { requireAuth } from "../../middlewares/auth.mjs";
-import { requireRole } from "../../middlewares/user.mjs";
-import * as usersHandler from "../../handlers/users/index.mjs";
+import * as projectsHandler from "$/handlers/projects/index.mjs";
+import { getAppSettings, updateAppSettings } from "$/handlers/app.mjs";
+import { requireAuth } from "$/middlewares/auth.mjs";
+import requireRole from "$/middlewares/requireRole.mjs";
+import * as usersHandler from "$/handlers/users/index.mjs";
 
 import blogRouter from "./blog.mjs";
 
@@ -22,13 +22,13 @@ router.patch("/projects/:id/configure", projectsHandler.configureProject);
 
 router.delete(
   "/users/:id",
-  requireRole(["platform_admin", "tenant_admin", "admin"]),
+  requireRole(["platform_admin"]),
   usersHandler.deleteUser,
 );
 
 // Appsettings
-router.get("/settings", getAppSettings);
-router.patch("/settings", updateAppSettings);
+router.get("/settings", requireRole(["platform_admin"]), getAppSettings);
+router.patch("/settings", requireRole(["platform_admin"]), updateAppSettings);
 
 router.use(blogRouter);
 
