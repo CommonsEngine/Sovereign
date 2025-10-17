@@ -110,7 +110,7 @@ const defaultConfigs = [
   },
 ];
 
-export async function seedAppSettings(prisma) {
+export default async function seedAppSettings(prisma) {
   if (!prisma) {
     throw new Error("seedAppSettings requires a Prisma client instance");
   }
