@@ -27,8 +27,8 @@
   }
 
   .userbar__avatar {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-round);
     overflow: hidden;
     background: var(--color-bg-muted);

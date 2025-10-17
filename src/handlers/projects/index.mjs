@@ -247,6 +247,9 @@ export async function viewProject(req, res) {
       }
 
       const gitConfig = project.Blog?.gitConfig || null;
+
+      console.log("==", gitConfig?.repoUrl);
+
       const created = formatDate(project.createdAt);
       const updated = formatDate(project.updatedAt);
       const projectView = {
