@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import fs from "fs";
 import path from "path";
 
+const isDev = process.env.NODE_ENV === "development";
 const usersPath = path.resolve(process.cwd(), "prisma/seed/users.json");
 
 export default async function seedTestUsers(prisma) {
@@ -55,7 +56,16 @@ export default async function seedTestUsers(prisma) {
       status = "active",
       roles: entryRoles = [],
       type = "human",
+      isTestUser = true,
+      devOnly = true,
     } = entry;
+
+    if (devOnly && !isDev) {
+      console.log(
+        `seedTestUsers: skipping devOnly user ${name} in non-development env`,
+      );
+      continue;
+    }
 
     if (!name || !email || !password) {
       console.warn("seedTestUsers: skipping invalid entry", entry);
@@ -73,7 +83,7 @@ export default async function seedTestUsers(prisma) {
         lastName,
         status,
         passwordHash,
-        isTestUser: true,
+        isTestUser,
       },
       create: {
         name,
@@ -82,7 +92,7 @@ export default async function seedTestUsers(prisma) {
         lastName,
         status,
         passwordHash,
-        isTestUser: true,
+        isTestUser,
       },
       select: { id: true, name: true },
     });

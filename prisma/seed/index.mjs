@@ -1,3 +1,6 @@
+/* eslint-disable import/order */
+import "dotenv/config";
+
 import { PrismaClient } from "@prisma/client";
 
 import seedRBACData from "./scripts/seed-rbac-data.mjs";

@@ -2,6 +2,8 @@
   "users": [
     {
       "type": "human",
+      "isTestUser": false,
+      "devOnly": false,
       "name": "heimdallr",
       "firstName": "Heim",
       "lastName": "Dall",
@@ -12,6 +14,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "platform_engineer",
       "firstName": "Platform",
       "lastName": "Engineer",
@@ -22,6 +26,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "tenant_admin",
       "firstName": "Tenant",
       "lastName": "Admin",
@@ -32,6 +38,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "workspace_admin",
       "firstName": "Workspace",
       "lastName": "Admin",
@@ -42,6 +50,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "editor",
       "firstName": "Content",
       "lastName": "Editor",
@@ -52,6 +62,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "moderator",
       "firstName": "Mod",
       "lastName": "Erator",
@@ -62,6 +74,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "contributor",
       "firstName": "Content",
       "lastName": "Contributor",
@@ -72,6 +86,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "viewer",
       "firstName": "Read",
       "lastName": "Only",
@@ -82,6 +98,8 @@
     },
     {
       "type": "human",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "guest",
       "firstName": "Guest",
       "lastName": "User",
@@ -92,6 +110,8 @@
     },
     {
       "type": "bot",
+      "isTestUser": true,
+      "devOnly": true,
       "name": "automationbot",
       "firstName": "Automation",
       "lastName": "Bot",
