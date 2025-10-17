@@ -224,14 +224,28 @@
     const rememberSelection = () => {
       const sel = window.getSelection();
       if (!sel || sel.rangeCount === 0) return;
-      savedRange = sel.getRangeAt(0);
+      const range = sel.getRangeAt(0);
+      const { startContainer, endContainer } = range;
+      if (
+        !rtfEditor.contains(startContainer) ||
+        !rtfEditor.contains(endContainer)
+      ) {
+        return;
+      }
+      savedRange = range.cloneRange();
     };
 
     const restoreSelection = () => {
-      if (!savedRange) return;
+      if (!savedRange) {
+        const range = document.createRange();
+        range.selectNodeContents(rtfEditor);
+        range.collapse(false);
+        savedRange = range;
+      }
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(savedRange);
+      rtfEditor.focus();
     };
 
     let editorMode = "markdown";
@@ -331,6 +345,13 @@
     updateModeButtons();
     syncEditors("html");
 
+    try {
+      document.execCommand("styleWithCSS", false, false);
+      document.execCommand("defaultParagraphSeparator", false, "p");
+    } catch (err) {
+      console.warn("execCommand init failed", err);
+    }
+
     if (pubDateEl?.dataset?.iso && !pubDateEl.value) {
       const local = isoToLocal(pubDateEl.dataset.iso);
       if (local) pubDateEl.value = local;
@@ -400,20 +421,67 @@
       syncEditors("html");
     });
 
-    rtfToolbar?.querySelectorAll("button[data-cmd]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const cmd = button.dataset.cmd;
-        const val = button.dataset.value || null;
-        restoreSelection();
-        document.execCommand(cmd, false, val);
-        rememberSelection();
-        syncEditors("markdown");
-      });
+    rtfToolbar?.addEventListener("mousedown", (event) => {
+      const btn = event.target.closest("button[data-cmd]");
+      if (!btn) return;
+      event.preventDefault();
+      restoreSelection();
     });
 
-    rtfEditor.addEventListener("keyup", rememberSelection);
-    rtfEditor.addEventListener("mouseup", rememberSelection);
+    rtfToolbar?.addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-cmd]");
+      if (!button) return;
+      const cmd = button.dataset.cmd;
+      let val = button.dataset.value || null;
 
+      if (cmd === "formatBlock" && val && !/^<.+>$/.test(val)) {
+        val = `<${val.toLowerCase()}>`;
+      }
+
+      if (cmd === "createLink") {
+        const url = prompt("Enter URL", "https://");
+        if (!url) return;
+        val = url;
+      }
+
+      restoreSelection();
+
+      try {
+        const ok = document.execCommand(cmd, false, val);
+        if (!ok && cmd === "insertHTML") {
+          const range = savedRange;
+          if (range) {
+            range.deleteContents();
+            const frag = range.createContextualFragment(val || "");
+            range.insertNode(frag);
+            range.collapse(false);
+            savedRange = range.cloneRange();
+          }
+        }
+      } catch (err) {
+        console.warn("execCommand failed", cmd, err);
+      }
+
+      rememberSelection();
+      syncEditors("markdown");
+      syncMarkdownFromRtf();
+      restoreSelection();
+    });
+
+    const syncMarkdownFromRtf = () => {
+      mdEditor.value = htmlToMarkdown(rtfEditor.innerHTML);
+    };
+
+    rtfEditor.addEventListener("keyup", () => {
+      rememberSelection();
+      syncMarkdownFromRtf();
+    });
+    rtfEditor.addEventListener("mouseup", rememberSelection);
+    rtfEditor.addEventListener("input", () => {
+      rememberSelection();
+      syncMarkdownFromRtf();
+    });
+    rtfEditor.addEventListener("focus", rememberSelection);
     const send = async (method, body) => {
       const projectId = document.body.dataset.projectId || "";
       const filename = window.__FILENAME__ || "";

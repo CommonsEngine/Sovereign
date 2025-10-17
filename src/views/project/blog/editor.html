@@ -6,16 +6,26 @@
     <link rel="stylesheet" href="/css/components/userbar.css" />
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <style>
+      :root {
+        --editor-min-viewport-height: 80vh;
+      }
       .layout {
         display: grid;
         grid-template-columns: minmax(0, 2fr) minmax(280px, 0.9fr);
         gap: 24px;
-        align-items: start;
+        align-items: stretch;
+        min-height: var(--editor-min-viewport-height);
       }
       @media (max-width: 1024px) {
         .layout {
           grid-template-columns: 1fr;
+          min-height: auto;
         }
+      }
+      .content-column {
+        display: flex;
+        flex-direction: column;
+        min-height: var(--editor-min-viewport-height);
       }
       .card {
         background: var(--color-surface);
@@ -23,6 +33,11 @@
         border-radius: var(--radius-l);
         box-shadow: var(--shadow-s);
         overflow: hidden;
+      }
+      .content-column .card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
       }
       .card__bar {
         padding: 18px 22px;
@@ -37,6 +52,8 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
+        flex: 1;
+        min-height: 0; /* allow children to flex within */
       }
       .segmented {
         border: 1px solid var(--color-border-primary);
@@ -98,9 +115,20 @@
         color: var(--color-text-primary);
         resize: vertical;
       }
+      .editor-area {
+        min-height: 280px;
+        overflow: auto;
+      }
       .meta-panel {
         position: sticky;
         top: 24px;
+        align-self: start;
+        min-height: var(--editor-min-viewport-height);
+        display: flex;
+        flex-direction: column;
+      }
+      .meta-panel .card__body {
+        flex: 1;
       }
       .meta-grid {
         display: grid;
@@ -314,7 +342,7 @@
                     <button
                       class="editor-btn"
                       data-cmd="formatBlock"
-                      data-value="H2"
+                      data-value="<h2>"
                       type="button"
                     >
                       H2
@@ -322,7 +350,7 @@
                     <button
                       class="editor-btn"
                       data-cmd="formatBlock"
-                      data-value="H3"
+                      data-value="<h3>"
                       type="button"
                     >
                       H3
@@ -357,7 +385,11 @@
                     >
                       Code
                     </button>
-                    <button class="editor-btn" id="link-btn" type="button">
+                    <button
+                      class="editor-btn"
+                      data-cmd="createLink"
+                      type="button"
+                    >
                       Link
                     </button>
                     <span class="spacer"></span>
@@ -381,7 +413,6 @@
               </div>
             </div>
           </article>
-
         </div>
 
         <aside class="card meta-panel">
@@ -477,7 +508,7 @@
                 <strong class="subtle">Danger zone</strong>
                 <div class="help">Delete this post from the repository.</div>
               </div>
-              <button id="delete-btn" class="button--danger" type="button">
+              <button type="button" id="delete-btn" class="button--danger">
                 Delete
               </button>
             </div>
@@ -485,7 +516,6 @@
         </aside>
       </section>
     </main>
-
     <script src="/js/startup.js" defer></script>
     <script src="/js/pages/blog/editor.js" defer></script>
   </body>
