@@ -51,6 +51,11 @@ const defaultConfigs = [
   },
   {
     scope: "platform",
+    key: "feature.email.delivery.bypass",
+    value: parseBoolLike(process.env.EMAIL_DELIVERY_BYPASS) ?? "true",
+  },
+  {
+    scope: "platform",
     key: "feature.guest.login.enabled.bypass",
     value:
       parseBoolLike(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN) ?? "false",

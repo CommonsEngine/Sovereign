@@ -103,6 +103,22 @@ const baseTemplate = Object.freeze({
     false,
   ),
 
+  SMTP_URL: process.env.SMTP_URL || "",
+  SMTP_HOST: process.env.SMTP_HOST || "",
+  SMTP_PORT: Number(process.env.SMTP_PORT ?? 587),
+  SMTP_SECURE: toBool(process.env.SMTP_SECURE, false),
+  SMTP_USER: process.env.SMTP_USER || "",
+  SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
+  SMTP_IGNORE_TLS: toBool(process.env.SMTP_IGNORE_TLS, false),
+  EMAIL_FROM_ADDRESS:
+    process.env.EMAIL_FROM_ADDRESS ||
+    process.env.EMAIL_FROM ||
+    "no-reply@localhost",
+  EMAIL_FROM_NAME:
+    process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Sovereign",
+  EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || "",
+  EMAIL_DELIVERY_BYPASS: toBool(process.env.EMAIL_DELIVERY_BYPASS, true),
+
   FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
   FT_PROJECT_TYPE_PAPERTRAIL: toBool(
     process.env.FT_PROJECT_TYPE_PAPERTRAIL,
@@ -245,6 +261,12 @@ const SETTING_OVERRIDES = {
     config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN = toBool(
       value,
       config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN ?? false,
+    );
+  },
+  "feature.email.delivery.bypass": (config, value) => {
+    config.EMAIL_DELIVERY_BYPASS = toBool(
+      value,
+      config.EMAIL_DELIVERY_BYPASS ?? true,
     );
   },
   "feature.terms.require_acceptance": (config, value) => {

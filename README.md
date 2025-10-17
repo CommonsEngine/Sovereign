@@ -236,6 +236,7 @@ The alias works for app code, tests, and development scripts (configured via a c
   - User created first (without primaryEmailId)
   - UserEmail created and linked with `userId`
   - User updated with `primaryEmailId` referencing created email
+- Email delivery: configure `SMTP_URL` or `SMTP_HOST`/`SMTP_PORT` with credentials plus `EMAIL_FROM_*` env vars; toggle the `feature.email.delivery.bypass` app setting (or `EMAIL_DELIVERY_BYPASS` env var) to disable outbound email while keeping logs for development.
 - Session RBAC snapshot:
   - Sessions may store a server-side `roles` and `capabilities` JSON to avoid repeated RBAC DB queries.
   - If roles/capabilities change, sessions must be invalidated or refreshed; consider versioning or updating session rows on changes. (To be implemented)
