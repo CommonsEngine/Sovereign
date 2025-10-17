@@ -30,20 +30,66 @@
         })[char],
     );
 
+  const getProjectId = () => {
+    if (document.body?.dataset?.projectId) {
+      return document.body.dataset.projectId;
+    }
+    const main = document.querySelector("main[data-project-id]");
+    return main?.dataset?.projectId || "";
+  };
+
   const markdownToHtml = (markdown) => {
     if (!markdown) return "";
-    let html = escapeHtml(markdown);
-    html = html.replace(
-      /```([\s\S]*?)```/g,
-      (_, code) => `<pre><code>${code.replace(/\n$/, "")}</code></pre>`,
-    );
+    const normalized = escapeHtml(String(markdown)).replace(/\r\n/g, "\n");
+    const CODE_FENCE = /```([a-z0-9+-]*)\n([\s\S]*?)```/gi;
+    const BLOCKQUOTE = /(^|\n)((?:&gt; ?.*(?:\n&gt; ?.*)*))/g;
+    const OL = /(^|\n)((?:\d+\.\s+.*(?:\n\d+\.\s+.*)*))/g;
+    const UL = /(^|\n)((?:[-*]\s+.*(?:\n[-*]\s+.*)*))/g;
+
+    const codeBlocks = [];
+    let html = normalized.replace(CODE_FENCE, (_, language, code) => {
+      const lang = String(language || "").trim();
+      const clean = String(code || "").replace(/\n$/, "");
+      const token = `\u0000CODE${codeBlocks.length}\u0000`;
+      const cls = lang ? ` class="language-${lang}"` : "";
+      const data = lang ? ` data-lang="${lang}"` : "";
+      codeBlocks.push(`<pre><code${cls}${data}>${clean}</code></pre>`);
+      return token;
+    });
+
+    html = html.replace(/^###### (.*)$/gm, "<h6>$1</h6>");
+    html = html.replace(/^##### (.*)$/gm, "<h5>$1</h5>");
+    html = html.replace(/^#### (.*)$/gm, "<h4>$1</h4>");
     html = html.replace(/^### (.*)$/gm, "<h3>$1</h3>");
     html = html.replace(/^## (.*)$/gm, "<h2>$1</h2>");
     html = html.replace(/^# (.*)$/gm, "<h1>$1</h1>");
-    html = html.replace(/^\> (.*)$/gm, "<blockquote>$1</blockquote>");
-    html = html.replace(/^(?:\d+\.\s+)(.*)$/gm, "<ol><li>$1</li></ol>");
-    html = html.replace(/^(?:-\s+|\*\s+)(.*)$/gm, "<ul><li>$1</li></ul>");
-    html = html.replace(/<\/ul>\n<ul>/g, "").replace(/<\/ol>\n<ol>/g, "");
+
+    html = html.replace(BLOCKQUOTE, (match, prefix, block) => {
+      const body = block
+        .split("\n")
+        .map((line) => line.replace(/^&gt; ?/, ""))
+        .join("<br/>");
+      return `${prefix}<blockquote>${body}</blockquote>`;
+    });
+
+    const renderList = (prefix, block, tag) => {
+      const items = block
+        .split("\n")
+        .map((line) =>
+          line.replace(tag === "ol" ? /^\d+\.\s+/ : /^[-*]\s+/, "").trim(),
+        )
+        .filter(Boolean);
+      if (!items.length) return `${prefix}${block}`;
+      const content = items.map((item) => `<li>${item}</li>`).join("");
+      return `${prefix}<${tag}>${content}</${tag}>`;
+    };
+    html = html.replace(UL, (match, prefix, block) =>
+      renderList(prefix, block, "ul"),
+    );
+    html = html.replace(OL, (match, prefix, block) =>
+      renderList(prefix, block, "ol"),
+    );
+
     html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
     html = html.replace(/`([^`]+?)`/g, "<code>$1</code>");
@@ -51,14 +97,27 @@
       /\[([^\]]+?)\]\(([^)]+?)\)/g,
       '<a href="$2" rel="noopener" target="_blank">$1</a>',
     );
+
     html = html
       .split(/\n{2,}/)
-      .map((block) =>
-        /^\s*<(h\d|pre|blockquote|ul|ol)/.test(block)
-          ? block
-          : `<p>${block.replace(/\n/g, "<br/>")}</p>`,
-      )
-      .join("\n");
+      .map((block) => {
+        const trimmed = block.trim();
+        if (
+          !trimmed ||
+          /^\u0000CODE\d+\u0000$/.test(trimmed) ||
+          /^\s*<(h\d|pre|blockquote|ul|ol)/.test(trimmed)
+        ) {
+          return trimmed;
+        }
+        return `<p>${trimmed.replace(/\n/g, "<br/>")}</p>`;
+      })
+      .filter(Boolean)
+      .join("\n")
+      .replace(/\u0000CODE(\d+)\u0000/g, (_, index) => {
+        const block = codeBlocks[Number(index)] || "";
+        return block;
+      });
+
     return html;
   };
 
@@ -66,18 +125,33 @@
     if (!html) return "";
     const container = document.createElement("div");
     container.innerHTML = html;
+
     const walk = (node) => {
-      if (node.nodeType === 3) return node.nodeValue.replace(/\s+/g, " ");
-      if (node.nodeType !== 1) return "";
+      if (node.nodeType === Node.TEXT_NODE) {
+        const parentTag = node.parentElement?.tagName.toLowerCase();
+        if (parentTag === "code" || parentTag === "pre") {
+          return node.nodeValue;
+        }
+        return node.nodeValue.replace(/\s+/g, " ");
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return "";
+
       const tag = node.tagName.toLowerCase();
       const childMd = Array.from(node.childNodes).map(walk).join("");
+
       switch (tag) {
         case "h1":
-          return `# ${childMd}\n\n`;
+          return `# ${childMd.trim()}\n\n`;
         case "h2":
-          return `## ${childMd}\n\n`;
+          return `## ${childMd.trim()}\n\n`;
         case "h3":
-          return `### ${childMd}\n\n`;
+          return `### ${childMd.trim()}\n\n`;
+        case "h4":
+          return `#### ${childMd.trim()}\n\n`;
+        case "h5":
+          return `##### ${childMd.trim()}\n\n`;
+        case "h6":
+          return `###### ${childMd.trim()}\n\n`;
         case "strong":
         case "b":
           return `**${childMd}**`;
@@ -86,23 +160,41 @@
           return `*${childMd}*`;
         case "code": {
           const parentTag = node.parentElement?.tagName.toLowerCase();
-          if (parentTag === "pre") return childMd;
+          if (parentTag === "pre") {
+            return childMd;
+          }
           return `\`${childMd}\``;
         }
-        case "pre":
-          return "```\n" + childMd + "\n```\n\n";
-        case "blockquote":
-          return `> ${childMd}\n\n`;
+        case "pre": {
+          const codeChild = node.querySelector("code");
+          const raw =
+            codeChild?.textContent ??
+            Array.from(node.childNodes).map(walk).join("");
+          const lang =
+            codeChild?.dataset?.lang ||
+            (codeChild?.className.match(/language-([^\s]+)/)?.[1] ?? "");
+          const fence = lang ? `\`\`\`${lang}\n` : "```\n";
+          return `${fence}${raw}\n\`\`\`\n`;
+        }
+        case "blockquote": {
+          const lines = childMd
+            .split("\n")
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .map((line) => `> ${line}`)
+            .join("\n");
+          return `${lines}\n\n`;
+        }
         case "ul":
           return (
             Array.from(node.children)
-              .map((li) => `- ${walk(li)}\n`)
+              .map((li) => `- ${walk(li).trim()}\n`)
               .join("") + "\n"
           );
         case "ol":
           return (
             Array.from(node.children)
-              .map((li, index) => `${index + 1}. ${walk(li)}\n`)
+              .map((li, index) => `${index + 1}. ${walk(li).trim()}\n`)
               .join("") + "\n"
           );
         case "li":
@@ -114,14 +206,35 @@
         case "br":
           return "  \n";
         case "p":
-          return `${childMd}\n\n`;
+          return `${childMd.trim()}\n\n`;
         default:
           return childMd;
       }
     };
-    return walk(container)
+
+    const cleaned = walk(container)
+      .replace(/\u00a0/g, " ")
       .replace(/\n{3,}/g, "\n\n")
+      .replace(/^[ \t]+>(?=\s?)/gm, ">")
       .trim();
+
+    const normalizeLeadingWhitespace = (markdown) => {
+      const lines = markdown.split("\n");
+      let inFence = false;
+      return lines
+        .map((line) => {
+          const trimmedStart = line.trimStart();
+          if (trimmedStart.startsWith("```")) {
+            inFence = !inFence;
+            return trimmedStart;
+          }
+          if (inFence) return line;
+          return line.replace(/^[ \t]+/, "");
+        })
+        .join("\n");
+    };
+
+    return normalizeLeadingWhitespace(cleaned);
   };
 
   SM.register("editor", async () => {
@@ -133,6 +246,7 @@
     const tagInputEl = el("tags");
     const tagPreviewEl = el("tag-preview");
     const excerptEl = el("excerpt");
+    const coverUrlEl = el("coverUrl");
     const pubDateEl = el("pubDate");
     const draftCheckbox = el("draft");
     const mdWrap = el("md-wrap");
@@ -177,9 +291,13 @@
 
     const renderTagChips = () => {
       if (!tagPreviewEl) return;
-      tagPreviewEl.innerHTML = collectTags()
-        .map((tag) => `<span class="pill">${tag}</span>`)
-        .join(" ");
+      tagPreviewEl.textContent = "";
+      collectTags().forEach((tag) => {
+        const pill = document.createElement("span");
+        pill.className = "pill";
+        pill.textContent = tag;
+        tagPreviewEl.appendChild(pill);
+      });
     };
 
     const setDraftState = (draft) => {
@@ -220,6 +338,54 @@
       }
     };
 
+    const rangeIsValid = (range) => {
+      if (!range) return false;
+      const { startContainer, endContainer } = range;
+      if (!startContainer || !endContainer) return false;
+      if (!startContainer.isConnected || !endContainer.isConnected)
+        return false;
+      if (
+        !rtfEditor.contains(startContainer) ||
+        !rtfEditor.contains(endContainer)
+      )
+        return false;
+      return true;
+    };
+
+    const getOffsetsFromRange = (range) => {
+      if (!rangeIsValid(range)) return null;
+      const startRange = document.createRange();
+      startRange.setStart(rtfEditor, 0);
+      startRange.setEnd(range.startContainer, range.startOffset);
+      const start = startRange.toString().length;
+      const endRange = document.createRange();
+      endRange.setStart(rtfEditor, 0);
+      endRange.setEnd(range.endContainer, range.endOffset);
+      const end = endRange.toString().length;
+      startRange.detach?.();
+      endRange.detach?.();
+      return { start, end };
+    };
+
+    const getTextNodeAtOffset = (offset) => {
+      let remaining = Math.max(0, offset);
+      const walker = document.createTreeWalker(
+        rtfEditor,
+        NodeFilter.SHOW_TEXT,
+        null,
+      );
+      let node = walker.nextNode();
+      while (node) {
+        const len = node.textContent.length;
+        if (remaining <= len) {
+          return { node, offset: Math.min(remaining, len) };
+        }
+        remaining -= len;
+        node = walker.nextNode();
+      }
+      return { node: rtfEditor, offset: rtfEditor.childNodes.length };
+    };
+
     let savedRange = null;
     const rememberSelection = () => {
       const sel = window.getSelection();
@@ -236,7 +402,7 @@
     };
 
     const restoreSelection = () => {
-      if (!savedRange) {
+      if (!rangeIsValid(savedRange)) {
         const range = document.createRange();
         range.selectNodeContents(rtfEditor);
         range.collapse(false);
@@ -246,6 +412,45 @@
       sel.removeAllRanges();
       sel.addRange(savedRange);
       rtfEditor.focus();
+    };
+
+    const restoreSelectionFromOffsets = (offsets) => {
+      if (!offsets) return null;
+      const { start, end } = offsets;
+      const startPoint = getTextNodeAtOffset(start);
+      const endPoint = getTextNodeAtOffset(end);
+      const range = document.createRange();
+      range.setStart(startPoint.node, startPoint.offset);
+      range.setEnd(endPoint.node, endPoint.offset);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      savedRange = range.cloneRange();
+      return range;
+    };
+
+    const surroundSelection = (tagName) => {
+      if (!rangeIsValid(savedRange) || savedRange.collapsed) return false;
+      const range = savedRange.cloneRange();
+      const fragment = range.extractContents();
+      const wrapper = document.createElement(tagName);
+      wrapper.appendChild(fragment);
+      range.insertNode(wrapper);
+      savedRange = range.cloneRange();
+      savedRange.selectNodeContents(wrapper);
+      rtfEditor.normalize();
+      return true;
+    };
+
+    const rebuildRtfFromMarkdown = (offsets) => {
+      rtfEditor.innerHTML = markdownToHtml(mdEditor.value);
+      if (offsets) {
+        restoreSelectionFromOffsets(offsets);
+        rememberSelection();
+      } else {
+        savedRange = null;
+        restoreSelection();
+      }
     };
 
     let editorMode = "markdown";
@@ -264,10 +469,17 @@
 
     const setMode = (mode) => {
       if (mode === editorMode) return;
-      if (mode === "markdown") syncEditors("markdown");
-      else syncEditors("html");
+      if (mode === "markdown") {
+        syncEditors("markdown");
+      } else if (mode === "rtf") {
+        syncEditors("html");
+      }
       editorMode = mode;
       updateModeButtons();
+      if (editorMode === "rtf") {
+        savedRange = null;
+        restoreSelection();
+      }
     };
 
     const wrapSelection = (textarea, before, after = before) => {
@@ -299,6 +511,10 @@
         if (typeof meta.title === "string") titleEl.value = meta.title;
         if (typeof meta.description === "string")
           excerptEl.value = meta.description;
+        if (coverUrlEl) {
+          coverUrlEl.value =
+            typeof meta.coverUrl === "string" ? meta.coverUrl : "";
+        }
         if (Array.isArray(meta.tags)) {
           tagInputEl.value = meta.tags.join(", ");
           renderTagChips();
@@ -314,6 +530,7 @@
     const collectPayload = () => {
       if (editorMode === "markdown") syncEditors("html");
       else syncEditors("markdown");
+      const cover = (coverUrlEl?.value || "").trim();
       let pubISO = null;
       if (pubDateEl?.value) {
         try {
@@ -321,10 +538,11 @@
         } catch {}
       }
       return {
-        projectId: document.body.dataset.projectId || "",
+        projectId: getProjectId(),
         path: toPath(slugEl.value.trim()),
         title: titleEl.value.trim(),
         description: excerptEl.value.trim(),
+        coverUrl: cover || null,
         pubDate: pubISO,
         draft: !!draftCheckbox.checked,
         tags: collectTags(),
@@ -457,14 +675,20 @@
             range.collapse(false);
             savedRange = range.cloneRange();
           }
+        } else if (!ok && (cmd === "bold" || cmd === "italic")) {
+          surroundSelection(cmd === "bold" ? "strong" : "em");
         }
       } catch (err) {
         console.warn("execCommand failed", cmd, err);
+        if (cmd === "bold" || cmd === "italic") {
+          surroundSelection(cmd === "bold" ? "strong" : "em");
+        }
       }
 
       rememberSelection();
-      syncEditors("markdown");
+      const offsets = getOffsetsFromRange(savedRange);
       syncMarkdownFromRtf();
+      rebuildRtfFromMarkdown(offsets);
       restoreSelection();
     });
 
@@ -483,7 +707,7 @@
     });
     rtfEditor.addEventListener("focus", rememberSelection);
     const send = async (method, body) => {
-      const projectId = document.body.dataset.projectId || "";
+      const projectId = getProjectId();
       const filename = window.__FILENAME__ || "";
       if (!projectId || !filename) throw new Error("Missing identifiers");
       const resp = await fetch(
@@ -537,7 +761,7 @@
 
     deleteBtn?.addEventListener("click", async () => {
       if (!confirm("Delete this post? This cannot be undone.")) return;
-      const projectId = document.body.dataset.projectId || "";
+      const projectId = getProjectId();
       const filename = window.__FILENAME__ || "";
       if (!projectId || !filename) {
         alert("Missing project or filename.");
