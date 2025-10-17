@@ -595,7 +595,7 @@
   .page__wrap {
     width: min(1100px, 100%);
     padding: 8px 20px 36px; /* tighter spacing below toolbar */
-    margin-top: 36px;
+    margin-top: 40px;
     display: flow-root;
   }
   .page__wrap > :first-child {
@@ -614,6 +614,11 @@
   }
   .page__title {
     padding: 0 0 3px 3px;
+  }
+  .page__subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-m);
+    line-height: var(--line-height-s);
   }
   /* grid */
   .grid {
@@ -879,6 +884,15 @@
 }
 
 @layer utilities {
+  .flex {
+    display: flex;
+  }
+  .items-center {
+    align-items: center;
+  }
+  .justify-space-between {
+    justify-content: space-between;
+  }
   .text-center {
     text-align: center;
   }

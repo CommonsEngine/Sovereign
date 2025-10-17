@@ -10,7 +10,6 @@
 .page--users .users-page__heading {
   display: flex;
   flex-direction: column;
-  gap: var(--space-xs);
   max-width: 540px;
 }
 

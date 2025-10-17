@@ -15,7 +15,6 @@ import apiRouter from "$/routes/api/index.mjs";
 import webRouter from "$/routes/web.mjs";
 
 import secure from "$/middlewares/secure.mjs";
-import requireFeature from "$/middlewares/requireFeature.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
