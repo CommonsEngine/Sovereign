@@ -44,6 +44,8 @@ model User {
   // Opposite relation for Project owner
   ownedProjects Project[] @relation("Owner")
 
+  isTestUser Boolean @default(false) @map("is_test_user")
+
   status    UserStatus @default(invited) @map("status")
   createdAt DateTime   @default(now()) @map("created_at")
   updatedAt DateTime   @updatedAt @map("updated_at")
