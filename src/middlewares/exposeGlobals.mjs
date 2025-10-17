@@ -1,8 +1,19 @@
 // TODO: Utilize config/head.mjs for these
 
+import env from "$/config/env.mjs";
 import pkg from "$/config/pkg.mjs";
 
+const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
+
 export default function exposeGlobals(req, res, next) {
+  const config = env();
+  const appVersion =
+    config?.APP_VERSION ||
+    config?.APP_SETTINGS?.["env.app.version"] ||
+    pkg.version ||
+    "0.0.0";
+  const cacheBuster = IS_PROD ? String(appVersion) : String(Date.now());
+
   // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
@@ -28,11 +39,13 @@ export default function exposeGlobals(req, res, next) {
       { name: "twitter:card", content: "summary_large_image" },
     ],
     link: [{ rel: "canonical", href: "/" }],
+    cacheBuster,
   };
 
   // Set app-wide globals
   res.locals.app = {
-    version: String(pkg.version || "0.0.0"),
+    version: String(appVersion),
+    cacheBuster,
   };
   res.locals.user = {
     name: req.user?.name || "guest",

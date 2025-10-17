@@ -214,8 +214,7 @@ export async function viewPostEdit(req, res) {
 
     const [meta, contentMarkdown] = parseFrontmatter(raw);
 
-    logger.log("Post meta:", meta);
-    logger.log("Post contentMarkdown:", contentMarkdown);
+    console.log("Rendering editor for post:", meta);
 
     // Render editor template with context
     return res.render("project/blog/editor", {
@@ -406,6 +405,9 @@ export async function updatePost(req, res) {
       updates.title = req.body.title.trim().slice(0, 300);
     if (typeof req.body?.description === "string")
       updates.description = req.body.description.trim();
+    if (typeof req.body?.coverUrl === "string")
+      updates.coverUrl = req.body.coverUrl.trim();
+    else if (req.body?.coverUrl === null) updates.coverUrl = "";
 
     if (typeof req.body?.pubDate === "string") {
       updates.pubDate = new Date(req.body.pubDate).toISOString();
@@ -592,6 +594,10 @@ export async function updatePost(req, res) {
           : (updates.description ?? ""),
       tags: normalizeTags(latestMetaRaw.tags),
       draft: latestMetaRaw.draft === true,
+      coverUrl:
+        typeof latestMetaRaw.coverUrl === "string"
+          ? latestMetaRaw.coverUrl
+          : (updates.coverUrl ?? ""),
       pubDate:
         typeof latestMetaRaw.pubDate === "string"
           ? latestMetaRaw.pubDate

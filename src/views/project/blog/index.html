@@ -2,172 +2,33 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <!-- ensure global tokens & base styles are available -->
-    <link rel="stylesheet" href="/css/global.css" />
     <link rel="stylesheet" href="/css/components/sidebar.css" />
     <link rel="stylesheet" href="/css/components/userbar.css" />
-    <!-- page-specific adjustments -->
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <style>
-      /* Ensure grid columns stretch same height so headers match */
-      .grid {
-        align-items: stretch;
-      }
-
-      /* Normalize header bar sizing so both column headers have identical height */
-      .card__bar {
-        display: flex;
-        align-items: center; /* vertical center content */
-        gap: 12px;
-        padding: 0 14px; /* consistent padding */
-        min-height: 50px; /* enforce a fixed minimum header height */
-        box-sizing: border-box;
-        width: 100%;
-      }
-
-      /* Make table header cells align and share same vertical metrics */
-      #posts-table thead th {
-        padding: 12px 14px;
-        line-height: 1.25;
-        vertical-align: middle;
-        box-sizing: border-box;
-        height: auto;
-        white-space: nowrap;
-      }
-
-      /* If there are action buttons causing extra height, force their container alignment */
-      .row-actions {
-        align-items: center;
-        display: flex;
-      }
-
-      /* Smaller screens: keep same header height but allow wrapping */
-      @media (max-width: 720px) {
-        .card__bar {
-          min-height: 48px;
-          padding: 10px;
-        }
-        #posts-table thead th {
-          padding: 10px;
-          white-space: normal;
-        }
-      }
-
-      /* page container */
-      .page__wrap {
-        max-width: 1200px;
-        width: 100%;
-        margin: 36px auto;
-        padding: 0 20px 56px;
-        box-sizing: border-box;
-      }
-
-      /* header */
-      .page__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 18px;
-      }
-      .title__wrap {
-        min-width: 0;
-      }
-      .title__name {
-        margin: 0;
-        font-size: 1.5rem;
-        line-height: 1.15;
-        font-weight: 600;
-        color: var(--color-text-primary, #111827);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-      .title__desc {
-        color: var(--color-text-muted, #6b7280);
-        font-size: 0.95rem;
-        margin-top: 4px;
-        white-space: normal;
-      }
-
-      /* layout grid: main content + sidebar */
-      .grid {
-        display: grid;
-        grid-template-columns: 1fr 320px;
-        gap: 20px;
-        align-items: start;
-      }
-      @media (max-width: 980px) {
-        .grid {
-          grid-template-columns: 1fr;
-        }
-        .page__header {
-          flex-direction: column;
-          align-items: stretch;
-        }
-      }
-
-      /* cards */
-      .card {
+      /* @layer components.alerts. move later */
+      .alert__notice {
+        margin-bottom: 20px;
+        padding: 12px 16px;
         border-radius: 8px;
-        overflow: hidden;
-        background: var(--color-surface, #fff);
-        box-shadow: 0 1px 0 rgba(16, 24, 40, 0.02);
-      }
-      .card__bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 0 14px;
-        border-bottom: 1px solid var(--color-border-primary, #e5e7eb);
-      }
-      .card__body {
-        padding: 12px 14px;
-      }
-      .table-wrap {
-        overflow: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* table */
-      #posts-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.95rem;
-      }
-      #posts-table th,
-      #posts-table td {
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--color-border-primary, #e5e7eb);
-        vertical-align: middle;
-      }
-      #posts-table thead th {
-        font-weight: 600;
-        color: var(--color-text-muted, #4b5563);
-        text-align: left;
-      }
-      #posts-table td .title {
-        font-weight: 500;
-        color: var(--color-text-primary, #111827);
-      }
-      #posts-table td .subtle {
-        color: var(--color-text-muted, #6b7280);
-        font-size: 0.9rem;
-        margin-top: 4px;
-      }
-      #posts-table td time {
-        color: var(--color-text-muted, #6b7280);
-        font-size: 0.9rem;
-      }
-      #posts-table td .badge {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 999px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
         background: var(--color-bg-muted, #f3f4f6);
-        color: var(--color-text-muted, #374151);
-        font-size: 0.85rem;
+        color: var(--color-text-secondary, #374151);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
       }
-
+      .alert__notice--error {
+        border-color: color-mix(in oklab, var(--color-danger), white 20%);
+        background: color-mix(in oklab, var(--color-danger), white 85%);
+        color: color-mix(in oklab, var(--color-danger), black 25%);
+      }
+      .alert__notice-link {
+        color: inherit;
+        text-decoration: underline;
+        font-weight: 600;
+      }
       /* search input */
       .search {
         width: 600px;
@@ -184,86 +45,77 @@
           max-width: none;
         }
       }
-
-      /* small helpers */
-      .row-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
+      /* buttons inside the card bar */
+      .card__bar-icon {
+        appearance: none;
+        padding: 6px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        border: none;
+        background-color: transparent;
+        box-shadow: var(--shadow-none);
+        color: var(--color-text-secondary);
+        border-radius: var(--radius-s, 8px);
+        transition:
+          background-color var(--transition-fast, 120ms)
+            var(--transition-easing-standard, ease),
+          color var(--transition-fast, 120ms)
+            var(--transition-easing-standard, ease);
       }
-      .notice {
-        margin-bottom: 20px;
-        padding: 12px 16px;
-        border-radius: 8px;
-        border: 1px solid var(--color-border-primary, #e5e7eb);
-        background: var(--color-bg-muted, #f3f4f6);
-        color: var(--color-text-secondary, #374151);
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      .card__bar-icon:hover {
+        background: color-mix(
+          in oklab,
+          var(--color-danger),
+          var(--color-bg-primary) 92%
+        );
+        color: var(--color-danger);
       }
-      .notice--error {
-        border-color: color-mix(in oklab, var(--color-danger), white 20%);
-        background: color-mix(in oklab, var(--color-danger), white 85%);
-        color: color-mix(in oklab, var(--color-danger), black 25%);
-      }
-      .notice__link {
-        color: inherit;
-        text-decoration: underline;
-        font-weight: 600;
-      }
-      .empty,
-      .error-row .empty {
-        text-align: center;
-        padding: 18px 0;
-        color: var(--color-text-muted, #6b7280);
-      }
-
-      /* ensure icon buttons show visible svg and inherit a sensible color */
-      .card__bar button.icon-button {
-        background: transparent;
-        border: 0;
-        padding: 6px;
-        color: var(--color-text-muted, #4b5563); /* stroke uses currentColor */
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-      .card__bar button.icon-button svg {
+      .card__bar-icon svg {
+        width: 24px;
+        height: 24px;
         display: block;
-        width: 20px;
-        height: 20px;
+        stroke: currentColor;
       }
     </style>
   </head>
-  <body class="page page--with-sidebar project-page">
+  <body class="page page--with-sidebar page--project-blog-index">
     <!-- top loading spinner -->
     <div data-startup-spinner class="loading-bar" style="display: none"></div>
 
     {{> sidebar}} {{> userbar show_user_menu=true}}
-    <!-- expose project id to client via data attribute for simpler resolution -->
+
     <main
-      class="page__wrap"
+      class="page__wrap page__wrap--fullwidth"
       data-project-id="{{project.id}}"
       data-project-status="{{project.status}}"
       data-connected="{{connected}}"
     >
       <header class="page__header">
-        <div class="title__wrap">
-          <h1 id="project-title" class="title__name">{{project.name}}</h1>
-          <div id="project-sub" class="title__desc">
-            {{#project.desc}}{{project.desc}}{{/project.desc}}
-            {{^project.desc}}&nbsp;{{/project.desc}}
-          </div>
+        <div class="page__heading">
+          <h2 class="page__title">{{project.name}}</h2>
+          {{#if project.desc}}
+          <p class="page__subtitle">{{project.desc}}</p>
+          {{/if}}
         </div>
       </header>
 
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/">Projects</a>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Blog</span>
+          </li>
+        </ol>
+      </nav>
+
       {{#connect_error}}
-      <div class="notice notice--error" role="alert">
+      <div class="alert__notice alert__notice--error" role="alert">
         <strong>Repository connection failed.</strong>
         <span>
           We couldn’t sync the repo. Review your credentials and
-          <a class="notice__link" href="/p/{{project.id}}/configure"
+          <a class="alert__notice-link" href="/p/{{project.id}}/configure"
             >reconfigure the blog</a
           >.
         </span>
@@ -280,17 +132,10 @@
 
       <section class="grid">
         <!-- Posts -->
-        <article class="card">
+        <article class="card flex-2-5">
           <div class="card__bar">
             <strong>Posts</strong>
-            <div
-              style="
-                display: flex;
-                flex-direction: row;
-                justify-content: flex-end;
-                gap: 10px;
-              "
-            >
+            <div class="flex row justify-content-end gap-3xs">
               <input
                 id="post-search"
                 class="search"
@@ -299,7 +144,7 @@
                 autocomplete="off"
               />
               <a
-                role="alert"
+                role="button"
                 class="card__bar-icon"
                 href="/p/{{project.id}}/blog/post/new"
                 title="Create post"
@@ -366,7 +211,7 @@
         </article>
 
         <!-- Project Meta -->
-        <aside class="card">
+        <aside class="card flex-1">
           <div class="card__bar">
             <strong>Project Meta</strong>
             <button
@@ -400,64 +245,67 @@
             </button>
           </div>
           <div class="card__body">
-            <div
-              style="
-                display: grid;
-                grid-template-columns: 140px 1fr;
-                row-gap: 8px;
-                column-gap: 12px;
-              "
-            >
-              <div class="subtle">Name</div>
-              <div id="m-name">{{project.name}}</div>
-
-              <div class="subtle">Status</div>
-              <div id="m-status">
-                <span class="badge">{{project.status}}</span>
+            <div class="flex col gap-s">
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Name</div>
+                <div id="m-name" class="flex-1">{{project.name}}</div>
               </div>
-
-              <div class="subtle">Posts</div>
-              <div id="m-count">0</div>
-
-              <div class="subtle">Repo</div>
-              <div id="m-repo">
-                {{#project.repoUrl}}
-                <a href="{{project.repoUrl}}" target="_blank" rel="noopener">
-                  {{project.repoUrl}}
-                </a>
-                {{/project.repoUrl}} {{^project.repoUrl}}—{{/project.repoUrl}}
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Status</div>
+                <div id="m-status" class="flex-1">
+                  <span class="badge">{{project.status}}</span>
+                </div>
               </div>
-
-              <div class="subtle">Branch</div>
-              <div id="m-branch">{{project.branch}}</div>
-
-              <div class="subtle">Content Dir</div>
-              <div id="m-dir">
-                {{#project.contentDir}}{{project.contentDir}}{{/project.contentDir
-                }}{{^project.contentDir}}(repo root){{/project.contentDir}}
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Posts</div>
+                <div id="m-count" class="flex-1">0</div>
               </div>
-
-              <div class="subtle">Live URL</div>
-              <div id="m-live">—</div>
-
-              <div class="subtle">Created</div>
-              <div id="m-created">
-                {{#project.createdAtISO}}
-                <time datetime="{{project.createdAtISO}}"
-                  >{{project.createdAtDisplay}}</time
-                >
-                {{/project.createdAtISO}} {{^project.createdAtISO}}—{{/project
-                .createdAtISO}}
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Repo</div>
+                <div id="m-repo" class="flex-1">
+                  {{#project.repoUrl}}
+                  <a href="{{project.repoUrl}}" target="_blank" rel="noopener">
+                    {{project.repoUrl}}
+                  </a>
+                  {{/project.repoUrl}} {{^project.repoUrl}}—{{/project.repoUrl}}
+                </div>
               </div>
-
-              <div class="subtle">Updated</div>
-              <div id="m-updated">
-                {{#project.updatedAtISO}}
-                <time datetime="{{project.updatedAtISO}}"
-                  >{{project.updatedAtDisplay}}</time
-                >
-                {{/project.updatedAtISO}} {{^project.updatedAtISO}}—{{/project
-                .updatedAtISO}}
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Branch</div>
+                <div id="m-branch" class="flex-1">{{project.branch}}</div>
+              </div>
+              <div class="flex row justify-content-start align-items-center">
+                <div class="flex-1 subtle">Content Dir</div>
+                <div id="m-dir" class="flex-1">
+                  {{#project.contentDir}}{{project.contentDir}}{{/project.contentDir
+                  }}{{^project.contentDir}}(repo root){{/project.contentDir}}
+                </div>
+              </div>
+              <div class="flex row justify-content-start align-items-center">
+                <div class="subtle flex-1">Live URL</div>
+                <div id="m-live" class="flex-1">—</div>
+              </div>
+              <div class="flex row justify-content-start align-items-center">
+                <div class="subtle flex-1">Created</div>
+                <div id="m-created" class="flex-1">
+                  {{#project.createdAtISO}}
+                  <time datetime="{{project.createdAtISO}}"
+                    >{{project.createdAtDisplay}}</time
+                  >
+                  {{/project.createdAtISO}} {{^project.createdAtISO}}—{{/project
+                  .createdAtISO}}
+                </div>
+              </div>
+              <div class="flex row justify-content-start align-items-center">
+                <div class="subtle flex-1">Updated</div>
+                <div id="m-updated" class="flex-1">
+                  {{#project.updatedAtISO}}
+                  <time datetime="{{project.updatedAtISO}}"
+                    >{{project.updatedAtDisplay}}</time
+                  >
+                  {{/project.updatedAtISO}} {{^project.updatedAtISO}}—{{/project
+                  .updatedAtISO}}
+                </div>
               </div>
             </div>
           </div>
