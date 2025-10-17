@@ -601,6 +601,21 @@
   .page__wrap > :first-child {
     margin-top: 0 !important;
   }
+  .page__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-m);
+    flex-wrap: wrap;
+  }
+  .page__header > * {
+    flex: 0 1 auto;
+  }
+  @media (max-width: 960px) {
+    .page__header {
+      align-items: flex-start;
+    }
+  }
   /* Center a page wrapper in the viewport (reusable) */
   .page__wrap--center {
     min-height: 100dvh;
@@ -849,6 +864,20 @@
     border-radius: var(--space-m);
   }
 
+  @media (max-width: 768px) {
+    .page__wrap {
+      margin-top: 20px;
+      padding: 16px 16px 48px;
+    }
+    .page__header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-m);
+    }
+    .page__header > * {
+      width: 100%;
+    }
+  }
   /* Optional: on small screens, top-align but keep horizontal centering */
   @media (max-width: 640px) {
     .page__wrap--center {
@@ -858,6 +887,16 @@
     .page--with-sidebar {
       --sidebar-w: 56px;
       padding-left: calc(var(--sidebar-w) + 6px);
+    }
+    .page__header {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .page__header > * {
+      width: 100%;
+    }
+    .page__header .button {
+      justify-content: center;
     }
   }
   @media (max-width: 980px) {

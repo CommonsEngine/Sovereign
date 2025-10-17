@@ -3,7 +3,7 @@
     margin: var(--space-l) 0;
     display: grid;
     gap: var(--space-m);
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 
   .card__row--card {
@@ -34,5 +34,22 @@
   .card__row--caption {
     font-size: var(--font-size-s);
     color: var(--color-text-secondary);
+  }
+
+  @media (max-width: 960px) {
+    .card__row {
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+  }
+  @media (max-width: 700px) {
+    .card__row {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+  }
+  @media (max-width: 520px) {
+    .card__row {
+      margin: var(--space-m) 0;
+      grid-template-columns: 1fr;
+    }
   }
 }
