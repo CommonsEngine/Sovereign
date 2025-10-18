@@ -129,6 +129,11 @@
   .projects__card-chip--type {
     --no-op: 1;
   }
+  .projects__card-chip--shared {
+    background: color-mix(in oklab, var(--color-accent, #6366f1), white 85%);
+    border-color: color-mix(in oklab, var(--color-accent, #6366f1), white 65%);
+    color: color-mix(in oklab, var(--color-accent, #6366f1), black 30%);
+  }
   .projects__card-chip:hover {
     background-color: color-mix(
       in oklab,

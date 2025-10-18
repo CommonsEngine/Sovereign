@@ -2,10 +2,32 @@ import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
 
 export default async function getAll(req, res) {
-  console.log("GET /api/projects");
   try {
+    const userId = req.user?.id;
+    const email = req.user?.email
+      ? String(req.user.email).trim().toLowerCase()
+      : null;
+    const membershipConditions = [];
+    if (userId) membershipConditions.push({ userId });
+    if (email) membershipConditions.push({ invitedEmail: email });
+
     const projectsRaw = await prisma.project.findMany({
-      where: { OR: [{ ownerId: null }, { ownerId: req.user.id }] },
+      where: {
+        OR: [
+          { ownerId: null },
+          { ownerId: userId },
+          membershipConditions.length
+            ? {
+                members: {
+                  some: {
+                    status: "active",
+                    OR: membershipConditions,
+                  },
+                },
+              }
+            : undefined,
+        ].filter(Boolean),
+      },
       select: {
         ownerId: true,
         id: true,
@@ -16,17 +38,37 @@ export default async function getAll(req, res) {
         status: true,
         createdAt: true,
         updatedAt: true,
+        members: {
+          where: { status: "active" },
+          select: {
+            userId: true,
+            role: true,
+          },
+        },
       },
     });
     const projects = projectsRaw
       .map((p) => ({
         ...p,
-        owned: p.ownerId === req.user.id,
+        owned:
+          p.ownerId === userId ||
+          p.members.some(
+            (member) => member.userId === userId && member.role === "owner",
+          ),
+        shared:
+          (p.members?.length ?? 0) > 1 ||
+          p.members.some(
+            (member) =>
+              member.role !== "owner" ||
+              (member.role === "owner" && member.userId !== userId),
+          ) ||
+          p.ownerId === null,
       }))
       .sort((a, b) => b.createdAt - a.createdAt /* newest first */)
       .map((p) => ({
         ...p,
         ownerId: undefined,
+        members: undefined,
       }));
     return res.json({ projects });
   } catch (error) {

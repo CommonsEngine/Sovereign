@@ -1,5 +1,9 @@
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
+import {
+  ensureProjectAccess,
+  ProjectAccessError,
+} from "$/libs/projectAccess.mjs";
 
 export default async function update(req, res) {
   try {
@@ -10,13 +14,17 @@ export default async function update(req, res) {
     if (!projectId)
       return res.status(400).json({ error: "Missing project id" });
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true },
-    });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
+    try {
+      await ensureProjectAccess({
+        projectId,
+        user: req.user,
+        allowedRoles: ["owner", "editor"],
+      });
+    } catch (err) {
+      if (err instanceof ProjectAccessError) {
+        return res.status(err.status ?? 403).json({ error: err.message });
+      }
+      throw err;
     }
 
     const raw = req.body || {};

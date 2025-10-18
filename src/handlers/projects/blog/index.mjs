@@ -8,12 +8,59 @@ import {
   disposeGitManager,
 } from "$/libs/git/registry.mjs";
 import FileManager from "$/libs/fs.mjs";
+import {
+  ensureProjectAccess,
+  ProjectAccessError,
+} from "$/libs/projectAccess.mjs";
 
-function ensureAccess(project, req) {
-  const userId = req.user?.id ?? null;
-  // if ownerId set and doesn't match current user -> forbidden
-  if (project.ownerId && project.ownerId !== userId) return false;
-  return true;
+async function getBlogProjectAccess(req, res, projectId, options = {}) {
+  const {
+    roles = ["editor"],
+    select = {
+      id: true,
+      ownerId: true,
+      type: true,
+      name: true,
+      Blog: { select: { id: true } },
+    },
+    responseType = "html",
+  } = options;
+
+  try {
+    return await ensureProjectAccess({
+      projectId,
+      user: req.user,
+      allowedRoles: roles,
+      select,
+    });
+  } catch (err) {
+    if (err instanceof ProjectAccessError) {
+      const status = err.status ?? 403;
+      if (responseType === "json") {
+        res.status(status).json({ error: err.message });
+      } else {
+        const message =
+          status === 404
+            ? "Not found"
+            : status === 400
+              ? "Bad request"
+              : "Forbidden";
+        const description =
+          status === 404
+            ? "Project not found"
+            : status === 400
+              ? err.message || "Invalid request."
+              : "You do not have permission to access this project.";
+        res.status(status).render("error", {
+          code: status,
+          message,
+          description,
+        });
+      }
+      return null;
+    }
+    throw err;
+  }
 }
 
 const FRONTMATTER_REGEX = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
@@ -103,31 +150,11 @@ export async function viewPostEdit(req, res) {
       });
     }
 
-    // Verify project and ownership
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: {
-        id: true,
-        ownerId: true,
-        type: true,
-        name: true,
-        Blog: { select: { id: true } },
-      },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
     });
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not found",
-        description: "Project not found",
-      });
-    }
-    if (project.ownerId !== userId) {
-      return res.status(403).render("error", {
-        code: 403,
-        message: "Forbidden",
-        description: "You do not have permission to view this post.",
-      });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).render("error", {
         code: 400,
@@ -259,14 +286,12 @@ export async function getAllPosts(req, res) {
       return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["viewer"],
+      responseType: "json",
     });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).json({ error: "Unsupported project type" });
     }
@@ -428,15 +453,12 @@ export async function updatePost(req, res) {
         .map((s) => s.trim())
         .filter(Boolean);
 
-    // Verify ownership and type
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
+      responseType: "json",
     });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).json({ error: "Project is not a blog type" });
     }
@@ -711,14 +733,12 @@ export async function deletePost(req, res) {
     }
 
     // Verify ownership and type
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
+      responseType: "json",
     });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).json({ error: "Unsupported project type" });
     }
@@ -826,14 +846,12 @@ export async function publishPost(req, res) {
       return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { ownerId: true, type: true, Blog: { select: { id: true } } },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
+      responseType: "json",
     });
-    if (!project) return res.status(404).json({ error: "Project not found" });
-    if (project.ownerId !== userId) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).json({ error: "Project is not a blog type" });
     }
@@ -940,30 +958,11 @@ export async function viewPostCreate(req, res) {
     }
 
     // Verify project exists and belongs to the user
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: {
-        id: true,
-        ownerId: true,
-        type: true,
-        Blog: { select: { id: true } },
-      },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
     });
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not found",
-        description: "Project not found",
-      });
-    }
-    if (project.ownerId !== userId) {
-      return res.status(403).render("error", {
-        code: 403,
-        message: "Forbidden",
-        description:
-          "You do not have permission to create posts in this project.",
-      });
-    }
+    if (!access) return;
+    const project = access.project;
     if (project.type !== "blog") {
       return res.status(400).render("error", {
         code: 400,
@@ -1099,8 +1098,9 @@ export async function retryConnection(req, res) {
     if (!projectId)
       return res.status(400).json({ error: "Missing project id" });
 
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
+    const access = await getBlogProjectAccess(req, res, projectId, {
+      roles: ["owner", "editor"],
+      responseType: "json",
       select: {
         ownerId: true,
         type: true,
@@ -1121,12 +1121,11 @@ export async function retryConnection(req, res) {
         },
       },
     });
+    if (!access) return;
+    const project = access.project;
 
     if (!project || project.type !== "blog") {
       return res.status(404).json({ error: "Project not found" });
-    }
-    if (!ensureAccess({ ownerId: project.ownerId }, req)) {
-      return res.status(403).json({ error: "Forbidden" });
     }
 
     const cfg = project.Blog?.gitConfig;

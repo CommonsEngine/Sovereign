@@ -43,6 +43,7 @@ model User {
 
   // Opposite relation for Project owner
   ownedProjects Project[] @relation("Owner")
+  projectMemberships ProjectMember[]
 
   isTestUser Boolean @default(false) @map("is_test_user")
 
@@ -246,6 +247,18 @@ enum ProjectStatus {
   published
 }
 
+enum ProjectRole {
+  owner
+  editor
+  viewer
+}
+
+enum ProjectMemberStatus {
+  pending
+  active
+  revoked
+}
+
 model Project {
   id   String  @id @default(cuid()) @map("id")
   name String  @default("Untitled") @map("name")
@@ -266,12 +279,38 @@ model Project {
   // optional multi-tenant support
   tenantId String? @map("tenant_id")
 
+  members ProjectMember[]
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([ownerId, slug]) // if you want slug unique per-owner; remove or change if you want global uniqueness
   @@index([ownerId])
   @@map("projects")
+}
+
+model ProjectMember {
+  id           String               @id @default(cuid()) @map("id")
+  projectId    String               @map("project_id")
+  userId       String?              @map("user_id")
+  invitedEmail String?              @map("invited_email")
+  role         ProjectRole          @map("role")
+  status       ProjectMemberStatus  @default(pending) @map("status")
+  invitedAt    DateTime             @default(now()) @map("invited_at")
+  acceptedAt   DateTime?            @map("accepted_at")
+  note         String?              @map("note")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, userId])
+  @@unique([projectId, invitedEmail])
+  @@index([userId])
+  @@index([invitedEmail])
+  @@map("project_members")
 }
 
 // [3.1] Blog model (for projects of type 'blog')

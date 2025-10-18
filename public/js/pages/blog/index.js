@@ -309,6 +309,358 @@
     }
   });
 
+  const SHARE_ROLE_LABELS = {
+    owner: "Owner",
+    editor: "Editor",
+    viewer: "Viewer",
+  };
+  const SHARE_STATUS_LABELS = {
+    active: "Active",
+    pending: "Pending invite",
+    revoked: "Revoked",
+  };
+
+  function initShareModal() {
+    const main = document.querySelector("main[data-project-id]");
+    if (!main) return;
+    const projectId = main.dataset.projectId;
+    const canView = main.dataset.shareCanView === "true";
+    const canManage = main.dataset.shareCanManage === "true";
+    if (!projectId || !canView) return;
+
+    const modal = document.querySelector('[data-modal="share-project"]');
+    if (!modal) return;
+
+    const els = {
+      form: modal.querySelector("[data-share-form]"),
+      email: modal.querySelector("[data-share-input]"),
+      role: modal.querySelector("[data-share-role]"),
+      submit: modal.querySelector("[data-share-submit]"),
+      error: modal.querySelector("[data-share-error]"),
+      loading: modal.querySelector("[data-share-loading]"),
+      empty: modal.querySelector("[data-share-empty]"),
+      table: modal.querySelector("[data-share-table]"),
+      rows: modal.querySelector("[data-share-rows]"),
+    };
+
+    if (!canManage && els.form) {
+      els.form.style.display = "none";
+    }
+
+    const state = {
+      members: [],
+      loading: false,
+      error: "",
+      busy: new Set(),
+      initialized: false,
+      refreshing: false,
+    };
+
+    function setError(message) {
+      state.error = message || "";
+      if (!els.error) return;
+      if (state.error) {
+        els.error.textContent = state.error;
+        els.error.style.display = "block";
+      } else {
+        els.error.textContent = "";
+        els.error.style.display = "none";
+      }
+    }
+
+    function setLoading(isLoading, { withoutRender = false } = {}) {
+      state.loading = !!isLoading;
+      if (els.loading) els.loading.hidden = !state.loading;
+      if (!withoutRender) render();
+    }
+
+    function ownerCount() {
+      return state.members.filter(
+        (m) => m.role === "owner" && m.status === "active",
+      ).length;
+    }
+
+    function upsertMember(member) {
+      if (!member) return;
+      const idx = state.members.findIndex((m) => m.id === member.id);
+      if (idx >= 0) state.members[idx] = member;
+      else state.members.push(member);
+    }
+
+    function removeMember(id) {
+      state.members = state.members.filter((m) => m.id !== id);
+    }
+
+    function render() {
+      if (state.loading && !state.initialized) {
+        if (els.table) els.table.hidden = true;
+        if (els.empty) els.empty.hidden = true;
+        return;
+      }
+
+      const visibleMembers = state.members.filter(
+        (member) => member && member.status !== "revoked",
+      );
+
+      const sorted = visibleMembers.slice().sort((a, b) => {
+        const weight = { owner: 0, editor: 1, viewer: 2 };
+        const wa = weight[a.role] ?? 99;
+        const wb = weight[b.role] ?? 99;
+        if (wa !== wb) return wa - wb;
+        const nameA = (a.displayName || "").toLowerCase();
+        const nameB = (b.displayName || "").toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      if (els.loading) els.loading.hidden = !state.loading;
+      if (els.empty) els.empty.hidden = state.loading || sorted.length > 0;
+      if (els.table) els.table.hidden = state.loading || sorted.length === 0;
+      setError(state.error);
+
+      if (!els.rows) return;
+      els.rows.innerHTML = "";
+
+      const activeOwners = ownerCount();
+
+      sorted.forEach((member) => {
+        const row = document.createElement("tr");
+        const emailDetail =
+          member.email && member.email !== member.displayName
+            ? `<div class="share-modal__status">${escapeHtml(member.email)}</div>`
+            : "";
+        const youTag = member.isSelf
+          ? '<span class="share-modal__tag">You</span>'
+          : "";
+        const statusLabel =
+          SHARE_STATUS_LABELS[member.status] || member.status || "";
+        const statusClass =
+          member.status === "pending" ? "share-modal__status--pending" : "";
+
+        const disableRoleSelection =
+          !canManage ||
+          state.busy.has(member.id) ||
+          (member.role === "owner" && member.isSelf && activeOwners <= 1);
+
+        const roleSelect = ["owner", "editor", "viewer"]
+          .map((role) => {
+            const selected = role === member.role ? "selected" : "";
+            return `<option value="${role}" ${selected}>${escapeHtml(SHARE_ROLE_LABELS[role] || role)}</option>`;
+          })
+          .join("");
+
+        const roleCell = canManage
+          ? `<select class="share-modal__role" data-share-member-role="${member.id}" ${disableRoleSelection ? "disabled" : ""}>${roleSelect}</select>`
+          : `<span class="share-modal__tag">${escapeHtml(SHARE_ROLE_LABELS[member.role] || member.role)}</span>`;
+
+        const removeBtn =
+          canManage && !member.isSelf
+            ? `<div class="share-modal__actions"><button type="button" class="chip" data-share-remove="${member.id}" ${state.busy.has(member.id) ? "disabled" : ""}>Remove</button></div>`
+            : '<div class="share-modal__actions"></div>';
+
+        row.innerHTML = `
+          <td>
+            <div>${escapeHtml(member.displayName || "Member")} ${youTag}</div>
+            ${emailDetail}
+          </td>
+          <td>${roleCell}</td>
+          <td><span class="share-modal__status ${statusClass}">${escapeHtml(statusLabel)}</span></td>
+          <td>${removeBtn}</td>
+        `;
+        row.dataset.memberId = member.id;
+        els.rows.appendChild(row);
+      });
+    }
+
+    async function refreshMembers() {
+      if (!projectId || state.refreshing) return;
+      state.refreshing = true;
+      setError("");
+      setLoading(true, { withoutRender: true });
+      render();
+      try {
+        const resp = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}/shares`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          },
+        );
+        const payload = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        state.members = Array.isArray(payload.members) ? payload.members : [];
+        state.initialized = true;
+      } catch (err) {
+        console.error("Failed to load project members", err);
+        state.members = [];
+        state.initialized = true;
+        setError(err?.message || "Failed to load collaborators.");
+      } finally {
+        state.refreshing = false;
+        setLoading(false, { withoutRender: true });
+        render();
+      }
+    }
+
+    async function inviteMember(email, role) {
+      if (!projectId || !canManage) return;
+      const cleanEmail = (email || "").trim();
+      if (!cleanEmail) {
+        setError("Enter an email address to invite.");
+        return;
+      }
+      if (els.submit) {
+        els.submit.disabled = true;
+        els.submit.textContent = "Sending…";
+      }
+      setError("");
+      try {
+        const resp = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}/shares`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail, role }),
+          },
+        );
+        const payload = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        if (payload.member) {
+          upsertMember(payload.member);
+          render();
+        } else {
+          await refreshMembers();
+        }
+        if (els.email) els.email.value = "";
+      } catch (err) {
+        console.error("Failed to invite member", err);
+        setError(err?.message || "Failed to invite member.");
+      } finally {
+        if (els.submit) {
+          els.submit.disabled = false;
+          els.submit.textContent = "Send invite";
+        }
+      }
+    }
+
+    async function updateMemberRole(memberId, role) {
+      if (!projectId || !canManage || !memberId) return;
+      state.busy.add(memberId);
+      render();
+      try {
+        const resp = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}/shares/${encodeURIComponent(memberId)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role }),
+          },
+        );
+        const payload = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        if (payload.member) {
+          upsertMember(payload.member);
+        } else {
+          await refreshMembers();
+        }
+        setError("");
+      } catch (err) {
+        console.error("Failed to update member role", err);
+        setError(err?.message || "Failed to update member role.");
+      } finally {
+        state.busy.delete(memberId);
+        render();
+      }
+    }
+
+    async function removeMemberRequest(memberId) {
+      if (!projectId || !canManage || !memberId) return;
+      state.busy.add(memberId);
+      render();
+      try {
+        const resp = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}/shares/${encodeURIComponent(memberId)}`,
+          {
+            method: "DELETE",
+            headers: { Accept: "application/json" },
+          },
+        );
+        if (!resp.ok && resp.status !== 204) {
+          let payload = {};
+          try {
+            payload = await resp.json();
+          } catch {}
+          throw new Error(payload?.error || `HTTP ${resp.status}`);
+        }
+        removeMember(memberId);
+        setError("");
+        render();
+      } catch (err) {
+        console.error("Failed to remove member", err);
+        setError(err?.message || "Failed to remove member.");
+      } finally {
+        state.busy.delete(memberId);
+        render();
+      }
+    }
+
+    if (els.form && canManage) {
+      els.form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (!canManage) return;
+        if (els.email && !els.email.reportValidity()) return;
+        inviteMember(els.email?.value, els.role?.value || "editor");
+      });
+    }
+
+    if (els.rows) {
+      els.rows.addEventListener("change", (event) => {
+        const select = event.target.closest("[data-share-member-role]");
+        if (!select) return;
+        if (!canManage || select.disabled) return;
+        const memberId = select.getAttribute("data-share-member-role");
+        const member = state.members.find((m) => m.id === memberId);
+        if (!member) return;
+        const nextRole = select.value;
+        if (!nextRole || nextRole === member.role) return;
+        updateMemberRole(memberId, nextRole).catch(() => {
+          select.value = member.role;
+        });
+      });
+
+      els.rows.addEventListener("click", (event) => {
+        const remover = event.target.closest("[data-share-remove]");
+        if (!remover) return;
+        if (!canManage || remover.disabled) return;
+        const memberId = remover.getAttribute("data-share-remove");
+        if (!memberId) return;
+        removeMemberRequest(memberId);
+      });
+    }
+
+    const modalObserver = new MutationObserver((records) => {
+      for (const record of records) {
+        if (
+          record.type === "attributes" &&
+          record.attributeName === "data-modal-active"
+        ) {
+          if (modal.dataset.modalActive === "true" && !state.refreshing) {
+            refreshMembers();
+          }
+        }
+      }
+    });
+    modalObserver.observe(modal, {
+      attributes: true,
+      attributeFilter: ["data-modal-active"],
+    });
+  }
+
   // wire search & loader and kick off startup tasks
   function wireLoader() {
     const spinner = document.querySelector("[data-startup-spinner]");
@@ -319,6 +671,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    initShareModal();
     wireLoader();
     search?.addEventListener("input", applySearch);
     retryConnectionBtn?.addEventListener("click", () => {

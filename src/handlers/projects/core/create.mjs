@@ -80,6 +80,19 @@ export default async function create(req, res) {
             },
           });
 
+          await tx.projectMember.create({
+            data: {
+              projectId: projectRecord.id,
+              userId,
+              invitedEmail: req.user?.email
+                ? String(req.user.email).trim().toLowerCase()
+                : null,
+              role: "owner",
+              status: "active",
+              acceptedAt: new Date(),
+            },
+          });
+
           if (type === "blog") {
             await tx.blog.create({
               data: {

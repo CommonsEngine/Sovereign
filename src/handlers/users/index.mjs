@@ -1,6 +1,7 @@
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
 import { USER_ROLES } from "$/config/index.mjs";
+import { syncProjectPrimaryOwner } from "$/libs/projectAccess.mjs";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -315,10 +316,20 @@ export async function deleteUser(req, res) {
     }
 
     await prisma.$transaction(async (tx) => {
+      const memberships = await tx.projectMember.findMany({
+        where: { userId },
+        select: { projectId: true },
+      });
+      const projectIds = Array.from(
+        new Set(memberships.map((m) => m.projectId)),
+      );
+
       await tx.project.updateMany({
         where: { ownerId: userId },
         data: { ownerId: null },
       });
+      await tx.projectMember.deleteMany({ where: { userId } });
+
       await tx.user.update({
         where: { id: userId },
         data: { primaryEmailId: null },
@@ -330,6 +341,10 @@ export async function deleteUser(req, res) {
       await tx.userEmail.deleteMany({ where: { userId } });
       await tx.userProfile.deleteMany({ where: { userId } });
       await tx.user.delete({ where: { id: userId } });
+
+      for (const projectId of projectIds) {
+        await syncProjectPrimaryOwner(projectId, { tx });
+      }
     });
 
     return res.status(204).end();
