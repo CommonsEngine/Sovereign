@@ -80,7 +80,7 @@ export default async function create(req, res) {
             },
           });
 
-          await tx.projectMember.create({
+          await tx.projectContributor.create({
             data: {
               projectId: projectRecord.id,
               userId,

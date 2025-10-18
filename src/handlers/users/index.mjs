@@ -316,7 +316,7 @@ export async function deleteUser(req, res) {
     }
 
     await prisma.$transaction(async (tx) => {
-      const memberships = await tx.projectMember.findMany({
+      const memberships = await tx.projectContributor.findMany({
         where: { userId },
         select: { projectId: true },
       });
@@ -328,7 +328,7 @@ export async function deleteUser(req, res) {
         where: { ownerId: userId },
         data: { ownerId: null },
       });
-      await tx.projectMember.deleteMany({ where: { userId } });
+      await tx.projectContributor.deleteMany({ where: { userId } });
 
       await tx.user.update({
         where: { id: userId },

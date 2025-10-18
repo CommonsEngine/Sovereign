@@ -81,7 +81,7 @@ function buildMemberPayload(member, currentUser) {
 }
 
 async function ensureAnotherActiveOwner(tx, projectId, excludingMemberId) {
-  const remainingOwners = await tx.projectMember.count({
+  const remainingOwners = await tx.projectContributor.count({
     where: {
       projectId,
       status: "active",
@@ -120,7 +120,7 @@ export async function list(req, res) {
       user: req.user,
       allowedRoles: ["owner", "editor"],
     });
-    const membersRaw = await prisma.projectMember.findMany({
+    const membersRaw = await prisma.projectContributor.findMany({
       where: { projectId },
       orderBy: [{ invitedAt: "asc" }, { createdAt: "asc" }],
       select: MEMBER_SELECT,
@@ -216,7 +216,7 @@ export async function create(req, res) {
 
       let existing = null;
       if (lookup.length) {
-        existing = await tx.projectMember.findFirst({
+        existing = await tx.projectContributor.findFirst({
           where: { projectId, OR: lookup },
           select: MEMBER_SELECT,
         });
@@ -226,7 +226,7 @@ export async function create(req, res) {
       let memberRecord = null;
 
       if (existing) {
-        memberRecord = await tx.projectMember.update({
+        memberRecord = await tx.projectContributor.update({
           where: { id: existing.id },
           data: {
             role,
@@ -240,7 +240,7 @@ export async function create(req, res) {
           select: MEMBER_SELECT,
         });
       } else {
-        memberRecord = await tx.projectMember.create({
+        memberRecord = await tx.projectContributor.create({
           data: {
             id: uuid("pm_"),
             projectId,
@@ -307,7 +307,7 @@ export async function update(req, res) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      const member = await tx.projectMember.findUnique({
+      const member = await tx.projectContributor.findUnique({
         where: { id: memberId },
         select: {
           id: true,
@@ -351,7 +351,7 @@ export async function update(req, res) {
         }
       }
 
-      const updated = await tx.projectMember.update({
+      const updated = await tx.projectContributor.update({
         where: { id: member.id },
         data,
         select: MEMBER_SELECT,
@@ -390,7 +390,7 @@ export async function remove(req, res) {
     });
 
     await prisma.$transaction(async (tx) => {
-      const member = await tx.projectMember.findUnique({
+      const member = await tx.projectContributor.findUnique({
         where: { id: memberId },
         select: {
           projectId: true,
@@ -406,7 +406,7 @@ export async function remove(req, res) {
         await ensureAnotherActiveOwner(tx, projectId, memberId);
       }
 
-      await tx.projectMember.delete({ where: { id: memberId } });
+      await tx.projectContributor.delete({ where: { id: memberId } });
       await syncProjectPrimaryOwner(projectId, { tx });
     });
 

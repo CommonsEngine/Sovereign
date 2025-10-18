@@ -42,8 +42,8 @@ model User {
   roleAssignments UserRoleAssignment[]
 
   // Opposite relation for Project owner
-  ownedProjects Project[] @relation("Owner") // TODO: Verify whether this is needed anymore
-  projectMemberships ProjectMember[]
+  ownedProjects        Project[]            @relation("Owner") // TODO: Verify whether this is needed anymore
+  projectContributions ProjectContributor[]
 
   isTestUser Boolean @default(false) @map("is_test_user")
 
@@ -247,20 +247,13 @@ enum ProjectStatus {
   published
 }
 
-// TODO:
-// - Rename `ProjectRole` enum to `ContributorRole`
-// - Rename `ProjectMemberStatus` enum to `ContributorStatus`
-// - Rename `User.projectMemberships` to `User.projectContributions`
-// - Rename `Project.members` to `Project.contributors`
-// - Revise the app code accordingly
-
-enum ProjectRole {
+enum ContributorRole {
   owner
   editor
   viewer
 }
 
-enum ProjectMemberStatus {
+enum ContributorStatus {
   pending
   active
   revoked
@@ -286,7 +279,7 @@ model Project {
   // optional multi-tenant support
   tenantId String? @map("tenant_id")
 
-  members ProjectMember[]
+  contributors ProjectContributor[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -296,16 +289,16 @@ model Project {
   @@map("projects")
 }
 
-model ProjectMember {
-  id           String               @id @default(cuid()) @map("id")
-  projectId    String               @map("project_id")
-  userId       String?              @map("user_id")
-  invitedEmail String?              @map("invited_email")
-  role         ProjectRole          @map("role")
-  status       ProjectMemberStatus  @default(pending) @map("status")
-  invitedAt    DateTime             @default(now()) @map("invited_at")
-  acceptedAt   DateTime?            @map("accepted_at")
-  note         String?              @map("note")
+model ProjectContributor {
+  id           String            @id @default(cuid()) @map("id")
+  projectId    String            @map("project_id")
+  userId       String?           @map("user_id")
+  invitedEmail String?           @map("invited_email")
+  role         ContributorRole   @map("role")
+  status       ContributorStatus @default(pending) @map("status")
+  invitedAt    DateTime          @default(now()) @map("invited_at")
+  acceptedAt   DateTime?         @map("accepted_at")
+  note         String?           @map("note")
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -317,7 +310,7 @@ model ProjectMember {
   @@unique([projectId, invitedEmail])
   @@index([userId])
   @@index([invitedEmail])
-  @@map("project_members")
+  @@map("project_contributors")
 }
 
 // [3.1] Blog model (for projects of type 'blog')

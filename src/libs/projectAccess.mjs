@@ -1,12 +1,12 @@
 import prisma from "$/prisma.mjs";
 
-export const PROJECT_ROLE_WEIGHT = {
+export const CONTRIBUTOR_ROLE_WEIGHT = {
   viewer: 1,
   editor: 2,
   owner: 3,
 };
 
-export const PROJECT_MEMBER_STATUS = {
+export const CONTRIBUTOR_STATUS = {
   pending: "pending",
   active: "active",
   revoked: "revoked",
@@ -35,16 +35,16 @@ export function isRoleAllowed(role, allowedRoles) {
   if (normalized.includes(role)) return true;
 
   const weights = normalized
-    .map((r) => PROJECT_ROLE_WEIGHT[r] ?? null)
+    .map((r) => CONTRIBUTOR_ROLE_WEIGHT[r] ?? null)
     .filter((w) => typeof w === "number");
   if (!weights.length) return false;
 
   const minRequired = Math.min(...weights);
-  const roleWeight = PROJECT_ROLE_WEIGHT[role] ?? 0;
+  const roleWeight = CONTRIBUTOR_ROLE_WEIGHT[role] ?? 0;
   return roleWeight >= minRequired;
 }
 
-function membershipLookupConditions(user, { emailOverride } = {}) {
+function contributorLookupConditions(user, { emailOverride } = {}) {
   const conditions = [];
   if (user?.id) conditions.push({ userId: user.id });
   const email =
@@ -55,16 +55,16 @@ function membershipLookupConditions(user, { emailOverride } = {}) {
   return conditions;
 }
 
-export async function findActiveMembership(projectId, user, options = {}) {
+export async function findActiveContribution(projectId, user, options = {}) {
   const { tx = prisma, emailOverride } = options;
   if (!projectId) return null;
-  const or = membershipLookupConditions(user, { emailOverride });
+  const or = contributorLookupConditions(user, { emailOverride });
   if (!or.length) return null;
 
-  return tx.projectMember.findFirst({
+  return tx.projectContributor.findFirst({
     where: {
       projectId,
-      status: PROJECT_MEMBER_STATUS.active,
+      status: CONTRIBUTOR_STATUS.active,
       OR: or,
     },
   });
@@ -90,13 +90,13 @@ export async function ensureProjectAccess({
     throw new ProjectAccessError("Project not found", 404);
   }
 
-  let membership = await findActiveMembership(projectId, user, {
+  let contribution = await findActiveContribution(projectId, user, {
     tx,
     emailOverride,
   });
-  let effectiveRole = membership?.role ?? null;
+  let effectiveRole = contribution?.role ?? null;
 
-  if (!membership && project.ownerId && project.ownerId === user?.id) {
+  if (!contribution && project.ownerId && project.ownerId === user?.id) {
     // Backwards compatibility fallback until ownerId is fully retired
     effectiveRole = "owner";
   }
@@ -111,15 +111,16 @@ export async function ensureProjectAccess({
 
   return {
     project,
-    membership,
+    contribution,
+    membership: contribution, // temporary alias for backward compatibility
     role: effectiveRole,
   };
 }
 
-export async function listProjectMembers(projectId, options = {}) {
+export async function listProjectContributors(projectId, options = {}) {
   const { tx = prisma } = options;
   if (!projectId) return [];
-  return tx.projectMember.findMany({
+  return tx.projectContributor.findMany({
     where: { projectId },
     orderBy: [{ createdAt: "asc" }],
     select: {
@@ -147,10 +148,10 @@ export async function syncProjectPrimaryOwner(projectId, options = {}) {
   const { tx = prisma } = options;
   if (!projectId) return;
 
-  const primaryOwner = await tx.projectMember.findFirst({
+  const primaryOwner = await tx.projectContributor.findFirst({
     where: {
       projectId,
-      status: PROJECT_MEMBER_STATUS.active,
+      status: CONTRIBUTOR_STATUS.active,
       role: "owner",
       userId: { not: null },
     },
@@ -163,3 +164,9 @@ export async function syncProjectPrimaryOwner(projectId, options = {}) {
     data: { ownerId: primaryOwner?.userId ?? null },
   });
 }
+
+// Deprecated aliases kept temporarily for compatibility with existing imports.
+export const PROJECT_ROLE_WEIGHT = CONTRIBUTOR_ROLE_WEIGHT;
+export const PROJECT_MEMBER_STATUS = CONTRIBUTOR_STATUS;
+export const findActiveMembership = findActiveContribution;
+export const listProjectMembers = listProjectContributors;

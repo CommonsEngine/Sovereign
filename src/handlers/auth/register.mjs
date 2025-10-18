@@ -373,7 +373,7 @@ export default async function register(req, res) {
       });
     }
 
-    const pendingMemberships = await prisma.projectMember.findMany({
+    const pendingMemberships = await prisma.projectContributor.findMany({
       where: {
         invitedEmail: emailNorm,
         status: "pending",
@@ -387,7 +387,7 @@ export default async function register(req, res) {
 
     if (pendingMemberships.length) {
       const membershipIds = pendingMemberships.map((m) => m.id);
-      await prisma.projectMember.updateMany({
+      await prisma.projectContributor.updateMany({
         where: { id: { in: membershipIds } },
         data: {
           userId: user.id,

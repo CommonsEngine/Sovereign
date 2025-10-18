@@ -18,7 +18,7 @@ export default async function getAll(req, res) {
           { ownerId: userId },
           membershipConditions.length
             ? {
-                members: {
+                contributors: {
                   some: {
                     status: "active",
                     OR: membershipConditions,
@@ -38,7 +38,7 @@ export default async function getAll(req, res) {
         status: true,
         createdAt: true,
         updatedAt: true,
-        members: {
+        contributors: {
           where: { status: "active" },
           select: {
             userId: true,
@@ -52,12 +52,12 @@ export default async function getAll(req, res) {
         ...p,
         owned:
           p.ownerId === userId ||
-          p.members.some(
+          p.contributors.some(
             (member) => member.userId === userId && member.role === "owner",
           ),
         shared:
-          (p.members?.length ?? 0) > 1 ||
-          p.members.some(
+          (p.contributors?.length ?? 0) > 1 ||
+          p.contributors.some(
             (member) =>
               member.role !== "owner" ||
               (member.role === "owner" && member.userId !== userId),
@@ -68,7 +68,7 @@ export default async function getAll(req, res) {
       .map((p) => ({
         ...p,
         ownerId: undefined,
-        members: undefined,
+        contributors: undefined,
       }));
     return res.json({ projects });
   } catch (error) {
