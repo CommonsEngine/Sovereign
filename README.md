@@ -70,23 +70,6 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
    - Run the migration command to log the change with `yarn prisma migrate dev --name <migration-name-in-snake-case>`
 
-### Project sharing
-
-Projects now support collaborative access with explicit membership records. Each project can include multiple **owners**, **editors**, and **viewers**:
-
-- Owners can configure integrations, manage content, and invite or revoke other members.
-- Editors can contribute to project content but cannot modify membership.
-- Viewers have read-only access.
-
-After pulling the latest changes, apply the new migration to create the `project_members` table (and backfill existing owners):
-
-```bash
-yarn prisma migrate dev --name add_project_members
-yarn prisma generate
-```
-
-When registering a new account, any pending email-based project invites are automatically linked to the newly created user.
-
 #### React / JSX Support (Server-Side Rendering + Client Hydration)
 
 The Sovereign Express/Handlebars stack also supports for **React / JSX views** (alonegside Handlebars) rendered via **server-side rendering (SSR)** with optional **client-side hydration** using [Vite](https://vite.dev/) middleware.
@@ -366,6 +349,18 @@ Tooling:
 - Use commitlint / husky if you want to enforce messages in CI.
 - A "prepare" script can run a commit template or interactive prompt (optional).
 -->
+
+## Features
+
+### Project sharing
+
+Projects now support collaborative access with explicit membership records. Each project can include multiple **owners**, **editors**, and **viewers**:
+
+- Owners can configure integrations, manage content, and invite or revoke other members.
+- Editors can contribute to project content but cannot modify membership.
+- Viewers have read-only access.
+
+When registering a new account, any pending email-based project invites are automatically linked to the newly created user.
 
 ## Contributing
 
