@@ -84,7 +84,7 @@ export async function ensureProjectAccess({
 
   const project = await tx.project.findUnique({
     where: { id: projectId },
-    select: select ?? { id: true, ownerId: true, type: true },
+    select: select ?? { id: true, type: true },
   });
   if (!project) {
     throw new ProjectAccessError("Project not found", 404);
@@ -95,11 +95,6 @@ export async function ensureProjectAccess({
     emailOverride,
   });
   let effectiveRole = contribution?.role ?? null;
-
-  if (!contribution && project.ownerId && project.ownerId === user?.id) {
-    // Backwards compatibility fallback until ownerId is fully retired
-    effectiveRole = "owner";
-  }
 
   if (!isRoleAllowed(effectiveRole, allowedRoles)) {
     throw new ProjectAccessError("Forbidden", 403, {
@@ -159,10 +154,7 @@ export async function syncProjectPrimaryOwner(projectId, options = {}) {
     select: { userId: true },
   });
 
-  await tx.project.update({
-    where: { id: projectId },
-    data: { ownerId: primaryOwner?.userId ?? null },
-  });
+  return primaryOwner?.userId ?? null;
 }
 
 // Deprecated aliases kept temporarily for compatibility with existing imports.

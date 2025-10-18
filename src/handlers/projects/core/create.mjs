@@ -72,7 +72,6 @@ export default async function create(req, res) {
               desc,
               type,
               scope,
-              ownerId: userId,
               slug: candidateSlug,
             },
             select: {
@@ -123,7 +122,7 @@ export default async function create(req, res) {
     if (!createdProject) {
       logger.warn("Failed to generate unique project slug", {
         base: slugBase,
-        ownerId: userId,
+        userId,
         error: lastError,
       });
       return res

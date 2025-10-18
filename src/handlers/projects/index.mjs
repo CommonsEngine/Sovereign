@@ -37,7 +37,6 @@ const DEFAULT_SELECT = {
   status: true,
   createdAt: true,
   updatedAt: true,
-  ownerId: true,
   Blog: {
     select: {
       id: true,
@@ -79,7 +78,7 @@ export async function configureProject(req, res) {
         id: true,
         projectId: true,
         gitConfig: true,
-        project: { select: { id: true, ownerId: true } },
+        project: { select: { id: true } },
       },
     });
 

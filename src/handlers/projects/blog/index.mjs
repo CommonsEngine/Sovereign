@@ -20,7 +20,6 @@ async function getBlogProjectAccess(req, res, projectId, options = {}) {
     roles = ["editor"],
     select = {
       id: true,
-      ownerId: true,
       type: true,
       name: true,
       Blog: { select: { id: true } },
@@ -1104,7 +1103,6 @@ export async function retryConnection(req, res) {
       roles: ["owner", "editor"],
       responseType: "json",
       select: {
-        ownerId: true,
         type: true,
         Blog: {
           select: {

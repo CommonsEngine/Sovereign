@@ -11,25 +11,20 @@ export default async function getAll(req, res) {
     if (userId) membershipConditions.push({ userId });
     if (email) membershipConditions.push({ invitedEmail: email });
 
+    if (!membershipConditions.length) {
+      return res.json({ projects: [] });
+    }
+
     const projectsRaw = await prisma.project.findMany({
       where: {
-        OR: [
-          { ownerId: null },
-          { ownerId: userId },
-          membershipConditions.length
-            ? {
-                contributors: {
-                  some: {
-                    status: "active",
-                    OR: membershipConditions,
-                  },
-                },
-              }
-            : undefined,
-        ].filter(Boolean),
+        contributors: {
+          some: {
+            status: "active",
+            OR: membershipConditions,
+          },
+        },
       },
       select: {
-        ownerId: true,
         id: true,
         type: true,
         name: true,
@@ -50,24 +45,20 @@ export default async function getAll(req, res) {
     const projects = projectsRaw
       .map((p) => ({
         ...p,
-        owned:
-          p.ownerId === userId ||
-          p.contributors.some(
-            (member) => member.userId === userId && member.role === "owner",
-          ),
+        owned: p.contributors.some(
+          (member) => member.userId === userId && member.role === "owner",
+        ),
         shared:
           (p.contributors?.length ?? 0) > 1 ||
           p.contributors.some(
             (member) =>
               member.role !== "owner" ||
               (member.role === "owner" && member.userId !== userId),
-          ) ||
-          p.ownerId === null,
+          ),
       }))
       .sort((a, b) => b.createdAt - a.createdAt /* newest first */)
       .map((p) => ({
         ...p,
-        ownerId: undefined,
         contributors: undefined,
       }));
     return res.json({ projects });

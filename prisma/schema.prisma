@@ -41,8 +41,6 @@ model User {
   // Add opposite relation for UserRoleAssignment
   roleAssignments UserRoleAssignment[]
 
-  // Opposite relation for Project owner
-  ownedProjects        Project[]            @relation("Owner") // TODO: Verify whether this is needed anymore
   projectContributions ProjectContributor[]
 
   isTestUser Boolean @default(false) @map("is_test_user")
@@ -273,9 +271,6 @@ model Project {
   scope  ProjectScope?  @map("scope")
   status ProjectStatus? @default(draft) @map("status")
 
-  ownerId String? @map("user_id")
-  owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
-
   // optional multi-tenant support
   tenantId String? @map("tenant_id")
 
@@ -284,8 +279,6 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([ownerId, slug]) // if you want slug unique per-owner; remove or change if you want global uniqueness
-  @@index([ownerId])
   @@map("projects")
 }
 

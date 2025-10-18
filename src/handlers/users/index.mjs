@@ -113,10 +113,9 @@ export async function viewUsers(req, res) {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
-        _count: {
-          select: {
-            ownedProjects: true,
-          },
+        projectContributions: {
+          where: { status: "active", role: "owner" },
+          select: { projectId: true },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -179,7 +178,7 @@ export async function viewUsers(req, res) {
       const inviteExpired = inviteToken
         ? toDate(inviteToken.expiresAt) < new Date()
         : false;
-      const projectsOwned = user._count?.ownedProjects ?? 0;
+      const projectsOwned = user.projectContributions?.length ?? 0;
       const projectsAssigned = projectsOwned;
       const projectsSummary = `${projectsOwned} ${
         projectsOwned === 1 ? "project" : "projects"
@@ -324,10 +323,6 @@ export async function deleteUser(req, res) {
         new Set(memberships.map((m) => m.projectId)),
       );
 
-      await tx.project.updateMany({
-        where: { ownerId: userId },
-        data: { ownerId: null },
-      });
       await tx.projectContributor.deleteMany({ where: { userId } });
 
       await tx.user.update({
