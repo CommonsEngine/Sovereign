@@ -8,6 +8,8 @@ import {
   disposeGitManager,
 } from "$/libs/git/registry.mjs";
 import FileManager from "$/libs/fs.mjs";
+// TODO: `$/libs/projectAccess.mjs` should be moved to `$/utils/projectAccess.mjs`
+// $/libs is intended for external and low-level libraries only
 import {
   ensureProjectAccess,
   ProjectAccessError,

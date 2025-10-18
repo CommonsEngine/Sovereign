@@ -42,7 +42,7 @@ model User {
   roleAssignments UserRoleAssignment[]
 
   // Opposite relation for Project owner
-  ownedProjects Project[] @relation("Owner")
+  ownedProjects Project[] @relation("Owner") // TODO: Verify whether this is needed anymore
   projectMemberships ProjectMember[]
 
   isTestUser Boolean @default(false) @map("is_test_user")
@@ -246,6 +246,13 @@ enum ProjectStatus {
   draft
   published
 }
+
+// TODO:
+// - Rename `ProjectRole` enum to `ContributorRole`
+// - Rename `ProjectMemberStatus` enum to `ContributorStatus`
+// - Rename `User.projectMemberships` to `User.projectContributions`
+// - Rename `Project.members` to `Project.contributors`
+// - Revise the app code accordingly
 
 enum ProjectRole {
   owner

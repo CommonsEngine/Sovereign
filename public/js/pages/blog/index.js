@@ -309,6 +309,8 @@
     }
   });
 
+  // TODO: Project share modal and functionality will be shared across multiple project-types
+  // Should be refactored into a common module, update the usage here and in other project pages
   const SHARE_ROLE_LABELS = {
     owner: "Owner",
     editor: "Editor",
