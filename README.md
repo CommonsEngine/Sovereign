@@ -68,7 +68,7 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
 7. Updating Prisma schema and apply migrations
    - Update `prisma/schema.prisma` first
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
-   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration-name-in-snake-case>`
+   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`
 
 #### React / JSX Support (Server-Side Rendering + Client Hydration)
 

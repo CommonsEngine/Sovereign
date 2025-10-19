@@ -37,7 +37,7 @@ const DEFAULT_SELECT = {
   status: true,
   createdAt: true,
   updatedAt: true,
-  Blog: {
+  blog: {
     select: {
       id: true,
       projectId: true,
@@ -205,7 +205,7 @@ export async function viewProject(req, res) {
 
     if (project.type === "blog") {
       // If this is a blog and not configured yet, send to configure flow
-      const needsBlogConfigure = !project.Blog?.gitConfig;
+      const needsBlogConfigure = !project.blog?.gitConfig;
       if (needsBlogConfigure) {
         return res.redirect(302, `/p/${project.id}/configure`);
       }
@@ -219,7 +219,7 @@ export async function viewProject(req, res) {
           connected = true;
         } else {
           const cfg = await prisma.gitConfig.findUnique({
-            where: { blogId: project.Blog.id },
+            where: { blogId: project.blog.id },
             select: {
               repoUrl: true,
               branch: true,
@@ -248,7 +248,7 @@ export async function viewProject(req, res) {
         try {
           disposeGitManager(project.id);
           await prisma.gitConfig.delete({
-            where: { blogId: project.Blog.id },
+            where: { blogId: project.blog.id },
           });
         } catch {
           // ignore if already deleted
@@ -256,7 +256,7 @@ export async function viewProject(req, res) {
         // return res.redirect(302, `/p/${project.id}/configure`);
       }
 
-      const gitConfig = project.Blog?.gitConfig || null;
+      const gitConfig = project.blog?.gitConfig || null;
 
       const created = formatDate(project.createdAt);
       const updated = formatDate(project.updatedAt);
@@ -326,7 +326,7 @@ export async function viewProjectConfigure(req, res) {
           id: true,
           name: true,
           type: true,
-          Blog: {
+          blog: {
             select: {
               id: true,
               projectId: true,
@@ -370,14 +370,14 @@ export async function viewProjectConfigure(req, res) {
     const project = access.project;
 
     // Only blogs have configuration flow. If already configured or not a blog, redirect to project.
-    const alreadyConfigured = !!project.Blog?.gitConfig;
+    const alreadyConfigured = !!project.blog?.gitConfig;
     if (project.type !== "blog" || alreadyConfigured) {
       return res.redirect(302, `/p/${project.id}`);
     }
 
     return res.render("project/blog/configure", {
       project,
-      gitConfig: project.Blog?.gitConfig || null,
+      gitConfig: project.blog?.gitConfig || null,
     });
   } catch (err) {
     logger.error("Load project configure failed:", err);

@@ -265,7 +265,7 @@ model Project {
 
   type String @map("type") // e.g., 'blog'
 
-  Blog Blog? // only set if type = 'blog'
+  blog Blog? // only set if type = 'blog'
 
   // lifecycle / meta
   scope  ProjectScope?  @map("scope")

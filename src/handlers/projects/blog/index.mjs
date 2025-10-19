@@ -20,7 +20,7 @@ async function getBlogProjectAccess(req, res, projectId, options = {}) {
       id: true,
       type: true,
       name: true,
-      Blog: { select: { id: true } },
+      blog: { select: { id: true } },
     },
     responseType = "html",
   } = options;
@@ -164,7 +164,7 @@ export async function viewPostEdit(req, res) {
 
     // Load Blog config
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -297,7 +297,7 @@ export async function getAllPosts(req, res) {
 
     // 2) Fetch blog config by project id
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -464,7 +464,7 @@ export async function updatePost(req, res) {
 
     // Load config
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -744,7 +744,7 @@ export async function deletePost(req, res) {
 
     // Load config
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -857,7 +857,7 @@ export async function publishPost(req, res) {
 
     // Load config to init manager if needed
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -972,7 +972,7 @@ export async function viewPostCreate(req, res) {
 
     // Load Blog config
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.Blog.id },
+      where: { blogId: project.blog.id },
       select: {
         repoUrl: true,
         branch: true,
@@ -1102,7 +1102,7 @@ export async function retryConnection(req, res) {
       responseType: "json",
       select: {
         type: true,
-        Blog: {
+        blog: {
           select: {
             id: true,
             gitConfig: {
@@ -1126,7 +1126,7 @@ export async function retryConnection(req, res) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    const cfg = project.Blog?.gitConfig;
+    const cfg = project.blog?.gitConfig;
     if (!cfg) {
       return res.status(400).json({ error: "Blog configuration is missing." });
     }

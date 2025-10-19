@@ -373,7 +373,7 @@ export default async function register(req, res) {
       });
     }
 
-    const pendingMemberships = await prisma.projectContributor.findMany({
+    const pendingContributors = await prisma.projectContributor.findMany({
       where: {
         invitedEmail: emailNorm,
         status: "pending",
@@ -385,8 +385,8 @@ export default async function register(req, res) {
       },
     });
 
-    if (pendingMemberships.length) {
-      const membershipIds = pendingMemberships.map((m) => m.id);
+    if (pendingContributors.length) {
+      const membershipIds = pendingContributors.map((m) => m.id);
       await prisma.projectContributor.updateMany({
         where: { id: { in: membershipIds } },
         data: {
@@ -397,7 +397,7 @@ export default async function register(req, res) {
       });
 
       const uniqueProjectIds = Array.from(
-        new Set(pendingMemberships.map((m) => m.projectId)),
+        new Set(pendingContributors.map((m) => m.projectId)),
       );
       await Promise.all(
         uniqueProjectIds.map((projectId) => syncProjectPrimaryOwner(projectId)),
