@@ -5,7 +5,7 @@ import {
 } from "$/libs/git/registry.mjs";
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
-import { ensureProjectAccess } from "$/libs/projectAccess.mjs";
+import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 
 export { default as create } from "./core/create.mjs";
 export { default as getAll } from "./core/getAll.mjs";

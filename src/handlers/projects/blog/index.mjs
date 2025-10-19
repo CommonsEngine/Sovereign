@@ -8,12 +8,10 @@ import {
   disposeGitManager,
 } from "$/libs/git/registry.mjs";
 import FileManager from "$/libs/fs.mjs";
-// TODO: `$/libs/projectAccess.mjs` should be moved to `$/utils/projectAccess.mjs`
-// $/libs is intended for external and low-level libraries only
 import {
   ensureProjectAccess,
   ProjectAccessError,
-} from "$/libs/projectAccess.mjs";
+} from "$/utils/projectAccess.mjs";
 
 async function getBlogProjectAccess(req, res, projectId, options = {}) {
   const {

@@ -3,7 +3,7 @@ import prisma from "$/prisma.mjs";
 import {
   ensureProjectAccess,
   ProjectAccessError,
-} from "$/libs/projectAccess.mjs";
+} from "$/utils/projectAccess.mjs";
 
 export default async function update(req, res) {
   try {

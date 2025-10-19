@@ -5,7 +5,7 @@ import {
   ensureProjectAccess,
   ProjectAccessError,
   syncProjectPrimaryOwner,
-} from "$/libs/projectAccess.mjs";
+} from "$/utils/projectAccess.mjs";
 
 const VALID_ROLES = new Set(["owner", "editor", "viewer"]);
 const MUTABLE_STATUSES = new Set(["active", "pending", "revoked"]);

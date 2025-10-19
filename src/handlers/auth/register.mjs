@@ -3,7 +3,7 @@ import logger from "$/utils/logger.mjs";
 import { sendMail } from "$/utils/mailer.mjs";
 import env from "$/config/env.mjs";
 import prisma from "$/prisma.mjs";
-import { syncProjectPrimaryOwner } from "$/libs/projectAccess.mjs";
+import { syncProjectPrimaryOwner } from "$/utils/projectAccess.mjs";
 
 const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();
 
