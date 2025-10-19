@@ -6,6 +6,7 @@ import {
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
 import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
+import { uuid } from "$/utils/id.mjs";
 
 export { default as create } from "./core/create.mjs";
 export { default as getAll } from "./core/getAll.mjs";
@@ -13,6 +14,7 @@ export { default as update } from "./core/update.mjs";
 export { default as remove } from "./core/remove.mjs";
 
 export * as blog from "./blog/index.mjs";
+export * as papertrail from "./papertrail/index.mjs";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -28,6 +30,24 @@ function formatDate(value) {
     return { iso: "", label: "" };
   }
 }
+
+const PAPERTRAIL_BOARD_SELECT = {
+  id: true,
+  projectId: true,
+  title: true,
+  schemaVersion: true,
+  layout: true,
+  meta: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+  _count: {
+    select: {
+      nodes: true,
+      edges: true,
+    },
+  },
+};
 
 const DEFAULT_SELECT = {
   id: true,
@@ -51,6 +71,9 @@ const DEFAULT_SELECT = {
         },
       },
     },
+  },
+  papertrail: {
+    select: PAPERTRAIL_BOARD_SELECT,
   },
 };
 
@@ -283,6 +306,86 @@ export async function viewProject(req, res) {
         project: projectView,
         connected,
         connect_error: !connected,
+        share: {
+          role: context.role,
+          canView: canViewShares,
+          canManage: canManageShares,
+        },
+      });
+    }
+
+    if (project.type === "papertrail") {
+      let board = project.papertrail;
+
+      if (!board) {
+        try {
+          board = await prisma.papertrailBoard.upsert({
+            where: { projectId: project.id },
+            create: {
+              id: uuid("ptb_"),
+              projectId: project.id,
+              title: project.name,
+              schemaVersion: 1,
+              userId: req.user?.id ?? null,
+              meta: {},
+            },
+            update: {},
+            select: PAPERTRAIL_BOARD_SELECT,
+          });
+        } catch (err) {
+          logger.error("Failed to ensure papertrail board exists", err);
+          throw err;
+        }
+      }
+
+      const created = formatDate(project.createdAt);
+      const updated = formatDate(project.updatedAt);
+      const boardCreated = board ? formatDate(board.createdAt) : null;
+      const boardUpdated = board ? formatDate(board.updatedAt) : null;
+
+      const boardPayload = board
+        ? {
+            id: board.id,
+            projectId: board.projectId,
+            title: board.title,
+            schemaVersion: board.schemaVersion,
+            layout: board.layout || null,
+            meta: board.meta ?? {},
+            userId: board.userId ?? null,
+            createdAtISO: boardCreated?.iso ?? "",
+            createdAtDisplay: boardCreated?.label ?? "",
+            updatedAtISO: boardUpdated?.iso ?? "",
+            updatedAtDisplay: boardUpdated?.label ?? "",
+            stats: {
+              nodes: board._count?.nodes ?? 0,
+              edges: board._count?.edges ?? 0,
+            },
+          }
+        : null;
+
+      const projectView = {
+        id: project.id,
+        name: project.name,
+        desc: project.desc || "",
+        status: project.status || "draft",
+        createdAtISO: created.iso,
+        createdAtDisplay: created.label,
+        updatedAtISO: updated.iso,
+        updatedAtDisplay: updated.label,
+      };
+
+      const canViewShares = ["owner", "editor"].includes(context.role || "");
+      const canManageShares = context.role === "owner";
+
+      return res.render("project/papertrail/index", {
+        project: projectView,
+        board: boardPayload,
+        boardJson: boardPayload
+          ? JSON.stringify(boardPayload, null, 2)
+              .replace(/</g, "\\u003c")
+              .replace(/>/g, "\\u003e")
+              .replace(/&/g, "\\u0026")
+          : "null",
         share: {
           role: context.role,
           canView: canViewShares,

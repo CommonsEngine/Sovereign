@@ -378,7 +378,7 @@ model PapertrailBoard {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   title         String  @default("Untitled") @map("title")
-  schemaVersion Int     @map("schema_version")
+  schemaVersion Int     @map("schema_version") @default(1)
   layout        String? // global board layout preferences (hierarchical, force-directed)
   meta          Json?
 

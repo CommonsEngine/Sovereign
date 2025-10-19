@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+    <link rel="stylesheet" href="/css/components/modal.css" />
+    <style>
+      .papertrail__header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: var(--space-s, 12px);
+        margin-bottom: var(--space-l, 24px);
+      }
+      .papertrail__meta {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        margin-bottom: 32px;
+      }
+      .papertrail__meta-card {
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
+        background: var(--color-bg-primary, #fff);
+        box-shadow: var(--shadow-s, 0 1px 2px rgba(15, 23, 42, 0.08));
+      }
+      .papertrail__meta-card h4 {
+        margin: 0 0 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-secondary, #4b5563);
+      }
+      .papertrail__meta-card p {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text-primary, #111827);
+      }
+      .papertrail__empty {
+        padding: 32px;
+        text-align: center;
+        border-radius: 16px;
+        border: 1px dashed var(--color-border-secondary, #d1d5db);
+        color: var(--color-text-secondary, #4b5563);
+        background: color-mix(
+          in oklab,
+          var(--color-bg-secondary, #f3f4f6),
+          white 45%
+        );
+      }
+      .papertrail__grid {
+        display: grid;
+        gap: 16px;
+      }
+      .papertrail__section {
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid var(--color-border-secondary, #d1d5db);
+        background: var(--color-bg-primary, #fff);
+      }
+      .papertrail__section h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--color-text-primary, #111827);
+      }
+      .papertrail__json {
+        margin: 0;
+        padding: 16px;
+        border-radius: 10px;
+        border: 1px solid var(--color-border-secondary, #d1d5db);
+        background: var(--color-bg-muted, #f9fafb);
+        font-family:
+          ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.9rem;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body class="page page--with-sidebar page--project-papertrail-index">
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
+    {{> sidebar}} {{> userbar show_user_menu=true}}
+
+    <main
+      class="page__wrap page__wrap--fullwidth"
+      data-project-id="{{project.id}}"
+      data-project-status="{{project.status}}"
+      data-board-id="{{board.id}}"
+      data-share-role="{{share.role}}"
+      data-share-can-view="{{share.canView}}"
+      data-share-can-manage="{{share.canManage}}"
+    >
+      <header class="papertrail__header">
+        <div>
+          <h1 class="page__title">{{project.name}}</h1>
+          <p class="page__subtitle">
+            {{#if project.desc}}{{project.desc}}{{else}}Papertrail
+            workboard{{/if}}
+          </p>
+        </div>
+        <div class="page__meta">
+          <span class="page__meta-item">
+            Created
+            <strong>{{project.createdAtDisplay}}</strong>
+          </span>
+          <span class="page__meta-item">
+            Updated
+            <strong>{{project.updatedAtDisplay}}</strong>
+          </span>
+        </div>
+      </header>
+
+      {{#if board}}
+      <section class="papertrail__meta" aria-label="Board summary">
+        <div class="papertrail__meta-card">
+          <h4>Board Title</h4>
+          <p>{{board.title}}</p>
+        </div>
+        <div class="papertrail__meta-card">
+          <h4>Schema Version</h4>
+          <p>{{board.schemaVersion}}</p>
+        </div>
+        <div class="papertrail__meta-card">
+          <h4>Total Nodes</h4>
+          <p>{{board.stats.nodes}}</p>
+        </div>
+        <div class="papertrail__meta-card">
+          <h4>Total Edges</h4>
+          <p>{{board.stats.edges}}</p>
+        </div>
+      </section>
+
+      <div class="papertrail__grid">
+        <section class="papertrail__section">
+          <h3>Board Metadata</h3>
+          <pre class="papertrail__json" data-papertrail-board-json>
+{{{boardJson}}}</pre
+          >
+        </section>
+      </div>
+      {{else}}
+      <div class="papertrail__empty">
+        We could not find a board for this project yet. Try refreshing the page
+        or contact an administrator.
+      </div>
+      {{/if}}
+    </main>
+
+    <script type="application/json" id="papertrail-board-data">
+      {{{boardJson}}}
+    </script>
+    <script>
+      (function bootstrapPapertrailBoard() {
+        try {
+          const script = document.getElementById("papertrail-board-data");
+          if (!script) return;
+          const payload = JSON.parse(script.textContent || "null");
+          if (payload) {
+            window.__PAPERTRAIL_BOARD__ = payload;
+          }
+        } catch (err) {
+          console.warn("Failed to bootstrap papertrail board payload", err);
+        }
+      })();
+    </script>
+  </body>
+</html>

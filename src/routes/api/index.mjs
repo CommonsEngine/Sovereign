@@ -8,6 +8,7 @@ import * as usersHandler from "$/handlers/users/index.mjs";
 import * as projectSharesHandler from "$/handlers/projects/shares.mjs";
 
 import blogRouter from "./blog.mjs";
+import papertrailRouter from "./papertrail.mjs";
 
 const router = express.Router();
 
@@ -36,5 +37,6 @@ router.get("/settings", requireRole(["platform:admin"]), getAppSettings);
 router.patch("/settings", requireRole(["platform:admin"]), updateAppSettings);
 
 router.use(blogRouter);
+router.use(papertrailRouter);
 
 export default router;

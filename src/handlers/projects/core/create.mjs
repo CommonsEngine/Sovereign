@@ -30,6 +30,7 @@ export default async function create(req, res) {
     // feature flags (assume flags object available)
     const allowedTypes = new Set();
     if (flags?.blog) allowedTypes.add("blog");
+    if (flags?.papertrail) allowedTypes.add("papertrail");
     // add other types conditionally...
     // allowed scopes
     const allowedScopes = new Set(["private", "org", "public"]);
@@ -98,6 +99,19 @@ export default async function create(req, res) {
                 id: uuid(),
                 projectId: projectRecord.id,
                 title: name,
+              },
+            });
+          }
+
+          if (type === "papertrail") {
+            await tx.papertrailBoard.create({
+              data: {
+                id: uuid("b_"),
+                projectId: projectRecord.id,
+                title: name,
+                schemaVersion: 1, // TODO: remove this line after updating the database schema
+                userId,
+                meta: {},
               },
             });
           }

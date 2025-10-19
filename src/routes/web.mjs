@@ -17,6 +17,8 @@ router.get(
   exposeGlobals,
   projectHandler.viewProject,
 );
+
+// Project:Blog
 router.get(
   "/p/:projectId/configure",
   requireFeature("blog"),
