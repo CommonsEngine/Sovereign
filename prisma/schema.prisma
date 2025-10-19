@@ -45,9 +45,10 @@ model User {
 
   isTestUser Boolean @default(false) @map("is_test_user")
 
-  status    UserStatus @default(invited) @map("status")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
+  status          UserStatus        @default(invited) @map("status")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  PapertrailBoard PapertrailBoard[]
 
   @@index([createdAt])
   @@index([emailVerifiedAt])
@@ -59,7 +60,7 @@ model UserProfile {
   userId   String  @id @map("user_id")
   locale   String?
   timezone String?
-  meta     Json // Remove @default("{}")
+  meta     Json?
 
   // Relations
   user User @relation(name: "UserToUserProfile", fields: [userId], references: [id], onDelete: Cascade)
@@ -263,9 +264,11 @@ model Project {
   slug String? @unique @map("slug")
   desc String? @map("desc")
 
-  type String @map("type") // e.g., 'blog'
+  type String @map("type") // 'blog' | 'papertrail'
 
-  blog Blog? // only set if type = 'blog'
+  // relationship (1:1)
+  blog       Blog? // only set if type = 'blog'
+  papertrail PapertrailBoard? //only set if type = 'papertrail'
 
   // lifecycle / meta
   scope  ProjectScope?  @map("scope")
@@ -312,14 +315,15 @@ enum BlogProvider {
 }
 
 model Blog {
-  id        String       @id @default(cuid()) @map("id")
+  id        String  @id @default(cuid()) @map("id")
+  projectId String  @unique @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
   title     String       @map("title")
   subtitle  String?      @map("subtitle")
   type      String       @default("blog:git") @map("type") // e.g., 'blog:git'
   provider  BlogProvider @default(astro) @map("provider") // e.g., 'astro', 'jekyll'
   gitConfig GitConfig?
-  projectId String       @unique @map("project_id")
-  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
   domain    String?      @unique @map("domain") // custom domain
   meta      Json?        @map("meta") // e.g., { "theme": "minimal", "postsPerPage": 10 }
 
@@ -364,4 +368,126 @@ model GitConfig {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("git_configs")
+}
+
+// [3.2] Papertrail model (for projects of type 'papertrail')
+model PapertrailBoard {
+  id        String  @id @default(cuid()) @map("id")
+  projectId String  @unique @map("project_id")
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title         String  @default("Untitled") @map("title")
+  schemaVersion Int     @map("schema_version")
+  layout        String? // global board layout preferences (hierarchical, force-directed)
+  meta          Json?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  userId String? @map("user_id")
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  nodes PaperTrailNode[]
+  edges PaperTrailEdge[]
+
+  @@index([createdAt])
+  @@map("papertrail_boards")
+}
+
+// [3.2.1] Nodes for PaperTrail
+model PaperTrailNode {
+  id      String          @id @default(cuid()) @map("id")
+  boardId String          @map("board_id")
+  board   PapertrailBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  type String @map("type") // text | image | link
+  x    Int    @map("x")
+  y    Int    @map("y")
+  w    Int?   @map("w")
+  h    Int?   @map("h")
+
+  // content fields expected by server.mjs
+  title    String? @map("title")
+  text     String? @map("text")
+  html     String? @map("html")
+  descHtml String? @map("desc_html")
+  linkUrl  String? @map("link_url")
+  imageUrl String? @map("image_url")
+
+  meta Json? // custom fields
+  tags PaperTrailNodeTag[]
+
+  @@index([boardId])
+  @@index([boardId, type])
+  @@map("papertrail_nodes")
+}
+
+// [3.2.1] Edges for PaperTrail.Nodes
+model PaperTrailEdge {
+  id      String          @id @default(cuid()) @map("id")
+  boardId String          @map("board_id")
+  board   PapertrailBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  sourceId String  @map("source_id")
+  targetId String  @map("target_id")
+  label    String? @map("label")
+  dashed   Boolean @default(false) @map("dashed") // TODO: maybe can this can merge into `style` later.
+  color    String? @map("color")
+
+  @@index([boardId])
+  @@index([boardId, sourceId])
+  @@index([boardId, targetId])
+  @@map("papertrail_edges")
+}
+
+// [3.2.2] Tags for PaperTrail.Nodes
+model PaperTrailTag {
+  id    String              @id @default(cuid()) @map("id")
+  name  String              @unique @map("name")
+  nodes PaperTrailNodeTag[]
+
+  @@map("tags")
+}
+
+// [3.2.3] Tags for PaperTrail.Nodes-Tags
+model PaperTrailNodeTag {
+  nodeId String         @map("node_id")
+  node   PaperTrailNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  tagId String        @map("tag_id")
+  tag   PaperTrailTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([nodeId, tagId])
+  @@index([nodeId])
+  @@index([tagId])
+  @@map("papertrail_node_tags")
+}
+
+// [3.2.4] Tags for PaperTrail
+model PapertrailComment {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  entityId  String   @map("entity_id") // --> node:<nodeId>, edge:<edgeId>
+  authorId  String   @map("author_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId, entityId])
+  @@map("papertrail_comments")
+}
+
+model PapertrailAttachment {
+  id        String   @id @default(uuid())
+  projectId String   @map("project_id")
+  nodeId    String   @map("node_id")
+  kind      String // 'file' | 'url'
+  url       String?
+  fileKey   String?  @map("file_key") // storage key
+  name      String?
+  sizeBytes Int?     @map("size_bytes")
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([projectId, nodeId])
+  @@map("papertrail_attachment")
 }
