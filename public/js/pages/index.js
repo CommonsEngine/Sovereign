@@ -31,6 +31,7 @@
       article.className = "projects__card";
       article.setAttribute("data-project-id", p.id);
       article.setAttribute("data-owned", p.owned ? "true" : "false");
+      article.setAttribute("data-shared", p.shared ? "true" : "false");
 
       const row = document.createElement("div");
       row.className = "projects__card-row";
@@ -66,6 +67,13 @@
         chip.className = "projects__card-chip projects__card-chip--type";
         chip.title = "Type";
         chip.textContent = p.type;
+        metaInfo.appendChild(chip);
+      }
+      if (p.shared) {
+        const chip = document.createElement("span");
+        chip.className = "projects__card-chip projects__card-chip--shared";
+        chip.title = p.owned ? "Shared with teammates" : "Shared project";
+        chip.textContent = p.owned ? "Shared" : "Shared with you";
         metaInfo.appendChild(chip);
       }
       article.appendChild(metaInfo);

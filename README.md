@@ -68,7 +68,7 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
 7. Updating Prisma schema and apply migrations
    - Update `prisma/schema.prisma` first
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
-   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration-name-in-snake-case>`
+   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`
 
 #### React / JSX Support (Server-Side Rendering + Client Hydration)
 
@@ -349,6 +349,18 @@ Tooling:
 - Use commitlint / husky if you want to enforce messages in CI.
 - A "prepare" script can run a commit template or interactive prompt (optional).
 -->
+
+## Features
+
+### Project sharing
+
+Projects now support collaborative access with explicit membership records. Each project can include multiple **owners**, **editors**, and **viewers**:
+
+- Owners can configure integrations, manage content, and invite or revoke other members.
+- Editors can contribute to project content but cannot modify membership.
+- Viewers have read-only access.
+
+When registering a new account, any pending email-based project invites are automatically linked to the newly created user.
 
 ## Contributing
 

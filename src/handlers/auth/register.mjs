@@ -3,6 +3,7 @@ import logger from "$/utils/logger.mjs";
 import { sendMail } from "$/utils/mailer.mjs";
 import env from "$/config/env.mjs";
 import prisma from "$/prisma.mjs";
+import { syncProjectPrimaryOwner } from "$/utils/projectAccess.mjs";
 
 const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();
 
@@ -370,6 +371,37 @@ export default async function register(req, res) {
         update: {},
         create: { userId: user.id, roleId: guestUserRole.id },
       });
+    }
+
+    const pendingContributors = await prisma.projectContributor.findMany({
+      where: {
+        invitedEmail: emailNorm,
+        status: "pending",
+      },
+      select: {
+        id: true,
+        projectId: true,
+        role: true,
+      },
+    });
+
+    if (pendingContributors.length) {
+      const membershipIds = pendingContributors.map((m) => m.id);
+      await prisma.projectContributor.updateMany({
+        where: { id: { in: membershipIds } },
+        data: {
+          userId: user.id,
+          status: "active",
+          acceptedAt: new Date(),
+        },
+      });
+
+      const uniqueProjectIds = Array.from(
+        new Set(pendingContributors.map((m) => m.projectId)),
+      );
+      await Promise.all(
+        uniqueProjectIds.map((projectId) => syncProjectPrimaryOwner(projectId)),
+      );
     }
 
     // Optional: email verification token (kept consistent with existing API)

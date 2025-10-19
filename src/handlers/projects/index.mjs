@@ -5,6 +5,7 @@ import {
 } from "$/libs/git/registry.mjs";
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
+import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 
 export { default as create } from "./core/create.mjs";
 export { default as getAll } from "./core/getAll.mjs";
@@ -36,8 +37,7 @@ const DEFAULT_SELECT = {
   status: true,
   createdAt: true,
   updatedAt: true,
-  ownerId: true,
-  Blog: {
+  blog: {
     select: {
       id: true,
       projectId: true,
@@ -54,20 +54,14 @@ const DEFAULT_SELECT = {
   },
 };
 
-// TODO: Maybe we can isolate these functions in a separate utils file if they are needed elsewhere
-async function loadProject(projectId, select = DEFAULT_SELECT) {
-  if (!projectId) return null;
-  return prisma.project.findUnique({
-    where: { id: projectId },
+async function getProjectAccessContext(req, projectId, options = {}) {
+  const { select = DEFAULT_SELECT, roles = ["viewer"] } = options;
+  return ensureProjectAccess({
+    projectId,
+    user: req.user,
+    allowedRoles: roles,
     select,
   });
-}
-
-function ensureAccess(project, req) {
-  const userId = req.user?.id ?? null;
-  // if ownerId set and doesn't match current user -> forbidden
-  if (project.ownerId && project.ownerId !== userId) return false;
-  return true;
 }
 
 export async function configureProject(req, res) {
@@ -84,7 +78,7 @@ export async function configureProject(req, res) {
         id: true,
         projectId: true,
         gitConfig: true,
-        project: { select: { id: true, ownerId: true } },
+        project: { select: { id: true } },
       },
     });
 
@@ -95,9 +89,11 @@ export async function configureProject(req, res) {
       return res.status(400).json({ error: "Blog already configured" });
     }
 
-    if (!ensureAccess(blog.project, req)) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
+    await ensureProjectAccess({
+      projectId,
+      user: req.user,
+      allowedRoles: ["owner"],
+    });
 
     const raw = req.body || {};
 
@@ -176,26 +172,40 @@ export async function viewProject(req, res) {
       });
     }
 
-    const project = await loadProject(projectId);
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not Found",
-        description: "Project not found",
-      });
+    let context;
+    try {
+      context = await getProjectAccessContext(req, projectId);
+    } catch (err) {
+      if (err?.name === "ProjectAccessError") {
+        const status = err.status ?? 403;
+        const message =
+          status === 404
+            ? "Not Found"
+            : status === 400
+              ? "Bad Request"
+              : "Forbidden";
+        const description =
+          status === 404
+            ? "Project not found"
+            : status === 400
+              ? err.message || "Invalid request"
+              : "You do not have access to this project";
+        if (status >= 400 && status < 500) {
+          return res.status(status).render("error", {
+            code: status,
+            message,
+            description,
+          });
+        }
+      }
+      throw err;
     }
 
-    if (!ensureAccess(project, req)) {
-      return res.status(403).render("error", {
-        code: 403,
-        message: "Forbidden",
-        description: "You do not have access to this project",
-      });
-    }
+    const project = context.project;
 
     if (project.type === "blog") {
       // If this is a blog and not configured yet, send to configure flow
-      const needsBlogConfigure = !project.Blog?.gitConfig;
+      const needsBlogConfigure = !project.blog?.gitConfig;
       if (needsBlogConfigure) {
         return res.redirect(302, `/p/${project.id}/configure`);
       }
@@ -209,7 +219,7 @@ export async function viewProject(req, res) {
           connected = true;
         } else {
           const cfg = await prisma.gitConfig.findUnique({
-            where: { blogId: project.Blog.id },
+            where: { blogId: project.blog.id },
             select: {
               repoUrl: true,
               branch: true,
@@ -238,7 +248,7 @@ export async function viewProject(req, res) {
         try {
           disposeGitManager(project.id);
           await prisma.gitConfig.delete({
-            where: { blogId: project.Blog.id },
+            where: { blogId: project.blog.id },
           });
         } catch {
           // ignore if already deleted
@@ -246,9 +256,7 @@ export async function viewProject(req, res) {
         // return res.redirect(302, `/p/${project.id}/configure`);
       }
 
-      const gitConfig = project.Blog?.gitConfig || null;
-
-      console.log("==", gitConfig?.repoUrl);
+      const gitConfig = project.blog?.gitConfig || null;
 
       const created = formatDate(project.createdAt);
       const updated = formatDate(project.updatedAt);
@@ -268,10 +276,18 @@ export async function viewProject(req, res) {
         updatedAtDisplay: updated.label,
       };
 
+      const canViewShares = ["owner", "editor"].includes(context.role || "");
+      const canManageShares = context.role === "owner";
+
       return res.render("project/blog/index", {
         project: projectView,
         connected,
         connect_error: !connected,
+        share: {
+          role: context.role,
+          canView: canViewShares,
+          canManage: canManageShares,
+        },
       });
     }
 
@@ -302,52 +318,66 @@ export async function viewProjectConfigure(req, res) {
       });
     }
 
-    const project = await loadProject(projectId, {
-      id: true,
-      name: true,
-      type: true,
-      Blog: {
+    let access;
+    try {
+      access = await getProjectAccessContext(req, projectId, {
+        roles: ["owner"],
         select: {
           id: true,
-          projectId: true,
-          gitConfig: {
+          name: true,
+          type: true,
+          blog: {
             select: {
-              repoUrl: true,
-              branch: true,
-              contentDir: true,
-              userName: true,
-              userEmail: true,
+              id: true,
+              projectId: true,
+              gitConfig: {
+                select: {
+                  repoUrl: true,
+                  branch: true,
+                  contentDir: true,
+                  userName: true,
+                  userEmail: true,
+                },
+              },
             },
           },
         },
-      },
-    });
-
-    if (!project) {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Not found",
-        description: "Project not found",
       });
+    } catch (err) {
+      if (err?.name === "ProjectAccessError") {
+        const status = err.status ?? 403;
+        const message =
+          status === 404
+            ? "Not Found"
+            : status === 400
+              ? "Bad Request"
+              : "Forbidden";
+        const description =
+          status === 404
+            ? "Project not found"
+            : status === 400
+              ? err.message || "Invalid request"
+              : "You do not have access to this project";
+        return res.status(status).render("error", {
+          code: status,
+          message,
+          description,
+        });
+      }
+      throw err;
     }
 
-    if (!ensureAccess(project, req)) {
-      return res.status(403).render("error", {
-        code: 403,
-        message: "Forbidden",
-        description: "You do not have access to this project",
-      });
-    }
+    const project = access.project;
 
     // Only blogs have configuration flow. If already configured or not a blog, redirect to project.
-    const alreadyConfigured = !!project.Blog?.gitConfig;
+    const alreadyConfigured = !!project.blog?.gitConfig;
     if (project.type !== "blog" || alreadyConfigured) {
       return res.redirect(302, `/p/${project.id}`);
     }
 
     return res.render("project/blog/configure", {
       project,
-      gitConfig: project.Blog?.gitConfig || null,
+      gitConfig: project.blog?.gitConfig || null,
     });
   } catch (err) {
     logger.error("Load project configure failed:", err);

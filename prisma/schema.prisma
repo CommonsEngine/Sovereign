@@ -41,8 +41,7 @@ model User {
   // Add opposite relation for UserRoleAssignment
   roleAssignments UserRoleAssignment[]
 
-  // Opposite relation for Project owner
-  ownedProjects Project[] @relation("Owner")
+  projectContributions ProjectContributor[]
 
   isTestUser Boolean @default(false) @map("is_test_user")
 
@@ -246,6 +245,18 @@ enum ProjectStatus {
   published
 }
 
+enum ContributorRole {
+  owner
+  editor
+  viewer
+}
+
+enum ContributorStatus {
+  pending
+  active
+  revoked
+}
+
 model Project {
   id   String  @id @default(cuid()) @map("id")
   name String  @default("Untitled") @map("name")
@@ -254,24 +265,45 @@ model Project {
 
   type String @map("type") // e.g., 'blog'
 
-  Blog Blog? // only set if type = 'blog'
+  blog Blog? // only set if type = 'blog'
 
   // lifecycle / meta
   scope  ProjectScope?  @map("scope")
   status ProjectStatus? @default(draft) @map("status")
 
-  ownerId String? @map("user_id")
-  owner   User?   @relation("Owner", fields: [ownerId], references: [id], onDelete: SetNull)
-
   // optional multi-tenant support
   tenantId String? @map("tenant_id")
+
+  contributors ProjectContributor[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@unique([ownerId, slug]) // if you want slug unique per-owner; remove or change if you want global uniqueness
-  @@index([ownerId])
   @@map("projects")
+}
+
+model ProjectContributor {
+  id           String            @id @default(cuid()) @map("id")
+  projectId    String            @map("project_id")
+  userId       String?           @map("user_id")
+  invitedEmail String?           @map("invited_email")
+  role         ContributorRole   @map("role")
+  status       ContributorStatus @default(pending) @map("status")
+  invitedAt    DateTime          @default(now()) @map("invited_at")
+  acceptedAt   DateTime?         @map("accepted_at")
+  note         String?           @map("note")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([projectId, userId])
+  @@unique([projectId, invitedEmail])
+  @@index([userId])
+  @@index([invitedEmail])
+  @@map("project_contributors")
 }
 
 // [3.1] Blog model (for projects of type 'blog')
