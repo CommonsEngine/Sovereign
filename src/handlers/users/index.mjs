@@ -1,6 +1,7 @@
 import logger from "$/utils/logger.mjs";
 import prisma from "$/prisma.mjs";
 import { USER_ROLES } from "$/config/index.mjs";
+import { syncProjectPrimaryOwner } from "$/utils/projectAccess.mjs";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -112,10 +113,9 @@ export async function viewUsers(req, res) {
           orderBy: { createdAt: "desc" },
           take: 1,
         },
-        _count: {
-          select: {
-            ownedProjects: true,
-          },
+        projectContributions: {
+          where: { status: "active", role: "owner" },
+          select: { projectId: true },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -178,7 +178,7 @@ export async function viewUsers(req, res) {
       const inviteExpired = inviteToken
         ? toDate(inviteToken.expiresAt) < new Date()
         : false;
-      const projectsOwned = user._count?.ownedProjects ?? 0;
+      const projectsOwned = user.projectContributions?.length ?? 0;
       const projectsAssigned = projectsOwned;
       const projectsSummary = `${projectsOwned} ${
         projectsOwned === 1 ? "project" : "projects"
@@ -315,10 +315,16 @@ export async function deleteUser(req, res) {
     }
 
     await prisma.$transaction(async (tx) => {
-      await tx.project.updateMany({
-        where: { ownerId: userId },
-        data: { ownerId: null },
+      const memberships = await tx.projectContributor.findMany({
+        where: { userId },
+        select: { projectId: true },
       });
+      const projectIds = Array.from(
+        new Set(memberships.map((m) => m.projectId)),
+      );
+
+      await tx.projectContributor.deleteMany({ where: { userId } });
+
       await tx.user.update({
         where: { id: userId },
         data: { primaryEmailId: null },
@@ -330,6 +336,10 @@ export async function deleteUser(req, res) {
       await tx.userEmail.deleteMany({ where: { userId } });
       await tx.userProfile.deleteMany({ where: { userId } });
       await tx.user.delete({ where: { id: userId } });
+
+      for (const projectId of projectIds) {
+        await syncProjectPrimaryOwner(projectId, { tx });
+      }
     });
 
     return res.status(204).end();

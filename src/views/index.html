@@ -85,6 +85,13 @@
               aria-label="Type: {{this.type}}"
               >{{this.type}}</span
             >
+            {{/if}} {{#if this.shared}}
+            <span
+              class="projects__card-chip projects__card-chip--shared"
+              title="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
+              aria-label="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
+              >{{#if this.owned}}Shared{{else}}Shared with you{{/if}}</span
+            >
             {{/if}}
           </div>
 

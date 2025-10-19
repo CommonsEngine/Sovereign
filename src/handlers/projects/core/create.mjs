@@ -72,11 +72,23 @@ export default async function create(req, res) {
               desc,
               type,
               scope,
-              ownerId: userId,
               slug: candidateSlug,
             },
             select: {
               id: true,
+            },
+          });
+
+          await tx.projectContributor.create({
+            data: {
+              projectId: projectRecord.id,
+              userId,
+              invitedEmail: req.user?.email
+                ? String(req.user.email).trim().toLowerCase()
+                : null,
+              role: "owner",
+              status: "active",
+              acceptedAt: new Date(),
             },
           });
 
@@ -110,7 +122,7 @@ export default async function create(req, res) {
     if (!createdProject) {
       logger.warn("Failed to generate unique project slug", {
         base: slugBase,
-        ownerId: userId,
+        userId,
         error: lastError,
       });
       return res

@@ -309,6 +309,31 @@
     }
   });
 
+  function initShareModal() {
+    const main = document.querySelector("main[data-project-id]");
+    if (!main) return;
+    const projectId = main.dataset.projectId;
+    const canView = main.dataset.shareCanView === "true";
+    if (!projectId || !canView) return;
+
+    import("/js/utils/project-share.mjs")
+      .then((module) => {
+        const init = module?.initProjectShareModal;
+        if (typeof init !== "function") return;
+        init({
+          scope: main,
+          projectId,
+          canView,
+          canManage: main.dataset.shareCanManage === "true",
+          apiBase: main.dataset.shareApiBase,
+          modal: document.querySelector('[data-modal="share-project"]'),
+        });
+      })
+      .catch((err) => {
+        console.error("Failed to load project share module", err);
+      });
+  }
+
   // wire search & loader and kick off startup tasks
   function wireLoader() {
     const spinner = document.querySelector("[data-startup-spinner]");
@@ -319,6 +344,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    initShareModal();
     wireLoader();
     search?.addEventListener("input", applySearch);
     retryConnectionBtn?.addEventListener("click", () => {
