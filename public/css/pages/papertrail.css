@@ -766,7 +766,7 @@
   }
 
   /* Make the main wrapper fill the viewport so the board can size/flex */
-  .page.page-papertrail .page__wrap--fullwidth {
+  .page.page-papertrail .page__wrap--wide {
     min-height: 100vh;
     display: flex;
     flex-direction: column;

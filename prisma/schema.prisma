@@ -378,7 +378,7 @@ model PapertrailBoard {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   title         String  @default("Untitled") @map("title")
-  schemaVersion Int     @map("schema_version") @default(1)
+  schemaVersion Int     @default(1) @map("schema_version")
   layout        String? // global board layout preferences (hierarchical, force-directed)
   meta          Json?
 
@@ -481,7 +481,7 @@ model PapertrailComment {
 model PapertrailAttachment {
   id        String   @id @default(uuid())
   projectId String   @map("project_id")
-  nodeId    String   @map("node_id")
+  nodeId    String?  @map("node_id")
   kind      String // 'file' | 'url'
   url       String?
   fileKey   String?  @map("file_key") // storage key

@@ -126,6 +126,23 @@ app.use(
   }),
 );
 
+const papertrailUploadsDir = path.resolve(
+  process.env.PAPERTRAIL_DATA_ROOT || path.join(process.cwd(), "data", "pt"),
+);
+app.use(
+  "/uploads",
+  express.static(papertrailUploadsDir, {
+    index: false,
+    setHeaders: (res) => {
+      if (NODE_ENV === "production") {
+        res.setHeader("Cache-Control", "public, max-age=86400");
+      } else {
+        res.setHeader("Cache-Control", "no-store");
+      }
+    },
+  }),
+);
+
 // Security headers
 app.use(secure);
 
