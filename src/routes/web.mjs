@@ -43,7 +43,7 @@ router.get(
   "/users",
   requireAuth,
   exposeGlobals,
-  requireRole(["platform_admin", "tenant_admin", "admin"]),
+  requireRole(["platform:admin", "tenant:admin", "project:admin"]),
   usersHandler.viewUsers,
 );
 
@@ -51,7 +51,7 @@ router.get(
   "/settings",
   requireAuth,
   exposeGlobals,
-  requireRole(["platform_admin", "tenant_admin", "admin"]),
+  requireRole(["platform:admin", "tenant:admin", "project:admin"]),
   settingsHandler.viewSettings,
 );
 

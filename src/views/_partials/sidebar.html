@@ -28,7 +28,7 @@
     </a>
 
     <!-- Users -->
-    {{#if (eq user.primaryRole.key 'platform_admin')}}
+    {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
       class="sidebar__btn{{#if users_active}} is-active{{/if}}"
       href="/users"
@@ -65,7 +65,7 @@
   <div class="sidebar__spacer"></div>
   <div class="sidebar__bottom">
     <!-- Settings -->
-    {{#if (eq user.primaryRole.key 'platform_admin')}}
+    {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
       class="sidebar__btn{{#if settings_active}} is-active{{/if}}"
       href="/settings"

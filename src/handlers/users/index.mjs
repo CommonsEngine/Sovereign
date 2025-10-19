@@ -273,7 +273,7 @@ export async function viewUsers(req, res) {
       })),
       data: {
         // TODO: only show roles that are "lower" than the current user's highest role
-        // E.g. platform_admin can assign any role, admin can assign editor/contributor/viewer, etc
+        // E.g. platform:admin can assign any role, project:admin can assign editor/contributor/viewer, etc
         // For now, just show all roles
         // Also, do not show "automation_bot" roles in the dropdown
         roles: Object.keys(USER_ROLES)

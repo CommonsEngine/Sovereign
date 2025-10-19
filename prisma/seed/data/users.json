@@ -10,7 +10,7 @@
       "email": "heimdallr@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["platform_admin"]
+      "roles": ["platform:admin", "platform:user"]
     },
     {
       "type": "human",
@@ -22,7 +22,7 @@
       "email": "platform_engineer@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["platform_engineer"]
+      "roles": ["platform:engineer", "platform:user"]
     },
     {
       "type": "human",
@@ -34,55 +34,43 @@
       "email": "tenant_admin@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["tenant_admin"]
+      "roles": ["tenant:admin", "platform:user"]
     },
     {
       "type": "human",
       "isTestUser": true,
       "devOnly": true,
-      "name": "workspace_admin",
-      "firstName": "Workspace",
+      "name": "project_admin",
+      "firstName": "Project",
       "lastName": "Admin",
       "email": "admin@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["admin"]
+      "roles": ["platform:user", "project:admin"]
     },
     {
       "type": "human",
       "isTestUser": true,
       "devOnly": true,
       "name": "editor",
-      "firstName": "Content",
+      "firstName": "Project",
       "lastName": "Editor",
       "email": "editor@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["editor"]
-    },
-    {
-      "type": "human",
-      "isTestUser": true,
-      "devOnly": true,
-      "name": "moderator",
-      "firstName": "Mod",
-      "lastName": "Erator",
-      "email": "moderator@sovereign.local",
-      "password": "ffp@2025",
-      "status": "active",
-      "roles": ["moderator"]
+      "roles": ["platform:user", "project:editor"]
     },
     {
       "type": "human",
       "isTestUser": true,
       "devOnly": true,
       "name": "contributor",
-      "firstName": "Content",
+      "firstName": "Project",
       "lastName": "Contributor",
       "email": "contributor@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["contributor"]
+      "roles": ["platform:user", "project:contributor"]
     },
     {
       "type": "human",
@@ -94,7 +82,7 @@
       "email": "viewer@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["viewer"]
+      "roles": ["platform:user", "project:viewer"]
     },
     {
       "type": "human",
@@ -106,14 +94,14 @@
       "email": "guest@sovereign.local",
       "password": "ffp@2025",
       "status": "active",
-      "roles": ["guest"]
+      "roles": ["platform:user", "project:guest"]
     },
     {
       "type": "bot",
       "isTestUser": true,
       "devOnly": true,
-      "name": "automationbot",
-      "firstName": "Automation",
+      "name": "sovereign_bot",
+      "firstName": "Sovereign",
       "lastName": "Bot",
       "email": "automation_bot@sovereign.local",
       "password": "ffp@2025",

@@ -27,13 +27,13 @@ router.delete("/projects/:id/shares/:memberId", projectSharesHandler.remove);
 
 router.delete(
   "/users/:id",
-  requireRole(["platform_admin"]),
+  requireRole(["platform:admin"]),
   usersHandler.deleteUser,
 );
 
 // Appsettings
-router.get("/settings", requireRole(["platform_admin"]), getAppSettings);
-router.patch("/settings", requireRole(["platform_admin"]), updateAppSettings);
+router.get("/settings", requireRole(["platform:admin"]), getAppSettings);
+router.patch("/settings", requireRole(["platform:admin"]), updateAppSettings);
 
 router.use(blogRouter);
 
