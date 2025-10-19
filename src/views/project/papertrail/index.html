@@ -7,79 +7,761 @@
     <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <link rel="stylesheet" href="/css/components/modal.css" />
     <style>
-      .papertrail__header {
+      :root {
+        --color-bg: #ffffff;
+        --color-muted: #9ca3af;
+        --color-ink: #e5e7eb;
+        --color-accent: #60a5fa;
+        --color-border-card: #e2e8f0;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: var(--color-bg);
+        color: var(--color-ink);
+        font:
+          14px/1.4 ui-sans-serif,
+          system-ui;
+      }
+      .toolbar__title {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: var(--space-s, 12px);
-        margin-bottom: var(--space-l, 24px);
+        flex-direction: column;
+        margin-right: 1rem;
       }
-      .papertrail__meta {
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        margin-bottom: 32px;
+      .toolbar__brand {
+        font-weight: 700;
+        font-size: 16px;
+        color: #111827;
+        text-decoration: none;
       }
-      .papertrail__meta-card {
-        padding: 14px 16px;
-        border-radius: 12px;
-        border: 1px solid var(--color-border-primary, #e5e7eb);
-        background: var(--color-bg-primary, #fff);
-        box-shadow: var(--shadow-s, 0 1px 2px rgba(15, 23, 42, 0.08));
+      .toolbar__tagline {
+        font-size: 11px;
+        color: #6b7280;
       }
-      .papertrail__meta-card h4 {
-        margin: 0 0 4px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--color-text-secondary, #4b5563);
+      .toolbar__board-name {
+        font-size: 12px;
+        color: #374151;
+        margin-top: 2px;
+        font-style: italic;
       }
-      .papertrail__meta-card p {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--color-text-primary, #111827);
+      .toolbar__board-name[contenteditable="true"] {
+        cursor: text;
+        border-bottom: 1px dashed #e5e7eb;
+        padding-bottom: 1px;
+        line-height: 1.2;
+        max-width: 280px;
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
-      .papertrail__empty {
-        padding: 32px;
-        text-align: center;
-        border-radius: 16px;
-        border: 1px dashed var(--color-border-secondary, #d1d5db);
-        color: var(--color-text-secondary, #4b5563);
-        background: color-mix(
-          in oklab,
-          var(--color-bg-secondary, #f3f4f6),
-          white 45%
-        );
+      .toolbar__board-name[contenteditable="false"],
+      .toolbar__board-name--readonly {
+        cursor: default;
+        border-bottom: none;
+        color: #6b7280;
       }
-      .papertrail__grid {
-        display: grid;
-        gap: 16px;
+      .toolbar__board-name[contenteditable="true"]:focus {
+        outline: none;
+        border-bottom: 1px dashed #60a5fa;
       }
-      .papertrail__section {
-        padding: 16px;
-        border-radius: 12px;
-        border: 1px solid var(--color-border-secondary, #d1d5db);
-        background: var(--color-bg-primary, #fff);
+      .toolbar__board-name[contenteditable="true"]:empty:before {
+        content: attr(data-placeholder);
+        color: #9ca3af;
       }
-      .papertrail__section h3 {
-        margin: 0 0 8px;
-        font-size: 1rem;
-        font-weight: 600;
-        color: var(--color-text-primary, #111827);
+      .toolbar {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: #f9fafb;
+        color: #111;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        align-items: flex-end;
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
-      .papertrail__json {
-        margin: 0;
-        padding: 16px;
+      .toolbar input,
+      .toolbar button,
+      .toolbar select {
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #111;
+        padding: 0.45rem 0.8rem;
+        border-radius: 0.4rem;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition:
+          background 0.2s,
+          box-shadow 0.2s;
+        outline: none;
+      }
+      .toolbar__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.45rem;
+      }
+      .toolbar__btn--icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+      }
+      .toolbar__btn--icon svg.filled {
+        fill: currentColor;
+        stroke: none;
+      }
+      .toolbar button:hover,
+      .toolbar select:hover {
+        background: #f3f4f6;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .toolbar button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .toolbar__spacer {
+        flex: 1;
+      }
+      .toolbar__search {
+        min-width: 250px;
+        cursor: text;
+      }
+      .toolbar__search-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+      }
+      .toolbar__search-wrap input.toolbar__search {
+        flex: 1 1 auto;
+        width: 100%;
+        padding-right: 1.8em;
+        box-sizing: border-box;
+      }
+      .toolbar__menu {
+        position: relative;
+      }
+      .toolbar__menu summary {
+        list-style: none;
+        outline: none;
+        cursor: pointer;
+      }
+      .toolbar__menu summary::-webkit-details-marker {
+        display: none;
+      }
+      .toolbar__menu[open] .toolbar__avatar {
+        box-shadow:
+          0 2px 8px rgba(0, 0, 0, 0.15),
+          0 0 0 1px var(--color-border-card) inset;
+      }
+      .toolbar__menu-panel {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        background: #fff;
+        border: 1px solid var(--color-border-card);
         border-radius: 10px;
-        border: 1px solid var(--color-border-secondary, #d1d5db);
-        background: var(--color-bg-muted, #f9fafb);
-        font-family:
-          ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas,
-          "Liberation Mono", "Courier New", monospace;
+        box-shadow: var(--shadow);
+        min-width: 160px;
+        padding: 6px;
+        z-index: 20;
+      }
+      .toolbar__avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #e5e7eb;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--color-border-card);
+        box-shadow: var(--shadow);
+      }
+      .toolbar__avatar > img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .menu__item {
+        display: block;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: #0f172a;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      .menu__item:hover {
+        background: #f1f5f9;
+      }
+      #clearSearch {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        right: 6px;
+        background: transparent;
+        border: none;
+        font-size: 12px;
+        line-height: 1;
+        padding: 0 2px 0 0;
+        cursor: pointer;
+        color: #6b7280;
+      }
+      #clearSearch:hover {
+        color: #111;
+      }
+      #clearSearch:disabled {
+        display: none;
+      }
+      @media (max-width: 640px) {
+        .toolbar {
+          flex-wrap: wrap;
+          gap: 6px;
+          padding: 0.5rem 0.5rem 0.35rem;
+        }
+        .toolbar__title {
+          flex: 1 1 100%;
+          margin-right: 0;
+        }
+        .toolbar__brand {
+          font-size: 15px;
+        }
+        .toolbar__tagline {
+          font-size: 10px;
+        }
+        .toolbar__board-name {
+          max-width: 100%;
+          font-size: 12px;
+        }
+        .toolbar__spacer {
+          display: none;
+        }
+        .toolbar__btn {
+          padding: 0.35rem;
+        }
+        .toolbar__btn--icon svg {
+          width: 16px;
+          height: 16px;
+        }
+        .toolbar__search-wrap {
+          flex: 1 1 100%;
+          min-width: 0;
+          order: 10;
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .toolbar__search-wrap input.toolbar__search {
+          width: 100%;
+        }
+        #autoLayout,
+        #export,
+        #importBtn,
+        #save,
+        #reset,
+        #infoBtn,
+        #userBtn {
+          order: 12;
+        }
+      }
+      main.page__wrap--fullwidth {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 48px);
+      }
+      .board {
+        flex: 1;
+        position: relative;
+        height: calc(100% - 24px);
+        overflow: auto;
+        background-image: radial-gradient(var(--color-muted) 1px, transparent 1px);
+        background-size: 16px 16px;
+        background-position: -1px -1px;
+      }
+      #boardSizer {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        visibility: hidden;
+      }
+      svg#edges {
+        position: absolute;
+        left: 0;
+        top: 0;
+        pointer-events: auto;
+        overflow: visible;
+      }
+      .node {
+        position: absolute;
+        min-width: 120px;
+        max-width: none;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        background: #f9fafb;
+        border: 1px solid #d1d5db;
+        color: #111;
+        cursor: grab;
+        user-select: none;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        box-sizing: border-box;
+      }
+      .node:active {
+        cursor: grabbing;
+      }
+      .node__title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        font-size: 13px;
+        color: #111827;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .node__content {
+        font-size: 13px;
+        color: #1f2937;
+        word-wrap: break-word;
+      }
+      .node img {
+        display: block;
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+        border-radius: 0.3rem;
+        margin-bottom: 0.35rem;
+      }
+      .node__ports {
+        position: absolute;
+        top: 12px;
+        left: 10px;
+        display: flex;
+        gap: 4px;
+        margin-top: 0;
+        align-items: center;
+      }
+      .node__port {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #94a3b8;
+        transition:
+          background 0.2s,
+          border-color 0.2s;
+        flex-shrink: 0;
+      }
+      .node__title {
+        padding-left: 18px;
+      }
+      .node--link .node__content .rich {
+        margin-top: 5px;
+      }
+      body.connect-mode .node .node__port {
+        background: #ef4444;
+        border-color: #b91c1c;
+      }
+      .toolbar button.toolbar__btn--active {
+        background: #ef4444;
+        color: #fff;
+        border-color: #b91c1c;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+      }
+      .toolbar button.toolbar__btn--active:hover {
+        background: #dc2626;
+        box-shadow: 0 3px 8px rgba(220, 38, 38, 0.35);
+      }
+      .node.selected {
+        outline: 2px solid var(--color-accent);
+      }
+      .node__resizer {
+        position: absolute;
+        right: 2px;
+        bottom: 2px;
+        width: 14px;
+        height: 14px;
+        background: transparent;
+        cursor: se-resize;
+        display: none;
+      }
+      .node__resizer::after {
+        content: "";
+        position: absolute;
+        right: 2px;
+        bottom: 2px;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid #9ca3af;
+        border-bottom: 2px solid #9ca3af;
+        box-sizing: border-box;
+      }
+      .node:hover .node__resizer,
+      .node:focus-within .node__resizer {
+        display: block;
+      }
+      .edge {
+        stroke: red;
+        stroke-width: 2;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: stroke;
+        cursor: pointer;
+      }
+      .edge__endpoint {
+        fill: red;
+        stroke: #b91c1c;
+        stroke-width: 1.2;
+        pointer-events: none;
+      }
+      .edge--selected {
+        stroke: var(--color-accent);
+        stroke-width: 3;
+      }
+      .edge:hover {
+        stroke-width: 3;
+      }
+      .edge--dashed {
+        stroke-dasharray: 6 6;
+      }
+      .edge--ghost {
+        stroke: #9ca3af;
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 6 6;
+        pointer-events: none;
+      }
+      .edge__label {
+        fill: #374151;
+        font-size: 11px;
+        font-weight: 500;
+        user-select: none;
+        paint-order: stroke;
+        stroke: #f9fafb;
+        stroke-width: 2px;
+      }
+      .statusbar__hint {
+        color: #000000;
+        margin-left: 0.5rem;
+      }
+      .context-menu {
+        position: absolute;
+        min-width: 180px;
+        background: #ffffff;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        padding: 0.25rem;
+        z-index: 1000;
+        display: none;
+        color: #111;
+      }
+      .context-menu__item {
+        width: 100%;
+        display: block;
+        text-align: left;
+        background: transparent;
+        border: 0;
+        color: #111;
+        padding: 0.5rem 0.6rem;
+        border-radius: 0.4rem;
+        cursor: pointer;
+        transition: background 0.15s ease-in-out;
+      }
+      .context-menu__item:hover {
+        background: #f3f4f6;
+      }
+      .rtb {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        display: none;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid #d1d5db;
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+        padding: 2px;
+        gap: 4px;
+        align-items: center;
+      }
+      .rtb button {
+        background: transparent;
+        border: 0;
+        padding: 5px 6px;
+        font-size: 12px;
+        cursor: pointer;
+        border-radius: 999px;
+        color: #111827;
+      }
+      .rtb button:hover {
+        background: rgba(15, 23, 42, 0.08);
+      }
+      .rtb button svg {
+        width: 16px;
+        height: 16px;
+        display: block;
+      }
+      .node:focus-within .rtb {
+        display: inline-flex;
+      }
+      .selection-rect {
+        position: absolute;
+        border: 1px solid rgba(59, 130, 246, 0.5);
+        background: rgba(147, 197, 253, 0.2);
+        pointer-events: none;
+        z-index: 50;
+      }
+      .search-hint {
+        color: #374151;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+      .search-results {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .search-results button {
+        border: 0;
+        border-radius: 8px;
+        padding: 6px 8px;
+        background: #f3f4f6;
+        font-size: 13px;
+        text-align: left;
+        cursor: pointer;
+        color: #111827;
+      }
+      .search-results button:hover {
+        background: #e5e7eb;
+      }
+      .advanced-search {
+        display: none;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 8px;
+        margin-top: 4px;
+        background: #ffffff;
+      }
+      body.search-advanced .advanced-search {
+        display: block;
+      }
+      .advanced-search fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+      }
+      .advanced-search legend {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 4px;
+      }
+      .advanced-search label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #1f2937;
+        margin-bottom: 4px;
+      }
+      .advanced-search input[type="checkbox"] {
+        accent-color: #2563eb;
+      }
+      .search-toggle {
+        font-size: 12px;
+        color: #2563eb;
+        text-decoration: underline;
+        cursor: pointer;
+        margin-top: 6px;
+        background: transparent;
+        border: 0;
+        padding: 0;
+      }
+      .search-toggle:hover {
+        color: #1d4ed8;
+      }
+      .dim {
+        opacity: 0.35;
+        filter: grayscale(0.3);
+      }
+      body.search-mode .node.dim,
+      body.search-mode .edge.dim {
+        display: none;
+      }
+      .highlight {
+        outline: 2px dashed var(--color-accent);
+      }
+      .add-desc {
+        margin-top: 6px;
+        background: #ffffff;
+        border: 1px dashed #d1d5db;
+        color: #374151;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .link-card {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #ffffff;
+        text-decoration: none;
+      }
+      .link-card .thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 6px;
+        background: #f3f4f6;
+        object-fit: cover;
+        display: block;
+      }
+      .link-card .meta {
+        min-width: 0;
+      }
+      .link-card .title {
+        font-weight: 600;
+        color: #111827;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 0;
+      }
+      .link-card .desc {
+        color: #374151;
+        font-size: 12px;
+        max-height: 2.6em;
+        overflow: hidden;
+        display: -webkit-box;
+        line-clamp: 2;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+      }
+      .link-card .site {
+        color: #6b7280;
+        font-size: 11px;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .link-card .icon {
+        width: 14px;
+        height: 14px;
+        vertical-align: -2px;
+        margin-right: 6px;
+        border-radius: 3px;
+      }
+      .link-card a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .statusbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 2px 12px;
+        background: transparent;
+        border: none;
+        color: #000;
+        z-index: 20;
+        font-size: smaller;
+      }
+      .statusbar .statusbar__text {
+        color: #000;
+      }
+      .modal__backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+      .modal__backdrop.show {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        color: #111827;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        width: min(560px, 90vw);
+        max-height: 80vh;
+        overflow: auto;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+      }
+      .modal__header {
+        padding: 14px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .modal__title {
+        margin: 0;
+        font-size: 16px;
+      }
+      .modal__close {
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        font-size: 18px;
+        color: #6b7280;
+      }
+      .modal__close:hover {
+        color: #111827;
+      }
+      .modal__body {
+        padding: 5px 20px 15px;
+        font-size: smaller;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 5px;
+        margin-top: 8px;
+      }
+      .kv div {
+        padding: 2px 0;
+      }
+      .settings__danger {
+        margin-top: 16px;
+      }
+      .settings__danger summary {
+        cursor: pointer;
         font-size: 0.9rem;
-        overflow-x: auto;
+        color: #b91c1c;
+      }
+      .settings__danger-box {
+        border: 1px solid #fecaca;
+        background: #fef2f2;
+        color: #7f1d1d;
+        padding: 12px;
+        border-radius: 10px;
+        margin-top: 8px;
+        display: grid;
+        gap: 8px;
       }
     </style>
   </head>
@@ -96,61 +778,205 @@
       data-share-role="{{share.role}}"
       data-share-can-view="{{share.canView}}"
       data-share-can-manage="{{share.canManage}}"
+      data-share-can-edit="{{share.canEdit}}"
     >
-      <header class="papertrail__header">
-        <div>
-          <h1 class="page__title">{{project.name}}</h1>
-          <p class="page__subtitle">
-            {{#if project.desc}}{{project.desc}}{{else}}Papertrail
-            workboard{{/if}}
-          </p>
-        </div>
-        <div class="page__meta">
-          <span class="page__meta-item">
-            Created
-            <strong>{{project.createdAtDisplay}}</strong>
+      <div class="toolbar">
+        <div class="toolbar__title">
+          <a class="toolbar__brand" href="/">PaperTrail</a>
+          <span class="toolbar__tagline">
+            {{#if project.desc}}{{project.desc}}{{else}}{{project.name}}{{/if}}
           </span>
-          <span class="page__meta-item">
-            Updated
-            <strong>{{project.updatedAtDisplay}}</strong>
-          </span>
+          <div
+            class="toolbar__board-name"
+            id="boardName"
+            contenteditable="{{#if share.canEdit}}true{{else}}false{{/if}}"
+            data-placeholder="Untitled Board"
+            aria-label="Board name"
+          ></div>
         </div>
-      </header>
-
-      {{#if board}}
-      <section class="papertrail__meta" aria-label="Board summary">
-        <div class="papertrail__meta-card">
-          <h4>Board Title</h4>
-          <p>{{board.title}}</p>
+        <button id="addText" class="toolbar__btn toolbar__btn--icon" title="Add text node">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="3" width="16" height="18" rx="2" ry="2" />
+            <line x1="8" y1="9" x2="16" y2="9" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="14" y2="17" />
+          </svg>
+        </button>
+        <button id="addImage" class="toolbar__btn toolbar__btn--icon" title="Add image (URL)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M7 15l3-3 3 3 4-4 3 3" />
+            <circle cx="9" cy="9" r="1.5" />
+          </svg>
+        </button>
+        <button id="uploadImage" class="toolbar__btn toolbar__btn--icon" title="Upload image">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15V5" />
+            <path d="M8 9l4-4 4 4" />
+            <path d="M4 19h16" />
+          </svg>
+        </button>
+        <input id="fileInput" type="file" accept="image/*" hidden />
+        <button id="addLink" class="toolbar__btn toolbar__btn--icon" title="Add link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 14l-2 2a4 4 0 0 1-6-6l2-2" />
+            <path d="M14 10l2-2a4 4 0 0 1 6 6l-2 2" />
+            <path d="M8 12l8-8" opacity="0.0" />
+          </svg>
+        </button>
+        <button id="connect" class="toolbar__btn toolbar__btn--icon" title="Connect nodes (C)">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="6" cy="12" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="18" cy="18" r="2" />
+            <path d="M8 12h6" />
+            <path d="M12 12L17 7" />
+            <path d="M12 12l5 5" />
+          </svg>
+        </button>
+        <div class="toolbar__search-wrap">
+          <input id="search" class="toolbar__search" type="search" placeholder="Search… use #tag" />
+          <button id="clearSearch" title="Clear search">✕</button>
         </div>
-        <div class="papertrail__meta-card">
-          <h4>Schema Version</h4>
-          <p>{{board.schemaVersion}}</p>
-        </div>
-        <div class="papertrail__meta-card">
-          <h4>Total Nodes</h4>
-          <p>{{board.stats.nodes}}</p>
-        </div>
-        <div class="papertrail__meta-card">
-          <h4>Total Edges</h4>
-          <p>{{board.stats.edges}}</p>
-        </div>
-      </section>
-
-      <div class="papertrail__grid">
-        <section class="papertrail__section">
-          <h3>Board Metadata</h3>
-          <pre class="papertrail__json" data-papertrail-board-json>
-{{{boardJson}}}</pre
-          >
-        </section>
+        <div class="toolbar__spacer"></div>
+        <button id="autoLayout" class="toolbar__btn toolbar__btn--icon" title="Auto layout">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="6" height="6" />
+            <rect x="14" y="4" width="6" height="6" />
+            <rect x="4" y="14" width="6" height="6" />
+            <rect x="14" y="14" width="6" height="6" />
+          </svg>
+        </button>
+        <button id="export" class="toolbar__btn toolbar__btn--icon" title="Export board">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v10" />
+            <path d="M8 9l4-4 4 4" />
+            <path d="M4 19h16" />
+          </svg>
+        </button>
+        <button id="importBtn" class="toolbar__btn toolbar__btn--icon" title="Import board">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 19V9" />
+            <path d="M8 15l4 4 4-4" />
+            <path d="M4 5h16" />
+          </svg>
+        </button>
+        <input
+          id="importFile"
+          type="file"
+          accept="application/zip,application/x-zip-compressed,.zip,application/json"
+          hidden
+        />
+        {{#if share.canEdit}}
+        <button id="save" class="toolbar__btn toolbar__btn--icon" disabled title="Save board">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <rect x="8" y="4" width="8" height="6" />
+            <rect x="9" y="14" width="6" height="6" />
+          </svg>
+        </button>
+        {{/if}}
+        <button id="reset" class="toolbar__btn toolbar__btn--icon" title="Reset board">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6" />
+            <path d="M3 4v6h6" />
+          </svg>
+        </button>
+        <button id="infoBtn" class="toolbar__btn toolbar__btn--icon" title="About board">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="8" r="1.4" />
+            <path d="M12 11v5" stroke-linecap="round" />
+          </svg>
+        </button>
+        {{#if share.canManage}}
+        <button id="settingsBtn" class="toolbar__btn toolbar__btn--icon" title="Board settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77z"
+            />
+          </svg>
+        </button>
+        {{/if}}
       </div>
-      {{else}}
-      <div class="papertrail__empty">
-        We could not find a board for this project yet. Try refreshing the page
-        or contact an administrator.
+
+      <div id="board" class="board" role="presentation">
+        <div id="boardSizer"></div>
+        <svg id="edges" width="0" height="0" aria-hidden="true"></svg>
       </div>
-      {{/if}}
+
+      <div class="statusbar">
+        <span id="status" class="statusbar__text"></span>
+        <span id="modeHint" class="statusbar__hint">Esc cancels · C connects nodes · Drag to move</span>
+      </div>
+
+      <div id="ctxMenu" class="context-menu" role="menu"></div>
+
+      <div id="aboutModal" class="modal__backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+          <header class="modal__header">
+            <h3 id="aboutTitle" class="modal__title">About this board</h3>
+            <button id="aboutClose" class="modal__close" aria-label="Close about dialog">×</button>
+          </header>
+          <div class="modal__body">
+            <div class="kv">
+              <div>Project</div>
+              <div>{{project.name}}</div>
+              <div>Board title</div>
+              <div id="aboutBoardName"></div>
+              <div>Schema version</div>
+              <div id="aboutSchemaVersion"></div>
+              <div>App version</div>
+              <div id="aboutAppVersion">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="settingsModal" class="modal__backdrop" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+          <header class="modal__header">
+            <h3 id="settingsTitle" class="modal__title">Board settings</h3>
+            <button id="settingsClose" class="modal__close" aria-label="Close settings dialog">
+              ×
+            </button>
+          </header>
+          <div class="modal__body">
+            <p id="settingsNotice" style="display: none">
+              You have read-only access to this board.
+            </p>
+          <div class="kv">
+            <label for="titleInput">Title</label>
+            <input id="titleInput" type="text" maxlength="160" />
+            <label for="visibilitySelect">Visibility</label>
+            <select id="visibilitySelect">
+              <option value="private">Private</option>
+              <option value="public">Public</option>
+            </select>
+            <label for="statusSelect">Status</label>
+            <select id="statusSelect">
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px">
+            <button id="saveMetaBtn">Save changes</button>
+          </div>
+          {{#if share.canManage}}
+          <details class="settings__danger">
+            <summary><strong>Danger zone</strong></summary>
+            <div class="settings__danger-box">
+              <p>Deleting this board removes nodes, edges, comments, and attachments. This action cannot be undone.</p>
+              <label for="confirmIdInput">Type <code>{{board.id}}</code> to confirm:</label>
+              <input id="confirmIdInput" type="text" placeholder="{{board.id}}" />
+              <button id="deleteBoardBtn" type="button">Delete board</button>
+            </div>
+          </details>
+          {{/if}}
+        </div>
+        </div>
+      </div>
     </main>
 
     <script type="application/json" id="papertrail-board-data">
@@ -170,5 +996,38 @@
         }
       })();
     </script>
+    <script>
+      (function bootstrapPapertrailContext() {
+        const mainEl = document.querySelector("main[data-project-id]");
+        const boardData = window.__PAPERTRAIL_BOARD__ || {};
+        const projectId = mainEl?.dataset.projectId || "";
+        const shareRole = (mainEl?.dataset.shareRole || "").toLowerCase();
+        const canManage = mainEl?.dataset.shareCanManage === "true";
+        const canEditAttr = mainEl?.dataset.shareCanEdit === "true";
+        const canEdit = canManage || canEditAttr || shareRole === "editor";
+        const boardVisibility =
+          (boardData?.project?.scope || boardData?.visibility || "").toLowerCase() || "private";
+        const boardStatus =
+          (boardData?.project?.status || boardData?.status || "").toLowerCase() || "draft";
+        const schemaVersion = boardData?.schemaVersion || 1;
+        const appVersion = "{{{app.version}}}";
+
+        window.__globals = {
+          projectId,
+          boardId: boardData?.id || "",
+          boardTitle: boardData?.title || "",
+          boardVisibility,
+          boardStatus,
+          schemaVersion,
+          isOwner: String(canManage),
+          canEdit: String(canEdit),
+          canManage: String(canManage),
+          apiBase: projectId ? `/api/projects/${projectId}/papertrail` : "",
+          initialBoard: boardData,
+          appVersion: appVersion || "",
+        };
+      })();
+    </script>
+    <script src="/js/papertrail-board.js"></script>
   </body>
 </html>

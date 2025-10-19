@@ -374,8 +374,9 @@ export async function viewProject(req, res) {
         updatedAtDisplay: updated.label,
       };
 
-      const canViewShares = ["owner", "editor"].includes(context.role || "");
+      const canEditShares = ["owner", "editor"].includes(context.role || "");
       const canManageShares = context.role === "owner";
+      const canViewShares = canEditShares || context.role === "viewer";
 
       return res.render("project/papertrail/index", {
         project: projectView,
@@ -390,6 +391,7 @@ export async function viewProject(req, res) {
           role: context.role,
           canView: canViewShares,
           canManage: canManageShares,
+          canEdit: canEditShares,
         },
       });
     }

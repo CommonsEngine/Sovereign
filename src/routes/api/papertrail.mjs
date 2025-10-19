@@ -10,6 +10,10 @@ const router = express.Router();
 router.use(requireFeature("papertrail"));
 
 // Board Meta
+router.post(
+  "/projects/:projectId/papertrail/board",
+  projectsHandler.papertrail.saveBoard,
+);
 router.get(
   "/projects/:projectId/papertrail/board",
   projectsHandler.papertrail.getBoard,
@@ -109,6 +113,12 @@ router.patch(
 router.delete(
   "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
   projectsHandler.papertrail.deleteAttachment,
+);
+
+router.post(
+  "/projects/:projectId/papertrail/board/:boardId/attachments/upload",
+  projectsHandler.papertrail.attachmentUpload.single("file"),
+  projectsHandler.papertrail.uploadAttachment,
 );
 
 export default router;
