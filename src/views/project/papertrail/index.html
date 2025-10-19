@@ -126,6 +126,10 @@
         opacity: 0.5;
         cursor: not-allowed;
       }
+      .button--disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
       .toolbar__spacer {
         flex: 1;
       }
@@ -281,7 +285,10 @@
         position: relative;
         height: calc(100% - 24px);
         overflow: auto;
-        background-image: radial-gradient(var(--color-muted) 1px, transparent 1px);
+        background-image: radial-gradient(
+          var(--color-muted) 1px,
+          transparent 1px
+        );
         background-size: 16px 16px;
         background-position: -1px -1px;
       }
@@ -794,7 +801,11 @@
             aria-label="Board name"
           ></div>
         </div>
-        <button id="addText" class="toolbar__btn toolbar__btn--icon" title="Add text node">
+        <button
+          id="addText"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add text node"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="4" y="3" width="16" height="18" rx="2" ry="2" />
             <line x1="8" y1="9" x2="16" y2="9" />
@@ -802,14 +813,22 @@
             <line x1="8" y1="17" x2="14" y2="17" />
           </svg>
         </button>
-        <button id="addImage" class="toolbar__btn toolbar__btn--icon" title="Add image (URL)">
+        <button
+          id="addImage"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add image (URL)"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="5" width="18" height="14" rx="2" />
             <path d="M7 15l3-3 3 3 4-4 3 3" />
             <circle cx="9" cy="9" r="1.5" />
           </svg>
         </button>
-        <button id="uploadImage" class="toolbar__btn toolbar__btn--icon" title="Upload image">
+        <button
+          id="uploadImage"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Upload image"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 15V5" />
             <path d="M8 9l4-4 4 4" />
@@ -817,14 +836,22 @@
           </svg>
         </button>
         <input id="fileInput" type="file" accept="image/*" hidden />
-        <button id="addLink" class="toolbar__btn toolbar__btn--icon" title="Add link">
+        <button
+          id="addLink"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add link"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M10 14l-2 2a4 4 0 0 1-6-6l2-2" />
             <path d="M14 10l2-2a4 4 0 0 1 6 6l-2 2" />
             <path d="M8 12l8-8" opacity="0.0" />
           </svg>
         </button>
-        <button id="connect" class="toolbar__btn toolbar__btn--icon" title="Connect nodes (C)">
+        <button
+          id="connect"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Connect nodes (C)"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="6" cy="12" r="2" />
             <circle cx="18" cy="6" r="2" />
@@ -835,11 +862,20 @@
           </svg>
         </button>
         <div class="toolbar__search-wrap">
-          <input id="search" class="toolbar__search" type="search" placeholder="Search… use #tag" />
+          <input
+            id="search"
+            class="toolbar__search"
+            type="search"
+            placeholder="Search… use #tag"
+          />
           <button id="clearSearch" title="Clear search">✕</button>
         </div>
         <div class="toolbar__spacer"></div>
-        <button id="autoLayout" class="toolbar__btn toolbar__btn--icon" title="Auto layout">
+        <button
+          id="autoLayout"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Auto layout"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="4" y="4" width="6" height="6" />
             <rect x="14" y="4" width="6" height="6" />
@@ -847,14 +883,22 @@
             <rect x="14" y="14" width="6" height="6" />
           </svg>
         </button>
-        <button id="export" class="toolbar__btn toolbar__btn--icon" title="Export board">
+        <button
+          id="export"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Export board"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 5v10" />
             <path d="M8 9l4-4 4 4" />
             <path d="M4 19h16" />
           </svg>
         </button>
-        <button id="importBtn" class="toolbar__btn toolbar__btn--icon" title="Import board">
+        <button
+          id="importBtn"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Import board"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 19V9" />
             <path d="M8 15l4 4 4-4" />
@@ -868,7 +912,12 @@
           hidden
         />
         {{#if share.canEdit}}
-        <button id="save" class="toolbar__btn toolbar__btn--icon" disabled title="Save board">
+        <button
+          id="save"
+          class="toolbar__btn toolbar__btn--icon"
+          disabled
+          title="Save board"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="4" y="4" width="16" height="16" rx="2" />
             <rect x="8" y="4" width="8" height="6" />
@@ -876,13 +925,21 @@
           </svg>
         </button>
         {{/if}}
-        <button id="reset" class="toolbar__btn toolbar__btn--icon" title="Reset board">
+        <button
+          id="reset"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Reset board"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 12a9 9 0 1 0 3-6" />
             <path d="M3 4v6h6" />
           </svg>
         </button>
-        <button id="infoBtn" class="toolbar__btn toolbar__btn--icon" title="About board">
+        <button
+          id="infoBtn"
+          class="toolbar__btn toolbar__btn--icon"
+          title="About board"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="10" />
             <circle cx="12" cy="8" r="1.4" />
@@ -890,7 +947,11 @@
           </svg>
         </button>
         {{#if share.canManage}}
-        <button id="settingsBtn" class="toolbar__btn toolbar__btn--icon" title="Board settings">
+        <button
+          id="settingsBtn"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Board settings"
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />
             <path
@@ -908,16 +969,29 @@
 
       <div class="statusbar">
         <span id="status" class="statusbar__text"></span>
-        <span id="modeHint" class="statusbar__hint">Esc cancels · C connects nodes · Drag to move</span>
+        <span id="modeHint" class="statusbar__hint"
+          >Esc cancels · C connects nodes · Drag to move</span
+        >
       </div>
 
       <div id="ctxMenu" class="context-menu" role="menu"></div>
 
       <div id="aboutModal" class="modal__backdrop" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="aboutTitle"
+        >
           <header class="modal__header">
             <h3 id="aboutTitle" class="modal__title">About this board</h3>
-            <button id="aboutClose" class="modal__close" aria-label="Close about dialog">×</button>
+            <button
+              id="aboutClose"
+              class="modal__close"
+              aria-label="Close about dialog"
+            >
+              ×
+            </button>
           </header>
           <div class="modal__body">
             <div class="kv">
@@ -935,10 +1009,19 @@
       </div>
 
       <div id="settingsModal" class="modal__backdrop" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settingsTitle"
+        >
           <header class="modal__header">
             <h3 id="settingsTitle" class="modal__title">Board settings</h3>
-            <button id="settingsClose" class="modal__close" aria-label="Close settings dialog">
+            <button
+              id="settingsClose"
+              class="modal__close"
+              aria-label="Close settings dialog"
+            >
               ×
             </button>
           </header>
@@ -946,35 +1029,51 @@
             <p id="settingsNotice" style="display: none">
               You have read-only access to this board.
             </p>
-          <div class="kv">
-            <label for="titleInput">Title</label>
-            <input id="titleInput" type="text" maxlength="160" />
-            <label for="visibilitySelect">Visibility</label>
-            <select id="visibilitySelect">
-              <option value="private">Private</option>
-              <option value="public">Public</option>
-            </select>
-            <label for="statusSelect">Status</label>
-            <select id="statusSelect">
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
-          </div>
-          <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px">
-            <button id="saveMetaBtn">Save changes</button>
-          </div>
-          {{#if share.canManage}}
-          <details class="settings__danger">
-            <summary><strong>Danger zone</strong></summary>
-            <div class="settings__danger-box">
-              <p>Deleting this board removes nodes, edges, comments, and attachments. This action cannot be undone.</p>
-              <label for="confirmIdInput">Type <code>{{board.id}}</code> to confirm:</label>
-              <input id="confirmIdInput" type="text" placeholder="{{board.id}}" />
-              <button id="deleteBoardBtn" type="button">Delete board</button>
+            <div class="kv">
+              <label for="titleInput">Title</label>
+              <input id="titleInput" type="text" maxlength="160" />
+              <label for="visibilitySelect">Visibility</label>
+              <select id="visibilitySelect">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+              <label for="statusSelect">Status</label>
+              <select id="statusSelect">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
             </div>
-          </details>
-          {{/if}}
-        </div>
+            <div
+              style="
+                display: flex;
+                gap: 10px;
+                justify-content: flex-end;
+                margin-top: 16px;
+              "
+            >
+              <button id="saveMetaBtn">Save changes</button>
+            </div>
+            {{#if share.canManage}}
+            <details class="settings__danger">
+              <summary><strong>Danger zone</strong></summary>
+              <div class="settings__danger-box">
+                <p>
+                  Deleting this board removes nodes, edges, comments, and
+                  attachments. This action cannot be undone.
+                </p>
+                <label for="confirmIdInput"
+                  >Type <code>{{board.id}}</code> to confirm:</label
+                >
+                <input
+                  id="confirmIdInput"
+                  type="text"
+                  placeholder="{{board.id}}"
+                />
+                <button id="deleteBoardBtn" type="button">Delete board</button>
+              </div>
+            </details>
+            {{/if}}
+          </div>
         </div>
       </div>
     </main>
@@ -1006,9 +1105,17 @@
         const canEditAttr = mainEl?.dataset.shareCanEdit === "true";
         const canEdit = canManage || canEditAttr || shareRole === "editor";
         const boardVisibility =
-          (boardData?.project?.scope || boardData?.visibility || "").toLowerCase() || "private";
+          (
+            boardData?.project?.scope ||
+            boardData?.visibility ||
+            ""
+          ).toLowerCase() || "private";
         const boardStatus =
-          (boardData?.project?.status || boardData?.status || "").toLowerCase() || "draft";
+          (
+            boardData?.project?.status ||
+            boardData?.status ||
+            ""
+          ).toLowerCase() || "draft";
         const schemaVersion = boardData?.schemaVersion || 1;
         const appVersion = "{{{app.version}}}";
 

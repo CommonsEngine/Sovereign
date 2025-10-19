@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 
 import * as projectsHandler from "$/handlers/projects/index.mjs";
 import requireFeature from "$/middlewares/requireFeature.mjs";
@@ -8,6 +9,11 @@ const router = express.Router();
 // TODO: Move `/projects` prefix to parent router
 
 router.use(requireFeature("papertrail"));
+
+const bundleUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+});
 
 // Board Meta
 router.post(
@@ -21,6 +27,24 @@ router.get(
 router.patch(
   "/projects/:projectId/papertrail/board",
   projectsHandler.papertrail.updateBoard,
+);
+router.get(
+  "/projects/:projectId/papertrail/board/export",
+  projectsHandler.papertrail.exportBoard,
+);
+router.post(
+  "/projects/:projectId/papertrail/board/import/validate",
+  bundleUpload.single("bundle"),
+  projectsHandler.papertrail.validateImportBundle,
+);
+router.post(
+  "/projects/:projectId/papertrail/board/import",
+  bundleUpload.single("bundle"),
+  projectsHandler.papertrail.importBoard,
+);
+router.delete(
+  "/projects/:projectId/papertrail/board",
+  projectsHandler.papertrail.deleteBoard,
 );
 
 // Nodes
