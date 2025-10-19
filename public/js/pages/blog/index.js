@@ -316,7 +316,7 @@
     const canView = main.dataset.shareCanView === "true";
     if (!projectId || !canView) return;
 
-    import("/js/utils/project.mjs")
+    import("/js/utils/project-share.mjs")
       .then((module) => {
         const init = module?.initProjectShareModal;
         if (typeof init !== "function") return;

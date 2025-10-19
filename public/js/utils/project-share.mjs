@@ -78,7 +78,7 @@ export function initProjectShareModal(options = {}) {
   }
 
   const state = {
-    members: [],
+    contributors: [],
     loading: false,
     error: "",
     busy: new Set(),
@@ -112,23 +112,28 @@ export function initProjectShareModal(options = {}) {
   }
 
   function ownerCount() {
-    return state.members.filter(
-      (member) => member.role === "owner" && member.status === "active",
+    return state.contributors.filter(
+      (contributor) =>
+        contributor.role === "owner" && contributor.status === "active",
     ).length;
   }
 
-  function upsertMember(member) {
-    if (!member) return;
-    const index = state.members.findIndex((item) => item.id === member.id);
+  function upsertContributor(contributor) {
+    if (!contributor) return;
+    const index = state.contributors.findIndex(
+      (item) => item.id === contributor.id,
+    );
     if (index >= 0) {
-      state.members[index] = member;
+      state.contributors[index] = contributor;
     } else {
-      state.members.push(member);
+      state.contributors.push(contributor);
     }
   }
 
-  function removeMember(id) {
-    state.members = state.members.filter((member) => member.id !== id);
+  function removeContributor(id) {
+    state.contributors = state.contributors.filter(
+      (contributor) => contributor.id !== id,
+    );
   }
 
   function render() {
@@ -138,11 +143,11 @@ export function initProjectShareModal(options = {}) {
       return;
     }
 
-    const visibleMembers = state.members.filter(
-      (member) => member && member.status !== "revoked",
+    const visibleContributors = state.contributors.filter(
+      (contributor) => contributor && contributor.status !== "revoked",
     );
 
-    const sortedMembers = visibleMembers.slice().sort((a, b) => {
+    const sortedContributors = visibleContributors.slice().sort((a, b) => {
       const weight = { owner: 0, editor: 1, viewer: 2 };
       const weightA = weight[a.role] ?? 99;
       const weightB = weight[b.role] ?? 99;
@@ -154,9 +159,9 @@ export function initProjectShareModal(options = {}) {
 
     if (elements.loading) elements.loading.hidden = !state.loading;
     if (elements.empty)
-      elements.empty.hidden = state.loading || sortedMembers.length > 0;
+      elements.empty.hidden = state.loading || sortedContributors.length > 0;
     if (elements.table)
-      elements.table.hidden = state.loading || sortedMembers.length === 0;
+      elements.table.hidden = state.loading || sortedContributors.length === 0;
     setError(state.error);
 
     if (!elements.rows) return;
@@ -164,56 +169,58 @@ export function initProjectShareModal(options = {}) {
 
     const activeOwners = ownerCount();
 
-    sortedMembers.forEach((member) => {
+    sortedContributors.forEach((contributor) => {
       const row = document.createElement("tr");
       const emailDetail =
-        member.email && member.email !== member.displayName
-          ? `<div class="share-modal__status">${escapeHtml(member.email)}</div>`
+        contributor.email && contributor.email !== contributor.displayName
+          ? `<div class="share-modal__status">${escapeHtml(contributor.email)}</div>`
           : "";
-      const youTag = member.isSelf
+      const youTag = contributor.isSelf
         ? '<span class="share-modal__tag">You</span>'
         : "";
       const statusLabel =
-        SHARE_STATUS_LABELS[member.status] || member.status || "";
+        SHARE_STATUS_LABELS[contributor.status] || contributor.status || "";
       const statusClass =
-        member.status === "pending" ? "share-modal__status--pending" : "";
+        contributor.status === "pending" ? "share-modal__status--pending" : "";
 
       const disableRoleSelection =
         !canManage ||
-        state.busy.has(member.id) ||
-        (member.role === "owner" && member.isSelf && activeOwners <= 1);
+        state.busy.has(contributor.id) ||
+        (contributor.role === "owner" &&
+          contributor.isSelf &&
+          activeOwners <= 1);
 
       const roleSelect = ["owner", "editor", "viewer"]
         .map((role) => {
-          const selected = role === member.role ? "selected" : "";
+          const selected = role === contributor.role ? "selected" : "";
           return `<option value="${role}" ${selected}>${escapeHtml(SHARE_ROLE_LABELS[role] || role)}</option>`;
         })
         .join("");
 
       const roleCell = canManage
-        ? `<select class="share-modal__role" data-share-member-role="${member.id}" ${disableRoleSelection ? "disabled" : ""}>${roleSelect}</select>`
-        : `<span class="share-modal__tag">${escapeHtml(SHARE_ROLE_LABELS[member.role] || member.role)}</span>`;
+        ? `<select class="share-modal__role" data-share-contributor-role="${contributor.id}" ${disableRoleSelection ? "disabled" : ""}>${roleSelect}</select>`
+        : `<span class="share-modal__tag">${escapeHtml(SHARE_ROLE_LABELS[contributor.role] || contributor.role)}</span>`;
 
       const removeBtn =
-        canManage && !member.isSelf
-          ? `<div class="share-modal__actions"><button type="button" class="chip" data-share-remove="${member.id}" ${state.busy.has(member.id) ? "disabled" : ""}>Remove</button></div>`
+        canManage && !contributor.isSelf
+          ? `<div class="share-modal__actions"><button type="button" class="chip" data-share-remove="${contributor.id}" ${state.busy.has(contributor.id) ? "disabled" : ""}>Remove</button></div>`
           : '<div class="share-modal__actions"></div>';
 
       row.innerHTML = `
         <td>
-          <div>${escapeHtml(member.displayName || "Member")} ${youTag}</div>
+          <div>${escapeHtml(contributor.displayName || "Contributor")} ${youTag}</div>
           ${emailDetail}
         </td>
         <td>${roleCell}</td>
         <td><span class="share-modal__status ${statusClass}">${escapeHtml(statusLabel)}</span></td>
         <td>${removeBtn}</td>
       `;
-      row.dataset.memberId = member.id;
+      row.dataset.contributorId = contributor.id;
       elements.rows.appendChild(row);
     });
   }
 
-  async function refreshMembers() {
+  async function refreshContributors() {
     if (state.refreshing) return;
     state.refreshing = true;
     setError("");
@@ -228,13 +235,14 @@ export function initProjectShareModal(options = {}) {
       if (!response.ok) {
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
-      state.members = Array.isArray(payload.members) ? payload.members : [];
+      const contributors = payload?.contributors ?? payload?.members ?? [];
+      state.contributors = Array.isArray(contributors) ? contributors : [];
       state.initialized = true;
     } catch (error) {
-      console.error("Failed to load project members", error);
-      state.members = [];
+      console.error("Failed to load project contributors", error);
+      state.contributors = [];
       state.initialized = true;
-      setError(error?.message || "Failed to load collaborators.");
+      setError(error?.message || "Failed to load contributors.");
     } finally {
       state.refreshing = false;
       setLoading(false, { withoutRender: true });
@@ -242,7 +250,7 @@ export function initProjectShareModal(options = {}) {
     }
   }
 
-  async function inviteMember(email, role) {
+  async function inviteContributor(email, role) {
     if (!canManage) return;
     const cleanEmail = (email || "").trim();
     if (!cleanEmail) {
@@ -264,16 +272,17 @@ export function initProjectShareModal(options = {}) {
       if (!response.ok) {
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
-      if (payload.member) {
-        upsertMember(payload.member);
+      const contributor = payload?.contributor ?? payload?.member;
+      if (contributor) {
+        upsertContributor(contributor);
         render();
       } else {
-        await refreshMembers();
+        await refreshContributors();
       }
       if (elements.email) elements.email.value = "";
     } catch (error) {
-      console.error("Failed to invite member", error);
-      setError(error?.message || "Failed to invite member.");
+      console.error("Failed to invite contributor", error);
+      setError(error?.message || "Failed to invite contributor.");
     } finally {
       if (elements.submit) {
         elements.submit.disabled = false;
@@ -282,13 +291,13 @@ export function initProjectShareModal(options = {}) {
     }
   }
 
-  async function updateMemberRole(memberId, role) {
-    if (!canManage || !memberId) return;
-    state.busy.add(memberId);
+  async function updateContributorRole(contributorId, role) {
+    if (!canManage || !contributorId) return;
+    state.busy.add(contributorId);
     render();
     try {
       const response = await fetch(
-        `${baseApi}/${encodeURIComponent(memberId)}`,
+        `${baseApi}/${encodeURIComponent(contributorId)}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -299,28 +308,29 @@ export function initProjectShareModal(options = {}) {
       if (!response.ok) {
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
-      if (payload.member) {
-        upsertMember(payload.member);
+      const contributor = payload?.contributor ?? payload?.member;
+      if (contributor) {
+        upsertContributor(contributor);
       } else {
-        await refreshMembers();
+        await refreshContributors();
       }
       setError("");
     } catch (error) {
-      console.error("Failed to update member role", error);
-      setError(error?.message || "Failed to update member role.");
+      console.error("Failed to update contributor role", error);
+      setError(error?.message || "Failed to update contributor role.");
     } finally {
-      state.busy.delete(memberId);
+      state.busy.delete(contributorId);
       render();
     }
   }
 
-  async function removeMemberRequest(memberId) {
-    if (!canManage || !memberId) return;
-    state.busy.add(memberId);
+  async function removeContributorRequest(contributorId) {
+    if (!canManage || !contributorId) return;
+    state.busy.add(contributorId);
     render();
     try {
       const response = await fetch(
-        `${baseApi}/${encodeURIComponent(memberId)}`,
+        `${baseApi}/${encodeURIComponent(contributorId)}`,
         {
           method: "DELETE",
           headers: { Accept: "application/json" },
@@ -335,14 +345,14 @@ export function initProjectShareModal(options = {}) {
         }
         throw new Error(payload?.error || `HTTP ${response.status}`);
       }
-      removeMember(memberId);
+      removeContributor(contributorId);
       setError("");
       render();
     } catch (error) {
-      console.error("Failed to remove member", error);
-      setError(error?.message || "Failed to remove member.");
+      console.error("Failed to remove contributor", error);
+      setError(error?.message || "Failed to remove contributor.");
     } finally {
-      state.busy.delete(memberId);
+      state.busy.delete(contributorId);
       render();
     }
   }
@@ -351,20 +361,22 @@ export function initProjectShareModal(options = {}) {
     event.preventDefault();
     if (!canManage) return;
     if (elements.email && !elements.email.reportValidity()) return;
-    inviteMember(elements.email?.value, elements.role?.value || "editor");
+    inviteContributor(elements.email?.value, elements.role?.value || "editor");
   };
 
   const handleRowsChange = (event) => {
-    const select = event.target.closest("[data-share-member-role]");
+    const select = event.target.closest("[data-share-contributor-role]");
     if (!select) return;
     if (!canManage || select.disabled) return;
-    const memberId = select.getAttribute("data-share-member-role");
-    const member = state.members.find((item) => item.id === memberId);
-    if (!member) return;
+    const contributorId = select.getAttribute("data-share-contributor-role");
+    const contributor = state.contributors.find(
+      (item) => item.id === contributorId,
+    );
+    if (!contributor) return;
     const nextRole = select.value;
-    if (!nextRole || nextRole === member.role) return;
-    updateMemberRole(memberId, nextRole).catch(() => {
-      select.value = member.role;
+    if (!nextRole || nextRole === contributor.role) return;
+    updateContributorRole(contributorId, nextRole).catch(() => {
+      select.value = contributor.role;
     });
   };
 
@@ -372,9 +384,9 @@ export function initProjectShareModal(options = {}) {
     const remover = event.target.closest("[data-share-remove]");
     if (!remover) return;
     if (!canManage || remover.disabled) return;
-    const memberId = remover.getAttribute("data-share-remove");
-    if (!memberId) return;
-    removeMemberRequest(memberId);
+    const contributorId = remover.getAttribute("data-share-remove");
+    if (!contributorId) return;
+    removeContributorRequest(contributorId);
   };
 
   const observer = new MutationObserver((records) => {
@@ -385,7 +397,7 @@ export function initProjectShareModal(options = {}) {
         modal.dataset.modalActive === "true" &&
         !state.refreshing
       ) {
-        refreshMembers();
+        refreshContributors();
       }
     }
   });
@@ -405,7 +417,7 @@ export function initProjectShareModal(options = {}) {
   });
 
   const controller = {
-    refresh: refreshMembers,
+    refresh: refreshContributors,
     destroy() {
       observer.disconnect();
       if (elements.form && canManage) {
