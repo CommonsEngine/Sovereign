@@ -350,6 +350,38 @@ Tooling:
 - A "prepare" script can run a commit template or interactive prompt (optional).
 -->
 
+## Docker Setup
+
+A multi-stage `Dockerfile` is provided to build and run Sovereign from a container. The image bundles the production build and Prisma client; SQLite data is stored under `/app/data`.
+
+### Build & run locally
+
+```bash
+docker build -t sovereign:local .
+mkdir -p ./data
+# run with mounted volume for sqlite persistence
+docker run --rm \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  --env-file .env \
+  sovereign:local
+```
+
+### Publish to GHCR
+
+```bash
+docker build -t ghcr.io/<org>/<repo>:latest .
+docker push ghcr.io/<org>/<repo>:latest
+```
+
+Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:packages` scope.
+
+### Production runtime notes
+
+- Default `DATABASE_URL` points to SQLite under `/app/data`; mount a persistent volume when running in production.
+- The entrypoint runs `prisma db push` on startup to sync the schema. Switch to `prisma migrate deploy` once a Postgres DB is introduced.
+- Exposes port `3000`; front with your preferred reverse proxy for TLS/HTTP termination.
+
 ## Features
 
 ### Project sharing
