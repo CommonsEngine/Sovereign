@@ -6,6 +6,7 @@ import { requireAuth } from "$/middlewares/auth.mjs";
 import requireRole from "$/middlewares/requireRole.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as projectSharesHandler from "$/handlers/projects/shares.mjs";
+import { fetchLinkPreview } from "$/handlers/linkPreview.mjs";
 
 import blogRouter from "./blog.mjs";
 import papertrailRouter from "./papertrail.mjs";
@@ -38,5 +39,6 @@ router.patch("/settings", requireRole(["platform:admin"]), updateAppSettings);
 
 router.use(blogRouter);
 router.use(papertrailRouter);
+router.post("/link-preview", fetchLinkPreview);
 
 export default router;

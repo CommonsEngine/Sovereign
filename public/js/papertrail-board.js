@@ -9,9 +9,6 @@ const exportBtn = document.getElementById("export");
 const importBtn = document.getElementById("importBtn");
 const importFile = document.getElementById("importFile");
 const searchInput = document.getElementById("search");
-const infoBtn = document.getElementById("infoBtn");
-const aboutModal = document.getElementById("aboutModal");
-const aboutClose = document.getElementById("aboutClose");
 const API_BASE = window.__globals?.apiBase || "";
 const BOARD_ENDPOINT = API_BASE ? `${API_BASE}/board` : "";
 const PROJECT_ID = window.__globals?.projectId || "";
@@ -19,6 +16,32 @@ const boardIdFromGlobals = window.__globals?.boardId || "";
 const isOwner = window.__globals?.canManage === "true";
 const canEdit = window.__globals?.canEdit === "true" || isOwner;
 let lastSavedJSON = null;
+
+function initShareModal() {
+  const mainEl = document.querySelector("main[data-project-id]");
+  if (!mainEl) return;
+  const projectId = mainEl.dataset.projectId;
+  const canViewShare = mainEl.dataset.shareCanView === "true";
+  if (!projectId || !canViewShare) return;
+
+  import("/js/utils/project-share.mjs")
+    .then((module) => {
+      const init = module?.initProjectShareModal;
+      if (typeof init !== "function") return;
+      init({
+        scope: mainEl,
+        projectId,
+        canView: canViewShare,
+        canManage: mainEl.dataset.shareCanManage === "true",
+        apiBase: mainEl.dataset.shareApiBase,
+        modal: document.querySelector('[data-modal="share-project"]'),
+      });
+    })
+    .catch((err) => {
+      console.error("Failed to load project share module", err);
+    });
+}
+initShareModal();
 
 // --- Ensure DOM positions/sizes are synced to the model prior to save
 function syncDomToModel() {
@@ -1680,8 +1703,23 @@ function exportBoard() {
 }
 
 async function fetchLinkPreview(url) {
-  void url;
-  return null;
+  if (!url) return null;
+  try {
+    const resp = await fetch("/api/link-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!resp.ok) {
+      return null;
+    }
+    const data = await resp.json().catch(() => null);
+    if (!data || data.error) return null;
+    return data;
+  } catch (err) {
+    console.warn("link preview failed", err);
+    return null;
+  }
 }
 
 function renderLinkCard(preview, href) {
@@ -1861,20 +1899,6 @@ function autoLayout(direction = "LR") {
 renderStatusBar();
 adjustBoardHeight();
 
-function openAbout() {
-  document.getElementById("aboutAppVersion").textContent =
-    window.__globals.appVersion || "—";
-  document.getElementById("aboutSchemaVersion").textContent = String(
-    board.schemaVersion || 1,
-  );
-  document.getElementById("aboutBoardName").textContent =
-    board.title || "Untitled Board";
-  aboutModal.classList.add("show");
-}
-function closeAbout() {
-  aboutModal.classList.remove("show");
-}
-
 // Toolbar wiring
 if (canEdit) {
   const addTextBtn = $("#addText");
@@ -1907,14 +1931,8 @@ if (canEdit) {
   });
 }
 exportBtn.onclick = exportBoard;
-infoBtn.addEventListener("click", openAbout);
-aboutClose.addEventListener("click", closeAbout);
-aboutModal.addEventListener("click", (e) => {
-  if (e.target === aboutModal) closeAbout();
-});
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    if (aboutModal.classList.contains("show")) closeAbout();
     if (connectMode && connectFromId) {
       connectFromId = null;
       hideGhost();
@@ -2072,37 +2090,12 @@ function viewCenter() {
   };
 }
 
-/** Info Button */
-function openAbout() {
-  document.getElementById("aboutAppVersion").textContent =
-    window.__globals.appVersion || "—";
-  document.getElementById("aboutSchemaVersion").textContent = String(
-    board.schemaVersion || 1,
-  );
-  document.getElementById("aboutBoardName").textContent =
-    board.title || "Untitled Board";
-  aboutModal.classList.add("show");
-}
-
-function closeAbout() {
-  aboutModal.classList.remove("show");
-}
-
-infoBtn.addEventListener("click", openAbout);
-aboutClose.addEventListener("click", closeAbout);
-// Close when clicking the backdrop
-aboutModal.addEventListener("click", (e) => {
-  if (e.target === aboutModal) closeAbout();
-});
-// Close on Esc
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && aboutModal.classList.contains("show")) closeAbout();
-});
-
 // Settings modal wiring (always visible; non-owners see read-only UI)
-{
+(() => {
   const settingsBtn = document.getElementById("settingsBtn");
-  const settingsModal = document.getElementById("settingsModal");
+  const settingsModal = document.querySelector(
+    '[data-modal="papertrail-settings"]',
+  );
   const settingsClose = document.getElementById("settingsClose");
   const visibilitySelect = document.getElementById("visibilitySelect");
   const statusSelect = document.getElementById("statusSelect");
@@ -2112,7 +2105,18 @@ document.addEventListener("keydown", (e) => {
   const confirmIdInput = document.getElementById("confirmIdInput");
   const settingsNotice = document.getElementById("settingsNotice");
 
+  if (
+    !settingsModal ||
+    !titleInput ||
+    !visibilitySelect ||
+    !statusSelect ||
+    !saveMetaBtn
+  ) {
+    return;
+  }
+
   function openSettings() {
+    if (!settingsModal) return;
     // initialize values from server-globals and from current UI
     titleInput.value =
       window.__globals.boardTitle ||
@@ -2124,14 +2128,28 @@ document.addEventListener("keydown", (e) => {
     statusSelect.value = (
       window.__globals.boardStatus || "draft"
     ).toLowerCase();
-    settingsModal.classList.add("show");
+    if (window.ModalRuntime?.open) {
+      window.ModalRuntime.open(settingsModal);
+    } else {
+      settingsModal.hidden = false;
+      settingsModal.dataset.modalActive = "true";
+    }
   }
   function closeSettings() {
-    settingsModal.classList.remove("show");
+    if (!settingsModal) return;
+    if (window.ModalRuntime?.close) {
+      window.ModalRuntime.close(settingsModal);
+    } else {
+      settingsModal.hidden = true;
+      settingsModal.dataset.modalActive = "false";
+    }
   }
   // Disable controls for non-owners
   if (!isOwner) {
-    settingsNotice.style.display = "block";
+    if (settingsNotice) {
+      settingsNotice.hidden = false;
+      settingsNotice.style.display = "block";
+    }
     titleInput.setAttribute("readonly", "true");
     titleInput.setAttribute("disabled", "true");
     visibilitySelect.setAttribute("disabled", "true");
@@ -2145,11 +2163,18 @@ document.addEventListener("keydown", (e) => {
   }
 
   settingsBtn?.addEventListener("click", openSettings);
-  settingsClose?.addEventListener("click", closeSettings);
-  settingsModal?.addEventListener("click", (e) => {
-    if (e.target === settingsModal) closeSettings();
+  settingsClose?.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeSettings();
   });
-
+  settingsModal?.addEventListener("click", (e) => {
+    if (
+      !window.ModalRuntime &&
+      e.target?.classList?.contains("modal__backdrop")
+    ) {
+      closeSettings();
+    }
+  });
   saveMetaBtn?.addEventListener("click", async () => {
     if (!isOwner) return;
     try {
@@ -2205,7 +2230,7 @@ document.addEventListener("keydown", (e) => {
       showStatus(err?.message || "Delete failed", { sticky: true });
     }
   });
-}
+})();
 /** end of Info Button */
 
 function toggleConnectMode() {
@@ -2219,7 +2244,6 @@ document.addEventListener("keydown", (e) => {
   const typing = isTypingTarget(e.target);
 
   if (e.key === "Escape") {
-    if (aboutModal.classList.contains("show")) closeAbout();
     if (connectMode && connectFromId) {
       connectFromId = null;
       hideGhost();
