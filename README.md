@@ -243,7 +243,7 @@ The alias works for app code, tests, and development scripts (configured via a c
 
 #### Troubleshooting
 
-- "table ... does not exist": run migrations (`npx prisma migrate deploy` / `npx prisma migrate dev`) and `npx prisma generate`.
+- "table ... does not exist": run migrations (`yarn prisma migrate deploy` / `yarn prisma migrate dev`) and `yarn prisma generate`.
 - VersionRegistry increments: seed logic should update VersionRegistry once, not per-config. If values are unexpectedly high, ensure the upsert is executed only once.
 
 #### Git Workflow
@@ -349,6 +349,107 @@ Tooling:
 - Use commitlint / husky if you want to enforce messages in CI.
 - A "prepare" script can run a commit template or interactive prompt (optional).
 -->
+
+## Docker Setup
+
+A multi-stage `Dockerfile` is provided to build and run Sovereign from a container. The image bundles the production build and Prisma client; SQLite data is stored under `/app/data`.
+
+### Build & run locally
+
+```bash
+docker build -t sovereign:local .
+mkdir -p ./data
+# run with mounted volume for sqlite persistence
+docker run --rm \
+  -p 3000:3000 \
+  -v $(pwd)/data:/app/data \
+  --env-file .env \
+  sovereign:local
+```
+
+### Publish to GHCR
+
+```bash
+docker build -t ghcr.io/<org>/<repo>:latest .
+docker push ghcr.io/<org>/<repo>:latest
+```
+
+Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:packages` scope.
+
+### Deployment workflow (GHCR → server)
+
+1. **CI/CD push** – On every merge to `main`, build the image and push it to `ghcr.io/<org>/<repo>:<tag>` (e.g., `latest` plus a git SHA tag). GitHub Actions can handle this automatically.
+2. **Server pull** – On the target host:
+   ```bash
+   docker login ghcr.io
+   docker pull ghcr.io/<org>/<repo>:latest
+   ```
+3. **Restart container with persistent volume** – Reuse the same named volume (or host path) for `/app/data` so the SQLite file survives upgrades:
+
+   ```bash
+   docker stop sovereign || true
+   docker rm sovereign || true
+
+   docker run -d \
+     --name sovereign \
+     -p 3000:3000 \
+     -v sovereign-data:/app/data \
+     --env-file /opt/sovereign/.env \
+     ghcr.io/<org>/<repo>:latest
+   ```
+
+4. **Verify** – Check logs (`docker logs -f sovereign`) and health endpoints. Because the data volume is external to the image, the SQLite database persists across deployments.
+
+### Production runtime notes
+
+- Default `DATABASE_URL` points to SQLite under `/app/data`; mount a persistent volume when running in production.
+- The entrypoint runs `prisma db push` on startup to sync the schema. Switch to `prisma migrate deploy` once a Postgres DB is introduced.
+- Exposes port `3000`; front with your preferred reverse proxy for TLS/HTTP termination.
+
+## PM2 Setup (non-container)
+
+If you prefer a bare-metal deployment without Docker, a sample `ecosystem.config.cjs` is included for [PM2](https://pm2.keymetrics.io/).
+
+1. Install dependencies and build once:
+
+   ```bash
+   yarn install --frozen-lockfile
+   yarn build
+   yarn prisma db push
+   ```
+
+   Repeat the build step (`yarn build`) after every application update so `dist/` stays current.
+
+2. Install PM2 globally (if not already):
+
+   ```bash
+   npm install --global pm2
+   ```
+
+3. Start Sovereign with the provided config:
+
+   ```bash
+   pm2 start ecosystem.config.cjs --env production
+   pm2 status
+   ```
+
+4. Make the process restart on boot:
+
+   ```bash
+   pm2 save
+   pm2 startup
+   ```
+
+5. For updates:
+   ```bash
+   git pull
+   yarn install --frozen-lockfile
+   yarn build
+   yarn prisma db push
+   pm2 reload sovereign
+   ```
+
+Environment variables come from your shell or an external manager (e.g., `/etc/profile`, systemd, direnv). The PM2 config sets `PORT=3000` and `NODE_ENV=production` by default; override those with `pm2 start ... --env` or by editing `ecosystem.config.cjs` to suit your infrastructure.
 
 ## Features
 

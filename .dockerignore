@@ -1,0 +1,38 @@
+# Node modules and build artefacts handled via Dockerfile stages
+node_modules
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Local env & config
+.env
+.env.*
+*.local
+
+# Build outputs / caches
+.DS_Store
+.git
+.gitignore
+.gitlab-ci.yml
+Dockerfile
+docker-compose.yml
+coverage
+.tmp
+.cache
+
+# SQLite data (mounted via volume)
+data
+
+# Tests & docs (not needed in runtime image)
+tests
+README.md
+MANIFESTO.md
+
+# Yarn berry
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Misc
+*.log
