@@ -37,7 +37,6 @@ const BOARD_WITH_RELATIONS_SELECT = {
   schemaVersion: true,
   layout: true,
   meta: true,
-  userId: true,
   createdAt: true,
   updatedAt: true,
   nodes: {
@@ -96,7 +95,7 @@ const PROJECT_META_SELECT = {
   status: true,
 };
 
-async function ensureBoard({ projectId, userId, tx = prisma }) {
+async function ensureBoard({ projectId, tx = prisma }) {
   const board = await tx.papertrailBoard.findUnique({
     where: { projectId },
     select: BOARD_WITH_RELATIONS_SELECT,
@@ -109,7 +108,6 @@ async function ensureBoard({ projectId, userId, tx = prisma }) {
       projectId,
       title: "Untitled Board",
       schemaVersion: 1,
-      userId: userId ?? null,
       meta: {},
     },
     select: BOARD_WITH_RELATIONS_SELECT,
@@ -267,7 +265,6 @@ function serializeBoard(board, project) {
     schemaVersion: board.schemaVersion ?? 1,
     layout: board.layout ?? null,
     meta: board.meta ?? {},
-    userId: board.userId ?? null,
     visibility: project?.scope ?? null,
     status: project?.status ?? null,
     createdAtISO:
@@ -531,14 +528,13 @@ function normalizeBoardPayload(raw = {}, { board }) {
   return sanitized;
 }
 
-async function writeBoardSnapshot({ projectId, boardId, payload, userId }) {
+async function writeBoardSnapshot({ projectId, boardId, payload }) {
   return prisma.$transaction(async (tx) => {
     const boardUpdate = {
       title: payload.title,
       schemaVersion: payload.schemaVersion ?? 1,
       layout: payload.layout ?? null,
       meta: payload.meta ?? {},
-      userId: userId ?? undefined,
     };
 
     await tx.papertrailBoard.update({
@@ -645,10 +641,7 @@ export async function getBoard(req, res) {
 
     const board = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({
-          projectId,
-          userId: req.user?.id ?? null,
-        });
+      : await ensureBoard({ projectId });
 
     return res.json({
       board: serializeBoard(board, access.project),
@@ -680,10 +673,7 @@ export async function saveBoard(req, res) {
 
     const boardRecord = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({
-          projectId,
-          userId: req.user?.id ?? null,
-        });
+      : await ensureBoard({ projectId });
 
     const payload = normalizeBoardPayload(req.body, { board: boardRecord });
 
@@ -691,7 +681,6 @@ export async function saveBoard(req, res) {
       projectId,
       boardId: boardRecord.id,
       payload,
-      userId: req.user?.id ?? null,
     });
 
     return res.json({ board: serializeBoard(board, project) });
@@ -720,10 +709,7 @@ export async function updateBoard(req, res) {
 
     const boardRecord = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({
-          projectId,
-          userId: req.user?.id ?? null,
-        });
+      : await ensureBoard({ projectId });
 
     const overrides = normalizeBoardPayload(req.body, { board: boardRecord });
 
@@ -812,7 +798,7 @@ export async function exportBoard(req, res) {
 
     const boardRecord = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({ projectId, userId: req.user?.id ?? null });
+      : await ensureBoard({ projectId });
 
     const snapshot = buildBoardExportSnapshot(boardRecord, access.project);
     const archive = archiver("zip", { zlib: { level: 9 } });
@@ -940,7 +926,7 @@ export async function importBoard(req, res) {
 
     const boardRecord = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({ projectId, userId: req.user?.id ?? null });
+      : await ensureBoard({ projectId });
 
     if (req.file && req.file.buffer) {
       // ZIP import
@@ -967,7 +953,6 @@ export async function importBoard(req, res) {
           projectId,
           boardId: boardRecord.id,
           payload: sanitized,
-          userId: req.user?.id ?? null,
         });
 
         // Replace uploads directory if provided
@@ -999,7 +984,6 @@ export async function importBoard(req, res) {
       projectId,
       boardId: boardRecord.id,
       payload,
-      userId: req.user?.id ?? null,
     });
 
     return res.json({
@@ -1106,10 +1090,7 @@ export async function uploadAttachment(req, res) {
 
     const board = access.project.papertrail
       ? access.project.papertrail
-      : await ensureBoard({
-          projectId,
-          userId: req.user?.id ?? null,
-        });
+      : await ensureBoard({ projectId });
 
     if (board.id !== boardId) {
       return res.status(404).json({ error: "Board not found for project" });

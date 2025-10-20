@@ -110,7 +110,6 @@ export default async function create(req, res) {
                 projectId: projectRecord.id,
                 title: name,
                 schemaVersion: 1, // TODO: remove this line after updating the database schema
-                userId,
                 meta: {},
               },
             });

@@ -876,4 +876,98 @@
     display: grid;
     gap: 8px;
   }
+
+  /* Share modal */
+  .share-modal__form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .share-modal__form fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .share-modal__form label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+  .share-modal__form input,
+  .share-modal__form select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-primary, #d1d5db);
+    font: inherit;
+    min-height: 36px;
+  }
+  .share-modal__error {
+    display: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, var(--color-danger), white 35%);
+    background: color-mix(in oklab, var(--color-danger), white 90%);
+    color: color-mix(in oklab, var(--color-danger), black 30%);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  .share-modal__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+  }
+  .share-modal__table thead {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-secondary);
+  }
+  .share-modal__table th,
+  .share-modal__table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+    vertical-align: middle;
+    text-align: left;
+  }
+  .share-modal__status {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+  }
+  .share-modal__status--pending {
+    color: color-mix(in oklab, var(--color-warning), black 15%);
+  }
+  .share-modal__empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+  }
+  .share-modal__loading {
+    padding: 16px;
+    text-align: center;
+  }
+  .share-modal__actions {
+    display: flex;
+    gap: 6px;
+  }
+  .share-modal__role {
+    min-width: 140px;
+  }
+  .share-modal__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--color-bg-secondary), white 40%);
+    border: 1px solid var(--color-border-primary);
+    color: var(--color-text-secondary);
+  }
 }

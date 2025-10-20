@@ -38,7 +38,6 @@ const PAPERTRAIL_BOARD_SELECT = {
   schemaVersion: true,
   layout: true,
   meta: true,
-  userId: true,
   createdAt: true,
   updatedAt: true,
   _count: {
@@ -326,7 +325,6 @@ export async function viewProject(req, res) {
               projectId: project.id,
               title: project.name,
               schemaVersion: 1,
-              userId: req.user?.id ?? null,
               meta: {},
             },
             update: {},
@@ -351,7 +349,6 @@ export async function viewProject(req, res) {
             schemaVersion: board.schemaVersion,
             layout: board.layout || null,
             meta: board.meta ?? {},
-            userId: board.userId ?? null,
             createdAtISO: boardCreated?.iso ?? "",
             createdAtDisplay: boardCreated?.label ?? "",
             updatedAtISO: boardUpdated?.iso ?? "",

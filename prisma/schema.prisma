@@ -45,10 +45,9 @@ model User {
 
   isTestUser Boolean @default(false) @map("is_test_user")
 
-  status          UserStatus        @default(invited) @map("status")
-  createdAt       DateTime          @default(now()) @map("created_at")
-  updatedAt       DateTime          @updatedAt @map("updated_at")
-  PapertrailBoard PapertrailBoard[]
+  status    UserStatus @default(invited) @map("status")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   @@index([createdAt])
   @@index([emailVerifiedAt])
@@ -384,9 +383,6 @@ model PapertrailBoard {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  userId String? @map("user_id")
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   nodes PaperTrailNode[]
   edges PaperTrailEdge[]
