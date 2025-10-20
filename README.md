@@ -243,7 +243,7 @@ The alias works for app code, tests, and development scripts (configured via a c
 
 #### Troubleshooting
 
-- "table ... does not exist": run migrations (`npx prisma migrate deploy` / `npx prisma migrate dev`) and `npx prisma generate`.
+- "table ... does not exist": run migrations (`yarn prisma migrate deploy` / `yarn prisma migrate dev`) and `yarn prisma generate`.
 - VersionRegistry increments: seed logic should update VersionRegistry once, not per-config. If values are unexpectedly high, ensure the upsert is executed only once.
 
 #### Git Workflow
@@ -405,6 +405,51 @@ Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:pac
 - Default `DATABASE_URL` points to SQLite under `/app/data`; mount a persistent volume when running in production.
 - The entrypoint runs `prisma db push` on startup to sync the schema. Switch to `prisma migrate deploy` once a Postgres DB is introduced.
 - Exposes port `3000`; front with your preferred reverse proxy for TLS/HTTP termination.
+
+## PM2 Setup (non-container)
+
+If you prefer a bare-metal deployment without Docker, a sample `ecosystem.config.cjs` is included for [PM2](https://pm2.keymetrics.io/).
+
+1. Install dependencies and build once:
+
+   ```bash
+   yarn install --frozen-lockfile
+   yarn build
+   yarn prisma db push
+   ```
+
+   Repeat the build step (`yarn build`) after every application update so `dist/` stays current.
+
+2. Install PM2 globally (if not already):
+
+   ```bash
+   npm install --global pm2
+   ```
+
+3. Start Sovereign with the provided config:
+
+   ```bash
+   pm2 start ecosystem.config.cjs --env production
+   pm2 status
+   ```
+
+4. Make the process restart on boot:
+
+   ```bash
+   pm2 save
+   pm2 startup
+   ```
+
+5. For updates:
+   ```bash
+   git pull
+   yarn install --frozen-lockfile
+   yarn build
+   yarn prisma db push
+   pm2 reload sovereign
+   ```
+
+Environment variables come from your shell or an external manager (e.g., `/etc/profile`, systemd, direnv). The PM2 config sets `PORT=3000` and `NODE_ENV=production` by default; override those with `pm2 start ... --env` or by editing `ecosystem.config.cjs` to suit your infrastructure.
 
 ## Features
 
