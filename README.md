@@ -376,6 +376,30 @@ docker push ghcr.io/<org>/<repo>:latest
 
 Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:packages` scope.
 
+### Deployment workflow (GHCR → server)
+
+1. **CI/CD push** – On every merge to `main`, build the image and push it to `ghcr.io/<org>/<repo>:<tag>` (e.g., `latest` plus a git SHA tag). GitHub Actions can handle this automatically.
+2. **Server pull** – On the target host:
+   ```bash
+   docker login ghcr.io
+   docker pull ghcr.io/<org>/<repo>:latest
+   ```
+3. **Restart container with persistent volume** – Reuse the same named volume (or host path) for `/app/data` so the SQLite file survives upgrades:
+
+   ```bash
+   docker stop sovereign || true
+   docker rm sovereign || true
+
+   docker run -d \
+     --name sovereign \
+     -p 3000:3000 \
+     -v sovereign-data:/app/data \
+     --env-file /opt/sovereign/.env \
+     ghcr.io/<org>/<repo>:latest
+   ```
+
+4. **Verify** – Check logs (`docker logs -f sovereign`) and health endpoints. Because the data volume is external to the image, the SQLite database persists across deployments.
+
 ### Production runtime notes
 
 - Default `DATABASE_URL` points to SQLite under `/app/data`; mount a persistent volume when running in production.
