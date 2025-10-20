@@ -29,10 +29,6 @@ async function main() {
   await seedRBACData(prisma);
   await seedTestUsers(prisma);
   await seedAppSettings(prisma);
-
-  if (process.env.NODE_ENV === "development") {
-    await seedTestUsers(prisma);
-  }
 }
 
 (async () => {

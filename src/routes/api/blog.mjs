@@ -4,6 +4,8 @@ import * as projectsHandler from "$/handlers/projects/index.mjs";
 
 const router = express.Router();
 
+// TODO: Move `/projects` prefix to parent router
+
 router.get(
   "/projects/:projectId/blog/post/all",
   projectsHandler.blog.getAllPosts,

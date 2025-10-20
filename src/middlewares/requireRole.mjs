@@ -81,13 +81,13 @@ function userHasCapability(user, allowedCapabilities) {
 
 /**
  * Usage:
- * requireRole(["platform_admin","tenant_admin"]) -> allows only defined roles
- * requireRole(0) -> allows only platform_admin (id=0)
+ * requireRole(["platform:admin","tenant:admin"]) -> allows only defined roles
+ * requireRole(0) -> allows only platform:admin (id=0)
  * requireRole(["admin","editor"]) -> allows any user with role label "admin" or "editor"
  * requireRole("any") -> allows any authenticated user
  * requireRole() -> allows any authenticated user
  * Accepts:
- *  - role keys (e.g. "platform_admin", "tenant_admin")
+ *  - role keys (e.g. "platform:admin", "tenant:admin")
  *  - numeric ids (0..n)
  */
 export default function requireRole(allowed = []) {

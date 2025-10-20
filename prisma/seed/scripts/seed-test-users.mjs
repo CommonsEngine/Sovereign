@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 const isDev = process.env.NODE_ENV === "development";
-const usersPath = path.resolve(process.cwd(), "prisma/seed/users.json");
+const usersPath = path.resolve(process.cwd(), "prisma/seed/data/users.json");
 
 export default async function seedTestUsers(prisma) {
   if (!prisma) {
@@ -42,9 +42,19 @@ export default async function seedTestUsers(prisma) {
     requestedRoleKeys.length > 0
       ? await prisma.userRole.findMany({
           where: { key: { in: requestedRoleKeys } },
+          include: { roleCapabilities: true },
         })
       : [];
   const roleMap = new Map(roles.map((role) => [role.key, role]));
+
+  const precedence = {
+    allow: 6,
+    consent: 5,
+    compliance: 4,
+    scoped: 3,
+    anonymized: 2,
+    deny: 1,
+  };
 
   for (const entry of entries) {
     const {
@@ -115,14 +125,23 @@ export default async function seedTestUsers(prisma) {
         data: { primaryEmailId: userEmail.id },
       });
     }
+    const normalizedRoleKeys = Array.from(
+      new Set(
+        (Array.isArray(entryRoles) ? entryRoles : [])
+          .map((key) => (typeof key === "string" ? key.trim() : ""))
+          .filter(Boolean),
+      ),
+    );
 
-    for (const roleKey of entryRoles) {
+    const desiredRoles = [];
+    for (const roleKey of normalizedRoleKeys) {
       if (!roleMap.has(roleKey)) {
         console.warn(`seedTestUsers: missing role ${roleKey}, skipping`);
         continue;
       }
 
       const role = roleMap.get(roleKey);
+      desiredRoles.push(role);
       await prisma.userRoleAssignment.upsert({
         where: {
           userId_roleId: { userId: user.id, roleId: role.id },
@@ -131,6 +150,53 @@ export default async function seedTestUsers(prisma) {
         create: { userId: user.id, roleId: role.id },
       });
     }
+
+    const desiredRoleIds = desiredRoles.map((role) => role.id);
+
+    if (desiredRoleIds.length === 0) {
+      await prisma.userRoleAssignment.deleteMany({
+        where: { userId: user.id },
+      });
+    } else {
+      await prisma.userRoleAssignment.deleteMany({
+        where: { userId: user.id, roleId: { notIn: desiredRoleIds } },
+      });
+    }
+
+    const aggregatedCapabilities = {};
+    const roleSnapshots = [];
+
+    for (const role of desiredRoles) {
+      roleSnapshots.push({
+        id: role.id,
+        key: role.key,
+        label: role.label,
+        level: role.level,
+        scope: role.scope,
+      });
+
+      for (const rc of role.roleCapabilities || []) {
+        const key = rc.capabilityKey;
+        const value = rc.value || "deny";
+        const current = aggregatedCapabilities[key];
+        if (!current) {
+          aggregatedCapabilities[key] = value;
+          continue;
+        }
+        if ((precedence[value] || 0) > (precedence[current] || 0)) {
+          aggregatedCapabilities[key] = value;
+        }
+      }
+    }
+
+    // Ensure existing sessions reflect merged roles/capabilities snapshot
+    await prisma.session.updateMany({
+      where: { userId: user.id },
+      data: {
+        roles: roleSnapshots,
+        capabilities: aggregatedCapabilities,
+      },
+    });
 
     console.log(`seedTestUsers: seeded ${user.name} (${email})`);
   }

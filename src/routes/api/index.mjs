@@ -6,8 +6,10 @@ import { requireAuth } from "$/middlewares/auth.mjs";
 import requireRole from "$/middlewares/requireRole.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as projectSharesHandler from "$/handlers/projects/shares.mjs";
+import { fetchLinkPreview } from "$/handlers/linkPreview.mjs";
 
 import blogRouter from "./blog.mjs";
+import papertrailRouter from "./papertrail.mjs";
 
 const router = express.Router();
 
@@ -27,14 +29,16 @@ router.delete("/projects/:id/shares/:memberId", projectSharesHandler.remove);
 
 router.delete(
   "/users/:id",
-  requireRole(["platform_admin"]),
+  requireRole(["platform:admin"]),
   usersHandler.deleteUser,
 );
 
 // Appsettings
-router.get("/settings", requireRole(["platform_admin"]), getAppSettings);
-router.patch("/settings", requireRole(["platform_admin"]), updateAppSettings);
+router.get("/settings", requireRole(["platform:admin"]), getAppSettings);
+router.patch("/settings", requireRole(["platform:admin"]), updateAppSettings);
 
 router.use(blogRouter);
+router.use(papertrailRouter);
+router.post("/link-preview", fetchLinkPreview);
 
 export default router;

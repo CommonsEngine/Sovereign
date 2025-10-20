@@ -19,6 +19,8 @@
   /* Brand & accent */
   --color-primary: #0f172a;
   --color-accent: #6366f1;
+  --color-muted: #9ca3af;
+  --color-ink: #e5e7eb;
 
   /* Semantic */
   --color-success: #22c55e;
@@ -601,6 +603,18 @@
   .page__wrap > :first-child {
     margin-top: 0 !important;
   }
+  /* Center a page wrapper in the viewport (reusable) */
+  .page__wrap--center {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+  }
+  .page__wrap--wide {
+    width: 90%;
+  }
+  .page__wrap--fullwidth {
+    width: 100%;
+  }
   .page__header {
     display: flex;
     align-items: center;
@@ -615,15 +629,6 @@
     .page__header {
       align-items: flex-start;
     }
-  }
-  /* Center a page wrapper in the viewport (reusable) */
-  .page__wrap--center {
-    min-height: 100dvh;
-    display: grid;
-    place-items: center;
-  }
-  .page__wrap--fullwidth {
-    width: 90%;
   }
   .page__title {
     padding: 0 0 3px 3px;
@@ -975,6 +980,12 @@
   }
   .margin-left-2xs {
     margin-left: var(--space-2xs);
+  }
+  .margin-none {
+    margin: 0;
+  }
+  .padding-none {
+    padding: 0;
   }
 }
 
