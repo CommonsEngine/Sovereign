@@ -4,12 +4,12 @@
   "title": "Sovereign",
   "tagline": "Reclaim your digital freedom.",
   "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
-  "main": "./src/index.mjs",
+  "main": "./src/bootstrap.mjs",
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node dist/index.mjs",
-    "start:src": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "start": "node dist/bootstrap.mjs",
+    "start:src": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "dev": "nodemon",
     "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
@@ -31,7 +31,7 @@
       "public"
     ],
     "ext": "mjs,js,jsx,json,html,css",
-    "exec": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "exec": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "signal": "SIGTERM"
   },
   "keywords": [
