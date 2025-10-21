@@ -3,7 +3,7 @@ import {
   createSession,
   createRandomGuestUser,
 } from "$/core/utils/auth.mjs";
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 import env from "$/core/config/env.mjs";
 import prisma from "$/core/services/database.mjs";
 

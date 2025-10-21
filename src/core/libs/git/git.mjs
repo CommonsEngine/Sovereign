@@ -3,7 +3,7 @@ import * as simpleGitPkg from "simple-git";
 import { promises as fs } from "fs";
 import path from "path";
 
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 
 const sg =
   typeof simpleGitPkg === "function"

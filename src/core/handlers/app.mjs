@@ -1,5 +1,5 @@
 import prisma from "$/core/services/database.mjs";
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 import { refreshEnvCache } from "$/core/config/env.mjs";
 
 const DEFAULT_SCOPE = "platform";

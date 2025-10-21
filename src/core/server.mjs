@@ -23,13 +23,14 @@ import * as indexHandler from "./handlers/index.mjs";
 import * as authHandler from "./handlers/auth/index.mjs";
 
 import hbsHelpers from "./utils/hbsHelpers.mjs";
-import logger from "./utils/logger.mjs";
-global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
 
 import {
   connectPrismaWithRetry,
   gracefulShutdown,
 } from "./services/database.mjs";
+import logger from "./services/logger.mjs";
+global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
+
 import env from "./config/env.mjs";
 
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = env();

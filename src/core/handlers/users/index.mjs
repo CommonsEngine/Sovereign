@@ -1,4 +1,4 @@
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 import prisma from "$/core/services/database.mjs";
 import { USER_ROLES } from "$/core/config/index.mjs";
 import { syncProjectPrimaryOwner } from "$/core/utils/projectAccess.mjs";

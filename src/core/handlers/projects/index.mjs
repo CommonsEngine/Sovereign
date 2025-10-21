@@ -3,7 +3,7 @@ import {
   getOrInitGitManager,
   disposeGitManager,
 } from "$/core/libs/git/registry.mjs";
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 import prisma from "$/core/services/database.mjs";
 import { ensureProjectAccess } from "$/core/utils/projectAccess.mjs";
 import { uuid } from "$/core/utils/id.mjs";

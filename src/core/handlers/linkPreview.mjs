@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/core/services/logger.mjs";
 
 export async function fetchLinkPreview(req, res) {
   try {
