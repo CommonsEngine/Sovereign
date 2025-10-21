@@ -1,9 +1,17 @@
-# RFC: Core Architecture & Extensibility Model
+# RFC-0001: Core Architecture & Extensibility Model
+
+**Status:** Draft  
+**Author:** Kasun B.
+**Created:** 2025-10-21  
+**Target Version:** Sovereign v0.1  
+**Tags:** Architecture, Extensibility, Plugin System, Multi-DB, RFC
+
+---
 
 ## 1. Vision
 
-*Sovereign* aims to evolve into an **enterprise-grade software platform** built on a simple, modular, and self-sufficient architecture.
-The guiding philosophy is *"Simplicity is the ultimate sophistication."*
+_Sovereign_ aims to evolve into an **enterprise-grade software platform** built on a simple, modular, and self-sufficient architecture.
+The guiding philosophy is _"Simplicity is the ultimate sophistication."_
 
 The platform's foundation must be strong, extendible, and maintainable — without unnecessary dependencies or over-engineering.
 
@@ -18,14 +26,14 @@ The platform's foundation must be strong, extendible, and maintainable — witho
 
 ## 3. Technology Stack
 
-| Layer             | Current                                                    | Future-Ready For                                  |
-|-------------------|------------------------------------------------------------|---------------------------------------------------|
-| **Runtime**       | Node.js (ESM `.mjs`)                                       | Golang (optional replacement)                     |
-| **Web Framework** | Express.js + Handlebars + React/JSX SSR middleware         | React/Vite standalone web app                     |
-| **ORM / DB Layer**| Prisma + SQLite                                            | Prisma + PostgreSQL, multi-DB support             |
-| **API Layer**     | REST (core)                                                | Optional GraphQL extension                        |
-| **CLI**           | Node-based (`sv` tool)                                     | Manage plugins, migrations, and tenants           |
-| **Extensions**    | `/plugins/*` structure                                     | SDK + manifest-based plugin registration          |
+| Layer              | Current                                            | Future-Ready For                         |
+| ------------------ | -------------------------------------------------- | ---------------------------------------- |
+| **Runtime**        | Node.js (ESM `.mjs`)                               | Golang (optional replacement)            |
+| **Web Framework**  | Express.js + Handlebars + React/JSX SSR middleware | React/Vite standalone web app            |
+| **ORM / DB Layer** | Prisma + SQLite                                    | Prisma + PostgreSQL, multi-DB support    |
+| **API Layer**      | REST (core)                                        | Optional GraphQL extension               |
+| **CLI**            | Node-based (`sv` tool)                             | Manage plugins, migrations, and tenants  |
+| **Extensions**     | `/plugins/*` structure                             | SDK + manifest-based plugin registration |
 
 ## 4. Directory Structure (Root-level)
 
