@@ -38,7 +38,7 @@ FROM node:20-bookworm-slim AS runtime
 
 WORKDIR /app
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=5000
 ENV DATABASE_URL="file:./data/sovereign.db"
 
 # Install tini for proper signal handling
@@ -65,7 +65,7 @@ RUN chmod +x /entrypoint.sh
 
 USER node
 
-EXPOSE 3000
+EXPOSE 5000
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
 CMD ["node", "dist/index.mjs"]

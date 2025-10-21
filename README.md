@@ -361,7 +361,7 @@ docker build -t sovereign:local .
 mkdir -p ./data
 # run with mounted volume for sqlite persistence
 docker run --rm \
-  -p 3000:3000 \
+  -p 5000:5000 \
   -v $(pwd)/data:/app/data \
   --env-file .env \
   sovereign:local
@@ -392,7 +392,7 @@ Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:pac
 
    docker run -d \
      --name sovereign \
-     -p 3000:3000 \
+     -p 5000:5000 \
      -v sovereign-data:/app/data \
      --env-file /opt/sovereign/.env \
      ghcr.io/<org>/<repo>:latest
@@ -404,7 +404,7 @@ Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:pac
 
 - Default `DATABASE_URL` points to SQLite under `/app/data`; mount a persistent volume when running in production.
 - The entrypoint runs `prisma db push` on startup to sync the schema. Switch to `prisma migrate deploy` once a Postgres DB is introduced.
-- Exposes port `3000`; front with your preferred reverse proxy for TLS/HTTP termination.
+- Container listens on port `5000`; map it to any host port you prefer (e.g., `-p 5000:5000`) and front with your preferred reverse proxy for TLS/HTTP termination.
 
 ## PM2 Setup (non-container)
 
