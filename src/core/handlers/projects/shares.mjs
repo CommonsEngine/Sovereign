@@ -1,4 +1,4 @@
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 import logger from "$/core/utils/logger.mjs";
 import { uuid } from "$/core/utils/id.mjs";
 import {

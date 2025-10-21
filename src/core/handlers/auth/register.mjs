@@ -2,7 +2,7 @@ import { hashPassword, randomToken } from "$/core/utils/auth.mjs";
 import logger from "$/core/utils/logger.mjs";
 import { sendMail } from "$/core/utils/mailer.mjs";
 import env from "$/core/config/env.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 import { syncProjectPrimaryOwner } from "$/core/utils/projectAccess.mjs";
 
 const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();

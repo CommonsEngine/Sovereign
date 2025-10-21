@@ -4,7 +4,7 @@ import { hashPassword, randomToken } from "$/core/utils/auth.mjs";
 import logger from "$/core/utils/logger.mjs";
 import { sendMail } from "$/core/utils/mailer.mjs";
 import env from "$/core/config/env.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
 

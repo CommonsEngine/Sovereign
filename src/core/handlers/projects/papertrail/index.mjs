@@ -7,7 +7,7 @@ import unzipper from "unzipper";
 import { Readable } from "stream";
 import multer from "multer";
 
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 import logger from "$/core/utils/logger.mjs";
 import { ensureProjectAccess } from "$/core/utils/projectAccess.mjs";
 import { uuid } from "$/core/utils/id.mjs";

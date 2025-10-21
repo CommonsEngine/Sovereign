@@ -1,4 +1,4 @@
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 
 export const CONTRIBUTOR_ROLE_WEIGHT = {
   viewer: 1,

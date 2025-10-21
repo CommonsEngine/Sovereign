@@ -1,7 +1,7 @@
 import { uuid } from "$/core/utils/id.mjs";
 import logger from "$/core/utils/logger.mjs";
 import { flags } from "$/core/config/flags.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 
 export const MAX_SLUG_ATTEMPTS = 10;
 

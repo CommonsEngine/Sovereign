@@ -5,7 +5,7 @@ import {
 } from "$/core/utils/auth.mjs";
 import logger from "$/core/utils/logger.mjs";
 import env from "$/core/config/env.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 
 const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } =
   env();

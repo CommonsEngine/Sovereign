@@ -1,7 +1,7 @@
 import path from "path";
 
 import logger from "$/core/utils/logger.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 import {
   getGitManager,
   getOrInitGitManager,

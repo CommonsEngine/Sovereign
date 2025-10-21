@@ -1,6 +1,6 @@
-import prisma from "$/core//prisma.mjs";
-import logger from "$/core//utils/logger.mjs";
-import { refreshEnvCache } from "$/core//config/env.mjs";
+import prisma from "$/core/services/database.mjs";
+import logger from "$/core/utils/logger.mjs";
+import { refreshEnvCache } from "$/core/config/env.mjs";
 
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;

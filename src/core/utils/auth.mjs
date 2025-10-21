@@ -3,7 +3,7 @@ import crypto from "crypto";
 import argon2 from "argon2";
 
 import env from "$/core/config/env.mjs";
-import prisma from "$/core/prisma.mjs";
+import prisma from "$/core/services/database.mjs";
 import logger from "$/core/utils/logger.mjs";
 
 const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS } = env();

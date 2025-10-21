@@ -1,5 +1,5 @@
-import createServer, { createExtHost } from "./core/server.mjs";
-import db from "./core/services/database.mjs";
+import createServer from "./core/server.mjs";
+import * as db from "./core/services/database.mjs";
 import logger from "./core/services/logger.mjs";
 
 async function bootstrap() {
@@ -31,7 +31,7 @@ async function bootstrap() {
     const shutdown = async (signal) => {
       logger.warn(`Received ${signal}, shutting down gracefully...`);
       try {
-        await db.closeAll();
+        await db.gracefulShutdown();
         if (server.httpServer) server.httpServer.close();
         logger.info("🧹 Clean shutdown complete");
         process.exit(0);
