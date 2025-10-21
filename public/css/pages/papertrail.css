@@ -510,7 +510,7 @@
   .toolbar {
     display: flex;
     gap: 0.5rem;
-    padding: 0.5rem;
+    padding: 0.6rem;
     background: #f9fafb;
     color: #111;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
