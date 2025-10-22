@@ -5,6 +5,7 @@ This plan bridges the current Sovereign codebase with the RFC-driven architectur
 ---
 
 ## 0. Baseline Snapshot ✅
+
 - `bootstrap.mjs` already builds the Express server through `createServer()` and hints at `createExtHost()` (commented).
 - All features (e.g., PaperTrail, Blog) still live under `src/core/routes`/`handlers`.
 - No `/src/plugins` directory yet; the platform is monolithic.
@@ -14,7 +15,8 @@ Goal: introduce the extension host alongside the current structure, then peel fu
 
 ---
 
-## Phase 1 — Plugin Scaffolding (Low-risk foundation)
+## Phase 1 — Plugin Scaffolding (Low-risk foundation) ✅
+
 1. **Directory & Host Skeleton**
    - Create `src/plugins/` with a placeholder (e.g., `papertrail`) and `plugin.json`.
    - Add `src/core/ext-host/` with the host loader, manifest validator, and sandbox stub.
@@ -32,7 +34,8 @@ Deliverable: Host can load manifest metadata, but plugins do not yet contribute 
 
 ---
 
-## Phase 2 — Lifecycle Glue & Express Integration
+## Phase 2 — Lifecycle Glue & Express Integration ✅
+
 1. **Router Mounting**
    - Allow manifests to declare `mount` points (`api`, `web`).
    - Extension host creates sub-routers; `server.mjs` mounts them after native routes.
@@ -50,6 +53,7 @@ Result: Plugins can register Express routes and participate in lifecycle events.
 ---
 
 ## Phase 3 — Migrating Existing Features into Plugins
+
 1. **PaperTrail Extraction (Pilot)**
    - Move papertrail routes/handlers/db logic into `src/plugins/papertrail`.
    - Manifest declares REST/web mounts, capabilities, migrations path.
@@ -64,6 +68,7 @@ Key: run dual tests during migration to ensure the new plugin endpoints behave i
 ---
 
 ## Phase 4 — Plugin Data & Migrations
+
 1. **Plugin-specific Prisma Schema**
    - Allow plugins to provide their own Prisma schema/migrations (path via manifest).
    - Maintain a migration registry per plugin (and tenant in future).
@@ -79,6 +84,7 @@ This phase keeps current data in SQLite but lays groundwork for future Postgres/
 ---
 
 ## Phase 5 — CLI & Operational Tooling
+
 1. **`sv` CLI Skeleton**
    - Implement commands: `sv plugins:list`, `sv plugins:enable <name>`, `sv migrate:deploy [--plugin]`.
    - CLI reuses extension host logic without starting HTTP.
@@ -91,6 +97,7 @@ This phase keeps current data in SQLite but lays groundwork for future Postgres/
 ---
 
 ## Phase 6 — Hardening & Production Readiness
+
 1. **Sandbox Execution**
    - Move plugin code into isolated VM contexts or Worker threads.
    - Provide proxy APIs for allowed operations (`fetch`, `fs`, storage).
@@ -106,6 +113,7 @@ This phase keeps current data in SQLite but lays groundwork for future Postgres/
 ---
 
 ## Supporting Tasks (Cross-cutting)
+
 - Populate `server.services` with shared resources (db, config, logger) so the host can pass them cleanly to plugins.
 - Update `.env` to include plugin-related configuration (`PLUGINS_DIR`, allow-list, etc.).
 - Prepare for the Postgres migration (phase shift after v1).

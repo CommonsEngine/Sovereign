@@ -34,6 +34,16 @@ const manifestSchema = {
         },
       },
     },
+    mounts: {
+      type: "object",
+      additionalProperties: false,
+      default: {},
+      properties: {
+        api: { type: "string", minLength: 1 },
+        web: { type: "string", minLength: 1 },
+        jobs: { type: "string", minLength: 1 },
+      },
+    },
     schema: { type: "string", minLength: 1 },
     migrations: { type: "string", minLength: 1 },
     config: {
@@ -97,6 +107,7 @@ export function validateManifest(manifest, metadata = {}) {
   if (!cloned.capabilities) cloned.capabilities = [];
   if (!cloned.events) cloned.events = { subscribe: [] };
   if (!cloned.config) cloned.config = {};
+  if (!cloned.mounts) cloned.mounts = {};
 
   return {
     success: true,

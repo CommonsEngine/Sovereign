@@ -23,7 +23,8 @@ function coerceLogger(logger) {
   if (!logger) return console;
 
   const mapMethod = (method) => {
-    if (typeof logger[method] === "function") return logger[method].bind(logger);
+    if (typeof logger[method] === "function")
+      return logger[method].bind(logger);
     return console[method]?.bind(console) || console.log.bind(console);
   };
 
@@ -39,32 +40,44 @@ function coerceLogger(logger) {
 function createPluginLogger(parentLogger, manifest) {
   const pluginLabel = manifest.name || manifest.directoryName;
   return {
-    trace: (...args) =>
-      parentLogger.trace(`[${pluginLabel}]`, ...args),
-    debug: (...args) =>
-      parentLogger.debug(`[${pluginLabel}]`, ...args),
-    info: (...args) =>
-      parentLogger.info(`[${pluginLabel}]`, ...args),
-    warn: (...args) =>
-      parentLogger.warn(`[${pluginLabel}]`, ...args),
-    error: (...args) =>
-      parentLogger.error(`[${pluginLabel}]`, ...args),
+    trace: (...args) => parentLogger.trace(`[${pluginLabel}]`, ...args),
+    debug: (...args) => parentLogger.debug(`[${pluginLabel}]`, ...args),
+    info: (...args) => parentLogger.info(`[${pluginLabel}]`, ...args),
+    warn: (...args) => parentLogger.warn(`[${pluginLabel}]`, ...args),
+    error: (...args) => parentLogger.error(`[${pluginLabel}]`, ...args),
   };
 }
 
 /**
  * Creates the context object passed to plugin lifecycle callbacks.
- * This will grow over time; for now it only exposes logger, config,
- * an isolated router, the placeholder database handle, and the sandbox.
+ * Exposes scoped logging, config, mount metadata, isolated routers,
+ * and shared service handles (db placeholder for now) in preparation
+ * for future SDK expansion.
  */
 function buildPluginContext({ manifest, services, logger, sandbox }) {
-  const router = express.Router();
+  const mounts = manifest.mounts || {};
+  const routers = {};
+
+  for (const key of Object.keys(mounts)) {
+    routers[key] = express.Router({ mergeParams: true });
+  }
+
+  let defaultRouter = routers.api || routers.web;
+  if (!defaultRouter) {
+    defaultRouter = express.Router({ mergeParams: true });
+  }
+
+  if (!routers.default) {
+    routers.default = defaultRouter;
+  }
 
   return {
     manifest,
     logger,
     config: services.config || {},
-    router,
+    router: defaultRouter,
+    routers,
+    mounts,
     db: services.database ?? null,
     services,
     sandbox,
@@ -98,9 +111,7 @@ async function loadPluginModule(entryPath) {
 }
 
 export async function createExtHost(services = {}, options = {}) {
-  const pluginsDir = resolvePluginsDir(
-    options.pluginsDir || "./src/plugins",
-  );
+  const pluginsDir = resolvePluginsDir(options.pluginsDir || "./src/plugins");
   const sandboxFactory = options.createSandbox || createSandbox;
   const baseLogger = coerceLogger(
     options.logger || services.logger || global.logger || console,
@@ -121,8 +132,59 @@ export async function createExtHost(services = {}, options = {}) {
     });
   }
 
+  function createPluginState(manifest) {
+    return {
+      manifest,
+      module: null,
+      context: null,
+      sandbox: null,
+      mountedRouters: [],
+      status: "discovered",
+      errors: [],
+    };
+  }
+
+  function recordError(pluginState, hook, error) {
+    const message = error?.stack || error?.message || String(error);
+    pluginState.errors.push({ hook, error, message });
+    return message;
+  }
+
+  async function invokeHook(pluginState, hookName, lifecycleOptions = {}) {
+    const hook = pluginState.module?.[hookName];
+    if (typeof hook !== "function") return true;
+
+    try {
+      await hook.call(
+        pluginState.module,
+        pluginState.context,
+        lifecycleOptions,
+      );
+      return true;
+    } catch (err) {
+      const message = recordError(pluginState, hookName, err);
+      try {
+        pluginState.context?.logger?.error?.(
+          `Plugin lifecycle hook "${hookName}" failed`,
+          err,
+        );
+      } catch {
+        // ignore logger errors
+      }
+      context.logger.error(
+        `Extension host: plugin "${pluginState.manifest.name}" ${hookName} failed: ${message}`,
+      );
+      return false;
+    }
+  }
+
   async function mount(app) {
-    void app;
+    if (!app || typeof app.use !== "function") {
+      throw new Error(
+        "Extension host mount requires an Express app instance with app.use()",
+      );
+    }
+
     context.plugins = [];
 
     if (context.manifests.length === 0) {
@@ -131,6 +193,8 @@ export async function createExtHost(services = {}, options = {}) {
     }
 
     for (const manifest of context.manifests) {
+      const pluginState = createPluginState(manifest);
+
       try {
         const entryPath = await ensureEntryExists(manifest);
         const pluginModule = await loadPluginModule(entryPath);
@@ -146,26 +210,76 @@ export async function createExtHost(services = {}, options = {}) {
           sandbox,
         });
 
-        if (typeof pluginModule?.register === "function") {
-          await pluginModule.register(pluginContext);
+        pluginState.module = pluginModule;
+        pluginState.context = pluginContext;
+        pluginState.sandbox = sandbox;
+        pluginState.status = "initialized";
+
+        const registered = await invokeHook(pluginState, "register");
+        if (!registered) {
+          pluginState.status = "error";
+          await pluginState.sandbox?.dispose?.();
+          context.plugins.push(pluginState);
+          continue;
         }
 
-        context.plugins.push({
-          manifest,
-          module: pluginModule,
-          context: pluginContext,
-          sandbox,
-          status: "registered",
-        });
+        pluginState.status = "registered";
 
-        context.logger.info(
-          `Extension host: loaded plugin ${manifest.name} v${manifest.version}`,
+        for (const [mountName, router] of Object.entries(
+          pluginContext.routers,
+        )) {
+          const mountPath = pluginContext.mounts[mountName];
+          if (!mountPath || typeof app.use !== "function") continue;
+
+          app.use(mountPath, router);
+          pluginState.mountedRouters.push({
+            name: mountName,
+            path: mountPath,
+            router,
+          });
+
+          pluginLogger.debug(`Mounted router "${mountName}" at ${mountPath}`);
+        }
+
+        const lifecycleOptions = {
+          tenantId: options.tenantId || "tenant-0",
+        };
+
+        const enabled = await invokeHook(
+          pluginState,
+          "onEnable",
+          lifecycleOptions,
         );
+
+        pluginState.status = enabled ? "enabled" : "error";
+
+        if (pluginState.status === "enabled") {
+          context.logger.info(
+            `Extension host: loaded plugin ${manifest.name} v${manifest.version}`,
+          );
+        } else {
+          context.logger.warn(
+            `Extension host: plugin ${manifest.name} enabled with errors`,
+          );
+        }
       } catch (err) {
+        const message = recordError(pluginState, "init", err);
+        pluginState.status = "error";
         context.logger.error(
-          `Extension host: failed to initialize plugin "${manifest.name}": ${err.message}`,
+          `Extension host: failed to initialize plugin "${manifest.name}": ${message}`,
         );
+        try {
+          await pluginState.sandbox?.dispose?.();
+        } catch (disposeErr) {
+          context.logger.warn(
+            `Extension host: sandbox dispose failed for "${manifest.name}" after init error: ${
+              disposeErr?.message || disposeErr
+            }`,
+          );
+        }
       }
+
+      context.plugins.push(pluginState);
     }
 
     return context.plugins;
@@ -173,6 +287,16 @@ export async function createExtHost(services = {}, options = {}) {
 
   async function shutdown() {
     for (const plugin of context.plugins) {
+      const lifecycleOptions = {
+        tenantId: options.tenantId || "tenant-0",
+        reason: "shutdown",
+      };
+
+      if (plugin.status === "enabled") {
+        await invokeHook(plugin, "onDisable", lifecycleOptions);
+      }
+      await invokeHook(plugin, "onShutdown", lifecycleOptions);
+
       try {
         await plugin.sandbox.dispose?.();
       } catch (err) {

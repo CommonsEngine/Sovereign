@@ -8,6 +8,10 @@
     "engine": ">=0.1.0",
     "entry": "./index.mjs"
   },
+  "mounts": {
+    "api": "/plugins/papertrail/api",
+    "web": "/plugins/papertrail"
+  },
   "capabilities": [],
   "events": {
     "subscribe": []

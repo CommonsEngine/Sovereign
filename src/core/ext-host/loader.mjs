@@ -3,6 +3,38 @@ import path from "path";
 
 import { validateManifest } from "./manifestValidator.mjs";
 
+function normalizeMountPath(value) {
+  if (typeof value !== "string") return null;
+  let result = value.trim();
+  if (!result) return null;
+  if (!result.startsWith("/")) {
+    result = `/${result}`;
+  }
+  if (result.length > 1 && result.endsWith("/")) {
+    result = result.replace(/\/+$/, "");
+    if (!result.startsWith("/")) result = `/${result}`;
+    if (result === "") result = "/";
+  }
+  return result;
+}
+
+function normalizeMounts(mounts = {}, { logger, manifestPath } = {}) {
+  const normalized = {};
+  for (const [key, rawValue] of Object.entries(mounts)) {
+    const pathValue = normalizeMountPath(rawValue);
+    if (!pathValue) {
+      logger?.warn?.(
+        formatError(`mount "${key}" is empty or invalid; skipping`, {
+          manifestPath,
+        }),
+      );
+      continue;
+    }
+    normalized[key] = pathValue;
+  }
+  return normalized;
+}
+
 function formatError(message, options = {}) {
   const { pluginDir, manifestPath } = options;
   const context = [pluginDir, manifestPath].filter(Boolean).join(" ");
@@ -75,13 +107,19 @@ export async function discoverManifests(pluginsDir, options = {}) {
       continue;
     }
 
-    manifests.push({
+    const normalizedManifest = {
       ...validation.manifest,
       id: validation.manifest.name || entry.name,
       directoryName: entry.name,
       manifestPath,
       absoluteDir: pluginDir,
-    });
+      mounts: normalizeMounts(validation.manifest.mounts, {
+        logger,
+        manifestPath,
+      }),
+    };
+
+    manifests.push(normalizedManifest);
   }
 
   manifests.sort((a, b) => a.id.localeCompare(b.id));

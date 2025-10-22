@@ -1,4 +1,4 @@
-export function createSandbox(manifest) {
+export function createSandbox(manifest, _options = {}) {
   return {
     manifest,
     dispose() {},
