@@ -1,0 +1,15 @@
+{
+  "name": "@sovereign/papertrail",
+  "version": "0.0.0-development",
+  "description": "PaperTrail plugin placeholder for Sovereign extension host bootstrap.",
+  "author": "CommonsEngine",
+  "license": "AGPL-3.0-only",
+  "sovereign": {
+    "engine": ">=0.1.0",
+    "entry": "./index.mjs"
+  },
+  "capabilities": [],
+  "events": {
+    "subscribe": []
+  }
+}

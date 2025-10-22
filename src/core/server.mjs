@@ -33,7 +33,8 @@ global.logger = logger; // Make logger globally accessible (e.g., in Prisma hook
 
 import env from "./config/env.mjs";
 
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = env();
+const config = env();
+const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = config;
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -228,18 +229,22 @@ export default async function createServer() {
     await new Promise((resolve) => httpServer.close(resolve));
   }
 
+  const services = {
+    logger,
+    config,
+    database: { client: null },
+  };
+
   return {
     app,
     port: PORT,
     start,
     stop,
-    services: {},
+    services,
     get httpServer() {
       return httpServer;
     },
   };
 }
 
-export async function createExtHost() {
-  return {};
-}
+export { createExtHost } from "./ext-host/index.mjs";
