@@ -7,10 +7,10 @@ import unzipper from "unzipper";
 import { Readable } from "stream";
 import multer from "multer";
 
-import prisma from "$/core/services/database.mjs";
-import logger from "$/core/utils/logger.mjs";
-import { ensureProjectAccess } from "$/core/utils/projectAccess.mjs";
-import { uuid } from "$/core/utils/id.mjs";
+import { prisma } from "$/services/database.mjs";
+import logger from "$/utils/logger.mjs";
+import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
+import { uuid } from "$/utils/id.mjs";
 
 const PAPERTRAIL_DATA_ROOT = path.resolve(
   process.env.PAPERTRAIL_DATA_ROOT || path.join(process.cwd(), "data", "pt"),

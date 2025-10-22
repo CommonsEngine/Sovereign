@@ -10,6 +10,18 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
+import {
+  connectPrismaWithRetry,
+  gracefulShutdown,
+  prisma,
+} from "$/services/database.mjs";
+
+import hbsHelpers from "$/utils/hbsHelpers.mjs";
+import logger from "$/utils/logger.mjs";
+global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
+
+import env from "$/config/env.mjs";
+
 import authRouter from "./routes/auth.mjs";
 import apiRouter from "./routes/api/index.mjs";
 import webRouter from "./routes/web.mjs";
@@ -21,16 +33,6 @@ import useJSX from "./middlewares/useJSX.mjs";
 
 import * as indexHandler from "./handlers/index.mjs";
 import * as authHandler from "./handlers/auth/index.mjs";
-
-import hbsHelpers from "./utils/hbsHelpers.mjs";
-import logger from "./utils/logger.mjs";
-global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
-
-import prisma, {
-  connectPrismaWithRetry,
-  gracefulShutdown,
-} from "./services/database.mjs";
-import env from "./config/env.mjs";
 
 const config = env();
 const { __publicdir, __srcDir, __templatedir, __datadir, PORT, NODE_ENV } =
@@ -49,7 +51,6 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 let createViteServer;
 if (process.env.NODE_ENV !== "production") {
   // Lazy require to avoid hard dependency in production builds
-  // eslint-disable-next-line n/no-unpublished-import
   ({ createServer: createViteServer } = await import("vite"));
 }
 

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import prisma from "$/core/services/database.mjs";
+import { prisma } from "$/services/database.mjs";
 
 import { toBool } from "./utils.mjs";
 

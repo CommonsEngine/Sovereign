@@ -1,9 +1,9 @@
-import logger from "$/core/utils/logger.mjs";
-import prisma from "$/core/services/database.mjs";
+import { prisma } from "$/services/database.mjs";
+import logger from "$/utils/logger.mjs";
 import {
   ensureProjectAccess,
   ProjectAccessError,
-} from "$/core/utils/projectAccess.mjs";
+} from "$/utils/projectAccess.mjs";
 
 export default async function update(req, res) {
   try {

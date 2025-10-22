@@ -1,7 +1,7 @@
 // TODO: Utilize config/head.mjs for these
 
-import env from "$/core/config/env.mjs";
-import pkg from "$/core/config/pkg.mjs";
+import env from "$/config/env.mjs";
+import pkg from "$/config/pkg.mjs";
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 

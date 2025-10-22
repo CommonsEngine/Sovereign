@@ -1,7 +1,7 @@
-import logger from "$/core/utils/logger.mjs";
-import prisma from "$/core/services/database.mjs";
-import { USER_ROLES } from "$/core/config/index.mjs";
-import { syncProjectPrimaryOwner } from "$/core/utils/projectAccess.mjs";
+import { prisma } from "$/services/database.mjs";
+import logger from "$/utils/logger.mjs";
+import { syncProjectPrimaryOwner } from "$/utils/projectAccess.mjs";
+import { USER_ROLES } from "$/config/index.mjs";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",

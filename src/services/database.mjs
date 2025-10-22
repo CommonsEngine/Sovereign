@@ -1,11 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 
-import logger from "$/core/utils/logger.mjs";
+import logger from "$/utils/logger.mjs";
 
-const prisma = new PrismaClient({
+export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
 });
-export default prisma;
 
 // Handle Prisma connection errors and graceful shutdown
 async function connectPrisma() {

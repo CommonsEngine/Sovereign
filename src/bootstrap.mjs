@@ -1,7 +1,8 @@
+import * as db from "$/services/database.mjs";
+import logger from "$/services/logger.mjs";
+
 import createServer from "./core/server.mjs";
 import createExtHost from "./core/ext-host/index.mjs";
-import * as db from "./core/services/database.mjs";
-import logger from "./core/services/logger.mjs";
 
 async function bootstrap() {
   logger.info("🚀 Starting Sovereign platform...");
