@@ -33,7 +33,8 @@ import prisma, {
 import env from "./config/env.mjs";
 
 const config = env();
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = config;
+const { __publicdir, __srcDir, __templatedir, __datadir, PORT, NODE_ENV } =
+  config;
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -89,7 +90,11 @@ export default async function createServer() {
     }),
   );
   app.set("view engine", "html");
-  app.set("views", __templatedir);
+  app.set("views", [
+    __templatedir,
+    path.join(__srcDir, "plugins/blog/views"),
+    path.join(__srcDir, "plugins/papertrail/views"),
+  ]);
 
   // Enable template caching in production
   app.set("view cache", NODE_ENV === "production");
@@ -131,6 +136,15 @@ export default async function createServer() {
         }
       },
     }),
+  );
+
+  app.use(
+    "/plugins/blog",
+    express.static(path.join(__srcDir, "plugins/blog/public")),
+  );
+  app.use(
+    "/plugins/papertrail",
+    express.static(path.join(__srcDir, "plugins/papertrail/public")),
   );
 
   const papertrailUploadsDir = path.resolve(

@@ -1,0 +1,17 @@
+{
+  "name": "@sovereign/blog",
+  "version": "0.0.0",
+  "enabled": true,
+  "description": "Sovereign Blog",
+  "main": "./index.mjs",
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "sovereign": {
+    "engine": "0.5.0",
+    "entryPoints": ["launcher"]
+  },
+  "capabilities": [],
+  "events": {},
+  "prisma": {},
+  "config": {}
+}

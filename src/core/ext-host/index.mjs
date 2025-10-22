@@ -1,5 +1,3 @@
-// eslint-disable-next-line import/order
-// import express from "express";
 import path from "path";
 
 import { discoverManifests } from "./loader.mjs";

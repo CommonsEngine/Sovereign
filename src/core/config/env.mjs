@@ -151,6 +151,7 @@ const baseTemplate = Object.freeze({
   IS_PROD: (process.env.NODE_ENV || "development") === "production",
 
   __rootdir,
+  __srcDir,
   __publicdir,
   __templatedir,
   __datadir,
