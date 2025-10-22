@@ -4,10 +4,11 @@ import * as handlers from "../handlers/index.mjs";
 
 const router = express.Router();
 
-router.get("/blog/post/all", handlers.getAllPosts);
-router.delete("/blog/post/:fp", handlers.deletePost);
-router.patch("/blog/post/:fp", handlers.updatePost);
-router.post("/blog/post/:fp", handlers.publishPost);
-router.post("/blog/retry-connection", handlers.retryConnection);
+router.patch("/blog/:projectId/configure", handlers.configureProject);
+router.get("/blog/:projectId/post/all", handlers.getAllPosts);
+router.delete("/blog/:projectId/post/:fp", handlers.deletePost);
+router.patch("/blog/:projectId/post/:fp", handlers.updatePost);
+router.post("/blog/:projectId/post/:fp", handlers.publishPost);
+router.post("/blog/:projectId/retry-connection", handlers.retryConnection);
 
 export default router;

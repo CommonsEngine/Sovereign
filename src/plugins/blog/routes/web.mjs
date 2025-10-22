@@ -11,11 +11,19 @@ const router = express.Router();
 router.use([requireAuth, exposeGlobals]);
 
 router.get(
-  "/blog/configure",
+  "/blog/:projectId/configure",
   requireFeature("blog"),
   handlers.viewProjectConfigure,
 );
-router.get("/blog/post/new", requireFeature("blog"), handlers.viewPostCreate);
-router.get("/blog/post/:fp", requireFeature("blog"), handlers.viewPostEdit);
+router.get(
+  "/blog/:projectId/post/new",
+  requireFeature("blog"),
+  handlers.viewPostCreate,
+);
+router.get(
+  "/blog/:projectId/post/:fp",
+  requireFeature("blog"),
+  handlers.viewPostEdit,
+);
 
 export default router;

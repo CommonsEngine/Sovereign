@@ -146,7 +146,7 @@ export default async function create(req, res) {
     // TODO: Use slug in URL if desired
     const url =
       type === "blog"
-        ? `/p/${createdProject.project.id}/configure`
+        ? `/${type}/${createdProject.project.id}/configure`
         : `/p/${createdProject.project.id}`;
 
     return res.status(201).json({

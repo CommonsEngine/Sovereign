@@ -87,7 +87,7 @@
       async function postConfigWithRetry(attempt = 0) {
         try {
           const resp = await fetch(
-            `/api/projects/${encodeURIComponent(projectId)}/configure`,
+            `/api/blog/${encodeURIComponent(projectId)}/configure`,
             {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },

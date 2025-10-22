@@ -230,7 +230,7 @@ export async function viewPostEdit(req, res) {
       },
     });
     if (!cfg) {
-      return res.redirect(302, `/p/${projectId}/configure`);
+      return res.redirect(302, `/${project.type}/${projectId}/configure`);
     }
 
     // Ensure git connection
@@ -246,7 +246,7 @@ export async function viewPostEdit(req, res) {
         });
       } catch (err) {
         logger.error("Git connect failed while opening post:", err);
-        return res.redirect(302, `/p/${projectId}/configure`);
+        return res.redirect(302, `/${project.type}/${projectId}/configure`);
       }
     }
 
@@ -298,7 +298,7 @@ export async function viewPostEdit(req, res) {
     console.log("Rendering editor for post:", meta);
 
     // Render editor template with context
-    return res.render("project/blog/editor", {
+    return res.render("blog/editor", {
       projectId,
       filename,
       projectName: project.name,
@@ -1039,7 +1039,7 @@ export async function viewPostCreate(req, res) {
     });
     if (!cfg) {
       // Not configured yet
-      return res.redirect(302, `/p/${projectId}/configure`);
+      return res.redirect(302, `/${project.type}/${projectId}/configure`);
     }
 
     // Ensure git connection (reuse cached manager if available)
@@ -1055,7 +1055,7 @@ export async function viewPostCreate(req, res) {
         });
       } catch (err) {
         logger.error("Git connect failed during post creation:", err);
-        return res.redirect(302, `/p/${projectId}/configure`);
+        return res.redirect(302, `/${project.type}/${projectId}/configure`);
       }
     }
 
@@ -1270,7 +1270,7 @@ export async function viewProjectConfigure(req, res) {
       return res.redirect(302, `/p/${project.id}`);
     }
 
-    return res.render("project/blog/configure", {
+    return res.render("blog/configure", {
       project,
       gitConfig: project.blog?.gitConfig || null,
     });
@@ -1282,5 +1282,102 @@ export async function viewProjectConfigure(req, res) {
       description: "Failed to load configuration",
       error: err?.message || String(err),
     });
+  }
+}
+
+export async function configureProject(req, res) {
+  try {
+    const projectId = req.params.id;
+    logger.log("Configuring blog for project: >>", projectId);
+    if (!projectId) {
+      return res.status(400).json({ error: "Missing project id" });
+    }
+
+    const blog = await prisma.blog.findUnique({
+      where: { projectId },
+      select: {
+        id: true,
+        projectId: true,
+        gitConfig: true,
+        project: { select: { id: true } },
+      },
+    });
+
+    if (!blog) {
+      return res.status(404).json({ error: "Unsupported project type" });
+    }
+    if (blog?.gitConfig) {
+      return res.status(400).json({ error: "Blog already configured" });
+    }
+
+    await ensureProjectAccess({
+      projectId,
+      user: req.user,
+      allowedRoles: ["owner"],
+    });
+
+    const raw = req.body || {};
+
+    const repoUrl = String(raw.repoUrl || "").trim();
+    if (!repoUrl)
+      return res.status(400).json({ error: "Repository URL is required" });
+
+    const branch = (
+      String(raw.branch || raw.defaultBranch || "main").trim() || "main"
+    ).slice(0, 80);
+    const contentDirRaw =
+      typeof raw.contentDir === "string" ? raw.contentDir : "";
+    const contentDir = contentDirRaw.trim().slice(0, 200) || null;
+    const gitUserName =
+      typeof raw.gitUserName === "string"
+        ? raw.gitUserName.trim().slice(0, 120)
+        : null;
+    const gitUserEmail =
+      typeof raw.gitUserEmail === "string"
+        ? raw.gitUserEmail.trim().slice(0, 120)
+        : null;
+    const gitAuthToken =
+      typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
+
+    // 1) Validate by connecting once and prime the in-memory connection
+    try {
+      await getOrInitGitManager(projectId, {
+        repoUrl,
+        branch,
+        gitUserName,
+        gitUserEmail,
+        gitAuthToken,
+      });
+    } catch (err) {
+      logger.error("Git connect/validate failed:", err);
+      return res.status(400).json({
+        error:
+          "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
+      });
+    }
+
+    // 2) Save configuration
+    // map to Prisma model field names
+    const gitConfigPayload = {
+      provider: "github",
+      repoUrl,
+      branch,
+      contentDir,
+      authType: "ssh",
+      authSecret: gitAuthToken,
+      userName: gitUserName, // model field is userName
+      userEmail: gitUserEmail, // model field is userEmail
+    };
+
+    await prisma.gitConfig.upsert({
+      where: { blogId: blog.id },
+      create: { blogId: blog.id, ...gitConfigPayload },
+      update: gitConfigPayload,
+    });
+
+    return res.json({ configured: true, gitConfigPayload });
+  } catch (err) {
+    logger.error("Configure blog failed:", err);
+    return res.status(500).json({ error: "Failed to configure blog" });
   }
 }

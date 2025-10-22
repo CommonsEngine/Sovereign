@@ -68,7 +68,7 @@
       ? post.tags.join(", ")
       : post.tags || "";
     const statusLabel = post.status || (post.draft ? "Draft" : "Published");
-    const hrefEdit = `/p/${projectId}/blog/post/${encodeURIComponent(post.filename)}?edit=true`;
+    const hrefEdit = `/blog/${projectId}/post/${encodeURIComponent(post.filename)}?edit=true`;
     const publishSource = post.pubDate || post.modified;
     const { iso, label } = publishSource
       ? fmtDate(publishSource)
@@ -178,7 +178,7 @@
 
   async function fetchPosts(projectId) {
     const resp = await fetch(
-      `/api/projects/${encodeURIComponent(projectId)}/blog/post/all`,
+      `/api/blog/${encodeURIComponent(projectId)}/post/all`,
       {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -272,7 +272,7 @@
 
     try {
       const resp = await fetch(
-        `/api/projects/${encodeURIComponent(projectId)}/blog/post/${encodeURIComponent(decodeURIComponent(filename))}`,
+        `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(decodeURIComponent(filename))}`,
         {
           method: "DELETE",
           headers: { Accept: "application/json" },
@@ -355,13 +355,10 @@
       }
       retryConnectionBtn.disabled = true;
       retryConnectionBtn.textContent = "Retrying…";
-      fetch(
-        `/api/projects/${encodeURIComponent(projectId)}/blog/retry-connection`,
-        {
-          method: "POST",
-          headers: { Accept: "application/json" },
-        },
-      )
+      fetch(`/api/blog/${encodeURIComponent(projectId)}/retry-connection`, {
+        method: "POST",
+        headers: { Accept: "application/json" },
+      })
         .then((resp) => {
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           return resp.json().catch(() => ({}));

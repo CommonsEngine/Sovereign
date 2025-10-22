@@ -83,103 +83,6 @@ async function getProjectAccessContext(req, projectId, options = {}) {
   });
 }
 
-export async function configureProject(req, res) {
-  try {
-    const projectId = req.params.id;
-    logger.log("Configuring blog for project: >>", projectId);
-    if (!projectId) {
-      return res.status(400).json({ error: "Missing project id" });
-    }
-
-    const blog = await prisma.blog.findUnique({
-      where: { projectId },
-      select: {
-        id: true,
-        projectId: true,
-        gitConfig: true,
-        project: { select: { id: true } },
-      },
-    });
-
-    if (!blog) {
-      return res.status(404).json({ error: "Unsupported project type" });
-    }
-    if (blog?.gitConfig) {
-      return res.status(400).json({ error: "Blog already configured" });
-    }
-
-    await ensureProjectAccess({
-      projectId,
-      user: req.user,
-      allowedRoles: ["owner"],
-    });
-
-    const raw = req.body || {};
-
-    const repoUrl = String(raw.repoUrl || "").trim();
-    if (!repoUrl)
-      return res.status(400).json({ error: "Repository URL is required" });
-
-    const branch = (
-      String(raw.branch || raw.defaultBranch || "main").trim() || "main"
-    ).slice(0, 80);
-    const contentDirRaw =
-      typeof raw.contentDir === "string" ? raw.contentDir : "";
-    const contentDir = contentDirRaw.trim().slice(0, 200) || null;
-    const gitUserName =
-      typeof raw.gitUserName === "string"
-        ? raw.gitUserName.trim().slice(0, 120)
-        : null;
-    const gitUserEmail =
-      typeof raw.gitUserEmail === "string"
-        ? raw.gitUserEmail.trim().slice(0, 120)
-        : null;
-    const gitAuthToken =
-      typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
-
-    // 1) Validate by connecting once and prime the in-memory connection
-    try {
-      await getOrInitGitManager(projectId, {
-        repoUrl,
-        branch,
-        gitUserName,
-        gitUserEmail,
-        gitAuthToken,
-      });
-    } catch (err) {
-      logger.error("Git connect/validate failed:", err);
-      return res.status(400).json({
-        error:
-          "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
-      });
-    }
-
-    // 2) Save configuration
-    // map to Prisma model field names
-    const gitConfigPayload = {
-      provider: "github",
-      repoUrl,
-      branch,
-      contentDir,
-      authType: "ssh",
-      authSecret: gitAuthToken,
-      userName: gitUserName, // model field is userName
-      userEmail: gitUserEmail, // model field is userEmail
-    };
-
-    await prisma.gitConfig.upsert({
-      where: { blogId: blog.id },
-      create: { blogId: blog.id, ...gitConfigPayload },
-      update: gitConfigPayload,
-    });
-
-    return res.json({ configured: true, gitConfigPayload });
-  } catch (err) {
-    logger.error("Configure blog failed:", err);
-    return res.status(500).json({ error: "Failed to configure blog" });
-  }
-}
-
 export async function viewProject(req, res) {
   try {
     const projectId = req.params.projectId;
@@ -222,11 +125,12 @@ export async function viewProject(req, res) {
 
     const project = context.project;
 
+    // TODO: Refer `configure()` from plugins/blog/index.mjs
     if (project.type === "blog") {
       // If this is a blog and not configured yet, send to configure flow
       const needsBlogConfigure = !project.blog?.gitConfig;
       if (needsBlogConfigure) {
-        return res.redirect(302, `/p/${project.id}/configure`);
+        return res.redirect(302, `/${project.type}/${project.id}/configure`);
       }
 
       // Try to use cached connection; if missing or broken, try to (re)connect once.
@@ -272,7 +176,7 @@ export async function viewProject(req, res) {
         } catch {
           // ignore if already deleted
         }
-        // return res.redirect(302, `/p/${project.id}/configure`);
+        // return res.redirect(302, `/${project.type}/${project.id}/configure`);
       }
 
       const gitConfig = project.blog?.gitConfig || null;
@@ -298,7 +202,7 @@ export async function viewProject(req, res) {
       const canViewShares = ["owner", "editor"].includes(context.role || "");
       const canManageShares = context.role === "owner";
 
-      return res.render("project/blog/index", {
+      return res.render(`${project.type}/index`, {
         project: projectView,
         connected,
         connect_error: !connected,
@@ -372,7 +276,7 @@ export async function viewProject(req, res) {
       const canManageShares = context.role === "owner";
       const canViewShares = canEditShares || context.role === "viewer";
 
-      return res.render("project/papertrail/index", {
+      return res.render(`${project.type}/index`, {
         project: projectView,
         board: boardPayload,
         boardJson: boardPayload
@@ -401,89 +305,6 @@ export async function viewProject(req, res) {
       code: 500,
       message: "Oops!",
       description: "Failed to load project",
-      error: err?.message || String(err),
-    });
-  }
-}
-
-export async function viewProjectConfigure(req, res) {
-  try {
-    const projectId = req.params.projectId;
-    if (!projectId) {
-      return res.status(400).render("error", {
-        code: 400,
-        message: "Bad Request",
-        description: "Missing project id",
-      });
-    }
-
-    let access;
-    try {
-      access = await getProjectAccessContext(req, projectId, {
-        roles: ["owner"],
-        select: {
-          id: true,
-          name: true,
-          type: true,
-          blog: {
-            select: {
-              id: true,
-              projectId: true,
-              gitConfig: {
-                select: {
-                  repoUrl: true,
-                  branch: true,
-                  contentDir: true,
-                  userName: true,
-                  userEmail: true,
-                },
-              },
-            },
-          },
-        },
-      });
-    } catch (err) {
-      if (err?.name === "ProjectAccessError") {
-        const status = err.status ?? 403;
-        const message =
-          status === 404
-            ? "Not Found"
-            : status === 400
-              ? "Bad Request"
-              : "Forbidden";
-        const description =
-          status === 404
-            ? "Project not found"
-            : status === 400
-              ? err.message || "Invalid request"
-              : "You do not have access to this project";
-        return res.status(status).render("error", {
-          code: status,
-          message,
-          description,
-        });
-      }
-      throw err;
-    }
-
-    const project = access.project;
-
-    // Only blogs have configuration flow. If already configured or not a blog, redirect to project.
-    const alreadyConfigured = !!project.blog?.gitConfig;
-    if (project.type !== "blog" || alreadyConfigured) {
-      return res.redirect(302, `/p/${project.id}`);
-    }
-
-    return res.render("project/blog/configure", {
-      project,
-      gitConfig: project.blog?.gitConfig || null,
-    });
-  } catch (err) {
-    logger.error("Load project configure failed:", err);
-    return res.status(500).render("error", {
-      code: 500,
-      message: "Oops!",
-      description: "Failed to load configuration",
       error: err?.message || String(err),
     });
   }

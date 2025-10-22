@@ -711,7 +711,7 @@
       const filename = window.__FILENAME__ || "";
       if (!projectId || !filename) throw new Error("Missing identifiers");
       const resp = await fetch(
-        `/api/projects/${encodeURIComponent(projectId)}/blog/post/${encodeURIComponent(filename)}`,
+        `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(filename)}`,
         {
           method,
           headers: {
@@ -769,7 +769,7 @@
       }
       try {
         const resp = await fetch(
-          `/api/projects/${encodeURIComponent(projectId)}/blog/post/${encodeURIComponent(filename)}`,
+          `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(filename)}`,
           {
             method: "DELETE",
             headers: { Accept: "application/json" },

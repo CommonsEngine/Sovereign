@@ -21,7 +21,6 @@ router.post("/projects", projectsHandler.create);
 router.get("/projects", projectsHandler.getAll);
 router.patch("/projects/:id", projectsHandler.update);
 router.delete("/projects/:id", projectsHandler.remove);
-router.patch("/projects/:id/configure", projectsHandler.configureProject);
 router.get("/projects/:id/shares", projectSharesHandler.list);
 router.post("/projects/:id/shares", projectSharesHandler.create);
 router.patch("/projects/:id/shares/:memberId", projectSharesHandler.update);
