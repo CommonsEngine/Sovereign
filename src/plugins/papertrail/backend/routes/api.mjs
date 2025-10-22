@@ -1,8 +1,8 @@
 import express from "express";
 import multer from "multer";
 
-import * as projectsHandler from "$/core/handlers/projects/index.mjs";
-import requireFeature from "$/core/middlewares/requireFeature.mjs";
+import requireFeature from "../../../../core/middlewares/requireFeature.mjs";
+import * as papertrail from "../index.mjs";
 
 const router = express.Router();
 
@@ -16,133 +16,121 @@ const bundleUpload = multer({
 });
 
 // Board Meta
-router.post(
-  "/projects/:projectId/papertrail/board",
-  projectsHandler.papertrail.saveBoard,
-);
-router.get(
-  "/projects/:projectId/papertrail/board",
-  projectsHandler.papertrail.getBoard,
-);
-router.patch(
-  "/projects/:projectId/papertrail/board",
-  projectsHandler.papertrail.updateBoard,
-);
+router.post("/projects/:projectId/papertrail/board", papertrail.saveBoard);
+router.get("/projects/:projectId/papertrail/board", papertrail.getBoard);
+router.patch("/projects/:projectId/papertrail/board", papertrail.updateBoard);
 router.get(
   "/projects/:projectId/papertrail/board/export",
-  projectsHandler.papertrail.exportBoard,
+  papertrail.exportBoard,
 );
 router.post(
   "/projects/:projectId/papertrail/board/import/validate",
   bundleUpload.single("bundle"),
-  projectsHandler.papertrail.validateImportBundle,
+  papertrail.validateImportBundle,
 );
 router.post(
   "/projects/:projectId/papertrail/board/import",
   bundleUpload.single("bundle"),
-  projectsHandler.papertrail.importBoard,
+  papertrail.importBoard,
 );
-router.delete(
-  "/projects/:projectId/papertrail/board",
-  projectsHandler.papertrail.deleteBoard,
-);
+router.delete("/projects/:projectId/papertrail/board", papertrail.deleteBoard);
 
 // Nodes
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/nodes",
-  projectsHandler.papertrail.listNodes,
+  papertrail.listNodes,
 );
 router.post(
   "/projects/:projectId/papertrail/board/:boardId/nodes",
-  projectsHandler.papertrail.createNode,
+  papertrail.createNode,
 );
 
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  projectsHandler.papertrail.getNode,
+  papertrail.getNode,
 );
 router.patch(
   "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  projectsHandler.papertrail.updateNode,
+  papertrail.updateNode,
 );
 router.delete(
   "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  projectsHandler.papertrail.deleteNode,
+  papertrail.deleteNode,
 );
 
 // Edges
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/edges",
-  projectsHandler.papertrail.listEdges,
+  papertrail.listEdges,
 );
 router.post(
   "/projects/:projectId/papertrail/board/:boardId/edges",
-  projectsHandler.papertrail.createEdge,
+  papertrail.createEdge,
 );
 
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  projectsHandler.papertrail.getEdge,
+  papertrail.getEdge,
 );
 router.patch(
   "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  projectsHandler.papertrail.updateEdge,
+  papertrail.updateEdge,
 );
 router.delete(
   "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  projectsHandler.papertrail.deleteEdge,
+  papertrail.deleteEdge,
 );
 
 // Comments
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/comments",
-  projectsHandler.papertrail.listComments,
+  papertrail.listComments,
 );
 router.post(
   "/projects/:projectId/papertrail/board/:boardId/comments",
-  projectsHandler.papertrail.createComment,
+  papertrail.createComment,
 );
 
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
-  projectsHandler.papertrail.getComment,
+  papertrail.getComment,
 );
 router.patch(
   "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
-  projectsHandler.papertrail.updateComment,
+  papertrail.updateComment,
 );
 router.delete(
   "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
-  projectsHandler.papertrail.deleteComment,
+  papertrail.deleteComment,
 );
 
 // Attachments
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/attachments",
-  projectsHandler.papertrail.listAttachments,
+  papertrail.listAttachments,
 );
 router.post(
   "/projects/:projectId/papertrail/board/:boardId/attachments",
-  projectsHandler.papertrail.createAttachment,
+  papertrail.createAttachment,
 );
 
 router.get(
   "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
-  projectsHandler.papertrail.getAttachment,
+  papertrail.getAttachment,
 );
 router.patch(
   "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
-  projectsHandler.papertrail.updateAttachment,
+  papertrail.updateAttachment,
 );
 router.delete(
   "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
-  projectsHandler.papertrail.deleteAttachment,
+  papertrail.deleteAttachment,
 );
 
 router.post(
   "/projects/:projectId/papertrail/board/:boardId/attachments/upload",
-  projectsHandler.papertrail.attachmentUpload.single("file"),
-  projectsHandler.papertrail.uploadAttachment,
+  papertrail.attachmentUpload.single("file"),
+  papertrail.uploadAttachment,
 );
 
 export default router;

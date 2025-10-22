@@ -78,7 +78,8 @@ function buildPluginContext({ manifest, services, logger, sandbox }) {
     router: defaultRouter,
     routers,
     mounts,
-    db: services.database ?? null,
+    db:
+      services.prisma || services.database?.client || services.database || null,
     services,
     sandbox,
   };

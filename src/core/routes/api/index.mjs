@@ -9,7 +9,6 @@ import * as projectSharesHandler from "$/core/handlers/projects/shares.mjs";
 import { fetchLinkPreview } from "$/core/handlers/linkPreview.mjs";
 
 import blogRouter from "./blog.mjs";
-import papertrailRouter from "./papertrail.mjs";
 
 const router = express.Router();
 
@@ -38,7 +37,6 @@ router.get("/settings", requireRole(["platform:admin"]), getAppSettings);
 router.patch("/settings", requireRole(["platform:admin"]), updateAppSettings);
 
 router.use(blogRouter);
-router.use(papertrailRouter);
 router.post("/link-preview", fetchLinkPreview);
 
 export default router;

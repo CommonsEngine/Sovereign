@@ -1,29 +1,27 @@
+import apiRouter from "./backend/routes/api.mjs";
+
 export default {
   name: "@sovereign/papertrail",
   version: "0.0.0-development",
   async register(ctx) {
-    const { routers, manifest } = ctx;
+    const { routers, services, mounts } = ctx;
 
     if (routers.api) {
-      routers.api.get("/", (req, res) => {
-        res.json({
-          plugin: manifest.name,
-          message: "PaperTrail plugin API placeholder online",
-        });
+      routers.api.use(apiRouter);
+    }
+
+    // Backwards compatibility: legacy core endpoints lived under /api/projects/*
+    // Mount the same router on the main app if available so existing clients keep working.
+    const legacyApiBase = "/api";
+    if (services?.app?.use) {
+      services.app.use(legacyApiBase, apiRouter);
+      ctx.logger.debug("Mounted PaperTrail API for legacy routes", {
+        base: legacyApiBase,
       });
     }
 
-    if (routers.web) {
-      routers.web.get("/", (req, res) => {
-        res.send(
-          `<h1>${manifest.name}</h1><p>PaperTrail plugin web placeholder route.</p>`,
-        );
-      });
-    }
-
-    ctx.logger.debug("PaperTrail placeholder register called", {
-      plugin: manifest.name,
-      mounts: ctx.mounts,
+    ctx.logger.info("PaperTrail plugin registered", {
+      mounts,
     });
   },
   async onEnable(ctx) {

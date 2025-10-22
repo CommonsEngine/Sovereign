@@ -24,7 +24,7 @@ import * as authHandler from "./handlers/auth/index.mjs";
 
 import hbsHelpers from "./utils/hbsHelpers.mjs";
 
-import {
+import prisma, {
   connectPrismaWithRetry,
   gracefulShutdown,
 } from "./services/database.mjs";
@@ -230,9 +230,11 @@ export default async function createServer() {
   }
 
   const services = {
+    app,
     logger,
     config,
-    database: { client: null },
+    prisma,
+    database: { client: prisma },
   };
 
   return {
