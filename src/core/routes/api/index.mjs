@@ -6,10 +6,10 @@ import { requireAuth } from "$/core/middlewares/auth.mjs";
 import requireRole from "$/core/middlewares/requireRole.mjs";
 import * as usersHandler from "$/core/handlers/users/index.mjs";
 import * as projectSharesHandler from "$/core/handlers/projects/shares.mjs";
-import { fetchLinkPreview } from "$/core/handlers/linkPreview.mjs";
 
-import blogRouter from "./blog.mjs";
-import papertrailRouter from "./papertrail.mjs";
+import blogRouter from "../../../plugins/blog/routes/api.mjs";
+import papertrailRouter from "../../../plugins/papertrail/routes/api.mjs";
+import { fetchLinkPreview } from "../../../plugins/papertrail/handlers/link-preview.mjs";
 
 const router = express.Router();
 

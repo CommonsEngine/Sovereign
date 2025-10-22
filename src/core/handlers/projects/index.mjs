@@ -13,9 +13,6 @@ export { default as getAll } from "./core/getAll.mjs";
 export { default as update } from "./core/update.mjs";
 export { default as remove } from "./core/remove.mjs";
 
-export * as blog from "./blog/index.mjs";
-export * as papertrail from "./papertrail/index.mjs";
-
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
   timeStyle: "short",
