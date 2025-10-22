@@ -1,11 +1,11 @@
 import { promises as fs } from "node:fs";
-// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { cp } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// eslint-disable-next-line n/no-unpublished-import
 import { build } from "esbuild";
+
+// TODO: Fix, adjust build script
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +13,7 @@ const rootDir = path.resolve(__dirname, "..");
 const srcDir = path.join(rootDir, "src");
 const outDir = path.join(rootDir, "dist");
 const pkgPath = path.join(rootDir, "package.json");
-const viewsDir = path.join(srcDir, "views");
+const viewsDir = path.join(srcDir, "core", "views");
 
 const aliasPlugin = {
   name: "alias-dollar",
@@ -31,8 +31,14 @@ async function ensureCleanOutDir() {
 
 async function copyStaticAssets() {
   const assets = [
-    { from: path.join(rootDir, "public"), to: path.join(outDir, "public") },
-    { from: path.join(srcDir, "views"), to: path.join(outDir, "views") },
+    {
+      from: path.join(rootDir, "core", "public"),
+      to: path.join(outDir, "public"),
+    },
+    {
+      from: path.join(srcDir, "core", "views"),
+      to: path.join(outDir, "views"),
+    },
     { from: pkgPath, to: path.join(outDir, "package.json") },
   ];
 
@@ -96,8 +102,8 @@ async function main() {
   const externalDeps = Array.from(externals);
 
   await build({
-    entryPoints: [path.join(srcDir, "index.mjs")],
-    outfile: path.join(outDir, "index.mjs"),
+    entryPoints: [path.join(srcDir, "bootstrap.mjs")],
+    outfile: path.join(outDir, "bootstrap.mjs"),
     format: "esm",
     platform: "node",
     bundle: true,

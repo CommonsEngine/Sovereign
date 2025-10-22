@@ -26,13 +26,14 @@ import hbsHelpers from "./utils/hbsHelpers.mjs";
 import logger from "./utils/logger.mjs";
 global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
 
-import {
+import prisma, {
   connectPrismaWithRetry,
   gracefulShutdown,
 } from "./services/database.mjs";
 import env from "./config/env.mjs";
 
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = env();
+const config = env();
+const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV } = config;
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -227,18 +228,21 @@ export default async function createServer() {
     await new Promise((resolve) => httpServer.close(resolve));
   }
 
+  const services = {
+    app,
+    logger,
+    config,
+    database: { prisma },
+  };
+
   return {
     app,
     port: PORT,
     start,
     stop,
-    services: {},
+    services,
     get httpServer() {
       return httpServer;
     },
   };
-}
-
-export async function createExtHost() {
-  return {};
 }

@@ -5,6 +5,8 @@ import pkg from "$/core/config/pkg.mjs";
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 
+const manifest = pkg.manifest;
+
 export default function exposeGlobals(req, res, next) {
   const config = env();
   const appVersion =
@@ -17,18 +19,18 @@ export default function exposeGlobals(req, res, next) {
   // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
-    title: pkg.title,
+    title: manifest.title,
     meta: [
-      { name: "application-name", content: pkg.title },
-      { name: "description", content: pkg.description },
+      { name: "application-name", content: manifest.title },
+      { name: "description", content: manifest.description },
       { name: "keywords", content: pkg.keywords.join(", ") },
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
-      { property: "og:site_name", content: pkg.title },
+      { property: "og:site_name", content: manifest.title },
       { property: "og:type", content: "app" },
-      { property: "og:title", content: pkg.title },
-      { property: "og:description", content: pkg.description },
+      { property: "og:title", content: manifest.title },
+      { property: "og:description", content: manifest.description },
       { property: "og:url", content: "/" },
       { property: "og:image", content: "/assets/og-image.png" },
       { property: "og:image:type", content: "image/png" },
