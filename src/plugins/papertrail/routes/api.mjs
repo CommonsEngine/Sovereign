@@ -1,9 +1,10 @@
 import express from "express";
 import multer from "multer";
 
-import requireFeature from "$/core/middlewares/requireFeature.mjs";
+import requireFeature from "$/platform/middlewares/requireFeature.mjs";
 
 import * as handlers from "../handlers/index.mjs";
+import { fetchLinkPreview } from "../handlers/link-preview.mjs";
 
 const router = express.Router();
 
@@ -133,5 +134,7 @@ router.post(
   handlers.attachmentUpload.single("file"),
   handlers.uploadAttachment,
 );
+
+router.post("/papertrail/link-preview", fetchLinkPreview);
 
 export default router;

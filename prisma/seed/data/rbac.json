@@ -495,7 +495,7 @@
         "user:project.export": "deny",
         "user:project.import": "deny",
         "user:project.collaborate": "deny",
-        "user:project.blog.feature": "deny",
+        "user:project.blog.feature": "allow",
         "user:project.blog.create": "deny",
         "user:project.blog.read": "deny",
         "user:project.blog.update": "deny",

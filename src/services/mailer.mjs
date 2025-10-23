@@ -1,14 +1,14 @@
 import env from "$/config/env.mjs";
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 
 const CONFIG_FIELDS = [
-  "SMTP_URL",
-  "SMTP_HOST",
-  "SMTP_PORT",
-  "SMTP_SECURE",
-  "SMTP_IGNORE_TLS",
-  "SMTP_USER",
-  "SMTP_PASSWORD",
+  "EMAIL_SMTP_URL",
+  "EMAIL_SMTP_HOST",
+  "EMAIL_SMTP_PORT",
+  "EMAIL_SMTP_SECURE",
+  "EMAIL_SMTP_IGNORE_TLS",
+  "EMAIL_SMTP_USER",
+  "EMAIL_SMTP_PASSWORD",
   "EMAIL_FROM_ADDRESS",
   "EMAIL_FROM_NAME",
   "EMAIL_REPLY_TO",
@@ -77,20 +77,25 @@ const createTransporter = async (config) => {
   let transporter = null;
 
   try {
-    if (config.SMTP_URL) {
-      transporter = nodemailer.createTransport(config.SMTP_URL);
-    } else if (config.SMTP_HOST) {
-      const { SMTP_HOST, SMTP_PORT, SMTP_SECURE, SMTP_IGNORE_TLS } = config;
+    if (config.EMAIL_SMTP_URL) {
+      transporter = nodemailer.createTransport(config.EMAIL_SMTP_URL);
+    } else if (config.EMAIL_SMTP_HOST) {
+      const {
+        EMAIL_SMTP_HOST,
+        EMAIL_SMTP_PORT,
+        EMAIL_SMTP_SECURE,
+        EMAIL_SMTP_IGNORE_TLS,
+      } = config;
       const transportConfig = {
-        host: SMTP_HOST,
-        port: Number.isFinite(SMTP_PORT) ? Number(SMTP_PORT) : 587,
-        secure: !!SMTP_SECURE,
-        ignoreTLS: !!SMTP_IGNORE_TLS,
+        host: EMAIL_SMTP_HOST,
+        port: Number.isFinite(EMAIL_SMTP_PORT) ? Number(EMAIL_SMTP_PORT) : 587,
+        secure: !!EMAIL_SMTP_SECURE,
+        ignoreTLS: !!EMAIL_SMTP_IGNORE_TLS,
       };
-      if (config.SMTP_USER && config.SMTP_PASSWORD) {
+      if (config.EMAIL_SMTP_USER && config.EMAIL_SMTP_PASSWORD) {
         transportConfig.auth = {
-          user: config.SMTP_USER,
-          pass: config.SMTP_PASSWORD,
+          user: config.EMAIL_SMTP_USER,
+          pass: config.EMAIL_SMTP_PASSWORD,
         };
       }
       transporter = nodemailer.createTransport(transportConfig);

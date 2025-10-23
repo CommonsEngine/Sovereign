@@ -1705,7 +1705,7 @@ function exportBoard() {
 async function fetchLinkPreview(url) {
   if (!url) return null;
   try {
-    const resp = await fetch("/api/link-preview", {
+    const resp = await fetch("/api/papertrail/link-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),

@@ -7,7 +7,7 @@ import {
   disposeGitManager,
 } from "$/libs/git/registry.mjs";
 import FileManager from "$/libs/fs.mjs";
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 import {
   ensureProjectAccess,
   ProjectAccessError,
@@ -294,8 +294,6 @@ export async function viewPostEdit(req, res) {
     }
 
     const [meta, contentMarkdown] = parseFrontmatter(raw);
-
-    console.log("Rendering editor for post:", meta);
 
     // Render editor template with context
     return res.render("blog/editor", {
@@ -1133,7 +1131,7 @@ export async function viewPostCreate(req, res) {
     // Redirect to edit page for the newly created post
     return res.redirect(
       302,
-      `/p/${projectId}/blog/post/${encodeURIComponent(finalFilename)}?edit=true`,
+      `/blog/${projectId}/post/${encodeURIComponent(finalFilename)}?edit=true`,
     );
   } catch (err) {
     logger.error("Create post flow failed:", err);

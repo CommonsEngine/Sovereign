@@ -4,7 +4,7 @@ import {
   createSession,
   createRandomGuestUser,
 } from "$/utils/auth.mjs";
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 import env from "$/config/env.mjs";
 
 const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } =

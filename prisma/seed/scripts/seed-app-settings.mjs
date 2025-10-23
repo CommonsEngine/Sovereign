@@ -79,40 +79,41 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "email.smtp.url",
-    value: process.env.SMTP_URL ?? "",
+    value: process.env.EMAIL_SMTP_URL ?? "",
   },
   {
     scope: "platform",
     key: "email.smtp.host",
-    value: process.env.SMTP_HOST ?? "",
+    value: process.env.EMAIL_SMTP_HOST ?? "",
   },
   {
     scope: "platform",
     key: "email.smtp.port",
     value:
-      process.env.SMTP_PORT && !Number.isNaN(Number(process.env.SMTP_PORT))
-        ? Number(process.env.SMTP_PORT)
+      process.env.EMAIL_SMTP_PORT &&
+      !Number.isNaN(Number(process.env.EMAIL_SMTP_PORT))
+        ? Number(process.env.EMAIL_SMTP_PORT)
         : 587,
   },
   {
     scope: "platform",
     key: "email.smtp.secure",
-    value: parseBoolLike(process.env.SMTP_SECURE) ?? "false",
+    value: parseBoolLike(process.env.EMAIL_SMTP_SECURE) ?? "false",
   },
   {
     scope: "platform",
     key: "email.smtp.ignore_tls",
-    value: parseBoolLike(process.env.SMTP_IGNORE_TLS) ?? "false",
+    value: parseBoolLike(process.env.EMAIL_SMTP_IGNORE_TLS) ?? "false",
   },
   {
     scope: "platform",
     key: "email.smtp.user",
-    value: process.env.SMTP_USER ?? "",
+    value: process.env.EMAIL_SMTP_USER ?? "",
   },
   {
     scope: "platform",
     key: "email.smtp.password",
-    value: process.env.SMTP_PASSWORD ?? "",
+    value: process.env.EMAIL_SMTP_PASSWORD ?? "",
   },
   {
     scope: "platform",

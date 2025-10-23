@@ -1,5 +1,5 @@
 import { prisma } from "$/services/database.mjs";
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 import { uuid } from "$/utils/id.mjs";
 import {
   ensureProjectAccess,

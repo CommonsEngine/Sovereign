@@ -1,8 +1,8 @@
 import express from "express";
 
-import { requireAuth } from "$/core/middlewares/auth.mjs";
-import exposeGlobals from "$/core/middlewares/exposeGlobals.mjs";
-import requireFeature from "$/core/middlewares/requireFeature.mjs";
+import { requireAuth } from "$/platform/middlewares/auth.mjs";
+import exposeGlobals from "$/platform/middlewares/exposeGlobals.mjs";
+import requireFeature from "$/platform/middlewares/requireFeature.mjs";
 
 import * as handlers from "../handlers/index.mjs";
 

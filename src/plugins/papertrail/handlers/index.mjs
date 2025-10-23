@@ -8,7 +8,7 @@ import { Readable } from "stream";
 import multer from "multer";
 
 import { prisma } from "$/services/database.mjs";
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 import { uuid } from "$/utils/id.mjs";
 

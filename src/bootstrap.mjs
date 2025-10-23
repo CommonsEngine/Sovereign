@@ -1,35 +1,46 @@
-import * as db from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
+/* eslint-disable import/order */
+import "dotenv/config";
 
-import createServer from "./core/server.mjs";
-import createExtHost from "./core/ext-host/index.mjs";
+import {
+  connectPrismaWithRetry,
+  gracefulShutdown,
+} from "$/services/database.mjs";
+import createExtHost from "$/platform/ext-host/index.mjs";
+
+import logger from "$/services/logger.mjs";
+global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
+
+import createServer from "./server.mjs";
 
 async function bootstrap() {
   logger.info("🚀 Starting Sovereign platform...");
 
   try {
-    // Create the server
-    // This sets up Express, middlewares, routes, config, and shared services.
-    const server = await createServer();
+    // Connect to the database
+    await connectPrismaWithRetry();
 
     // Initialize Extention Host
     // Discovers and mounts all plugins under /src/plugins/*
-    const extHost = await createExtHost(server.services, {
-      pluginsDir: "./src/plugins",
-    });
-    await extHost.init();
-    await extHost.mount(server);
+    const extHost = await createExtHost(
+      {},
+      {
+        pluginsDir: "./src/plugins",
+      },
+    );
+
+    // Create the server
+    // This sets up Express, middlewares, coreRoutes etc.
+    const server = await createServer(extHost);
 
     // Start the HTTP Server
     server.start();
 
-    logger.info("✅ Sovereign server is up and running");
-    logger.info(`   ➜  Environment: ${process.env.NODE_ENV || "development"}`);
-    logger.info(`   ➜  Listening on ::${server.port}`);
+    logger.info("✓ Sovereign server is up and running");
+    logger.info(`  ➜  Environment: ${process.env.NODE_ENV || "development"}`);
 
     const enabledPlugins = extHost?.plugins.map((plugin) => plugin.name);
     logger.info(
-      `   ➜  Loaded plugins: ${
+      `  ➜  Loaded plugins: ${
         enabledPlugins && enabledPlugins.length
           ? enabledPlugins.join(", ")
           : "none"
@@ -39,13 +50,12 @@ async function bootstrap() {
     const shutdown = async (signal) => {
       logger.warn(`Received ${signal}, shutting down gracefully...`);
       try {
-        await extHost.shutdown();
-        await db.gracefulShutdown();
-        if (server.httpServer) server.httpServer.close();
-        logger.info("🧹 Clean shutdown complete");
+        await gracefulShutdown(signal);
+        await server.stop();
+        logger.info("✓ Clean shutdown complete");
         process.exit(0);
       } catch (err) {
-        logger.error("Error during shutdown", err);
+        logger.error("✗ Error during shutdown", err);
         process.exit(1);
       }
     };
@@ -53,7 +63,7 @@ async function bootstrap() {
     process.on("SIGINT", () => shutdown("SIGINT"));
     process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (err) {
-    logger.error("❌ Failed to bootstrap Sovereign", err);
+    logger.error("✗ Failed to bootstrap Sovereign", err);
     process.exit(1);
   }
 }

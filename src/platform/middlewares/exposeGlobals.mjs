@@ -1,6 +1,5 @@
 // TODO: Utilize config/head.mjs for these
 
-import env from "$/config/env.mjs";
 import pkg from "$/config/pkg.mjs";
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
@@ -8,12 +7,11 @@ const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 const manifest = pkg.manifest;
 
 export default function exposeGlobals(req, res, next) {
-  const config = env();
-  const appVersion =
-    config?.APP_VERSION ||
-    config?.APP_SETTINGS?.["env.app.version"] ||
-    pkg.version ||
-    "0.0.0";
+  if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
+    return next();
+  }
+
+  const appVersion = pkg.version;
   const cacheBuster = IS_PROD ? String(appVersion) : String(Date.now());
 
   // TODO: Expose api level globals too
