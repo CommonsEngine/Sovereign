@@ -241,11 +241,13 @@ export default async function createServer({ plugins }) {
     authHandler.viewRegister,
   );
   app.post("/register", authHandler.register);
-  app.get("/logout", authHandler.logout);
+  app.get("/logout", exposeGlobals, authHandler.logout);
 
   // User Routes (Web)
   app.get(
     "/users",
+    requireAuth,
+    exposeGlobals,
     requireRole(["platform:admin", "tenant:admin", "project:admin"]),
     usersHandler.viewUsers,
   );
@@ -260,12 +262,14 @@ export default async function createServer({ plugins }) {
   // Settings Routes (Web)
   app.get(
     "/settings",
+    requireAuth,
+    exposeGlobals,
     requireRole(["platform:admin", "tenant:admin", "project:admin"]),
     settingsHandler.viewSettings,
   );
   // Settings Routes (API)
   app.get(
-    "/api/ettings",
+    "/api/settings",
     requireAuth,
     requireRole(["platform:admin"]),
     appHandler.getAppSettings,
@@ -278,7 +282,7 @@ export default async function createServer({ plugins }) {
   );
 
   // Project Routes (Web)
-  app.get("/p/:projectId", requireAuth, async (req, res) => {
+  app.get("/p/:projectId", requireAuth, exposeGlobals, async (req, res) => {
     try {
       const projectId = req.params.projectId;
       if (!projectId) {
@@ -353,7 +357,7 @@ export default async function createServer({ plugins }) {
 
   // Plugins Routes (Web)
   for (const { base, router } of webRouters) {
-    app.use(base, requireAuth, router.default);
+    app.use(base, requireAuth, exposeGlobals, router.default);
   }
   // Plugins Routes (API)
   for (const { base, router } of apiRouters) {
