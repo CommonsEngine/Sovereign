@@ -217,13 +217,13 @@ yarn test:watch
 The project uses a simple `$` alias that points to the `src/` directory. Instead of long relative paths like:
 
 ```js
-import logger from "../../utils/logger.mjs";
+import logger from "../../services/logger.mjs";
 ```
 
 use:
 
 ```js
-import logger from "$/utils/logger.mjs";
+import logger from "$/services/logger.mjs";
 ```
 
 The alias works for app code, tests, and development scripts (configured via a custom loader in `scripts/alias-loader.mjs`).
@@ -236,7 +236,7 @@ The alias works for app code, tests, and development scripts (configured via a c
   - User created first (without primaryEmailId)
   - UserEmail created and linked with `userId`
   - User updated with `primaryEmailId` referencing created email
-- Email delivery: configure `SMTP_URL` or `SMTP_HOST`/`SMTP_PORT` with credentials plus `EMAIL_FROM_*` env vars; toggle the `feature.email.delivery.bypass` app setting (or `EMAIL_DELIVERY_BYPASS` env var) to disable outbound email while keeping logs for development.
+- Email delivery: configure `EMAIL_SMTP_URL` or `EMAIL_SMTP_HOST`/`EMAIL_SMTP_PORT` with credentials plus `EMAIL_FROM_*` env vars; toggle the `feature.email.delivery.bypass` app setting (or `EMAIL_DELIVERY_BYPASS` env var) to disable outbound email while keeping logs for development.
 - Session RBAC snapshot:
   - Sessions may store a server-side `roles` and `capabilities` JSON to avoid repeated RBAC DB queries.
   - If roles/capabilities change, sessions must be invalidated or refreshed; consider versioning or updating session rows on changes. (To be implemented)

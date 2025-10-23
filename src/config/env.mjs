@@ -1,18 +1,14 @@
-import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import prisma from "$/prisma.mjs";
-
-import { toBool } from "./utils.mjs";
+import { prisma } from "$/services/database.mjs";
+import { toBool } from "$/utils/misc.mjs";
+import pkg from "$/config/pkg.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const resolveRoot = () => {
-  if (process.env.APP_ROOT) {
-    return path.resolve(process.env.APP_ROOT);
-  }
   const cwd = process.cwd();
   if (cwd && path.isAbsolute(cwd)) {
     return cwd;
@@ -21,45 +17,20 @@ const resolveRoot = () => {
 };
 
 const __rootdir = resolveRoot();
-
-const resolveFirstExisting = (candidates, fallback) => {
-  for (const candidate of candidates) {
-    try {
-      if (fs.existsSync(candidate)) return candidate;
-    } catch {
-      // ignore
-    }
-  }
-  return fallback;
-};
+const __srcDir = path.join(__rootdir, "src");
+const __distDir = path.join(__rootdir, "dist");
 
 const preferDist =
   (process.env.NODE_ENV || "development") === "production" ||
   process.env.PREFER_DIST_BUILD === "true";
 
-const publicCandidates = preferDist
-  ? [path.join(__rootdir, "dist", "public"), path.join(__rootdir, "public")]
-  : [path.join(__rootdir, "public"), path.join(__rootdir, "dist", "public")];
+const __publicdir = preferDist
+  ? path.join(__distDir, "public")
+  : path.join(__srcDir, "public");
 
-const __publicdir = resolveFirstExisting(
-  publicCandidates,
-  path.join(__rootdir, "public"),
-);
-
-const templateCandidates = preferDist
-  ? [
-      path.join(__rootdir, "dist", "views"),
-      path.join(__rootdir, "src", "views"),
-    ]
-  : [
-      path.join(__rootdir, "src", "views"),
-      path.join(__rootdir, "dist", "views"),
-    ];
-
-const __templatedir = resolveFirstExisting(
-  templateCandidates,
-  path.join(__rootdir, "src", "views"),
-);
+const __templatedir = preferDist
+  ? path.join(__distDir, "views")
+  : path.join(__srcDir, "views");
 
 const __datadir = path.resolve(
   process.env.__datadir || path.join(__rootdir, "data"),
@@ -76,13 +47,13 @@ const baseLocales =
     ? splitCsv(process.env.SUPPORTED_LOCALES)
     : ["en-US"];
 
-const defaultDbPath = path.join(__datadir, "sovereign.db");
+const defaultDbPath = path.join(__rootdir, "prisma", "data", "sovereign.db");
 
 const baseTemplate = Object.freeze({
-  APP_NAME: process.env.APP_NAME || "Sovereign",
-  APP_TAGLINE: process.env.APP_TAGLINE || "",
-  APP_DESCRIPTION: process.env.APP_DESCRIPTION || "",
-  APP_VERSION: process.env.APP_VERSION || "0.1.0",
+  APP_NAME: pkg.manifest.title,
+  APP_TAGLINE: pkg.manifest.tagline,
+  APP_DESCRIPTION: pkg.manifest.description,
+  APP_VERSION: pkg.version,
   APP_URL: process.env.APP_URL || "http://localhost:3000",
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),
@@ -95,7 +66,7 @@ const baseTemplate = Object.freeze({
 
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
-  DEFAULT_USER_ROLE: process.env.DEFAULT_USER_ROLE || "guest",
+  DEFAULT_USER_ROLE: process.env.DEFAULT_USER_ROLE || "platform:user",
   SIGNUP_POLICY: process.env.SIGNUP_POLICY || "invite", // 'open' or 'invite'
 
   FEATURE_TERMS_REQUIRE_ACCEPTANCE: toBool(
@@ -103,22 +74,20 @@ const baseTemplate = Object.freeze({
     false,
   ),
 
-  SMTP_URL: process.env.SMTP_URL || "",
-  SMTP_HOST: process.env.SMTP_HOST || "",
-  SMTP_PORT: Number(process.env.SMTP_PORT ?? 587),
-  SMTP_SECURE: toBool(process.env.SMTP_SECURE, false),
-  SMTP_USER: process.env.SMTP_USER || "",
-  SMTP_PASSWORD: process.env.SMTP_PASSWORD || "",
-  SMTP_IGNORE_TLS: toBool(process.env.SMTP_IGNORE_TLS, false),
-  EMAIL_FROM_ADDRESS:
-    process.env.EMAIL_FROM_ADDRESS ||
-    process.env.EMAIL_FROM ||
-    "no-reply@localhost",
+  EMAIL_SMTP_URL: process.env.EMAIL_SMTP_URL || "",
+  EMAIL_SMTP_HOST: process.env.EMAIL_SMTP_HOST || "",
+  EMAIL_SMTP_PORT: Number(process.env.EMAIL_SMTP_PORT ?? 587),
+  EMAIL_SMTP_SECURE: toBool(process.env.EMAIL_SMTP_SECURE, false),
+  EMAIL_SMTP_USER: process.env.EMAIL_SMTP_USER || "",
+  EMAIL_SMTP_PASSWORD: process.env.EMAIL_SMTP_PASSWORD || "",
+  EMAIL_SMTP_IGNORE_TLS: toBool(process.env.EMAIL_SMTP_IGNORE_TLS, false),
+  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || "no-reply@localhost",
   EMAIL_FROM_NAME:
     process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Sovereign",
   EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || "",
   EMAIL_DELIVERY_BYPASS: toBool(process.env.EMAIL_DELIVERY_BYPASS, true),
 
+  // TODO: We may need to fetch these from plugin manifest
   FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
   FT_PROJECT_TYPE_PAPERTRAIL: toBool(
     process.env.FT_PROJECT_TYPE_PAPERTRAIL,
@@ -138,7 +107,7 @@ const baseTemplate = Object.freeze({
   LOCALE_DEFAULT: process.env.DEFAULT_LOCALE || "en-US",
   LOCALES_SUPPORTED: baseLocales,
   TIMEZONE_DEFAULT: process.env.DEFAULT_TIMEZONE || "UTC",
-  CURRENCY_DEFAULT: process.env.DEFAULT_CURRENCY || "USD",
+  CURRENCY_DEFAULT: process.env.DEFAULT_CURRENCY || "EUR",
 
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT) || 3000,
@@ -146,6 +115,7 @@ const baseTemplate = Object.freeze({
   IS_PROD: (process.env.NODE_ENV || "development") === "production",
 
   __rootdir,
+  __srcDir,
   __publicdir,
   __templatedir,
   __datadir,
@@ -283,32 +253,35 @@ const SETTING_OVERRIDES = {
   },
   "email.smtp.url": (config, value) => {
     const str = toStringValue(value);
-    config.SMTP_URL = str ?? "";
+    config.EMAIL_SMTP_URL = str ?? "";
   },
   "email.smtp.host": (config, value) => {
     const str = toStringValue(value);
-    config.SMTP_HOST = str ?? "";
+    config.EMAIL_SMTP_HOST = str ?? "";
   },
   "email.smtp.port": (config, value) => {
     if (value === null || value === undefined || value === "") return;
     const num = toPositiveInt(value);
-    if (num && num > 0) config.SMTP_PORT = num;
+    if (num && num > 0) config.EMAIL_SMTP_PORT = num;
   },
   "email.smtp.secure": (config, value) => {
-    config.SMTP_SECURE = toBool(value, config.SMTP_SECURE ?? false);
+    config.EMAIL_SMTP_SECURE = toBool(value, config.EMAIL_SMTP_SECURE ?? false);
   },
   "email.smtp.ignore_tls": (config, value) => {
-    config.SMTP_IGNORE_TLS = toBool(value, config.SMTP_IGNORE_TLS ?? false);
+    config.EMAIL_SMTP_IGNORE_TLS = toBool(
+      value,
+      config.EMAIL_SMTP_IGNORE_TLS ?? false,
+    );
   },
   "email.smtp.user": (config, value) => {
     const str = toStringValue(value);
-    config.SMTP_USER = str ?? "";
+    config.EMAIL_SMTP_USER = str ?? "";
   },
   "email.smtp.password": (config, value) => {
     if (value === null || value === undefined) {
-      config.SMTP_PASSWORD = "";
+      config.EMAIL_SMTP_PASSWORD = "";
     } else {
-      config.SMTP_PASSWORD = String(value);
+      config.EMAIL_SMTP_PASSWORD = String(value);
     }
   },
   "feature.terms.require_acceptance": (config, value) => {

@@ -1,16 +1,28 @@
 {
-  "name": "sovereign",
+  "private": true,
+  "name": "@sovereign/core",
   "version": "0.5.0",
-  "title": "Sovereign",
-  "tagline": "Reclaim your digital freedom.",
-  "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
-  "main": "./src/index.mjs",
+  "description": "Core runtime and service framework for the Sovereign platform",
+  "main": "./dist/bootstrap.mjs",
+  "bin": {
+    "sv": "./bin/sv.mjs"
+  },
+  "manifest": {
+    "title": "Sovereign",
+    "tagline": "Reclaim your digital freedom.",
+    "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
+    "main": "./src/bootstrap.mjs",
+    "cli": {
+      "version": "0.1.0"
+    }
+  },
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node dist/index.mjs",
-    "start:src": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "start": "node dist/bootstrap.mjs",
+    "start:src": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "dev": "nodemon",
+    "prepare": "node ./scripts/build.mjs",
     "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
     "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
@@ -31,7 +43,7 @@
       "public"
     ],
     "ext": "mjs,js,jsx,json,html,css",
-    "exec": "node --import ./scripts/register-alias.mjs src/index.mjs",
+    "exec": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "signal": "SIGTERM"
   },
   "keywords": [
@@ -62,10 +74,35 @@
     "civic-tech",
     "commonsengine"
   ],
-  "author": "Kasun Benthara",
+  "repository": "https://github.com/CommonsEngine/Sovereign#readme",
+  "bugs": {
+    "url": "https://github.com/CommonsEngine/Sovereign/issues",
+    "email": "mailtokasun@gmail.com"
+  },
+  "contributors": [
+    {
+      "name": "Kasun Benthara",
+      "email": "mailtokasun@gmail.com",
+      "url": "https://github.com/kasunben"
+    },
+    {
+      "name": "Dishan Rajapaksha",
+      "email": "DishanRajapaksha@email.com",
+      "url": "https://github.com/DishanRajapaksha"
+    }
+  ],
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/kasunben"
+  },
   "license": "AGPL-3.0",
+  "engines": {
+    "node": ">=22.20.0"
+  },
+  "packageManager": "yarn@4.10.3",
   "dependencies": {
     "@prisma/client": "^6.16.3",
+    "ajv": "^8.17.1",
     "archiver": "^7.0.1",
     "argon2": "^0.44.0",
     "bcryptjs": "^3.0.2",

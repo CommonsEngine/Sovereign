@@ -1,0 +1,107 @@
+{
+  "namespace": "papertrail",
+  "name": "@sovereign/papertrail",
+  "version": "0.0.0",
+  "enabled": true,
+  "draft": true,
+  "description": "Sovereign PaperTrail",
+  "main": "./index.mjs",
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "sovereign": {
+    "engine": "0.5.0",
+    "entryPoints": ["launcher"]
+  },
+  "routes": {
+    "web": false,
+    "api": true
+  },
+  "platformCapabilities": {
+    "database": true,
+    "fileUpload": true
+  },
+  "userCapabilities": [
+    {
+      "key": "user:plugin.papertrail.feature",
+      "description": "Enable PaperTrail plugin.",
+      "roles": ["platform:user"]
+    },
+    {
+      "key": "user:plugin.papertrail.create",
+      "description": "Create papertrail project, and configure.",
+      "roles": ["platform:user"]
+    },
+    {
+      "key": "user:plugin.papertrail.read",
+      "description": "View own papertrail project.",
+      "roles": [
+        "project:admin",
+        "project:editor",
+        "project:contributor",
+        "project:viewer",
+        "project:guest"
+      ]
+    },
+    {
+      "key": "user:plugin.papertrail.update",
+      "description": "Update papertrail project.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.update.shared",
+      "description": "Update papertrail project.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.delete",
+      "description": "Delete papertrail project.",
+      "roles": ["project:admin"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.create",
+      "description": "Create papertrail posts.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.read",
+      "description": "View papertrail posts.",
+      "roles": [
+        "project:admin",
+        "project:editor",
+        "project:contributor",
+        "project:viewer",
+        "project:guest"
+      ]
+    },
+    {
+      "key": "user:plugin.papertrail.post.update",
+      "description": "Update papertrail posts.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.update.shared",
+      "description": "Update shared papertrail posts.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.delete",
+      "description": "Delete papertrail posts.",
+      "roles": ["project:admin", "project:editor", "project:contributor"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.delete.shared",
+      "description": "Delete shared papertrail posts.",
+      "roles": ["project:admin", "project:editor"]
+    },
+    {
+      "key": "user:plugin.papertrail.post.publish",
+      "description": "Publish papertrail posts.",
+      "roles": ["platform:user", "project:admin", "project:editor"]
+    }
+  ],
+  "events": {},
+  "prisma": {},
+  "config": {
+    "FT_PLUGIN_PAPERTRAIL": true
+  }
+}

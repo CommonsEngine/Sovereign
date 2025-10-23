@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+    <link rel="stylesheet" href="/css/components/modal.css" />
+    <style>
+      /* @layer components.alerts. move later */
+      .alert__notice {
+        margin-bottom: 20px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
+        background: var(--color-bg-muted, #f3f4f6);
+        color: var(--color-text-secondary, #374151);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+      .alert__notice--error {
+        border-color: color-mix(in oklab, var(--color-danger), white 20%);
+        background: color-mix(in oklab, var(--color-danger), white 85%);
+        color: color-mix(in oklab, var(--color-danger), black 25%);
+      }
+      .alert__notice-link {
+        color: inherit;
+        text-decoration: underline;
+        font-weight: 600;
+      }
+      /* search input */
+      .search {
+        width: 600px;
+        max-width: 40%;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-primary, #e5e7eb);
+        background: var(--color-bg-primary, #fff);
+        color: var(--color-text-primary, #111827);
+      }
+      @media (max-width: 720px) {
+        .search {
+          width: 100%;
+          max-width: none;
+        }
+      }
+      /* buttons inside the card bar */
+      .card__bar-icon {
+        appearance: none;
+        padding: 6px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        border: none;
+        background-color: transparent;
+        box-shadow: var(--shadow-none);
+        color: var(--color-text-secondary);
+        border-radius: var(--radius-s, 8px);
+        transition:
+          background-color var(--transition-fast, 120ms)
+            var(--transition-easing-standard, ease),
+          color var(--transition-fast, 120ms)
+            var(--transition-easing-standard, ease);
+      }
+      .card__bar-icon:hover {
+        background: color-mix(
+          in oklab,
+          var(--color-danger),
+          var(--color-bg-primary) 92%
+        );
+        color: var(--color-danger);
+      }
+      .card__bar-icon svg {
+        width: 24px;
+        height: 24px;
+        display: block;
+        stroke: currentColor;
+      }
+      .page__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-m, 16px);
+      }
+      .page__actions {
+        display: flex;
+        gap: var(--space-xs, 10px);
+        align-items: center;
+      }
+      .share-modal__form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 16px;
+      }
+      .share-modal__form fieldset {
+        border: 0;
+        padding: 0;
+        margin: 0;
+        min-width: 220px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .share-modal__form label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+      }
+      .share-modal__form input,
+      .share-modal__form select {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border-primary, #d1d5db);
+        font: inherit;
+        min-height: 36px;
+      }
+      .share-modal__error {
+        display: none;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid color-mix(in oklab, var(--color-danger), white 35%);
+        background: color-mix(in oklab, var(--color-danger), white 90%);
+        color: color-mix(in oklab, var(--color-danger), black 30%);
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+      }
+      .share-modal__table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 4px;
+      }
+      .share-modal__table thead {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--color-text-secondary);
+      }
+      .share-modal__table th,
+      .share-modal__table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+        vertical-align: middle;
+        text-align: left;
+      }
+      .share-modal__status {
+        font-size: 0.8rem;
+        color: var(--color-text-secondary);
+      }
+      .share-modal__status--pending {
+        color: color-mix(in oklab, var(--color-warning), black 15%);
+      }
+      .share-modal__empty {
+        padding: 16px;
+        text-align: center;
+        color: var(--color-text-secondary);
+        font-size: 0.95rem;
+      }
+      .share-modal__loading {
+        padding: 16px;
+        text-align: center;
+      }
+      .share-modal__actions {
+        display: flex;
+        gap: 6px;
+      }
+      .share-modal__role {
+        min-width: 140px;
+      }
+      .share-modal__tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        background: color-mix(in oklab, var(--color-bg-secondary), white 40%);
+        border: 1px solid var(--color-border-primary);
+        color: var(--color-text-secondary);
+      }
+    </style>
+  </head>
+  <body class="page page--with-sidebar page--project-blog-index">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
+    {{> sidebar}} {{> userbar show_user_menu=true}}
+
+    <main
+      class="page__wrap page__wrap--wide"
+      data-project-id="{{project.id}}"
+      data-project-status="{{project.status}}"
+      data-connected="{{connected}}"
+      data-share-role="{{share.role}}"
+      data-share-can-view="{{share.canView}}"
+      data-share-can-manage="{{share.canManage}}"
+    >
+      {{> modal/modal-runtime}} {{> modal/share-project}}
+      <header class="page__header">
+        <div class="page__heading">
+          <h2 class="page__title">{{project.name}}</h2>
+          {{#if project.desc}}
+          <p class="page__subtitle">{{project.desc}}</p>
+          {{/if}}
+        </div>
+        {{#if share.canView}}
+        <div class="page__actions">
+          <button
+            type="button"
+            class="chip button"
+            data-modal-open="share-project"
+            data-share-trigger
+          >
+            {{#if share.canManage}}Share project{{else}}View access{{/if}}
+          </button>
+        </div>
+        {{/if}}
+      </header>
+
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol class="breadcrumb__list">
+          <li class="breadcrumb__item">
+            <a class="breadcrumb__link" href="/">Projects</a>
+          </li>
+          <li class="breadcrumb__item" aria-current="page">
+            <span class="breadcrumb__current">Blog</span>
+          </li>
+        </ol>
+      </nav>
+
+      {{#connect_error}}
+      <div class="alert__notice alert__notice--error" role="alert">
+        <strong>Repository connection failed.</strong>
+        <span>
+          We couldn’t sync the repo. Review your credentials and
+          <a class="alert__notice-link" href="/blog/{{project.id}}/configure"
+            >reconfigure the blog</a
+          >.
+        </span>
+        <button
+          id="retry-connection"
+          class="chip button"
+          type="button"
+          data-action="retry-connection"
+        >
+          Retry connection
+        </button>
+      </div>
+      {{/connect_error}}
+
+      <section class="grid">
+        <!-- Posts -->
+        <article class="card flex-2-5">
+          <div class="card__bar">
+            <strong>Posts</strong>
+            <div class="flex row justify-end gap-3xs">
+              <input
+                id="post-search"
+                class="search"
+                type="search"
+                placeholder="Search posts…"
+                autocomplete="off"
+              />
+              <a
+                role="button"
+                class="card__bar-icon"
+                href="/blog/{{project.id}}/post/new"
+                title="Create post"
+                aria-label="Create post"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="size-6"
+                  role="img"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <title>Create post</title>
+                  <path
+                    d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div class="card__body table-wrap">
+            <table id="posts-table" aria-label="Posts">
+              <thead>
+                <tr>
+                  <th style="width: 40%">Title</th>
+                  <th>Path</th>
+                  <th>Tags</th>
+                  <th>Status</th>
+                  <th>Published</th>
+                  <th style="width: 1%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="posts-tbody">
+                <!-- Loading state -->
+                <tr class="loading-row" hidden>
+                  <td colspan="6" class="empty">Loading posts…</td>
+                </tr>
+                <!-- Error state -->
+                <tr class="error-row" hidden>
+                  <td colspan="6" class="empty">
+                    Failed to load posts
+                    <button id="retry-posts" class="chip" type="button">
+                      Retry
+                    </button>
+                  </td>
+                </tr>
+                <!-- Empty state (shown by script when filtered or no posts) -->
+                <tr class="empty-row" hidden>
+                  <td colspan="6" class="empty">No posts found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- Project Meta -->
+        <aside class="card flex-1">
+          <div class="card__bar">
+            <strong>Project Meta</strong>
+            <button
+              class="card__bar-icon"
+              type="button"
+              aria-label="Project info"
+              title="Project info"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="size-6"
+                role="img"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
+                />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                />
+              </svg>
+            </button>
+          </div>
+          <div class="card__body">
+            <div class="flex col gap-s">
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Name</div>
+                <div id="m-name" class="flex-1">{{project.name}}</div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Status</div>
+                <div id="m-status" class="flex-1">
+                  <span class="badge">{{project.status}}</span>
+                </div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Posts</div>
+                <div id="m-count" class="flex-1">0</div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Repo</div>
+                <div id="m-repo" class="flex-1">
+                  <a href="{{project.repoUrl}}">GitHub</a>
+                </div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Branch</div>
+                <div id="m-branch" class="flex-1">{{project.branch}}</div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="flex-1 subtle">Content Dir</div>
+                <div id="m-dir" class="flex-1">{{project.contentDir}}</div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="subtle flex-1">Created</div>
+                <div id="m-created" class="flex-1">
+                  <time datetime="{{project.createdAtISO}}"
+                    >{{project.createdAtDisplay}}</time
+                  >
+                </div>
+              </div>
+              <div class="flex row justify-start items-center">
+                <div class="subtle flex-1">Updated</div>
+                <div id="m-updated" class="flex-1">
+                  <time datetime="{{project.updatedAtISO}}"
+                    >{{project.updatedAtDisplay}}</time
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+    <script src="/js/startup.js" defer></script>
+    <script src="/plugins/blog/js/index.js" defer></script>
+  </body>
+</html>

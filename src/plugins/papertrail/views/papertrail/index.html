@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <link rel="stylesheet" href="/css/components/sidebar.css" />
+    <link rel="stylesheet" href="/css/components/userbar.css" />
+    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
+    <link rel="stylesheet" href="/css/components/modal.css" />
+    <link rel="stylesheet" href="/plugins/papertrail/css/board.css" />
+  </head>
+  <body class="page page--with-sidebar page--project-papertrail-index">
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
+    {{> sidebar}}
+
+    <main
+      class="page__wrap page__wrap--fullwidth margin-none padding-none"
+      data-project-id="{{project.id}}"
+      data-project-status="{{project.status}}"
+      data-board-id="{{board.id}}"
+      data-share-role="{{share.role}}"
+      data-share-can-view="{{share.canView}}"
+      data-share-can-manage="{{share.canManage}}"
+      data-share-can-edit="{{share.canEdit}}"
+    >
+      <div class="toolbar">
+        <div class="toolbar__title">
+          <a class="toolbar__brand" href="/">PaperTrail</a>
+          <span class="toolbar__tagline"
+            >map your evidence, follow the story.</span
+          >
+          <div
+            class="toolbar__board-name"
+            id="boardName"
+            contenteditable="{{#if share.canEdit}}true{{else}}false{{/if}}"
+            data-placeholder="Untitled Board"
+            aria-label="Board name"
+          ></div>
+        </div>
+        <button
+          id="addText"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add text node"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="3" width="16" height="18" rx="2" ry="2" />
+            <line x1="8" y1="9" x2="16" y2="9" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="14" y2="17" />
+          </svg>
+        </button>
+        <button
+          id="addImage"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add image (URL)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M7 15l3-3 3 3 4-4 3 3" />
+            <circle cx="9" cy="9" r="1.5" />
+          </svg>
+        </button>
+        <button
+          id="uploadImage"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Upload image"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 15V5" />
+            <path d="M8 9l4-4 4 4" />
+            <path d="M4 19h16" />
+          </svg>
+        </button>
+        <input id="fileInput" type="file" accept="image/*" hidden />
+        <button
+          id="addLink"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Add link"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 14l-2 2a4 4 0 0 1-6-6l2-2" />
+            <path d="M14 10l2-2a4 4 0 0 1 6 6l-2 2" />
+            <path d="M8 12l8-8" opacity="0.0" />
+          </svg>
+        </button>
+        <button
+          id="connect"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Connect nodes (C)"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="6" cy="12" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="18" cy="18" r="2" />
+            <path d="M8 12h6" />
+            <path d="M12 12L17 7" />
+            <path d="M12 12l5 5" />
+          </svg>
+        </button>
+        <div class="toolbar__search-wrap">
+          <input
+            id="search"
+            class="toolbar__search"
+            type="search"
+            placeholder="Search… use #tag"
+          />
+          <button id="clearSearch" title="Clear search">✕</button>
+        </div>
+        <div class="toolbar__spacer"></div>
+        <button
+          id="autoLayout"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Auto layout"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="6" height="6" />
+            <rect x="14" y="4" width="6" height="6" />
+            <rect x="4" y="14" width="6" height="6" />
+            <rect x="14" y="14" width="6" height="6" />
+          </svg>
+        </button>
+        <button
+          id="export"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Export board"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v10" />
+            <path d="M8 9l4-4 4 4" />
+            <path d="M4 19h16" />
+          </svg>
+        </button>
+        <button
+          id="importBtn"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Import board"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 19V9" />
+            <path d="M8 15l4 4 4-4" />
+            <path d="M4 5h16" />
+          </svg>
+        </button>
+        <input
+          id="importFile"
+          type="file"
+          accept="application/zip,application/x-zip-compressed,.zip,application/json"
+          hidden
+        />
+        {{#if share.canEdit}}
+        <button
+          id="save"
+          class="toolbar__btn toolbar__btn--icon"
+          disabled
+          title="Save board"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <rect x="8" y="4" width="8" height="6" />
+            <rect x="9" y="14" width="6" height="6" />
+          </svg>
+        </button>
+        {{/if}}
+        <button
+          id="reset"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Reset board"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 12a9 9 0 1 0 3-6" />
+            <path d="M3 4v6h6" />
+          </svg>
+        </button>
+        {{#if share.canView}}
+        <button
+          type="button"
+          id="share"
+          class="toolbar__btn toolbar__btn--icon"
+          title="{{#if share.canManage}}Share board{{else}}View access{{/if}}"
+          data-modal-open="share-project"
+          data-share-trigger
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M16 6l-4-4-4 4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M12 2v14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+        {{/if}} {{#if share.canManage}}
+        <button
+          id="settingsBtn"
+          class="toolbar__btn toolbar__btn--icon"
+          title="Board settings"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.26 1.3.73 1.77z"
+            />
+          </svg>
+        </button>
+        {{/if}}
+        <details id="userBtn" class="toolbar__menu toolbar__menu-user">
+          <summary class="toolbar__avatar" title="{{handler}}">
+            <!-- If you have a real avatar URL, replace the SVG with <img src="{{avatarUrl}}" alt="{{handler}}'s avatar"> -->
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="8" r="4" fill="#111" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#111" />
+            </svg>
+          </summary>
+          <div class="toolbar__menu-panel" role="menu" aria-label="User menu">
+            <a class="menu__item" href="/logout" role="menuitem">Logout</a>
+          </div>
+        </details>
+      </div>
+
+      <div id="board" class="board" role="presentation">
+        <div id="boardSizer"></div>
+        <svg id="edges" width="0" height="0" aria-hidden="true"></svg>
+      </div>
+
+      <div class="statusbar">
+        <span id="status" class="statusbar__text"></span>
+        <span id="modeHint" class="statusbar__hint"
+          >Esc cancels · C connects nodes · Drag to move</span
+        >
+      </div>
+
+      <div id="ctxMenu" class="context-menu" role="menu"></div>
+
+      <div
+        id="settingsModal"
+        class="modal"
+        data-modal="papertrail-settings"
+        hidden
+      >
+        <div class="modal__backdrop" data-modal-close aria-hidden="true"></div>
+        <div
+          class="modal__dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="settingsTitle"
+        >
+          <header class="modal__header">
+            <h3 id="settingsTitle" class="modal__title">Board settings</h3>
+            <button
+              id="settingsClose"
+              class="modal__close"
+              type="button"
+              aria-label="Close settings dialog"
+              data-modal-close
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          </header>
+          <div class="modal__body">
+            <p
+              id="settingsNotice"
+              class="modal__alert modal__alert--error"
+              hidden
+              role="alert"
+            >
+              You have read-only access to this board.
+            </p>
+            <div class="kv">
+              <label for="titleInput">Title</label>
+              <input
+                id="titleInput"
+                class="modal__input input"
+                type="text"
+                maxlength="160"
+                data-modal-autofocus
+              />
+              <label for="visibilitySelect">Visibility</label>
+              <select id="visibilitySelect" class="modal__input input">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+              </select>
+              <label for="statusSelect">Status</label>
+              <select id="statusSelect" class="modal__input input">
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+            {{#if share.canManage}}
+            <details class="settings__danger">
+              <summary><strong>Danger zone</strong></summary>
+              <div class="settings__danger-box">
+                <p>
+                  Deleting this board removes nodes, edges, comments, and
+                  attachments. This action cannot be undone.
+                </p>
+                <label for="confirmIdInput"
+                  >Type <code>{{board.id}}</code> to confirm:</label
+                >
+                <input
+                  id="confirmIdInput"
+                  class="modal__input input"
+                  type="text"
+                  placeholder="{{board.id}}"
+                />
+                <button
+                  id="deleteBoardBtn"
+                  type="button"
+                  class="chip chip--danger button button--danger"
+                >
+                  Delete board
+                </button>
+              </div>
+            </details>
+            {{/if}}
+          </div>
+          <footer class="modal__footer">
+            <button
+              id="saveMetaBtn"
+              type="button"
+              class="chip chip--primary button button--primary"
+            >
+              Save changes
+            </button>
+          </footer>
+        </div>
+      </div>
+      {{> modal/modal-runtime}} {{> modal/share-project}}
+    </main>
+
+    <script type="application/json" id="papertrail-board-data">
+      {{{boardJson}}}
+    </script>
+    <script>
+      (function bootstrapPapertrailBoard() {
+        try {
+          const script = document.getElementById("papertrail-board-data");
+          if (!script) return;
+          const payload = JSON.parse(script.textContent || "null");
+          if (payload) {
+            window.__PAPERTRAIL_BOARD__ = payload;
+          }
+        } catch (err) {
+          console.warn("Failed to bootstrap papertrail board payload", err);
+        }
+      })();
+    </script>
+    <script>
+      (function bootstrapPapertrailContext() {
+        const mainEl = document.querySelector("main[data-project-id]");
+        const boardData = window.__PAPERTRAIL_BOARD__ || {};
+        const projectId = mainEl?.dataset.projectId || "";
+        const shareRole = (mainEl?.dataset.shareRole || "").toLowerCase();
+        const canManage = mainEl?.dataset.shareCanManage === "true";
+        const canEditAttr = mainEl?.dataset.shareCanEdit === "true";
+        const canEdit = canManage || canEditAttr || shareRole === "editor";
+        const boardVisibility =
+          (
+            boardData?.project?.scope ||
+            boardData?.visibility ||
+            ""
+          ).toLowerCase() || "private";
+        const boardStatus =
+          (
+            boardData?.project?.status ||
+            boardData?.status ||
+            ""
+          ).toLowerCase() || "draft";
+        const schemaVersion = boardData?.schemaVersion || 1;
+        const appVersion = "{{{app.version}}}";
+
+        window.__globals = {
+          projectId,
+          boardId: boardData?.id || "",
+          boardTitle: boardData?.title || "",
+          boardVisibility,
+          boardStatus,
+          schemaVersion,
+          isOwner: String(canManage),
+          canEdit: String(canEdit),
+          canManage: String(canManage),
+          apiBase: projectId ? `/api/papertrail/${projectId}` : "",
+          initialBoard: boardData,
+          appVersion: appVersion || "",
+        };
+      })();
+    </script>
+    <script src="/plugins/papertrail/js/board.js"></script>
+  </body>
+</html>
