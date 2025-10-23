@@ -5,21 +5,20 @@ import {
   connectPrismaWithRetry,
   gracefulShutdown,
 } from "$/services/database.mjs";
-import createExtHost from "$/platform/ext-host/index.mjs";
-
 import logger from "$/services/logger.mjs";
-global.logger = logger; // Make logger globally accessible (e.g., in Prisma hooks)
+import createExtHost from "$/platform/ext-host/index.mjs";
 
 import createServer from "./server.mjs";
 
+global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
+
 async function bootstrap() {
   logger.info("🚀 Starting Sovereign platform...");
+  const start = Date.now();
 
   try {
-    // Connect to the database
     await connectPrismaWithRetry();
 
-    // Initialize Extention Host
     // Discovers and mounts all plugins under /src/plugins/*
     const extHost = await createExtHost(
       {},
@@ -28,17 +27,17 @@ async function bootstrap() {
       },
     );
 
-    // Create the server
+    logger.info("- Initializing HTTP server...");
     // This sets up Express, middlewares, coreRoutes etc.
     const server = await createServer(extHost);
-
-    // Start the HTTP Server
     server.start();
 
-    logger.info("✓ Sovereign server is up and running");
-    logger.info(`  ➜  Environment: ${process.env.NODE_ENV || "development"}`);
+    const enabledPlugins = extHost?.plugins.map(
+      (plugin) => `${plugin.name}@${plugin.version}`,
+    );
 
-    const enabledPlugins = extHost?.plugins.map((plugin) => plugin.name);
+    logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
+    logger.info(`  ➜  Environment: ${process.env.NODE_ENV || "development"}`);
     logger.info(
       `  ➜  Loaded plugins: ${
         enabledPlugins && enabledPlugins.length
@@ -53,18 +52,18 @@ async function bootstrap() {
         await gracefulShutdown(signal);
         await server.stop();
         logger.info("✓ Clean shutdown complete");
-        process.exit(0);
       } catch (err) {
-        logger.error("✗ Error during shutdown", err);
-        process.exit(1);
+        logger.error("✗ Error during shutdown", err.stack || err);
+      } finally {
+        process.exit(0);
       }
     };
 
     process.on("SIGINT", () => shutdown("SIGINT"));
     process.on("SIGTERM", () => shutdown("SIGTERM"));
   } catch (err) {
-    logger.error("✗ Failed to bootstrap Sovereign", err);
-    process.exit(1);
+    logger.error("✗ Failed to bootstrap Sovereign", err.stack || err);
+    process.exitCode = 1;
   }
 }
 

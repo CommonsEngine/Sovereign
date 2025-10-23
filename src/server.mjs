@@ -55,6 +55,12 @@ export default async function createServer({ plugins }) {
   const webRouters = [];
   const apiRouters = [];
 
+  // plugins: mounting
+  /** TODO:
+   * To future-proof, consider separating the plugin discovery layer (manifest reading, module import, normalization)
+   * into a helper (e.g., /platform/ext-host/loader.mjs). That keeps server.mjs focused only on mounting.
+   */
+
   for (const p of plugins || []) {
     const namespace = p.namespace;
 
@@ -79,6 +85,9 @@ export default async function createServer({ plugins }) {
     }
 
     // Routes
+    // TODO: Parallelize imports to avoid performance issues
+    // - await Promise.all(plugins.map(async p => { ... }))
+    // TODO: Consider implementing capability for auto-detect route files
     if (p?.routes?.web) {
       webRouters.push({
         base: `/${namespace}`,
@@ -121,6 +130,8 @@ export default async function createServer({ plugins }) {
   app.use(useJSX);
 
   // View engine
+  // TODO: Consider letting each plugin also register its own partials:
+  // app.engine("html", hbsEngine({ partialsDir: templateDirs.map(d => path.join(d, "_partials")), ... }))
   app.engine(
     "html",
     hbsEngine({
@@ -137,6 +148,8 @@ export default async function createServer({ plugins }) {
   app.set("view cache", NODE_ENV === "production");
 
   // Serve everything under /public at the root
+  // TODO: Consider moving it into a small utility like utils/cacheHeaders.mjs
+  // since we’ll likely reuse it for plugin assets.
   const staticOptions = {
     index: false,
     setHeaders: (res, filePath) => {
@@ -283,8 +296,7 @@ export default async function createServer({ plugins }) {
         select: { role: true },
       });
 
-      // TODO: Consider other roles too
-      if (projectContributions?.role !== "owner") {
+      if (!["owner", "editor", "admin"].includes(projectContributions?.role)) {
         return res.status(403).render("error", {
           code: 403,
           message: "Forbidden",
@@ -298,6 +310,8 @@ export default async function createServer({ plugins }) {
         select: { id: true, type: true },
       });
 
+      // TODO: Instead of importing pluginRoot every request, cache it:
+      // const pluginRoot = pluginsCache.get(project.type) || await import(...);
       const pluginPath = pluginsMap.get(project.type);
       const pluginRoot = await import(pluginPath);
       // TODO: We should pass project, other required services as the context
