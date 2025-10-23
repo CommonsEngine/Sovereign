@@ -8,8 +8,6 @@ import { fetchLinkPreview } from "../handlers/link-preview.mjs";
 
 const router = express.Router();
 
-// TODO: Move `/projects` prefix to parent router
-
 router.use(requireFeature("papertrail"));
 
 const bundleUpload = multer({
@@ -18,123 +16,81 @@ const bundleUpload = multer({
 });
 
 // Board Meta
-router.post("/projects/:projectId/papertrail/board", handlers.saveBoard);
-router.get("/projects/:projectId/papertrail/board", handlers.getBoard);
-router.patch("/projects/:projectId/papertrail/board", handlers.updateBoard);
-router.get(
-  "/projects/:projectId/papertrail/board/export",
-  handlers.exportBoard,
-);
+router.post("/:projectId/board", handlers.saveBoard);
+router.get("/:projectId/board", handlers.getBoard);
+router.patch("/:projectId/board", handlers.updateBoard);
+router.get("/:projectId/board/export", handlers.exportBoard);
 router.post(
-  "/projects/:projectId/papertrail/board/import/validate",
+  "/:projectId/board/import/validate",
   bundleUpload.single("bundle"),
   handlers.validateImportBundle,
 );
 router.post(
-  "/projects/:projectId/papertrail/board/import",
+  "/:projectId/board/import",
   bundleUpload.single("bundle"),
   handlers.importBoard,
 );
-router.delete("/projects/:projectId/papertrail/board", handlers.deleteBoard);
+router.delete("/:projectId/board", handlers.deleteBoard);
 
 // Nodes
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/nodes",
-  handlers.listNodes,
-);
-router.post(
-  "/projects/:projectId/papertrail/board/:boardId/nodes",
-  handlers.createNode,
-);
+router.get("/:projectId/board/:boardId/nodes", handlers.listNodes);
+router.post("/:projectId/board/:boardId/nodes", handlers.createNode);
 
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  handlers.getNode,
-);
-router.patch(
-  "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  handlers.updateNode,
-);
-router.delete(
-  "/projects/:projectId/papertrail/board/:boardId/nodes/:nodeId",
-  handlers.deleteNode,
-);
+router.get("/:projectId/board/:boardId/nodes/:nodeId", handlers.getNode);
+router.patch("/:projectId/board/:boardId/nodes/:nodeId", handlers.updateNode);
+router.delete("/:projectId/board/:boardId/nodes/:nodeId", handlers.deleteNode);
 
 // Edges
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/edges",
-  handlers.listEdges,
-);
-router.post(
-  "/projects/:projectId/papertrail/board/:boardId/edges",
-  handlers.createEdge,
-);
+router.get("/:projectId/board/:boardId/edges", handlers.listEdges);
+router.post("/:projectId/board/:boardId/edges", handlers.createEdge);
 
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  handlers.getEdge,
-);
-router.patch(
-  "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  handlers.updateEdge,
-);
-router.delete(
-  "/projects/:projectId/papertrail/board/:boardId/edges/:edgeId",
-  handlers.deleteEdge,
-);
+router.get("/:projectId/board/:boardId/edges/:edgeId", handlers.getEdge);
+router.patch("/:projectId/board/:boardId/edges/:edgeId", handlers.updateEdge);
+router.delete("/:projectId/board/:boardId/edges/:edgeId", handlers.deleteEdge);
 
 // Comments
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/comments",
-  handlers.listComments,
-);
-router.post(
-  "/projects/:projectId/papertrail/board/:boardId/comments",
-  handlers.createComment,
-);
+router.get("/:projectId/board/:boardId/comments", handlers.listComments);
+router.post("/:projectId/board/:boardId/comments", handlers.createComment);
 
 router.get(
-  "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
+  "/:projectId/board/:boardId/comments/:commentId",
   handlers.getComment,
 );
 router.patch(
-  "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
+  "/:projectId/board/:boardId/comments/:commentId",
   handlers.updateComment,
 );
 router.delete(
-  "/projects/:projectId/papertrail/board/:boardId/comments/:commentId",
+  "/:projectId/board/:boardId/comments/:commentId",
   handlers.deleteComment,
 );
 
 // Attachments
-router.get(
-  "/projects/:projectId/papertrail/board/:boardId/attachments",
-  handlers.listAttachments,
-);
+router.get("/:projectId/board/:boardId/attachments", handlers.listAttachments);
 router.post(
-  "/projects/:projectId/papertrail/board/:boardId/attachments",
+  "/:projectId/board/:boardId/attachments",
   handlers.createAttachment,
 );
 
 router.get(
-  "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
+  "/:projectId/board/:boardId/attachments/:attachmentId",
   handlers.getAttachment,
 );
 router.patch(
-  "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
+  "/:projectId/board/:boardId/attachments/:attachmentId",
   handlers.updateAttachment,
 );
 router.delete(
-  "/projects/:projectId/papertrail/board/:boardId/attachments/:attachmentId",
+  "/:projectId/board/:boardId/attachments/:attachmentId",
   handlers.deleteAttachment,
 );
 
 router.post(
-  "/projects/:projectId/papertrail/board/:boardId/attachments/upload",
+  "/:projectId/board/:boardId/attachments/upload",
   handlers.attachmentUpload.single("file"),
   handlers.uploadAttachment,
 );
 
-router.post("/papertrail/link-preview", fetchLinkPreview);
+router.post("/link-preview", fetchLinkPreview);
 
 export default router;

@@ -11,17 +11,17 @@ const router = express.Router();
 router.use([requireAuth, exposeGlobals]);
 
 router.get(
-  "/blog/:projectId/configure",
+  "/:projectId/configure",
   requireFeature("blog"),
   handlers.viewProjectConfigure,
 );
 router.get(
-  "/blog/:projectId/post/new",
+  "/:projectId/post/new",
   requireFeature("blog"),
   handlers.viewPostCreate,
 );
 router.get(
-  "/blog/:projectId/post/:fp",
+  "/:projectId/post/:fp",
   requireFeature("blog"),
   handlers.viewPostEdit,
 );

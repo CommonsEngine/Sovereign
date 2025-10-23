@@ -402,7 +402,7 @@
           isOwner: String(canManage),
           canEdit: String(canEdit),
           canManage: String(canManage),
-          apiBase: projectId ? `/api/projects/${projectId}/papertrail` : "",
+          apiBase: projectId ? `/api/papertrail/${projectId}` : "",
           initialBoard: boardData,
           appVersion: appVersion || "",
         };

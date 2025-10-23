@@ -29,42 +29,9 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 
 import env from "$/config/env.mjs";
 
-import blogWebRouter from "$/plugins/blog/routes/web.mjs";
-import blogApiRouter from "$/plugins/blog/routes/api.mjs";
-import papertrailApiRouter from "$/plugins/papertrail/routes/api.mjs";
-
-import * as blogRoot from "$/plugins/blog/index.mjs";
-import * as papertrailRoot from "$/plugins/papertrail/index.mjs";
-
 const config = env();
 const { __publicdir, __srcDir, __templatedir, __datadir, PORT, NODE_ENV } =
   config;
-
-const getPluginConfigs = async (plugins) => {
-  const templateDirs = [];
-  const publicDirs = [];
-  const uploadDirs = [];
-
-  for (const plugin of plugins) {
-    const namespace = plugin.namespace;
-
-    templateDirs.push(path.join(__srcDir, `plugins/${namespace}/views`));
-
-    publicDirs.push({
-      namespace,
-      path: path.join(__srcDir, `plugins/${namespace}/public`),
-    });
-
-    if (plugin?.platformCapabilities?.fileUpload) {
-      uploadDirs.push({
-        namespace,
-        path: path.resolve(path.join(process.cwd(), "data", namespace)),
-      });
-    }
-  }
-
-  return { templateDirs, publicDirs, uploadDirs };
-};
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -78,7 +45,57 @@ if (process.env.NODE_ENV !== "production") {
 
 export default async function createServer({ plugins }) {
   const app = express();
-  const pluginConfigs = await getPluginConfigs(plugins);
+
+  const templateDirs = [__templatedir];
+  const publicDirs = [];
+  const uploadDirs = [];
+
+  const pluginsMap = new Map();
+
+  const webRouters = [];
+  const apiRouters = [];
+
+  for (const p of plugins || []) {
+    const namespace = p.namespace;
+
+    pluginsMap.set(
+      namespace,
+      path.join(__srcDir, `plugins/${namespace}/index.mjs`),
+    );
+
+    // Directories
+    templateDirs.push(path.join(__srcDir, `plugins/${namespace}/views`));
+
+    publicDirs.push({
+      namespace,
+      path: path.join(__srcDir, `plugins/${namespace}/public`),
+    });
+
+    if (p?.platformCapabilities?.fileUpload) {
+      uploadDirs.push({
+        namespace,
+        path: path.resolve(path.join(process.cwd(), "data", namespace)),
+      });
+    }
+
+    // Routes
+    if (p?.routes?.web) {
+      webRouters.push({
+        base: `/${namespace}`,
+        router: await import(
+          path.join(__srcDir, "plugins", namespace, "routes", "web.mjs")
+        ),
+      });
+    }
+    if (p?.routes?.api) {
+      apiRouters.push({
+        base: `/api/${namespace}`,
+        router: await import(
+          path.join(__srcDir, `plugins/${namespace}/routes/api.mjs`)
+        ),
+      });
+    }
+  }
 
   // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
   app.set("trust proxy", 1);
@@ -114,7 +131,7 @@ export default async function createServer({ plugins }) {
     }),
   );
   app.set("view engine", "html");
-  app.set("views", [__templatedir, ...pluginConfigs.templateDirs]);
+  app.set("views", templateDirs);
 
   // Enable template caching in production
   app.set("view cache", NODE_ENV === "production");
@@ -155,11 +172,11 @@ export default async function createServer({ plugins }) {
 
   app.use(express.static(__publicdir, staticOptions));
 
-  pluginConfigs.publicDirs.forEach(({ namespace, path }) => {
+  publicDirs.forEach(({ namespace, path }) => {
     app.use(`/plugins/${namespace}`, express.static(path, staticOptions));
   });
 
-  const uploadConfigs = pluginConfigs.uploadDirs.map(({ path }) =>
+  const uploadConfigs = uploadDirs.map(({ path }) =>
     express.static(path, {
       index: false,
       setHeaders: (res) => {
@@ -171,7 +188,6 @@ export default async function createServer({ plugins }) {
       },
     }),
   );
-
   app.use("/uploads", uploadConfigs);
 
   // Security headers
@@ -282,20 +298,12 @@ export default async function createServer({ plugins }) {
         select: { id: true, type: true },
       });
 
+      const pluginPath = pluginsMap.get(project.type);
+      const pluginRoot = await import(pluginPath);
       // TODO: We should pass project, other required services as the context
-      if (project.type === "blog") {
-        return blogRoot.render({}, (resolve) => {
-          return resolve(req, res);
-        });
-      }
-
-      if (project.type === "papertrail") {
-        return papertrailRoot.render({}, (resolve) => {
-          return resolve(req, res);
-        });
-      }
-
-      return res.send(projectId);
+      return pluginRoot.render({}, (resolve) => {
+        return resolve(req, res);
+      });
     } catch (err) {
       logger.error("Render project page failed:", err);
       return res.status(500).render("error", {
@@ -330,11 +338,13 @@ export default async function createServer({ plugins }) {
   );
 
   // Plugins Routes (Web)
-  app.use("/", requireAuth, blogWebRouter);
-
+  for (const { base, router } of webRouters) {
+    app.use(base, requireAuth, router.default);
+  }
   // Plugins Routes (API)
-  app.use("/api", requireAuth, blogApiRouter);
-  app.use("/api", requireAuth, papertrailApiRouter);
+  for (const { base, router } of apiRouters) {
+    app.use(base, requireAuth, router.default);
+  }
 
   // 404
   app.use((req, res) => {

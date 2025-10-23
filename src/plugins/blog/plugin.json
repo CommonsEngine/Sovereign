@@ -12,6 +12,10 @@
     "engine": "0.5.0",
     "entryPoints": ["launcher"]
   },
+  "routes": {
+    "web": true,
+    "api": true
+  },
   "platformCapabilities": {
     "database": true,
     "gitManager": true,

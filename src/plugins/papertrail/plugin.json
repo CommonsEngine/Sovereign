@@ -12,6 +12,10 @@
     "engine": "0.5.0",
     "entryPoints": ["launcher"]
   },
+  "routes": {
+    "web": false,
+    "api": true
+  },
   "platformCapabilities": {
     "database": true,
     "fileUpload": true
