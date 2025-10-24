@@ -100,7 +100,7 @@
   "engines": {
     "node": ">=20"
   },
-  "packageManager": "yarn@4.10.3",
+  "packageManager": "yarn@1.22.22",
   "dependencies": {
     "@prisma/client": "^6.16.3",
     "ajv": "^8.17.1",
