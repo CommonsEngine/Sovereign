@@ -2,13 +2,215 @@
 
 Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign will enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.
 
-The platform is still in its early stages of development. While the plan has been mapped out, the documentation remains incomplete and is actively being developed.
+> The platform is still in its early stages of development.  
+> While the plan has been mapped out, the documentation remains incomplete and is actively being developed.
 
 ## Getting Started
 
-We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with the [Handlebars](https://handlebarsjs.com/) template engine as the core stack for this application, with optional [React](https://react.dev/) SSR/JSX support. SQLite serves as the primary database during the MVP stage, with straightforward extensibility to PostgreSQL (or any other SQL database) through [Prisma](https://www.prisma.io/), as an intermediate abstraction layer between the app code and the database.
+We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with the [Handlebars](https://handlebarsjs.com/) template engine as the core stack for this application, with optional [React](https://react.dev/) SSR/JSX support. SQLite serves as the primary database during the MVP stage, with straightforward extensibility to PostgreSQL (or any other SQL database) through [Prisma](https://www.prisma.io/) as an intermediate abstraction layer between the app code and the database.
 
 Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
+
+### Modular Architecture (Core + Plugins)
+
+Sovereign is built as a **modular platform**. The core app provides the runtime (Express, Handlebars/React SSR, RBAC, settings, storage, CLI, and build system). Feature domains live in **plugins** that can be added, enabled/disabled, versioned, and shipped independently from the core.
+
+**Goals**
+
+- Minimize core surface area; keep features in plugins
+- Enable safe iteration: plugin versioning + engine compatibility
+- Support both server-rendered Handlebars and React SSR views
+- Keep deploys simple: one app artifact with opt‑in plugins
+
+**High‑level runtime**
+
+1. **Bootstrap**: core loads config, DB, logger, view engines, and scans `src/plugins/*` for registered plugins.
+2. **Manifest phase**: each plugin’s `plugin.json` is validated (namespace, version, engine compatibility, entry points, declared routes/capabilities).
+3. **Wiring**: core mounts plugin **routes** (web/api), registers **handlers**, exposes **public assets**, and loads **views**.
+4. **RBAC merge**: plugin‑declared capabilities are merged into the global graph (no runtime DB migration required for read‑time checks). (TBA)
+5. **Lifecycle hooks** (optional): install/enable/disable/upgrade hooks can prepare data, run migrations, or seed settings. (TBA)
+
+#### Directory Layout
+
+Each plugin sits under `src/plugins/<namespace>` with a predictable layout. Example based on the uploaded screenshot:
+
+```
+src/
+  plugins/
+    blog/
+      handlers/        # business logic (service layer)
+      public/          # static assets served under /plugins/<ns>/...
+      routes/          # Express route modules (web + api)
+      views/           # Handlebars or React SSR views
+      index.mjs        # plugin entry (exports attach(server) or factory)
+      plugin.json      # manifest (see below)
+    papertrail/
+```
+
+> During build, **all files are copied to `dist/plugins/*` with their original extensions**, while code files are **transpiled in place**. This preserves the structure expected by the runtime and avoids `*.json.json` / `*.html.html` or `.mjs -> .js` skew.
+
+#### Build & Load Rules
+
+- **Assets** (`.html`, `.json`, `.css`, images, etc.) are copied byte‑for‑byte.
+- **Code** files (`.ts`, `.tsx`, `.jsx`, `.js`, `.mjs`, `.cjs`) are transpiled but **keep their original extensions**.
+- Core resolves `$` imports to `src/`.
+- On startup, the server only mounts **enabled** plugins (see `isEnabled`).
+
+### Plugin Architecture
+
+A plugin is defined by a `plugin.json` manifest with the `index.mjs` entry. The manifest declares compatibility, routes, and capabilities; the entry file wires handlers/routes when the plugin is enabled. Lifecycle hooks to be added in the future.
+
+#### `plugin.json` (reference)
+
+Below is the sample manifest used for the **Blog** plugin; field comments explain how the core interprets them.
+
+```jsonc
+{
+  "namespace": "blog", // unique short id used for routing + RBAC keys
+  "name": "@sovereign/blog", // display + NPM-like naming convention
+  "version": "1.0.0-alpha.7", // semver of the plugin itself
+  "schemaVersion": 1, // manifest schema version (platform-side decoder)
+  "preRelease": true, // whether the plugin is flagged experimental
+  "isEnabled": true, // default enablement (can be toggled at runtime)
+  "description": "Sovereign Blog",
+  "main": "./index.mjs", // optional runtime entry for imperative wiring
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+
+  "sovereign": {
+    "engine": "0.5.0", // minimum/target core engine version compatibility
+    "entryPoints": ["launcher"], // named entry points if the plugin exposes launchers. i.e: launcher | sidebar
+  },
+
+  "routes": {
+    "web": true, // mount web routes under /plugins/blog (or custom base)
+    "api": true, // mount API routes under /api/plugins/blog
+  },
+
+  "platformCapabilities": {
+    "database": true, // requires DB access (Prisma)
+    "gitManager": true, // requires Git manager integration
+    "fs": true, // requires filesystem access to workspace
+  },
+
+  "userCapabilities": [
+    // RBAC: capabilities added by this plugin
+    {
+      "key": "user:plugin.blog.feature",
+      "description": "Enable Blog plugin.",
+      "roles": ["platform:user"],
+    },
+    {
+      "key": "user:plugin.blog.create",
+      "description": "Create blog project, and configure.",
+      "roles": ["platform:user"],
+    },
+    {
+      "key": "user:plugin.blog.read",
+      "description": "View own blog project.",
+      "roles": [
+        "project:admin",
+        "project:editor",
+        "project:contributor",
+        "project:viewer",
+        "project:guest",
+      ],
+    },
+    // …additional granular post.* capabilities elided for brevity…
+  ],
+
+  "events": {}, // (reserved) event contracts the plugin can emit/consume
+  "prisma": {}, // (reserved) plugin-owned Prisma schema modules
+  "config": { "FT_PLUGIN_BLOG": true }, // default config/feature flags injected at init (note: might be removed later)
+}
+```
+
+_Source: sample `plugin.json` shipped with the repo._
+
+#### Entry file (`index.mjs`)
+
+A conventional entry exposes a function the core calls with the app context. Minimal example:
+
+```js
+// src/plugins/blog/index.mjs
+/**
+ * Plugin: Route registry
+ * ----------------------
+ * Exposes the plugin's Express routers to the Sovereign extension host.
+ * - web: non-API routes (e.g., SSR pages)
+ * - api: REST or GraphQL endpoints for plugin data operations
+ *
+ * The extension host mounts these under a plugin-specific base path,
+ * e.g., `/api/<plugin-namespace>` for API and `/<plugin-namespace>` for web.
+ *
+ * This object should remain declarative and side-effect free.
+ */
+export const routes = { web: webRoutes, api: apiRoutes };
+
+/**
+ * render
+ * ------
+ * Handles server-rendered index view for the plugin (if applicable).
+ *
+ * Typical Flow
+ * 1) Resolve and authorize request context
+ * 2) Prepare or fetch data relevant to the view
+ * 3) Render a Handlebars or React SSR template with that data
+ *
+ * Parameters
+ * - _: (reserved for dependency injection; receives context in future)
+ * - resolve(fn): wrapper that produces an Express route handler
+ *
+ * Returns
+ * - Express handler that renders a view or error template.
+ *
+ * Notes
+ * - This is optional; plugins without UI can omit it.
+ * - Avoid leaking secrets or raw config into templates.
+ */
+export async function render(_, resolve) {
+  return resolve(async (req, res) => {
+    // render logic goes here
+  });
+}
+```
+
+#### Routing conventions
+
+- Web routes mount under `/plugins/<namespace>` by default; APIs under `/api/plugins/<namespace>`.
+- A plugin can customize its base mount path from the entry file. (TBA later)
+- Views can be Handlebars **or** React SSR. Client hydration is supported via sibling `.client.jsx` files when Vite is active in dev.
+
+#### RBAC & Capabilities
+
+- Plugins **declare** capabilities in `plugin.json`; these are merged into the global RBAC graph at boot. (TBA)
+- At request time, middleware exposes `req.can('user:plugin.blog.post.create')` / `res.locals.capabilities` for templates.
+- For idempotent imports or repeated enabling, capabilities are upserted.
+
+#### Versioning & Compatibility
+
+- Core checks `manifest.sovereign.engine` against the running engine version. Incompatible plugins are skipped with a warning.
+- Use semver for plugin `version`; core can surface upgrade prompts when a newer compatible version is present.
+
+#### CLI (v0.1.0) — managing plugins
+
+```
+sv plugins add <spec>                     # path | git URL | npm name
+sv plugins list [--json] [--enabled|--disabled]
+sv plugins enable <namespace>
+sv plugins disable <namespace>
+sv plugins remove <namespace>
+sv plugins show <namespace> [--json]
+sv plugins validate <path>
+```
+
+> CLI tool is under development and not operational at the moment.
+
+#### Notes for Contributors
+
+- Keep plugin code **pure** and **self‑contained**. Cross‑plugin calls should go via explicit APIs or events.
+- Put shared utilities in `src/platform` or `src/services`; do not reach into another plugin’s internals.
+- Keep manifests small: name/namespace/version, route toggles, capabilities, and minimal config. Heavy logic lives in code.
 
 ### Development
 
