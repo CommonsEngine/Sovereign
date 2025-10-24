@@ -21,39 +21,6 @@ import apiRoutes from "./routes/api.mjs";
 export const routes = { web: undefined, api: apiRoutes };
 
 /**
- * configure
- * ---------
- * Handles initial setup or configuration tasks for the plugin.
- *
- * Typical Responsibilities
- * - Validate input parameters and access rights
- * - Initialize any external integrations or resources
- * - Persist configuration state or credentials to the database
- *
- * Security
- * - Restrict to authorized roles (e.g., owner/admin)
- * - Avoid echoing sensitive data (tokens, secrets) in responses
- *
- * Parameters
- * - _: (reserved for dependency injection; receives context in future)
- * - resolve(fn): wrapper provided by the runtime that transforms async logic
- *   into an Express handler `(req, res) => Promise<void>`
- *
- * Returns
- * - Express handler responding with JSON status or error payloads.
- *
- * Notes
- * - Should log meaningful messages for diagnostics
- * - Keep implementation stateless; rely on DI context instead of imports later
- *
- * export async function configure(_, resolve) {
- *  return resolve((req, res) => {
- *    return res.json({})
- *  });
- * }
- */
-
-/**
  * render
  * ------
  * Handles server-rendered index view for the plugin (if applicable).

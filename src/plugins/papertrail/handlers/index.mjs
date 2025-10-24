@@ -529,97 +529,104 @@ function normalizeBoardPayload(raw = {}, { board }) {
 }
 
 async function writeBoardSnapshot({ projectId, boardId, payload }) {
-  return prisma.$transaction(async (tx) => {
-    const boardUpdate = {
-      title: payload.title,
-      schemaVersion: payload.schemaVersion ?? 1,
-      layout: payload.layout ?? null,
-      meta: payload.meta ?? {},
-    };
+  try {
+    return prisma.$transaction(async (tx) => {
+      const boardUpdate = {
+        title: payload.title,
+        schemaVersion: payload.schemaVersion ?? 1,
+        layout: payload.layout ?? null,
+        meta: payload.meta ?? {},
+      };
 
-    await tx.papertrailBoard.update({
-      where: { id: boardId },
-      data: boardUpdate,
-    });
-
-    if (payload.projectUpdates && Object.keys(payload.projectUpdates).length) {
-      await tx.project.update({
-        where: { id: projectId },
-        data: payload.projectUpdates,
-      });
-    }
-
-    await tx.paperTrailEdge.deleteMany({ where: { boardId } });
-    await tx.paperTrailNode.deleteMany({ where: { boardId } });
-
-    const tagCache = new Map();
-
-    async function ensureTag(name) {
-      if (tagCache.has(name)) return tagCache.get(name);
-      const tag = await tx.paperTrailTag.upsert({
-        where: { name },
-        update: {},
-        create: { id: uuid("tag_"), name },
-      });
-      tagCache.set(name, tag);
-      return tag;
-    }
-
-    for (const node of payload.nodes) {
-      await tx.paperTrailNode.create({
-        data: {
-          id: node.id,
-          boardId,
-          type: node.type,
-          x: node.x,
-          y: node.y,
-          w: node.w,
-          h: node.h,
-          title: node.title,
-          text: node.text,
-          html: node.html,
-          descHtml: node.descHtml,
-          linkUrl: node.linkUrl,
-          imageUrl: node.imageUrl,
-          meta: node.meta ?? {},
-        },
+      await tx.papertrailBoard.update({
+        where: { id: boardId },
+        data: boardUpdate,
       });
 
-      for (const tagName of node.tags ?? []) {
-        const tag = await ensureTag(tagName);
-        await tx.paperTrailNodeTag.create({
-          data: { nodeId: node.id, tagId: tag.id },
+      if (
+        payload.projectUpdates &&
+        Object.keys(payload.projectUpdates).length
+      ) {
+        await tx.project.update({
+          where: { id: projectId },
+          data: payload.projectUpdates,
         });
       }
-    }
 
-    for (const edge of payload.edges) {
-      await tx.paperTrailEdge.create({
-        data: {
-          id: edge.id,
-          boardId,
-          sourceId: edge.sourceId,
-          targetId: edge.targetId,
-          label: edge.label,
-          dashed: edge.dashed,
-          color: edge.color,
-        },
-      });
-    }
+      await tx.paperTrailEdge.deleteMany({ where: { boardId } });
+      await tx.paperTrailNode.deleteMany({ where: { boardId } });
 
-    const [boardRecord, projectRecord] = await Promise.all([
-      tx.papertrailBoard.findUnique({
-        where: { id: boardId },
-        select: BOARD_WITH_RELATIONS_SELECT,
-      }),
-      tx.project.findUnique({
-        where: { id: projectId },
-        select: PROJECT_META_SELECT,
-      }),
-    ]);
+      const tagCache = new Map();
 
-    return { board: boardRecord, project: projectRecord };
-  });
+      async function ensureTag(name) {
+        if (tagCache.has(name)) return tagCache.get(name);
+        const tag = await tx.paperTrailTag.upsert({
+          where: { name },
+          update: {},
+          create: { id: uuid("tag_"), name },
+        });
+        tagCache.set(name, tag);
+        return tag;
+      }
+
+      for (const node of payload.nodes) {
+        await tx.paperTrailNode.create({
+          data: {
+            id: node.id,
+            boardId,
+            type: node.type,
+            x: node.x,
+            y: node.y,
+            w: node.w,
+            h: node.h,
+            title: node.title,
+            text: node.text,
+            html: node.html,
+            descHtml: node.descHtml,
+            linkUrl: node.linkUrl,
+            imageUrl: node.imageUrl,
+            meta: node.meta ?? {},
+          },
+        });
+
+        for (const tagName of node.tags ?? []) {
+          const tag = await ensureTag(tagName);
+          await tx.paperTrailNodeTag.create({
+            data: { nodeId: node.id, tagId: tag.id },
+          });
+        }
+      }
+
+      for (const edge of payload.edges) {
+        await tx.paperTrailEdge.create({
+          data: {
+            id: edge.id,
+            boardId,
+            sourceId: edge.sourceId,
+            targetId: edge.targetId,
+            label: edge.label,
+            dashed: edge.dashed,
+            color: edge.color,
+          },
+        });
+      }
+
+      const [boardRecord, projectRecord] = await Promise.all([
+        tx.papertrailBoard.findUnique({
+          where: { id: boardId },
+          select: BOARD_WITH_RELATIONS_SELECT,
+        }),
+        tx.project.findUnique({
+          where: { id: projectId },
+          select: PROJECT_META_SELECT,
+        }),
+      ]);
+
+      return { board: boardRecord, project: projectRecord };
+    });
+  } catch (err) {
+    logger.error("✗ papertrail writeBoardSnapshot() failed:", err);
+  }
 }
 
 export async function getBoard(req, res) {
@@ -954,7 +961,6 @@ export async function importBoard(req, res) {
           boardId: boardRecord.id,
           payload: sanitized,
         });
-
         // Replace uploads directory if provided
         const uploadsSrc = path.join(path.dirname(boardJsonPath), "uploads");
         const uploadsDest = path.join(PAPERTRAIL_DATA_ROOT, boardRecord.id);

@@ -1285,7 +1285,7 @@ export async function viewProjectConfigure(req, res) {
 
 export async function configureProject(req, res) {
   try {
-    const projectId = req.params.id;
+    const projectId = req.params.projectId;
     logger.info("Configuring blog for project: >>", projectId);
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });

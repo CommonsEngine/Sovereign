@@ -4,7 +4,7 @@ import { requireAuth } from "$/platform/middlewares/auth.mjs";
 import exposeGlobals from "$/platform/middlewares/exposeGlobals.mjs";
 import requireFeature from "$/platform/middlewares/requireFeature.mjs";
 
-import * as handlers from "../handlers/index.mjs";
+import * as indexHandler from "../handlers/index.mjs";
 
 const router = express.Router();
 
@@ -13,17 +13,17 @@ router.use([requireAuth, exposeGlobals]);
 router.get(
   "/:projectId/configure",
   requireFeature("blog"),
-  handlers.viewProjectConfigure,
+  indexHandler.viewProjectConfigure,
 );
 router.get(
   "/:projectId/post/new",
   requireFeature("blog"),
-  handlers.viewPostCreate,
+  indexHandler.viewPostCreate,
 );
 router.get(
   "/:projectId/post/:fp",
   requireFeature("blog"),
-  handlers.viewPostEdit,
+  indexHandler.viewPostEdit,
 );
 
 export default router;
