@@ -22,7 +22,7 @@ function resolvePluginsDir(pluginsDir) {
 }
 
 export default async function createExtHost(_, options = {}) {
-  const __pluginsDir = resolvePluginsDir(options.pluginsDir || "./src/plugins");
+  const __pluginsDir = resolvePluginsDir(options.pluginsDir);
 
   let pluginCandidates;
   const plugins = [];

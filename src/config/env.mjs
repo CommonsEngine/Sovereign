@@ -32,6 +32,10 @@ const __templatedir = preferDist
   ? path.join(__distDir, "views")
   : path.join(__srcDir, "views");
 
+const __pluginsDir = preferDist
+  ? path.join(__distDir, "plugins")
+  : path.join(__srcDir, "plugins");
+
 const __datadir = path.resolve(
   process.env.__datadir || path.join(__rootdir, "data"),
 );
@@ -118,6 +122,7 @@ const baseTemplate = Object.freeze({
   __srcDir,
   __publicdir,
   __templatedir,
+  __pluginsDir,
   __datadir,
 });
 

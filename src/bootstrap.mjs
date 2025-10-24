@@ -22,6 +22,7 @@ async function bootstrap() {
     const extHost = await createExtHost(
       {},
       {
+        // TODO: Fix pluginsDir to take dist for production
         pluginsDir: "./src/plugins",
       },
     );
