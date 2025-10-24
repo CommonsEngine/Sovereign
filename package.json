@@ -19,7 +19,7 @@
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "node dist/bootstrap.mjs",
+    "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs dist/bootstrap.mjs",
     "start:src": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "dev": "nodemon",
     "prepare": "node ./scripts/build.mjs",
@@ -35,7 +35,8 @@
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
-    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format"
+    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format",
+    "check": "yarn format:check && yarn lint:check && yarn prisma validate"
   },
   "nodemonConfig": {
     "watch": [
@@ -97,7 +98,7 @@
   },
   "license": "AGPL-3.0",
   "engines": {
-    "node": ">=22.20.0"
+    "node": ">=20"
   },
   "packageManager": "yarn@4.10.3",
   "dependencies": {

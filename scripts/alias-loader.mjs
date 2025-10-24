@@ -2,8 +2,11 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ALIAS_PREFIX = "$/";
-const projectRoot = path.dirname(fileURLToPath(import.meta.url));
-const aliasRoot = path.join(projectRoot, "..", "src");
+const projectRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+const aliasRoot = path.join(projectRoot, "src");
 
 export async function resolve(specifier, context, defaultResolve) {
   if (specifier.startsWith(ALIAS_PREFIX)) {
@@ -13,7 +16,7 @@ export async function resolve(specifier, context, defaultResolve) {
     return { url, shortCircuit: true };
   }
 
-  return defaultResolve(specifier, context, defaultResolve);
+  return defaultResolve(specifier, context);
 }
 
 export async function load(url, context, defaultLoad) {

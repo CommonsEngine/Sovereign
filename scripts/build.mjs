@@ -13,7 +13,7 @@ const rootDir = path.resolve(__dirname, "..");
 const srcDir = path.join(rootDir, "src");
 const outDir = path.join(rootDir, "dist");
 const pkgPath = path.join(rootDir, "package.json");
-const viewsDir = path.join(srcDir, "core", "views");
+const viewsDir = path.join(srcDir, "views");
 
 const aliasPlugin = {
   name: "alias-dollar",
@@ -32,11 +32,11 @@ async function ensureCleanOutDir() {
 async function copyStaticAssets() {
   const assets = [
     {
-      from: path.join(rootDir, "core", "public"),
+      from: path.join(srcDir, "public"),
       to: path.join(outDir, "public"),
     },
     {
-      from: path.join(srcDir, "core", "views"),
+      from: path.join(srcDir, "views"),
       to: path.join(outDir, "views"),
     },
     { from: pkgPath, to: path.join(outDir, "package.json") },
