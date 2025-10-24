@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
-// TODO: Fix, adjust build script
+// TODO: Optimize the build script
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,43 +136,111 @@ async function collectPluginServerEntries() {
 }
 
 async function copyPluginAssets() {
-  // Copy plugin views/ and public/ to dist/plugins/<namespace>/...
-  let namespaces = [];
+  // Requirements:
+  // 1) Copy *everything* from src/plugins -> dist/plugins preserving structure
+  // 2) Transpile code files, but DO NOT change file extensions
+  // 3) Avoid the previous issues (.json.json, .html.html, .mjs -> .js)
+
+  // Short-circuit if there's no plugins dir
+  let stat;
   try {
-    namespaces = (await fs.readdir(pluginsDir, { withFileTypes: true }))
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name);
+    stat = await fs.stat(pluginsDir);
+    if (!stat.isDirectory()) return;
   } catch (err) {
-    if (err.code === "ENOENT") return; // no plugins directory
+    if (err.code === "ENOENT") return;
     throw err;
   }
 
-  for (const ns of namespaces) {
-    const srcViews = path.join(pluginsDir, ns, "views");
-    const srcPublic = path.join(pluginsDir, ns, "public");
-    const dstViews = path.join(distPluginsDir, ns, "views");
-    const dstPublic = path.join(distPluginsDir, ns, "public");
+  const skipDirs = new Set(["node_modules", "dist"]);
+  const codeExtGroups = {
+    ts: new Set([".ts"]),
+    tsx: new Set([".tsx"]),
+    jsx: new Set([".jsx"]),
+    js: new Set([".js"]),
+    mjs: new Set([".mjs"]),
+    cjs: new Set([".cjs"]),
+  };
+  const allCodeExts = new Set([".ts", ".tsx", ".jsx", ".js", ".mjs", ".cjs"]);
 
-    try {
-      const statV = await fs.stat(srcViews);
-      if (statV.isDirectory()) {
-        await fs.mkdir(dstViews, { recursive: true });
-        await cp(srcViews, dstViews, { recursive: true });
-      }
-    } catch (e) {
-      if (e.code !== "ENOENT") throw e;
-    }
+  const codeBuckets = {
+    ts: [],
+    tsx: [],
+    jsx: [],
+    js: [],
+    mjs: [],
+    cjs: [],
+  };
+  const assetFiles = [];
 
-    try {
-      const statP = await fs.stat(srcPublic);
-      if (statP.isDirectory()) {
-        await fs.mkdir(dstPublic, { recursive: true });
-        await cp(srcPublic, dstPublic, { recursive: true });
+  async function walk(dir) {
+    const dirents = await fs.readdir(dir, { withFileTypes: true });
+    for (const d of dirents) {
+      const full = path.join(dir, d.name);
+      if (d.isDirectory()) {
+        if (skipDirs.has(d.name)) continue;
+        await walk(full);
+      } else {
+        const ext = path.extname(d.name);
+        if (allCodeExts.has(ext)) {
+          if (codeExtGroups.ts.has(ext)) codeBuckets.ts.push(full);
+          else if (codeExtGroups.tsx.has(ext)) codeBuckets.tsx.push(full);
+          else if (codeExtGroups.jsx.has(ext)) codeBuckets.jsx.push(full);
+          else if (codeExtGroups.js.has(ext)) codeBuckets.js.push(full);
+          else if (codeExtGroups.mjs.has(ext)) codeBuckets.mjs.push(full);
+          else if (codeExtGroups.cjs.has(ext)) codeBuckets.cjs.push(full);
+        } else {
+          assetFiles.push(full);
+        }
       }
-    } catch (e) {
-      if (e.code !== "ENOENT") throw e;
     }
   }
+
+  await walk(pluginsDir);
+
+  // 1) Copy non-code assets byte-for-byte (html, json, css, images, etc.)
+  for (const absSrc of assetFiles) {
+    const rel = path.relative(pluginsDir, absSrc);
+    const absDest = path.join(distPluginsDir, rel);
+    await fs.mkdir(path.dirname(absDest), { recursive: true });
+    await fs.copyFile(absSrc, absDest);
+  }
+
+  // Helper to run esbuild for a given bucket and force the output extension
+  async function buildBucket(entries, outExt) {
+    if (!entries || entries.length === 0) return;
+    await build({
+      entryPoints: entries,
+      outdir: distPluginsDir,
+      outbase: pluginsDir,
+      format: "esm",
+      platform: "node",
+      bundle: false,
+      sourcemap: true,
+      logLevel: "info",
+      allowOverwrite: true,
+      plugins: [aliasPlugin],
+      // Transpile TS/JSX to JS syntax but retain the *original* filenames by
+      // mapping esbuild's default .js output to the requested extension per-bucket.
+      outExtension: { ".js": outExt },
+      loader: {
+        ".ts": "ts",
+        ".tsx": "tsx",
+        ".jsx": "jsx",
+        ".js": "js",
+        ".mjs": "js",
+        ".cjs": "js",
+      },
+      target: "node20",
+    });
+  }
+
+  // 2) Transpile each code group while keeping original extensions
+  await buildBucket(codeBuckets.ts, ".ts");
+  await buildBucket(codeBuckets.tsx, ".tsx");
+  await buildBucket(codeBuckets.jsx, ".jsx");
+  await buildBucket(codeBuckets.js, ".js");
+  await buildBucket(codeBuckets.mjs, ".mjs");
+  await buildBucket(codeBuckets.cjs, ".cjs");
 }
 
 async function main() {

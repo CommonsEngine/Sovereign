@@ -16,13 +16,15 @@ const resolveRoot = () => {
   return path.resolve(__dirname, "../..");
 };
 
+const preferDist =
+  (process.env.NODE_ENV || "development") === "production" ||
+  process.env.PREFER_DIST_BUILD === "true";
+
 const __rootdir = resolveRoot();
 const __srcDir = path.join(__rootdir, "src");
 const __distDir = path.join(__rootdir, "dist");
 
-const preferDist =
-  (process.env.NODE_ENV || "development") === "production" ||
-  process.env.PREFER_DIST_BUILD === "true";
+const __runtimeDir = preferDist ? __distDir : __srcDir;
 
 const __publicdir = preferDist
   ? path.join(__distDir, "public")
@@ -120,6 +122,7 @@ const baseTemplate = Object.freeze({
 
   __rootdir,
   __srcDir,
+  __runtimeDir,
   __publicdir,
   __templatedir,
   __pluginsDir,

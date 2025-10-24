@@ -30,7 +30,7 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __publicdir, __srcDir, __templatedir, __datadir, PORT, NODE_ENV } =
+const { __publicdir, __runtimeDir, __templatedir, __datadir, PORT, NODE_ENV } =
   config;
 
 // Ensure data root exist at startup
@@ -66,15 +66,15 @@ export default async function createServer({ plugins }) {
 
     pluginsMap.set(
       namespace,
-      path.join(__srcDir, `plugins/${namespace}/index.mjs`),
+      path.join(__runtimeDir, `plugins/${namespace}/index.mjs`),
     );
 
     // Directories
-    templateDirs.push(path.join(__srcDir, `plugins/${namespace}/views`));
+    templateDirs.push(path.join(__runtimeDir, `plugins/${namespace}/views`));
 
     publicDirs.push({
       namespace,
-      path: path.join(__srcDir, `plugins/${namespace}/public`),
+      path: path.join(__runtimeDir, `plugins/${namespace}/public`),
     });
 
     if (p?.platformCapabilities?.fileUpload) {
@@ -92,7 +92,7 @@ export default async function createServer({ plugins }) {
       webRouters.push({
         base: `/${namespace}`,
         router: await import(
-          path.join(__srcDir, "plugins", namespace, "routes", "web.mjs")
+          path.join(__runtimeDir, "plugins", namespace, "routes", "web.mjs")
         ),
       });
     }
@@ -100,7 +100,7 @@ export default async function createServer({ plugins }) {
       apiRouters.push({
         base: `/api/${namespace}`,
         router: await import(
-          path.join(__srcDir, `plugins/${namespace}/routes/api.mjs`)
+          path.join(__runtimeDir, `plugins/${namespace}/routes/api.mjs`)
         ),
       });
     }
