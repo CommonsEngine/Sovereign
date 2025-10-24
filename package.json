@@ -16,6 +16,7 @@
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
     "dev": "yarn workspace @sovereign/platform dev",
+    "postinstall": "husky",
     "format:check": "prettier --check .",
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
@@ -32,7 +33,9 @@
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "execa": "^9.6.0",
-    "fast-glob": "^3.3.3"
+    "fast-glob": "^3.3.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
