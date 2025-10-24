@@ -1,9 +1,10 @@
 {
   "namespace": "papertrail",
   "name": "@sovereign/papertrail",
-  "version": "0.0.0",
-  "enabled": true,
-  "draft": true,
+  "version": "1.0.0-alpha.7",
+  "schemaVersion": 1,
+  "preRelease": true,
+  "isEnabled": true,
   "description": "Sovereign PaperTrail",
   "main": "./index.mjs",
   "author": "Sovereign Core Team",

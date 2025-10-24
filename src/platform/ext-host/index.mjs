@@ -75,7 +75,7 @@ export default async function createExtHost(_, options = {}) {
       continue;
     }
 
-    if (!pluginManifest.enabled) break;
+    if (!pluginManifest.isEnabled) break;
 
     // TODO: Validate the schema
     // TODO: Normalize pluginManifest
