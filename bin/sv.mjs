@@ -2,6 +2,10 @@
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+const pkg = require("../package.json");
 
 // robust side-effect import relative to this file
 const __filename = fileURLToPath(import.meta.url);
@@ -30,16 +34,34 @@ function parseArgs(argv) {
 }
 
 function printUsage() {
-  console.log(`Usage:
-  sv [--help] [--version] <command> [options]
+  console.log(`
+    Usage:
+      sv [options] <namespace> <command> [args]
 
-Commands:
-  plugins:register <spec>          Register a plugin (path | git URL | npm name)
-  plugins:list [--json]            List plugins
-  plugins:enable <id>              Enable a plugin
-  plugins:disable <id>             Disable a plugin
-  migrate:deploy [--plugin <id>]   Run prisma migrate deploy (core or plugin)
-`);
+    Namespaces & commands:
+      plugins
+        add <spec>                      Register/install a plugin (path|git|npm)
+        list [--json] [--enabled|--disabled]
+        enable <namespace>
+        disable <namespace>
+        remove <namespace>
+        show <namespace> [--json]
+        validate <path>
+
+      migrate
+        deploy [--plugin <id>] [--dry-run]
+        status [--plugin <id>] [--json]
+        generate [--plugin <id>]
+
+    Global options:
+      -h, --help       Show help (also: sv <ns> --help)
+      -v, --version    Show version
+      --json           JSON output where supported
+      --verbose        Increase log verbosity
+      --quiet          Suppress non-essential output
+      --dry-run        Simulate mutating commands
+      --no-color       Disable ANSI colors
+  `);
 }
 
 function exitUsage(msg) {
@@ -48,69 +70,197 @@ function exitUsage(msg) {
   process.exit(2);
 }
 
-// Handlers
-const commands = {
-  "plugins:register": {
-    desc: "Register a plugin",
-    async run(args) {
-      const spec = args._[1];
-      if (!spec) exitUsage("Missing <spec> for plugins:register.");
+function printNamespaceHelp(ns) {
+  const node = commands[ns];
+  if (node && typeof node.__help__ === "string") {
+    console.log(node.__help__);
+  } else {
+    printUsage();
+  }
+}
 
-      // TODO: normalizeSpec(spec)
-      /** TODO:
-       * 1. Quick verification to see the plugin is valid, and reject if invalid
-       * 2. Download the pluging to /data/tmp/plugins/<plugin-name>
-       * 3. Read plugin.json, and verify the file system (maybe we can implement MD5 hash verification too), and reject if invalid
-       * 4. Move the plugin from /data/tmp/plugins/<plugin-name> to /src/plugins/<plugin-name>
-       * 5. Register: add a record to `PluginsRegistry` (Database Table)
-       * 6. Run the database migrations (initially we add new table structure to our current schema, planning to allow for per-plugin database later)
-       * 7. Quick intergrity check
-       * 8. Done
-       */
-      console.log("$commandPluginsRegister", spec);
+// Command Tree
+const commands = {
+  // Global meta (no run; handled separately)
+  meta: {
+    name: "sv",
+    version: pkg.manifest.cli.version,
+    globals: [
+      "--help",
+      "--version",
+      "--verbose",
+      "--quiet",
+      "--json",
+      "--no-color",
+      "--dry-run",
+      "--config",
+      "--cwd",
+    ],
+  },
+
+  plugins: {
+    __help__: `
+      Usage:
+        sv plugins add <spec>
+        sv plugins list [--json] [--enabled|--disabled]
+        sv plugins enable <namespace>
+        sv plugins disable <namespace>
+        sv plugins remove <namespace>
+        sv plugins show <namespace> [--json]
+        sv plugins validate <path>
+
+      Examples:
+        sv plugins add ./src/plugins/blog
+        sv plugins enable @sovereign/blog
+        sv plugins list --json
+    `,
+
+    add: {
+      desc: "Register/install a plugin from path/git/npm",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Resolve <spec> (path | git URL | npm)
+          // - Validate manifest (plugin.json), checksum (optional)
+          // - Copy/prepare into src/plugins/<name> or data/plugins/<name>
+          // - Update registry (DB/file)
+          // - Respect --dry-run
+          // - Print human output or JSON (if --json present)  
+        `);
+      },
+    },
+
+    list: {
+      desc: "List plugins",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Load registry
+          // - Filter by --enabled/--disabled
+          // - Output as table (human) or array (JSON) if --json
+          // - Exit 0 (even if empty)
+        `);
+      },
+    },
+
+    enable: {
+      desc: "Enable a plugin by namespace",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Read <namespace>
+          // - Update registry: enabled=true (idempotent)
+          // - Validate dependencies/conflicts (future)
+          // - Respect --dry-run
+        `);
+      },
+    },
+
+    disable: {
+      desc: "Disable a plugin by namespace",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Read <namespace>
+          // - Update registry: enabled=false (idempotent)
+          // - Respect --dry-run
+        `);
+      },
+    },
+
+    remove: {
+      desc: "Unregister/remove a plugin",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Read <namespace>
+          // - Safety checks (in use? migrations?)
+          // - Remove from registry; optionally prune files
+          // - Respect --dry-run
+        `);
+      },
+    },
+
+    show: {
+      desc: "Show plugin details",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Read <namespace>
+          // - Print manifest + status (human) or JSON
+        `);
+      },
+    },
+
+    validate: {
+      desc: "Validate a plugin directory",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Read <path>
+          // - Verify plugin.json, required files, schema
+          // - Print diagnostics; non-zero exit on failure
+        `);
+      },
     },
   },
-  "plugins:list": {
-    desc: "List plugins",
-    async run(args) {
-      const json = !!args.flags.json;
-      // TODO: load registry from `PluginsRegistry`
-      // TODO: (later) Maybe we can show expanded version of the list
-      const data = [{ id: "@sovereign/blog", enabled: true }];
-      if (json) console.log(JSON.stringify(data, null, 2));
-      else
-        data.forEach((p) => console.log(`${p.enabled ? "✔" : "✖"} ${p.id}`));
+
+  migrate: {
+    __help__: `
+      Usage:
+        sv migrate deploy [--plugin <id>] [--dry-run]
+        sv migrate status [--plugin <id>] [--json]
+        sv migrate generate [--plugin <id>]
+
+      Notes:
+        --plugin <id> limits operation to a plugin; omit for core.
+    `,
+
+    deploy: {
+      desc: "Run migrations (core or plugin-scoped)",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Parse optional --plugin
+          // - Validate pending migrations
+          // - Execute (or simulate with --dry-run)
+          // - Print summary; JSON if --json
+          // - Exit non-zero on failure
+        `);
+      },
     },
-  },
-  "plugins:enable": {
-    desc: "Enable a plugin",
-    async run(args) {
-      const id = args._[1];
-      // TODO: Update `PluginsRegistry`
-      if (!id) exitUsage("Missing <id> for plugins:enable.");
-      console.log("$commandPluginsEnable", id);
+
+    status: {
+      desc: "Show migration status",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Inspect migration history
+          // - Print human summary or JSON
+          // - Exit 0
+        `);
+      },
     },
-  },
-  "plugins:disable": {
-    desc: "Disable a plugin",
-    async run(args) {
-      const id = args._[1];
-      // TODO: Update `PluginsRegistry`
-      if (!id) exitUsage("Missing <id> for plugins:disable.");
-      console.log("$commandPluginsDisable", id);
-    },
-  },
-  "migrate:deploy": {
-    desc: "Run migrations",
-    async run(args) {
-      const plugin = args.flags.plugin || null;
-      /** TODO:
-       * 1. Verify new migration is available and valid
-       * 2. Run the migrations
-       * 3. Quick intergrity check
-       * 4. Done
-       */
-      console.log("$commandMigrateDeploy", { plugin });
+
+    generate: {
+      desc: "Generate a new migration (optional exposure)",
+      async run(args) {
+        console.log(args);
+        console.info(`
+          // TODO:
+          // - Plugin/core target selection
+          // - Produce migration files; guard in CI
+        `);
+      },
     },
   },
 };
@@ -125,17 +275,45 @@ async function main() {
   }
   if (args.flags.version || args.flags.v) {
     // optionally read from package.json
-    console.log("sv 0.1.0");
+    console.log(`sv ${pkg.manifest.cli.version}`);
     return;
   }
 
-  const cmd = args._[0];
-  if (!cmd) exitUsage();
+  const ns = args._[0];
+  const sub = args._[1];
 
-  const handler = commands[cmd];
-  if (!handler) exitUsage(`Unknown command "${cmd}".`);
+  if (!ns) exitUsage();
 
-  await handler.run(args);
+  const nsNode = commands[ns];
+  if (!nsNode) exitUsage(`Unknown namespace "${ns}".`);
+
+  // Scoped help: `sv <ns> --help` or `sv <ns> <sub> --help`
+  if (args.flags.help || args.flags.h) {
+    if (sub && nsNode[sub] && typeof nsNode[sub].__help__ === "string") {
+      console.log(nsNode[sub].__help__);
+      return;
+    }
+    printNamespaceHelp(ns);
+    return;
+  }
+
+  // If a subcommand is provided, dispatch to it
+  if (sub) {
+    const subHandler = nsNode[sub];
+    if (!subHandler || typeof subHandler.run !== "function") {
+      exitUsage(`Unknown command "${ns} ${sub}".`);
+    }
+    await subHandler.run(args);
+    return;
+  }
+
+  // If no subcommand and the namespace itself is runnable, run it; otherwise show help
+  if (typeof nsNode.run === "function") {
+    await nsNode.run(args);
+  } else {
+    printNamespaceHelp(ns);
+    process.exit(2);
+  }
 }
 
 main().catch((err) => {
