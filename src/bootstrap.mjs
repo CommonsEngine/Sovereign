@@ -37,7 +37,8 @@ async function bootstrap() {
     );
 
     logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
-    logger.info(`  ➜  Environment: ${NODE_ENV}`);
+    logger.info(`  ➜  Version: ${server.appVersion}`);
+    logger.info(`  ➜  Environment: ${server.nodeEnv}`);
     logger.info(
       `  ➜  Loaded plugins: ${
         enabledPlugins && enabledPlugins.length

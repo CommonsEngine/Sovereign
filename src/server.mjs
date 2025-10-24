@@ -30,8 +30,15 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __publicdir, __runtimeDir, __templatedir, __datadir, PORT, NODE_ENV } =
-  config;
+const {
+  __publicdir,
+  __runtimeDir,
+  __templatedir,
+  __datadir,
+  PORT,
+  NODE_ENV,
+  APP_VERSION,
+} = config;
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -420,6 +427,8 @@ export default async function createServer({ plugins }) {
     start,
     stop,
     services,
+    nodeEnv: NODE_ENV,
+    appVersion: APP_VERSION,
     get httpServer() {
       return httpServer;
     },
