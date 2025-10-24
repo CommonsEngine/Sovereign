@@ -34,7 +34,7 @@ export default class GitManager {
       }
       return true;
     } catch (error) {
-      logger.error("Failed to initialize repository:", error.message);
+      logger.error("✗ Failed to initialize repository:", error.message);
       throw error;
     }
   }

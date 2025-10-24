@@ -299,7 +299,7 @@ export async function getAppSettings(_req, res) {
       version: version?.v ?? 0,
     });
   } catch (err) {
-    logger.error("getAppSettings failed", err);
+    logger.error("✗ getAppSettings failed", err);
     return res.status(500).json({ error: "Failed to load settings" });
   }
 }
@@ -398,7 +398,7 @@ export async function updateAppSettings(req, res) {
       version: version.v,
     });
   } catch (err) {
-    logger.error("updateAppSettings failed", err);
+    logger.error("✗ updateAppSettings failed", err);
     return res.status(500).json({ error: "Failed to update settings" });
   }
 }

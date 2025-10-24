@@ -156,7 +156,7 @@ export default async function create(req, res) {
       url,
     });
   } catch (err) {
-    logger.error("Create project failed:", err);
+    logger.error("✗ Create project failed:", err);
     // handle Prisma unique constraint / validation errors specially if desired
     return res.status(500).json({ error: "Create project failed" });
   }

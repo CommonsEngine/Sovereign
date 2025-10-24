@@ -12,9 +12,6 @@ import createServer from "./server.mjs";
 
 global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
 
-// Safe NODE_ENV snapshot (avoid direct process.env access later in code)
-const NODE_ENV = globalThis?.process?.env?.NODE_ENV || "development";
-
 async function bootstrap() {
   logger.info("🚀 Starting Sovereign platform...");
   const start = Date.now();

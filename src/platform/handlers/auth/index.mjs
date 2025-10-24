@@ -253,7 +253,7 @@ export async function inviteUser(req, res) {
       inviteUrl,
     });
   } catch (err) {
-    logger.error("Invite user failed:", err);
+    logger.error("✗ Invite user failed:", err);
     return res.status(500).json({ error: "Failed to create user invite" });
   }
 }
@@ -344,8 +344,8 @@ export async function forgotPassword(req, res) {
       });
     }
     return res.json({ ok: true });
-  } catch (e) {
-    logger.error("/auth/password/forgot error", e);
+  } catch (err) {
+    logger.error("✗ /auth/password/forgot error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -430,8 +430,8 @@ export async function resetPassword(req, res) {
       return res.redirect(302, "/login?reset=1");
     }
     return res.json({ ok: true });
-  } catch (e) {
-    logger.error("/auth/password/reset error", e);
+  } catch (err) {
+    logger.error("✗ /auth/password/reset error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -491,8 +491,8 @@ export async function verifyToken(req, res) {
       });
     }
     return res.json({ ok: true });
-  } catch (e) {
-    logger.error("/auth/verify error", e);
+  } catch (err) {
+    logger.error("✗ /auth/verify error", err);
     const accept = String(req.headers["accept"] || "");
     const wantsHtml =
       accept.includes("text/html") || !accept.includes("application/json");
@@ -520,8 +520,8 @@ export async function logout(req, res) {
       }
       res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
     }
-  } catch (error) {
-    logger.error("Logout handler failed", error);
+  } catch (err) {
+    logger.error("✗ Logout handler failed", err);
   }
   return res.redirect(302, "/login");
 }

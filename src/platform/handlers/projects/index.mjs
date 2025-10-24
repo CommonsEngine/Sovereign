@@ -232,7 +232,7 @@ export async function viewProject(req, res) {
             select: PAPERTRAIL_BOARD_SELECT,
           });
         } catch (err) {
-          logger.error("Failed to ensure papertrail board exists", err);
+          logger.error("✗ Failed to ensure papertrail board exists", err);
           throw err;
         }
       }
@@ -300,7 +300,7 @@ export async function viewProject(req, res) {
       description: "Project not found",
     });
   } catch (err) {
-    logger.error("Render project page failed:", err);
+    logger.error("✗ Render project page failed:", err);
     return res.status(500).render("error", {
       code: 500,
       message: "Oops!",

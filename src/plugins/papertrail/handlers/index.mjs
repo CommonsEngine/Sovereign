@@ -647,7 +647,7 @@ export async function getBoard(req, res) {
       board: serializeBoard(board, access.project),
     });
   } catch (err) {
-    logger.error("papertrail.getBoard failed:", err);
+    logger.error("✗ papertrail.getBoard failed:", err);
     return res
       .status(500)
       .json({ error: "Failed to load papertrail board data" });
@@ -685,7 +685,7 @@ export async function saveBoard(req, res) {
 
     return res.json({ board: serializeBoard(board, project) });
   } catch (err) {
-    logger.error("papertrail.saveBoard failed:", err);
+    logger.error("✗ papertrail.saveBoard failed:", err);
     return res.status(500).json({ error: "Failed to save papertrail board" });
   }
 }
@@ -772,7 +772,7 @@ export async function updateBoard(req, res) {
 
     return res.json({ board: serializeBoard(board, project) });
   } catch (err) {
-    logger.error("papertrail.updateBoard failed:", err);
+    logger.error("✗ papertrail.updateBoard failed:", err);
     return res
       .status(500)
       .json({ error: "Failed to update papertrail board metadata" });
@@ -813,7 +813,7 @@ export async function exportBoard(req, res) {
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 
     archive.on("error", (err) => {
-      logger.error("papertrail.exportBoard archive error", err);
+      logger.error("✗ papertrail.exportBoard archive error", err);
       if (!res.headersSent) {
         res.status(500).json({ error: "Failed to export board" });
       } else {
@@ -831,7 +831,7 @@ export async function exportBoard(req, res) {
 
     await archive.finalize();
   } catch (err) {
-    logger.error("papertrail.exportBoard failed", err);
+    logger.error("✗ papertrail.exportBoard failed", err);
     if (!res.headersSent) {
       return res.status(500).json({ error: "Failed to export board" });
     }
@@ -899,7 +899,7 @@ export async function validateImportBundle(req, res) {
 
     return res.json(info);
   } catch (err) {
-    logger.error("papertrail.validateImportBundle failed", err);
+    logger.error("✗ papertrail.validateImportBundle failed", err);
     if (err?.status) {
       return res.status(err.status).json({ error: err.message });
     }
@@ -990,7 +990,7 @@ export async function importBoard(req, res) {
       board: serializeBoard(snapshot.board, snapshot.project),
     });
   } catch (err) {
-    logger.error("papertrail.importBoard failed", err);
+    logger.error("✗ papertrail.importBoard failed", err);
     if (err?.status) {
       return res.status(err.status).json({ error: err.message });
     }
@@ -1038,7 +1038,7 @@ export async function deleteBoard(req, res) {
 
     return res.status(204).end();
   } catch (err) {
-    logger.error("papertrail.deleteBoard failed", err);
+    logger.error("✗ papertrail.deleteBoard failed", err);
     return res.status(500).json({ error: "Failed to delete board" });
   }
 }
@@ -1149,7 +1149,7 @@ export async function uploadAttachment(req, res) {
       .status(201)
       .json({ attachment: { ...attachment, url: publicUrl } });
   } catch (err) {
-    logger.error("papertrail.uploadAttachment failed:", err);
+    logger.error("✗ papertrail.uploadAttachment failed:", err);
     return res
       .status(500)
       .json({ error: "Failed to upload papertrail attachment" });

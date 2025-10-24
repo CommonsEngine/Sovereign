@@ -55,7 +55,7 @@ export async function configure(_, resolve) {
   return resolve(async (req, res) => {
     try {
       const projectId = req.params.id;
-      logger.log("Configuring blog. project-id:", projectId);
+      logger.info("Configuring blog. project-id:", projectId);
       if (!projectId) {
         return res.status(400).json({ error: "Missing project-id" });
       }
@@ -116,7 +116,7 @@ export async function configure(_, resolve) {
           gitAuthToken,
         });
       } catch (err) {
-        logger.error("Git connect/validate failed:", err);
+        logger.error("✗ Git connect/validate failed:", err);
         return res.status(400).json({
           error:
             "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
@@ -144,7 +144,7 @@ export async function configure(_, resolve) {
 
       return res.json({ configured: true, gitConfigPayload });
     } catch (err) {
-      logger.error("Configure blog failed:", err);
+      logger.error("✗ Configure blog failed:", err);
       return res.status(500).json({ error: "Failed to configure blog" });
     }
   });
@@ -362,7 +362,7 @@ export async function render(_, resolve) {
         description: "Project not found",
       });
     } catch (err) {
-      logger.error("Render project page failed:", err);
+      logger.error("✗ Render project page failed:", err);
       return res.status(500).render("error", {
         code: 500,
         message: "Oops!",

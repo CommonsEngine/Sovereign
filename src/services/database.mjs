@@ -10,7 +10,7 @@ export const prisma = new PrismaClient({
 async function connectPrisma() {
   try {
     await prisma.$connect();
-    logger.log("✓ Connected to the database.");
+    logger.info("✓ Connected to the database.");
   } catch (err) {
     logger.error("✗ Failed to connect to the database:", err);
     process.exit(1);
@@ -48,10 +48,10 @@ export async function connectPrismaWithRetry(maxRetries = 5, delayMs = 2000) {
 
 // Graceful shutdown
 export async function gracefulShutdown(signal) {
-  logger.log(`Received ${signal}. Closing database connection...`);
+  logger.info(`Received ${signal}. Closing database connection...`);
   try {
     await prisma.$disconnect();
-    logger.log("✓ Database connection closed.");
+    logger.info("✓ Database connection closed.");
   } catch (err) {
     logger.error("✗ Error during disconnect:", err);
     process.exit(1);

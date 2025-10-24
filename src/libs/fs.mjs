@@ -14,7 +14,7 @@ export default class FileManager {
     try {
       await fs.mkdir(this.fullPath, { recursive: true });
     } catch (err) {
-      logger.error("Failed to create blog directory:", err.message);
+      logger.error("✗ Failed to create blog directory:", err.message);
       throw err;
     }
   }
@@ -41,7 +41,7 @@ export default class FileManager {
       fileDetails.sort((a, b) => b.modified - a.modified);
       return fileDetails;
     } catch (err) {
-      logger.error("Failed to list markdown files:", err.message);
+      logger.error("✗ Failed to list markdown files:", err.message);
       throw err;
     }
   }
@@ -55,7 +55,7 @@ export default class FileManager {
       const content = await fs.readFile(filePath, "utf-8");
       return content;
     } catch (err) {
-      logger.error("Failed to read file:", err.message);
+      logger.error("✗ Failed to read file:", err.message);
       throw err;
     }
   }

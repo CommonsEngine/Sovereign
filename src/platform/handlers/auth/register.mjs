@@ -34,7 +34,7 @@ export default async function register(req, res) {
 
     // If invite-only and no token, reject
     if (SIGNUP_POLICY === "invite" && !token) {
-      logger.log("Registration is by invitation only.");
+      logger.info("Registration is by invitation only.");
       const msg = "Registration is by invitation only.";
       if (isFormContent) {
         return res.status(403).render("register", {
@@ -45,7 +45,7 @@ export default async function register(req, res) {
       return res.status(403).json({ error: msg });
     }
 
-    logger.log("Register called with token:", token);
+    logger.info("Register called with token:", token);
 
     if (token) {
       // Look up invite token
@@ -456,8 +456,8 @@ export default async function register(req, res) {
     }
     // JSON API flow
     return res.status(201).json({ ok: true });
-  } catch (e) {
-    logger.error("/register error", e);
+  } catch (err) {
+    logger.error("✗ /register error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -482,7 +482,7 @@ export async function viewRegister(req, res) {
   const token = typeof req.query.token === "string" ? req.query.token : "";
 
   if (SIGNUP_POLICY !== "open") {
-    logger.log("Registration is by invitation only.");
+    logger.info("Registration is by invitation only.");
     if (!token) {
       return res.redirect(302, "/login?signup_disabled=1");
     }

@@ -162,8 +162,8 @@ export default async function login(req, res) {
       return res.redirect(302, dest);
     }
     return res.json({ ok: true });
-  } catch (e) {
-    logger.error("/login error", e);
+  } catch (err) {
+    logger.error("✗ /login error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
       req.is("application/x-www-form-urlencoded") ||
@@ -187,8 +187,8 @@ export async function guestLogin(req, res) {
     const guest = await createRandomGuestUser();
     await createSession(req, res, guest);
     return res.redirect(302, "/");
-  } catch (e) {
-    logger.error("guestLogin error", e);
+  } catch (err) {
+    logger.error("✗ guestLogin error", err);
     return res.status(500).json({ error: "Guest login failed" });
   }
 }

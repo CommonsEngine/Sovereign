@@ -32,7 +32,7 @@ export default async function remove(req, res) {
 
     return res.status(204).end();
   } catch (err) {
-    logger.error("Delete project failed:", err);
+    logger.error("✗ Delete project failed:", err);
     return res.status(500).json({ error: "Failed to delete project" });
   }
 }

@@ -104,7 +104,7 @@ function handleKnownError(res, err) {
   if (err?.code === "P2002") {
     return res.status(409).json({ error: "Member already exists" });
   }
-  logger.error("Project share operation failed:", err);
+  logger.error("✗ Project share operation failed:", err);
   return res.status(500).json({ error: "Project share operation failed" });
 }
 

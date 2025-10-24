@@ -283,7 +283,7 @@ export async function viewUsers(req, res) {
       },
     });
   } catch (err) {
-    logger.error("users view failed:", err);
+    logger.error("✗ users view failed:", err);
     return res.status(500).render("error", {
       code: 500,
       message: "Oops!",
@@ -344,7 +344,7 @@ export async function deleteUser(req, res) {
 
     return res.status(204).end();
   } catch (err) {
-    logger.error("deleteUser failed:", err);
+    logger.error("✗ deleteUser failed:", err);
     return res.status(500).json({ error: "Failed to delete user" });
   }
 }

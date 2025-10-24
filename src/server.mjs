@@ -330,7 +330,7 @@ export default async function createServer({ plugins }) {
         return resolve(req, res);
       });
     } catch (err) {
-      logger.error("Render project page failed:", err);
+      logger.error("✗ Render project page failed:", err);
       return res.status(500).render("error", {
         code: 500,
         message: "Oops!",
@@ -384,7 +384,7 @@ export default async function createServer({ plugins }) {
 
   // Central error handler
   app.use((err, req, res, next) => {
-    logger.error(err);
+    logger.error("✗ ", err);
     if (res.headersSent) return next(err);
     if (req.path.startsWith("/api/")) {
       return res.status(500).json({ error: "Internal server error" });
@@ -402,7 +402,7 @@ export default async function createServer({ plugins }) {
   async function start() {
     await new Promise((resolve) => {
       httpServer = app.listen(PORT, () => {
-        logger.log(`  ➜  Server running at http://localhost:${PORT}`);
+        logger.info(`  ➜  Server running at http://localhost:${PORT}`);
         resolve();
       });
     });

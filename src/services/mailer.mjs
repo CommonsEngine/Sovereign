@@ -108,7 +108,7 @@ const createTransporter = async (config) => {
       );
     }
   } catch (err) {
-    logger.error("Failed to configure email transporter", err);
+    logger.error("✗ Failed to configure email transporter", err);
     transporter = null;
   }
 
@@ -156,7 +156,7 @@ export async function sendMail({
   const replyToHeader = replyTo || config.EMAIL_REPLY_TO || undefined;
 
   if (config.EMAIL_DELIVERY_BYPASS) {
-    logger.log("[mail:bypass]", {
+    logger.info("[mail:bypass]", {
       to: payload.to,
       subject: payload.subject,
     });
@@ -202,7 +202,7 @@ export async function sendMail({
       headers: payload.headers,
     });
 
-    logger.log("[mail:sent]", {
+    logger.info("[mail:sent]", {
       to: payload.to,
       subject: payload.subject,
       messageId: info?.messageId ?? null,
@@ -216,7 +216,7 @@ export async function sendMail({
       replyTo: replyToHeader,
     };
   } catch (err) {
-    logger.error("Email delivery failed", err);
+    logger.error("✗ Email delivery failed", err);
     return {
       status: "failed",
       error: err,

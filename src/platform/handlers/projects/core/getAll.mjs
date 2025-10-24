@@ -63,7 +63,7 @@ export default async function getAll(req, res) {
       }));
     return res.json({ projects });
   } catch (error) {
-    logger.error("Failed to get projects:", error);
+    logger.error("✗ Failed to get projects:", error);
     return res.status(500).json({ error: "Failed to get projects" });
   }
 }

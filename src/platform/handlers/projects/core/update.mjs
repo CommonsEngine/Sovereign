@@ -56,7 +56,7 @@ export default async function update(req, res) {
 
     return res.json(updated);
   } catch (err) {
-    logger.error("Update project failed:", err);
+    logger.error("✗ Update project failed:", err);
     return res.status(500).json({ error: "Failed to update project" });
   }
 }

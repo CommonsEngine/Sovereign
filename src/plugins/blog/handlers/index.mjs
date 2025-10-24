@@ -245,7 +245,7 @@ export async function viewPostEdit(req, res) {
           authToken: cfg.authSecret || null,
         });
       } catch (err) {
-        logger.error("Git connect failed while opening post:", err);
+        logger.error("✗ Git connect failed while opening post:", err);
         return res.redirect(302, `/${project.type}/${projectId}/configure`);
       }
     }
@@ -284,7 +284,7 @@ export async function viewPostEdit(req, res) {
           description: "Invalid file path",
         });
       }
-      logger.error("Failed to read post:", err);
+      logger.error("✗ Failed to read post:", err);
       return res.status(500).render("error", {
         code: 500,
         message: "Oops!",
@@ -435,7 +435,7 @@ export async function getAllPosts(req, res) {
 
     return res.status(200).json({ posts });
   } catch (e) {
-    logger.error("List blog posts failed:", e);
+    logger.error("✗ List blog posts failed:", e);
     return res.status(500).json({ error: "Failed to list posts" });
   }
 }
@@ -543,7 +543,7 @@ export async function updatePost(req, res) {
           authToken: cfg.authSecret || null,
         });
       } catch (err) {
-        logger.error("Git manager init failed during update:", err);
+        logger.error("✗ Git manager init failed during update:", err);
         return res.status(400).json({
           error:
             "Failed to access repository. Please verify the configuration.",
@@ -616,7 +616,7 @@ export async function updatePost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      logger.error("Failed to read existing file:", err);
+      logger.error("✗ Failed to read existing file:", err);
       return res.status(500).json({ error: "Failed to read existing file" });
     }
 
@@ -652,7 +652,7 @@ export async function updatePost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      logger.error("Update file failed:", err);
+      logger.error("✗ Update file failed:", err);
       return res.status(500).json({ error: "Failed to update file" });
     }
 
@@ -717,7 +717,7 @@ export async function updatePost(req, res) {
 
           await fs.rename(oldFsPath, newFsPath);
 
-          logger.log(`Renamed post ${filename} -> ${desiredBase}`);
+          logger.info(`Renamed post ${filename} -> ${desiredBase}`);
 
           resultingFilename = desiredBase;
           const redirectUrl = `/p/${encodeURIComponent(
@@ -739,7 +739,7 @@ export async function updatePost(req, res) {
         }
       }
     } catch (err) {
-      logger.error("Rename after update failed:", err);
+      logger.error("✗ Rename after update failed:", err);
       // Fall through to normal success if rename failed silently
     }
 
@@ -756,7 +756,7 @@ export async function updatePost(req, res) {
       meta: latestMeta,
     });
   } catch (err) {
-    logger.error("Update Blog post failed:", err);
+    logger.error("✗ Update Blog post failed:", err);
     return res.status(500).json({ error: "Failed to update post" });
   }
 }
@@ -823,7 +823,7 @@ export async function deletePost(req, res) {
           authToken: cfg.authSecret || null,
         });
       } catch (err) {
-        logger.error("Git connect failed during delete:", err);
+        logger.error("✗ Git connect failed during delete:", err);
         return res.status(400).json({
           error:
             "Failed to connect to repository. Please verify the configuration.",
@@ -853,7 +853,7 @@ export async function deletePost(req, res) {
       ) {
         return res.status(400).json({ error: "Invalid file path" });
       }
-      logger.error("Delete file failed:", err);
+      logger.error("✗ Delete file failed:", err);
       return res.status(500).json({ error: "Failed to delete file" });
     }
 
@@ -882,7 +882,7 @@ export async function deletePost(req, res) {
 
     return res.status(200).json(responsePayload);
   } catch (err) {
-    logger.error("Delete Blog post failed:", err);
+    logger.error("✗ Delete Blog post failed:", err);
     return res.status(500).json({ error: "Failed to delete post" });
   }
 }
@@ -936,7 +936,7 @@ export async function publishPost(req, res) {
           authToken: cfg.authSecret || null,
         });
       } catch (err) {
-        logger.error("Git connect failed during publish:", err);
+        logger.error("✗ Git connect failed during publish:", err);
         return res.status(400).json({
           error:
             "Failed to connect to repository. Please verify the configuration.",
@@ -973,7 +973,7 @@ export async function publishPost(req, res) {
       message: result?.message || "Changes published successfully",
     });
   } catch (err) {
-    logger.error("Publish Blog changes failed:", err);
+    logger.error("✗ Publish Blog changes failed:", err);
     // Common non-fast-forward hint
     const msg = String(err?.message || err);
     const nonFastForward = /non-fast-forward|fetch first|rejected/i.test(msg);
@@ -1052,7 +1052,7 @@ export async function viewPostCreate(req, res) {
           authToken: cfg.authSecret || null,
         });
       } catch (err) {
-        logger.error("Git connect failed during post creation:", err);
+        logger.error("✗ Git connect failed during post creation:", err);
         return res.redirect(302, `/${project.type}/${projectId}/configure`);
       }
     }
@@ -1134,7 +1134,7 @@ export async function viewPostCreate(req, res) {
       `/blog/${projectId}/post/${encodeURIComponent(finalFilename)}?edit=true`,
     );
   } catch (err) {
-    logger.error("Create post flow failed:", err);
+    logger.error("✗ Create post flow failed:", err);
     return res.status(500).render("error", {
       code: 500,
       message: "Oops!",
@@ -1195,7 +1195,7 @@ export async function retryConnection(req, res) {
 
     return res.json({ connected: true });
   } catch (err) {
-    logger.error("Retry blog connection failed:", err);
+    logger.error("✗ Retry blog connection failed:", err);
     return res.status(500).json({ error: "Failed to reconnect" });
   }
 }
@@ -1273,7 +1273,7 @@ export async function viewProjectConfigure(req, res) {
       gitConfig: project.blog?.gitConfig || null,
     });
   } catch (err) {
-    logger.error("Load project configure failed:", err);
+    logger.error("✗ Load project configure failed:", err);
     return res.status(500).render("error", {
       code: 500,
       message: "Oops!",
@@ -1286,7 +1286,7 @@ export async function viewProjectConfigure(req, res) {
 export async function configureProject(req, res) {
   try {
     const projectId = req.params.id;
-    logger.log("Configuring blog for project: >>", projectId);
+    logger.info("Configuring blog for project: >>", projectId);
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -1347,7 +1347,7 @@ export async function configureProject(req, res) {
         gitAuthToken,
       });
     } catch (err) {
-      logger.error("Git connect/validate failed:", err);
+      logger.error("✗ Git connect/validate failed:", err);
       return res.status(400).json({
         error:
           "Failed to connect to repository. Please verify the repo URL, branch, and access token.",
@@ -1375,7 +1375,7 @@ export async function configureProject(req, res) {
 
     return res.json({ configured: true, gitConfigPayload });
   } catch (err) {
-    logger.error("Configure blog failed:", err);
+    logger.error("✗ Configure blog failed:", err);
     return res.status(500).json({ error: "Failed to configure blog" });
   }
 }
