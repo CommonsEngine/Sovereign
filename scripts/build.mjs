@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+// eslint-disable-next-line n/no-unsupported-features/node-builtins
 import { cp } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,6 +15,7 @@ const srcDir = path.join(rootDir, "src");
 const outDir = path.join(rootDir, "dist");
 const pkgPath = path.join(rootDir, "package.json");
 const viewsDir = path.join(srcDir, "views");
+const distPkgPath = path.join(outDir, "package.json");
 
 const aliasPlugin = {
   name: "alias-dollar",
@@ -56,6 +58,13 @@ async function copyStaticAssets() {
       throw err;
     }
   }
+}
+
+async function writeDistPackageJson() {
+  // Ensure Node treats all files under dist/ as ESM to avoid MODULE_TYPELESS_PACKAGE_JSON warnings.
+  const minimal = { type: "module" };
+  await fs.mkdir(outDir, { recursive: true });
+  await fs.writeFile(distPkgPath, JSON.stringify(minimal, null, 2), "utf8");
 }
 
 async function collectReactViewEntries() {
@@ -137,6 +146,7 @@ async function main() {
   }
 
   await copyStaticAssets();
+  await writeDistPackageJson();
 }
 
 main().catch((err) => {
