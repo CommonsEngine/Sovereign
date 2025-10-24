@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@sovereign/core",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Core runtime and service framework for the Sovereign platform",
   "main": "./dist/bootstrap.mjs",
   "bin": {
@@ -22,7 +22,6 @@
     "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs dist/bootstrap.mjs",
     "start:src": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
     "dev": "nodemon",
-    "prepare": "node ./scripts/build.mjs",
     "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
     "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
