@@ -1,7 +1,13 @@
 {
   "name": "sovereign",
+  "description": "Reclaim your digital freedom.",
   "private": true,
-  "version": "0.7.3",
+  "version": "3",
+  "license": "AGPL-3.0",
+  "cliVersion": "0.1.0",
+  "bin": {
+    "sv": "./bin/sv.mjs"
+  },
   "workspaces": [
     "platform",
     "plugins/*"
@@ -9,6 +15,72 @@
   "scripts": {
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
-    "dev": "yarn workspace @sovereign/platform dev"
-  }
+    "dev": "yarn workspace @sovereign/platform dev",
+    "format:check": "prettier --check .",
+    "format": "prettier --ignore-path .prettierignore --write .",
+    "lint:check": "eslint .",
+    "lint": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-promise": "^7.2.1",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "yarn@1.22.22",
+  "repository": "https://github.com/CommonsEngine/Sovereign#readme",
+  "bugs": {
+    "url": "https://github.com/CommonsEngine/Sovereign/issues",
+    "email": "mailtokasun@gmail.com"
+  },
+  "contributors": [
+    {
+      "name": "Kasun Benthara",
+      "email": "mailtokasun@gmail.com",
+      "url": "https://github.com/kasunben"
+    },
+    {
+      "name": "Dishan Rajapaksha",
+      "email": "DishanRajapaksha@email.com",
+      "url": "https://github.com/DishanRajapaksha"
+    }
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/kasunben"
+  },
+  "keywords": [
+    "sovereign",
+    "digital-sovereignty",
+    "self-determination",
+    "privacy-first",
+    "open-source",
+    "decentralized",
+    "federated",
+    "commons",
+    "digital-commons",
+    "collaboration-suite",
+    "productivity-suite",
+    "privacy",
+    "data-protection",
+    "human-rights-tech",
+    "ethical-tech",
+    "alternative-to-big-tech",
+    "community-driven",
+    "digital-rights",
+    "freedom-software",
+    "cloud-self-hosted",
+    "agpl",
+    "secure-collaboration",
+    "self-hosted",
+    "open-infrastructure",
+    "civic-tech",
+    "commonsengine"
+  ]
 }
