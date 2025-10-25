@@ -1,0 +1,23 @@
+{
+  "sovereign": {
+    "schemaVersion": 1,
+    "engine": "0.7.3",
+    "entryPoints": ["launcher", "sidebar"]
+  },
+  "name": "@sovereign/example-plugin-html",
+  "version": "0.1.0",
+  "platformCapabilities": {
+    "database": true,
+    "gitManager": false,
+    "fs": false,
+    "logger": false,
+    "mailer": false
+  },
+  "userCapabilities": [
+    {
+      "key": "user:plugin.example_plugin_html.feature",
+      "description": "Enable the plugin.",
+      "roles": ["platform:user"]
+    }
+  ]
+}
