@@ -8,24 +8,24 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
-import { prisma } from "./services/database.mjs";
-import logger from "./services/logger.mjs";
+import { prisma } from "$/services/database.mjs";
+import logger from "$/services/logger.mjs";
 
-import secure from "./platform/middlewares/secure.mjs";
-import { requireAuth, disallowIfAuthed } from "./platform/middlewares/auth.mjs";
-import exposeGlobals from "./platform/middlewares/exposeGlobals.mjs";
-import useJSX from "./platform/middlewares/useJSX.mjs";
-import requireRole from "./platform/middlewares/requireRole.mjs";
+import secure from "$/platform/middlewares/secure.mjs";
+import { requireAuth, disallowIfAuthed } from "$/platform/middlewares/auth.mjs";
+import exposeGlobals from "$/platform/middlewares/exposeGlobals.mjs";
+import useJSX from "$/platform/middlewares/useJSX.mjs";
+import requireRole from "$/platform/middlewares/requireRole.mjs";
 
-import * as indexHandler from "./platform/handlers/index.mjs";
-import * as authHandler from "./platform/handlers/auth/index.mjs";
-import * as usersHandler from "./platform/handlers/users/index.mjs";
-import * as settingsHandler from "./platform/handlers/settings/index.mjs";
-import * as appHandler from "./platform/handlers/app.mjs";
+import * as indexHandler from "$/platform/handlers/index.mjs";
+import * as authHandler from "$/platform/handlers/auth/index.mjs";
+import * as usersHandler from "$/platform/handlers/users/index.mjs";
+import * as settingsHandler from "$/platform/handlers/settings/index.mjs";
+import * as appHandler from "$/platform/handlers/app.mjs";
 
-import hbsHelpers from "./utils/hbsHelpers.mjs";
+import hbsHelpers from "$/utils/hbsHelpers.mjs";
 
-import env from "./config/env.mjs";
+import env from "$/config/env.mjs";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
