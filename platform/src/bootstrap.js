@@ -1,8 +1,7 @@
-/* eslint-disable import/order */
-import { connectPrismaWithRetry, gracefulShutdown } from "./services/database.mjs";
-import logger from "./services/logger.mjs";
-import createExtHost from "./platform/ext-host/index.mjs";
-import env from "./config/env.mjs";
+import { connectPrismaWithRetry, gracefulShutdown } from "$/services/database.mjs";
+import logger from "$/services/logger.mjs";
+import createExtHost from "$/ext-host/index.mjs";
+import env from "$/config/env.mjs";
 
 import createServer from "./server.js";
 

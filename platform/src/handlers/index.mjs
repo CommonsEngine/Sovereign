@@ -1,4 +1,4 @@
-import env from "../../config/env.mjs";
+import env from "$/config/env.mjs";
 
 const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
 

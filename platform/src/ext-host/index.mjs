@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs/promises";
 
-import logger from "../../services/logger.mjs";
+import logger from "$/services/logger.mjs";
 
 function formatError(message, options = {}) {
   const { pluginDir, manifestPath } = options;

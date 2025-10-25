@@ -1,12 +1,8 @@
-import { prisma } from "../../../services/database.mjs";
-import {
-  getGitManager,
-  getOrInitGitManager,
-  disposeGitManager,
-} from "../../../libs/git/registry.mjs";
-import logger from "../../../services/logger.mjs";
-import { ensureProjectAccess } from "../../../utils/projectAccess.mjs";
-import { uuid } from "../../../utils/id.mjs";
+import { prisma } from "$/services/database.mjs";
+import { getGitManager, getOrInitGitManager, disposeGitManager } from "$/libs/git/registry.mjs";
+import logger from "$/services/logger.mjs";
+import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
+import { uuid } from "$/utils/id.mjs";
 
 export { default as create } from "./core/create.mjs";
 export { default as getAll } from "./core/getAll.mjs";
