@@ -7,4 +7,4 @@ prisma/schema.prisma
 # Ignore Handlebars templates that use conditional attrs
 platform/src/views/_partials/layout/head.html
 platform/src/views/register.html
-platform/src/plugins/blog/views/blog/editor.html
+plugins/blog/views/blog/editor.html

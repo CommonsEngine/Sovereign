@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-import logger from "$/services/logger.mjs";
+import logger from "../services/logger.mjs";
 
 export default class FileManager {
   constructor(basePath, blogDir) {

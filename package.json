@@ -21,6 +21,7 @@
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
+    "prisma:legacy": "yarn workspace @sovereign/platform prisma generate --schema prisma/schema.prisma",
     "prisma:compose": "node tools/database-prisma-compose.mjs",
     "db:generate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma generate --schema platform/prisma/schema.prisma",
     "db:migrate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --create-only --schema platform/prisma/schema.prisma",

@@ -2,9 +2,9 @@
 import crypto from "crypto";
 import argon2 from "argon2";
 
-import { prisma } from "$/services/database.mjs";
-import env from "$/config/env.mjs";
-import logger from "$/services/logger.mjs";
+import { prisma } from "../services/database.mjs";
+import env from "../config/env.mjs";
+import logger from "../services/logger.mjs";
 
 const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS } = env();
 

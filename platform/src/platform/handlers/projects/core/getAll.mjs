@@ -1,5 +1,5 @@
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
+import { prisma } from "../../../../services/database.mjs";
+import logger from "../../../../services/logger.mjs";
 
 export default async function getAll(req, res) {
   try {

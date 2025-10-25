@@ -4,7 +4,7 @@
   "version": "0.7.3",
   "description": "Core runtime and service framework for the Sovereign platform",
   "license": "AGPL-3.0",
-  "main": "./bootstrap.js",
+  "main": "./index.cjs",
   "type": "module",
   "manifest": {
     "title": "Sovereign",
@@ -15,8 +15,8 @@
   "scripts": {
     "init:prepare": "cp .env.example .env",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs ./bootstrap.js",
-    "start:src": "node --import ./scripts/register-alias.mjs ./bootstrap.js",
+    "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs ./index.cjs",
+    "start:src": "node --import ./scripts/register-alias.mjs ./index.cjs",
     "dev": "nodemon",
     "build": "node ./scripts/build.mjs",
     "reset": "yarn prisma:reset",
@@ -26,7 +26,7 @@
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema prisma/schema.prisma",
-    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format",
+    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format --schema prisma/schema.prisma",
     "check": "yarn format:check && yarn lint:check && yarn prisma validate"
   },
   "nodemonConfig": {
@@ -35,7 +35,7 @@
       "public"
     ],
     "ext": "mjs,cjs,js,jsx,json,html,css",
-    "exec": "node --import ./scripts/register-alias.mjs ./bootstrap.js",
+    "exec": "node --import ./scripts/register-alias.mjs ./index.cjs",
     "signal": "SIGTERM"
   },
   "dependencies": {

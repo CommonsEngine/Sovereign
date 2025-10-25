@@ -1,9 +1,9 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { prisma } from "$/services/database.mjs";
-import { toBool } from "$/utils/misc.mjs";
-import pkg from "$/config/pkg.mjs";
+import { prisma } from "../services/database.mjs";
+import { toBool } from "../utils/misc.mjs";
+import pkg from "../config/pkg.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -425,12 +425,18 @@ const scheduleRefresh = (force = false) => {
     });
 };
 
-await refreshSettings(true);
+// Avoid top-level await to stay compatible when this ESM module is required from CJS.
+// Kick off an initial refresh asynchronously; callers can also invoke refreshEnvCache({ force: true }) at startup.
+refreshSettings(true).catch(() => {});
 
 export default function env(context = {}) {
   const scopes = computeScopes(context);
   scheduleRefresh(false);
   return buildConfigForScopes(scopes);
+}
+
+export async function initEnvCache() {
+  await refreshSettings(true);
 }
 
 export async function refreshEnvCache({ force = false } = {}) {

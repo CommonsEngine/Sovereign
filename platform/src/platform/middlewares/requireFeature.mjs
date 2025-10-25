@@ -1,4 +1,4 @@
-import { isFeatureEnabled } from "$/config/flags.mjs";
+import { isFeatureEnabled } from "../../config/flags.mjs";
 
 // Usage: requireFeature("blog"); requireFeature(["blog", "workspace"]); requireFeature(["blog", "workspace"], { mode: "any" });
 export default function requireFeature(keys, { mode = "all" } = {}) {

@@ -1,5 +1,5 @@
-import env from "$/config/env.mjs";
-import logger from "$/services/logger.mjs";
+import env from "../config/env.mjs";
+import logger from "../services/logger.mjs";
 
 const CONFIG_FIELDS = [
   "EMAIL_SMTP_URL",

@@ -1,6 +1,6 @@
 // TODO: Utilize config/head.mjs for these
 
-import pkg from "$/config/pkg.mjs";
+import pkg from "../../config/pkg.mjs";
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 

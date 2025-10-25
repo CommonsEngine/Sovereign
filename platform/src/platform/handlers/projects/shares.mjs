@@ -1,11 +1,11 @@
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import { uuid } from "$/utils/id.mjs";
+import { prisma } from "../../../services/database.mjs";
+import logger from "../../../services/logger.mjs";
+import { uuid } from "../../../utils/id.mjs";
 import {
   ensureProjectAccess,
   ProjectAccessError,
   syncProjectPrimaryOwner,
-} from "$/utils/projectAccess.mjs";
+} from "../../../utils/projectAccess.mjs";
 
 const VALID_ROLES = new Set(["owner", "editor", "viewer"]);
 const MUTABLE_STATUSES = new Set(["active", "pending", "revoked"]);

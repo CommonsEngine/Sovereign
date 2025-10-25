@@ -1,10 +1,10 @@
 import crypto from "crypto";
 
-import { prisma } from "$/services/database.mjs";
-import { sendMail } from "$/services/mailer.mjs";
-import { hashPassword, randomToken } from "$/utils/auth.mjs";
-import logger from "$/services/logger.mjs";
-import env from "$/config/env.mjs";
+import { prisma } from "../../../services/database.mjs";
+import { sendMail } from "../../../services/mailer.mjs";
+import { hashPassword, randomToken } from "../../../utils/auth.mjs";
+import logger from "../../../services/logger.mjs";
+import env from "../../../config/env.mjs";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
 
