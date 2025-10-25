@@ -21,8 +21,6 @@ import * as indexHandler from "./platform/handlers/index.mjs";
 import * as authHandler from "./platform/handlers/auth/index.mjs";
 import * as usersHandler from "./platform/handlers/users/index.mjs";
 import * as settingsHandler from "./platform/handlers/settings/index.mjs";
-import * as projectsHandler from "./platform/handlers/projects/index.mjs";
-import * as projectSharesHandler from "./platform/handlers/projects/shares.mjs";
 import * as appHandler from "./platform/handlers/app.mjs";
 
 import hbsHelpers from "./utils/hbsHelpers.mjs";
@@ -30,76 +28,20 @@ import hbsHelpers from "./utils/hbsHelpers.mjs";
 import env from "./config/env.mjs";
 
 const config = env();
-const { __publicdir, __runtimeDir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
+const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
 
-// Ensure data root exist at startup
-await fs.mkdir(__datadir, { recursive: true });
-
-// Vite is used for JSX/TSX SSR in dev (middleware mode)
-let createViteServer;
-if (process.env.NODE_ENV !== "production") {
-  // Lazy require to avoid hard dependency in production builds
-  ({ createServer: createViteServer } = await import("vite"));
-}
-
-export default async function createServer({ plugins }) {
+export default async function createServer() {
   const app = express();
 
-  const templateDirs = [__templatedir];
-  const publicDirs = [];
-  const uploadDirs = [];
+  // Ensure data root exist at startup
+  await fs.mkdir(__datadir, { recursive: true });
 
-  const pluginsMap = new Map();
-
-  const webRouters = [];
-  const apiRouters = [];
-
-  // plugins: mounting
-  /** TODO:
-   * To future-proof, consider separating the plugin discovery layer (manifest reading, module import, normalization)
-   * into a helper (e.g., /platform/ext-host/loader.mjs). That keeps server.mjs focused only on mounting.
-   */
-
-  for (const p of plugins || []) {
-    const namespace = p.namespace;
-
-    pluginsMap.set(namespace, path.join(__runtimeDir, `plugins/${namespace}/index.mjs`));
-
-    // Directories
-    templateDirs.push(path.join(__runtimeDir, `plugins/${namespace}/views`));
-
-    publicDirs.push({
-      namespace,
-      path: path.join(__runtimeDir, `plugins/${namespace}/public`),
-    });
-
-    if (p?.platformCapabilities?.fileUpload) {
-      uploadDirs.push({
-        namespace,
-        path: path.resolve(path.join(process.cwd(), "data", namespace)),
-      });
-    }
-
-    // Routes
-    // TODO: Parallelize imports to avoid performance issues
-    // - await Promise.all(plugins.map(async p => { ... }))
-    // TODO: Consider implementing capability for auto-detect route files
-    if (p?.routes?.web) {
-      webRouters.push({
-        base: `/${namespace}`,
-        router: await import(path.join(__runtimeDir, "plugins", namespace, "routes", "web.mjs")),
-      });
-    }
-    if (p?.routes?.api) {
-      apiRouters.push({
-        base: `/api/${namespace}`,
-        router: await import(path.join(__runtimeDir, `plugins/${namespace}/routes/api.mjs`)),
-      });
-    }
+  // Vite is used for JSX/TSX SSR in dev (middleware mode)
+  let createViteServer;
+  if (process.env.NODE_ENV !== "production") {
+    // Lazy require to avoid hard dependency in production builds
+    ({ createServer: createViteServer } = await import("vite"));
   }
-
-  // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
-  app.set("trust proxy", 1);
 
   // --- Vite (dev) for JSX/TSX SSR ----
   if (NODE_ENV !== "production") {
@@ -111,6 +53,9 @@ export default async function createServer({ plugins }) {
     app.use(vite.middlewares);
   }
 
+  // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
+  app.set("trust proxy", 1);
+
   // Core middleware
   app.use(helmet());
   app.use(compression());
@@ -119,11 +64,12 @@ export default async function createServer({ plugins }) {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  // Security headers
+  app.use(secure);
+
   app.use(useJSX);
 
   // View engine
-  // TODO: Consider letting each plugin also register its own partials:
-  // app.engine("html", hbsEngine({ partialsDir: templateDirs.map(d => path.join(d, "_partials")), ... }))
   app.engine(
     "html",
     hbsEngine({
@@ -134,7 +80,7 @@ export default async function createServer({ plugins }) {
     })
   );
   app.set("view engine", "html");
-  app.set("views", templateDirs);
+  app.set("views", __templatedir);
 
   // Enable template caching in production
   app.set("view cache", NODE_ENV === "production");
@@ -174,15 +120,11 @@ export default async function createServer({ plugins }) {
       }
     },
   };
-
   app.use(express.static(__publicdir, staticOptions));
 
-  publicDirs.forEach(({ namespace, path }) => {
-    app.use(`/plugins/${namespace}`, express.static(path, staticOptions));
-  });
-
-  const uploadConfigs = uploadDirs.map(({ path }) =>
-    express.static(path, {
+  app.use(
+    "/uploads",
+    express.static(path.join(__datadir, "upload"), {
       index: false,
       setHeaders: (res) => {
         if (NODE_ENV === "production") {
@@ -193,10 +135,6 @@ export default async function createServer({ plugins }) {
       },
     })
   );
-  app.use("/uploads", uploadConfigs);
-
-  // Security headers
-  app.use(secure);
 
   // --- Demo routes ---
   // Example route for React-SSR handled view (captures any subpath)
@@ -207,7 +145,7 @@ export default async function createServer({ plugins }) {
     } catch (e) {
       next(e);
     }
-  });
+  }); // TODO: Remove once the platfrom is ready
 
   // Auth Routes
   app.post("/auth/invite", requireAuth, authHandler.inviteUser);
@@ -258,76 +196,7 @@ export default async function createServer({ plugins }) {
     appHandler.updateAppSettings
   );
 
-  // Project Routes (Web)
-  app.get("/p/:projectId", requireAuth, exposeGlobals, async (req, res) => {
-    try {
-      const projectId = req.params.projectId;
-      if (!projectId) {
-        return res.status(400).render("error", {
-          code: 400,
-          message: "Bad Request",
-          description: "Missing project id",
-        });
-      }
-
-      // Resolve ownership
-      // TODO: Fix the query by quering by role (all allowed roles)
-      const projectContributions = await prisma.projectContributor.findFirst({
-        where: { projectId, userId: req.user.id, status: "active" },
-        select: { role: true },
-      });
-
-      if (!["owner", "editor", "admin"].includes(projectContributions?.role)) {
-        return res.status(403).render("error", {
-          code: 403,
-          message: "Forbidden",
-          description: "You are not authorized!",
-        });
-      }
-
-      // Fetch Project
-      const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: { id: true, type: true },
-      });
-
-      // TODO: Instead of importing pluginRoot every request, cache it:
-      // const pluginRoot = pluginsCache.get(project.type) || await import(...);
-      const pluginPath = pluginsMap.get(project.type);
-      const pluginRoot = await import(pluginPath);
-      // TODO: We should pass project, other required services as the context
-      return pluginRoot.render({}, (resolve) => {
-        return resolve(req, res);
-      });
-    } catch (err) {
-      logger.error("✗ Render project page failed:", err);
-      return res.status(500).render("error", {
-        code: 500,
-        message: "Oops!",
-        description: "Failed to load project",
-        error: err?.message || String(err),
-      });
-    }
-  });
-
-  // Project Routes (API)
-  app.post("/api/projects", requireAuth, projectsHandler.create);
-  app.get("/api/projects", requireAuth, projectsHandler.getAll);
-  app.patch("/api/projects/:id", requireAuth, projectsHandler.update);
-  app.delete("/api/projects/:id", requireAuth, projectsHandler.remove);
-  app.get("/api/projects/:id/shares", requireAuth, projectSharesHandler.list);
-  app.post("/api/projects/:id/shares", requireAuth, projectSharesHandler.create);
-  app.patch("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.update);
-  app.delete("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.remove);
-
-  // Plugins Routes (Web)
-  for (const { base, router } of webRouters) {
-    app.use(base, requireAuth, exposeGlobals, router.default);
-  }
-  // Plugins Routes (API)
-  for (const { base, router } of apiRouters) {
-    app.use(base, requireAuth, router.default);
-  }
+  // TODO: Put Project/Plugin Routes here.
 
   // 404
   app.use((req, res) => {
