@@ -21,7 +21,7 @@ export default function exposeGlobals(req, res, next) {
     meta: [
       { name: "application-name", content: manifest.title },
       { name: "description", content: manifest.description },
-      { name: "keywords", content: pkg.keywords.join(", ") },
+      { name: "keywords", content: pkg?.keywords?.join(", ") }, // TODO: Pick keywords from manifest
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
