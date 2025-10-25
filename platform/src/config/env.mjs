@@ -9,11 +9,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const resolveRoot = () => {
-  const cwd = process.cwd();
-  if (cwd && path.isAbsolute(cwd)) {
-    return cwd;
-  }
-  return path.resolve(__dirname, "../..");
+  // TODO: Resolve this properly.
+  return path.resolve(__dirname, "../../../");
 };
 
 const preferDist =
@@ -21,8 +18,9 @@ const preferDist =
   process.env.PREFER_DIST_BUILD === "true";
 
 const __rootdir = resolveRoot();
-const __srcDir = path.join(__rootdir, "src");
-const __distDir = path.join(__rootdir, "dist");
+const __platformDir = path.join(__rootdir, "platform");
+const __srcDir = path.join(__platformDir, "src");
+const __distDir = path.join(__platformDir, "dist");
 
 const __runtimeDir = preferDist ? __distDir : __srcDir;
 
@@ -30,7 +28,7 @@ const __publicdir = preferDist ? path.join(__distDir, "public") : path.join(__sr
 
 const __templatedir = preferDist ? path.join(__distDir, "views") : path.join(__srcDir, "views");
 
-const __pluginsDir = preferDist ? path.join(__distDir, "plugins") : path.join(__srcDir, "plugins");
+const __pluginsDir = path.join(__rootdir, "plugins");
 
 const __datadir = path.resolve(process.env.__datadir || path.join(__rootdir, "data"));
 
@@ -45,7 +43,7 @@ const baseLocales =
     ? splitCsv(process.env.SUPPORTED_LOCALES)
     : ["en-US"];
 
-const defaultDbPath = path.join(__rootdir, "prisma", "data", "sovereign.db");
+const defaultDbPath = path.join(__rootdir, "data", "sovereign.db");
 
 const baseTemplate = Object.freeze({
   APP_NAME: pkg.manifest.title,
@@ -99,6 +97,7 @@ const baseTemplate = Object.freeze({
   IS_PROD: (process.env.NODE_ENV || "development") === "production",
 
   __rootdir,
+  __platformDir,
   __srcDir,
   __runtimeDir,
   __publicdir,

@@ -13,6 +13,7 @@
     "plugins/*"
   ],
   "scripts": {
+    "init:prepare": "yarn workspace @sovereign/platform init:prepare",
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
     "dev": "yarn workspace @sovereign/platform dev",

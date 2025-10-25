@@ -9,6 +9,7 @@
   "version": "0.1.0",
   "type": "html",
   "devOnly": true,
+  "draft": false,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "platformCapabilities": {

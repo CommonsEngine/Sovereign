@@ -13,7 +13,7 @@
     "main": "./src/bootstrap.js"
   },
   "scripts": {
-    "init:prepare": "cp .env.example .env",
+    "init:prepare": "cp .env.example .env && yarn prisma db push --schema prisma/schema.prisma",
     "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
     "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs ./index.cjs",
     "start:src": "node --import ./scripts/register-alias.mjs ./index.cjs",

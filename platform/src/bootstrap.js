@@ -6,7 +6,7 @@ import env from "./config/env.mjs";
 
 // import createServer from "./src/server.mjs";
 
-// global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
+global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
 
 export async function bootstrap() {
   logger.info("🚀 Starting Sovereign platform...");
@@ -16,25 +16,25 @@ export async function bootstrap() {
     await connectPrismaWithRetry();
 
     // Discovers and mounts all plugins under /__runtimeDir/plugins/*
-    // const { __pluginsDir } = env();
-    // logger.info(`- Plugin directory: ${__pluginsDir}`);
-    // const extHost = await createExtHost({}, { pluginsDir: __pluginsDir });
+    const { __pluginsDir } = env();
+    logger.info(`- Plugin directory: ${__pluginsDir}`);
+    const extHost = await createExtHost({}, { pluginsDir: __pluginsDir });
 
-    // logger.info("- Initializing HTTP server...");
+    logger.info("- Initializing HTTP server...");
     // // This sets up Express, middlewares, coreRoutes etc.
     // const server = await createServer(extHost);
     // server.start();
 
-    // const enabledPlugins = extHost?.plugins.map((plugin) => `${plugin.name}@${plugin.version}`);
+    const enabledPlugins = extHost?.plugins.map((plugin) => `${plugin.name}@${plugin.version}`);
 
     // logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
     // logger.info(`  ➜  Version: ${server.appVersion}`);
     // logger.info(`  ➜  Environment: ${server.nodeEnv}`);
-    // logger.info(
-    //   `  ➜  Loaded plugins: ${
-    //     enabledPlugins && enabledPlugins.length ? enabledPlugins.join(", ") : "none"
-    //   }`
-    // );
+    logger.info(
+      `  ➜  Loaded plugins: ${
+        enabledPlugins && enabledPlugins.length ? enabledPlugins.join(", ") : "none"
+      }`
+    );
 
     // const shutdown = async (signal) => {
     //   logger.warn(`Received ${signal}, shutting down gracefully...`);

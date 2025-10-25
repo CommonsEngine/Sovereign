@@ -37,22 +37,16 @@ export default async function createExtHost(_, options = {}) {
   }
 
   for (const candidate of pluginCandidates) {
-    if (!candidate.isDirectory()) continue;
-
-    const pluginDir = path.join(__pluginsDir, candidate.name);
-    const pluginManifestPath = path.join(pluginDir, "plugin.json");
+    const namespace = candidate.name;
+    const plugingRoot = path.join(candidate.parentPath, namespace);
+    const pluginManifestPath = path.join(plugingRoot, "plugin.json");
 
     let pluginManifestSource;
     try {
       pluginManifestSource = await fs.readFile(pluginManifestPath, "utf8");
     } catch (err) {
       if (err.code === "ENOENT") {
-        logger?.warn?.(
-          formatError(`missing plugin.json file`, {
-            pluginDir,
-            pluginManifestPath,
-          })
-        );
+        logger?.warn?.(formatError(`missing plugin.json file`, pluginManifestPath));
         continue;
       }
       throw err;
@@ -62,21 +56,23 @@ export default async function createExtHost(_, options = {}) {
     try {
       pluginManifest = JSON.parse(pluginManifestSource);
     } catch (err) {
-      logger?.error?.(
-        formatError(`invalid JSON: ${err.message}`, {
-          pluginDir,
-          pluginManifestPath,
-        })
-      );
+      logger?.error?.(formatError(`invalid JSON: ${err.message}`, pluginManifestPath));
       continue;
     }
 
-    if (!pluginManifest.isEnabled) break;
+    const allowPlugin =
+      (process.env.NODE_ENV === "production" || pluginManifest.devOnly) && !pluginManifest.draft;
 
     // TODO: Validate the schema
     // TODO: Normalize pluginManifest
 
-    plugins.push(pluginManifest);
+    if (allowPlugin) {
+      plugins.push({
+        namespace,
+        plugingRoot,
+        ...pluginManifest,
+      });
+    }
   }
 
   return {
