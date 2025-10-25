@@ -4,8 +4,7 @@ import path from "path";
 const rbacPath = path.resolve(process.cwd(), "prisma/seed/data/rbac.json");
 const rbac = JSON.parse(fs.readFileSync(rbacPath, "utf8"));
 
-const FALLBACK_CAPABILITY_DESCRIPTION =
-  "[auto] capability description missing in rbac.json";
+const FALLBACK_CAPABILITY_DESCRIPTION = "[auto] capability description missing in rbac.json";
 
 export default async function seedRBAC(prisma) {
   const catalog = new Map();
@@ -19,9 +18,7 @@ export default async function seedRBAC(prisma) {
     if (!catalog.has(key)) {
       catalog.set(key, cap.description || "");
     } else {
-      console.warn(
-        `seedRBAC: duplicate capability '${key}' encountered in catalog`,
-      );
+      console.warn(`seedRBAC: duplicate capability '${key}' encountered in catalog`);
     }
 
     await prisma.userCapability.upsert({
@@ -37,7 +34,7 @@ export default async function seedRBAC(prisma) {
 
     if (!catalog.has(key)) {
       console.warn(
-        `seedRBAC: capability '${key}' missing from catalog; creating placeholder description`,
+        `seedRBAC: capability '${key}' missing from catalog; creating placeholder description`
       );
       await prisma.userCapability.upsert({
         where: { key },
@@ -54,7 +51,7 @@ export default async function seedRBAC(prisma) {
     const roleId = Number(role.id);
     if (!Number.isFinite(roleId)) {
       throw new Error(
-        `seedRBAC: role '${role.key}' has invalid id '${role.id}' – expected numeric`,
+        `seedRBAC: role '${role.key}' has invalid id '${role.id}' – expected numeric`
       );
     }
 

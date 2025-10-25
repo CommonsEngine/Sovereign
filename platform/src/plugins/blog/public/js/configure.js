@@ -53,22 +53,12 @@
 
       const projectId = form.getAttribute("data-project-id");
       const repoUrl = document.getElementById("repo-url-input").value.trim();
-      const branch =
-        (document.getElementById("branch-input").value || "main").trim() ||
-        "main";
-      const contentDir = document
-        .getElementById("content-dir-input")
-        .value.trim();
+      const branch = (document.getElementById("branch-input").value || "main").trim() || "main";
+      const contentDir = document.getElementById("content-dir-input").value.trim();
 
-      const gitUserName = document
-        .getElementById("git-user-name-input")
-        .value.trim();
-      const gitUserEmail = document
-        .getElementById("git-user-email-input")
-        .value.trim();
-      const gitAuthToken = document
-        .getElementById("git-auth-token-input")
-        .value.trim();
+      const gitUserName = document.getElementById("git-user-name-input").value.trim();
+      const gitUserEmail = document.getElementById("git-user-email-input").value.trim();
+      const gitAuthToken = document.getElementById("git-auth-token-input").value.trim();
 
       if (!repoUrl) {
         showError("Repository URL is required.");
@@ -86,14 +76,11 @@
 
       async function postConfigWithRetry(attempt = 0) {
         try {
-          const resp = await fetch(
-            `/api/blog/${encodeURIComponent(projectId)}/configure`,
-            {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            },
-          );
+          const resp = await fetch(`/api/blog/${encodeURIComponent(projectId)}/configure`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
           const data = await resp.json().catch(() => ({}));
           if (!resp.ok) throw new Error(data?.error || "Save failed");
           window.location.replace(`/p/${encodeURIComponent(projectId)}`);

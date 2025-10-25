@@ -130,9 +130,7 @@
       <header class="page__header flex items-center justify-space-between">
         <div class="page__heading">
           <h2 class="page__title">Users</h2>
-          <p class="page__subtitle">
-            Manage access, invitations, and roles across your workspace.
-          </p>
+          <p class="page__subtitle">Manage access, invitations, and roles across your workspace.</p>
         </div>
         <button
           class="chip chip--primary button button--primary"
@@ -220,9 +218,7 @@
                     <div class="subtle users-table__identity">
                       <span>{{email}}</span>
                       {{#if emailVerified}}
-                      <span class="badge badge--soft badge--tone-success"
-                        >Verified</span
-                      >
+                      <span class="badge badge--soft badge--tone-success">Verified</span>
                       {{else}}
                       <span class="badge badge--soft">Unverified</span>
                       {{/if}}
@@ -235,9 +231,7 @@
                         {{primaryRoleLabel}}
                       </span>
                       {{#if extraRoleCount}}
-                      <span class="badge badge--soft">
-                        +{{extraRoleCount}} more
-                      </span>
+                      <span class="badge badge--soft"> +{{extraRoleCount}} more </span>
                       {{/if}}
                     </div>
                     {{else}}
@@ -253,37 +247,26 @@
                     <div class="users-table__meta">
                       <div>
                         Created
-                        <time
-                          datetime="{{createdAtISO}}"
-                          title="{{createdAtDisplay}}"
-                        >
-                          {{#if createdAtRelative}} {{createdAtRelative}}
-                          {{else}} {{createdAtDisplay}} {{/if}}
+                        <time datetime="{{createdAtISO}}" title="{{createdAtDisplay}}">
+                          {{#if createdAtRelative}} {{createdAtRelative}} {{else}}
+                          {{createdAtDisplay}} {{/if}}
                         </time>
                       </div>
                       {{#if lastSeenRelative}}
                       <div>
                         Last active
-                        <time
-                          datetime="{{lastSeenISO}}"
-                          title="{{lastSeenDisplay}}"
-                        >
+                        <time datetime="{{lastSeenISO}}" title="{{lastSeenDisplay}}">
                           {{lastSeenRelative}}
                         </time>
                       </div>
                       {{else if inviteSentRelative}}
                       <div>
                         Invite sent
-                        <time
-                          datetime="{{inviteSentISO}}"
-                          title="{{inviteSentDisplay}}"
-                        >
+                        <time datetime="{{inviteSentISO}}" title="{{inviteSentDisplay}}">
                           {{inviteSentRelative}}
                         </time>
                         {{#if inviteExpired}}
-                        <span class="badge badge--soft badge--tone-warning"
-                          >Expired</span
-                        >
+                        <span class="badge badge--soft badge--tone-warning">Expired</span>
                         {{/if}}
                       </div>
                       {{/if}}
@@ -294,12 +277,7 @@
                   </td>
                   <td>
                     <div class="row-actions">
-                      <button
-                        class="chip"
-                        aria-label="Edit user"
-                        title="Edit user"
-                        type="button"
-                      >
+                      <button class="chip" aria-label="Edit user" title="Edit user" type="button">
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
@@ -425,12 +403,7 @@
 
           for (const tr of rows) {
             const haystack = normalize(
-              [
-                tr.dataset.name,
-                tr.dataset.email,
-                tr.dataset.roles,
-                tr.dataset.status,
-              ].join(" "),
+              [tr.dataset.name, tr.dataset.email, tr.dataset.roles, tr.dataset.status].join(" ")
             );
             const match = !q || haystack.includes(q);
             tr.hidden = !match;
@@ -452,28 +425,21 @@
         applyFilter();
 
         document.addEventListener("click", async (event) => {
-          const deleteBtn = event.target.closest(
-            'button[data-action="delete"]',
-          );
+          const deleteBtn = event.target.closest('button[data-action="delete"]');
           if (!deleteBtn) return;
           const userId = deleteBtn.dataset.id;
           if (!userId) return;
           const row = deleteBtn.closest("tr");
           const name = row?.dataset?.name || "this user";
-          const confirmed = window.confirm(
-            `Remove ${name}? This action cannot be undone.`,
-          );
+          const confirmed = window.confirm(`Remove ${name}? This action cannot be undone.`);
           if (!confirmed) return;
 
           deleteBtn.setAttribute("disabled", "true");
           try {
-            const resp = await fetch(
-              `/api/users/${encodeURIComponent(userId)}`,
-              {
-                method: "DELETE",
-                headers: { Accept: "application/json" },
-              },
-            );
+            const resp = await fetch(`/api/users/${encodeURIComponent(userId)}`, {
+              method: "DELETE",
+              headers: { Accept: "application/json" },
+            });
             if (!resp.ok && resp.status !== 204) {
               const data = await resp.json().catch(() => ({}));
               throw new Error(data?.error || `HTTP ${resp.status}`);
@@ -483,9 +449,7 @@
             applyFilter();
           } catch (error) {
             console.error("Failed to delete user:", error);
-            window.alert(
-              error?.message || "Failed to delete user. Please try again.",
-            );
+            window.alert(error?.message || "Failed to delete user. Please try again.");
           } finally {
             deleteBtn.removeAttribute("disabled");
           }

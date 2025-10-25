@@ -40,22 +40,18 @@ function resolveBaseApi({ scope, projectId, apiBase }) {
 
 export function initProjectShareModal(options = {}) {
   const scope =
-    options.scope ??
-    document.querySelector(options.scopeSelector ?? "main[data-project-id]");
+    options.scope ?? document.querySelector(options.scopeSelector ?? "main[data-project-id]");
   if (!scope) return null;
 
   const projectId = options.projectId ?? scope.dataset.projectId;
   const canView = options.canView ?? scope.dataset.shareCanView === "true";
-  const canManage =
-    options.canManage ?? scope.dataset.shareCanManage === "true";
+  const canManage = options.canManage ?? scope.dataset.shareCanManage === "true";
 
   if (!projectId || !canView) return null;
 
   const modal =
     options.modal ??
-    document.querySelector(
-      options.modalSelector ?? '[data-modal="share-project"]',
-    );
+    document.querySelector(options.modalSelector ?? '[data-modal="share-project"]');
   if (!modal) return null;
   if (modal.dataset.projectShareInit === "true") {
     return modal.__projectShareController || null;
@@ -113,16 +109,13 @@ export function initProjectShareModal(options = {}) {
 
   function ownerCount() {
     return state.contributors.filter(
-      (contributor) =>
-        contributor.role === "owner" && contributor.status === "active",
+      (contributor) => contributor.role === "owner" && contributor.status === "active"
     ).length;
   }
 
   function upsertContributor(contributor) {
     if (!contributor) return;
-    const index = state.contributors.findIndex(
-      (item) => item.id === contributor.id,
-    );
+    const index = state.contributors.findIndex((item) => item.id === contributor.id);
     if (index >= 0) {
       state.contributors[index] = contributor;
     } else {
@@ -131,9 +124,7 @@ export function initProjectShareModal(options = {}) {
   }
 
   function removeContributor(id) {
-    state.contributors = state.contributors.filter(
-      (contributor) => contributor.id !== id,
-    );
+    state.contributors = state.contributors.filter((contributor) => contributor.id !== id);
   }
 
   function render() {
@@ -144,7 +135,7 @@ export function initProjectShareModal(options = {}) {
     }
 
     const visibleContributors = state.contributors.filter(
-      (contributor) => contributor && contributor.status !== "revoked",
+      (contributor) => contributor && contributor.status !== "revoked"
     );
 
     const sortedContributors = visibleContributors.slice().sort((a, b) => {
@@ -158,10 +149,8 @@ export function initProjectShareModal(options = {}) {
     });
 
     if (elements.loading) elements.loading.hidden = !state.loading;
-    if (elements.empty)
-      elements.empty.hidden = state.loading || sortedContributors.length > 0;
-    if (elements.table)
-      elements.table.hidden = state.loading || sortedContributors.length === 0;
+    if (elements.empty) elements.empty.hidden = state.loading || sortedContributors.length > 0;
+    if (elements.table) elements.table.hidden = state.loading || sortedContributors.length === 0;
     setError(state.error);
 
     if (!elements.rows) return;
@@ -175,20 +164,14 @@ export function initProjectShareModal(options = {}) {
         contributor.email && contributor.email !== contributor.displayName
           ? `<div class="share-modal__status">${escapeHtml(contributor.email)}</div>`
           : "";
-      const youTag = contributor.isSelf
-        ? '<span class="share-modal__tag">You</span>'
-        : "";
-      const statusLabel =
-        SHARE_STATUS_LABELS[contributor.status] || contributor.status || "";
-      const statusClass =
-        contributor.status === "pending" ? "share-modal__status--pending" : "";
+      const youTag = contributor.isSelf ? '<span class="share-modal__tag">You</span>' : "";
+      const statusLabel = SHARE_STATUS_LABELS[contributor.status] || contributor.status || "";
+      const statusClass = contributor.status === "pending" ? "share-modal__status--pending" : "";
 
       const disableRoleSelection =
         !canManage ||
         state.busy.has(contributor.id) ||
-        (contributor.role === "owner" &&
-          contributor.isSelf &&
-          activeOwners <= 1);
+        (contributor.role === "owner" && contributor.isSelf && activeOwners <= 1);
 
       const roleSelect = ["owner", "editor", "viewer"]
         .map((role) => {
@@ -296,14 +279,11 @@ export function initProjectShareModal(options = {}) {
     state.busy.add(contributorId);
     render();
     try {
-      const response = await fetch(
-        `${baseApi}/${encodeURIComponent(contributorId)}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role }),
-        },
-      );
+      const response = await fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(payload?.error || `HTTP ${response.status}`);
@@ -329,13 +309,10 @@ export function initProjectShareModal(options = {}) {
     state.busy.add(contributorId);
     render();
     try {
-      const response = await fetch(
-        `${baseApi}/${encodeURIComponent(contributorId)}`,
-        {
-          method: "DELETE",
-          headers: { Accept: "application/json" },
-        },
-      );
+      const response = await fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
+        method: "DELETE",
+        headers: { Accept: "application/json" },
+      });
       if (!response.ok && response.status !== 204) {
         let payload = {};
         try {
@@ -369,9 +346,7 @@ export function initProjectShareModal(options = {}) {
     if (!select) return;
     if (!canManage || select.disabled) return;
     const contributorId = select.getAttribute("data-share-contributor-role");
-    const contributor = state.contributors.find(
-      (item) => item.id === contributorId,
-    );
+    const contributor = state.contributors.find((item) => item.id === contributorId);
     if (!contributor) return;
     const nextRole = select.value;
     if (!nextRole || nextRole === contributor.role) return;

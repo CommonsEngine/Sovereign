@@ -1,9 +1,6 @@
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
-import {
-  ensureProjectAccess,
-  ProjectAccessError,
-} from "$/utils/projectAccess.mjs";
+import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.mjs";
 
 export default async function remove(req, res) {
   try {
@@ -11,8 +8,7 @@ export default async function remove(req, res) {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const projectId = req.params?.id || req.body?.id;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     try {
       await ensureProjectAccess({

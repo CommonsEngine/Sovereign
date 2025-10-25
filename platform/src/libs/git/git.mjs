@@ -53,11 +53,7 @@ export default class GitManager {
     const authUrl = this.buildAuthUrl();
 
     // Clone
-    await sg().clone(authUrl, this.localPath, [
-      "--branch",
-      this.branch,
-      "--single-branch",
-    ]);
+    await sg().clone(authUrl, this.localPath, ["--branch", this.branch, "--single-branch"]);
 
     // Configure git
     this.git = sg(this.localPath);

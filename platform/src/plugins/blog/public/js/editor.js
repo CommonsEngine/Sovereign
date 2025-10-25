@@ -27,7 +27,7 @@
           ">": "&gt;",
           '"': "&quot;",
           "'": "&#39;",
-        })[char],
+        })[char]
     );
 
   const getProjectId = () => {
@@ -75,27 +75,21 @@
     const renderList = (prefix, block, tag) => {
       const items = block
         .split("\n")
-        .map((line) =>
-          line.replace(tag === "ol" ? /^\d+\.\s+/ : /^[-*]\s+/, "").trim(),
-        )
+        .map((line) => line.replace(tag === "ol" ? /^\d+\.\s+/ : /^[-*]\s+/, "").trim())
         .filter(Boolean);
       if (!items.length) return `${prefix}${block}`;
       const content = items.map((item) => `<li>${item}</li>`).join("");
       return `${prefix}<${tag}>${content}</${tag}>`;
     };
-    html = html.replace(UL, (match, prefix, block) =>
-      renderList(prefix, block, "ul"),
-    );
-    html = html.replace(OL, (match, prefix, block) =>
-      renderList(prefix, block, "ol"),
-    );
+    html = html.replace(UL, (match, prefix, block) => renderList(prefix, block, "ul"));
+    html = html.replace(OL, (match, prefix, block) => renderList(prefix, block, "ol"));
 
     html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
     html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
     html = html.replace(/`([^`]+?)`/g, "<code>$1</code>");
     html = html.replace(
       /\[([^\]]+?)\]\(([^)]+?)\)/g,
-      '<a href="$2" rel="noopener" target="_blank">$1</a>',
+      '<a href="$2" rel="noopener" target="_blank">$1</a>'
     );
 
     html = html
@@ -167,9 +161,7 @@
         }
         case "pre": {
           const codeChild = node.querySelector("code");
-          const raw =
-            codeChild?.textContent ??
-            Array.from(node.childNodes).map(walk).join("");
+          const raw = codeChild?.textContent ?? Array.from(node.childNodes).map(walk).join("");
           const lang =
             codeChild?.dataset?.lang ||
             (codeChild?.className.match(/language-([^\s]+)/)?.[1] ?? "");
@@ -268,8 +260,7 @@
       return { attached: false };
     }
 
-    const contentDir = () =>
-      (el("m-dir")?.textContent || "").trim().replace(/^\/+|\/+$/g, "");
+    const contentDir = () => (el("m-dir")?.textContent || "").trim().replace(/^\/+|\/+$/g, "");
 
     const toPath = (slug) => {
       const dir = contentDir();
@@ -303,15 +294,9 @@
     const setDraftState = (draft) => {
       if (draftCheckbox) draftCheckbox.checked = !!draft;
       if (visibilityDraftBtn)
-        visibilityDraftBtn.setAttribute(
-          "aria-pressed",
-          draft ? "true" : "false",
-        );
+        visibilityDraftBtn.setAttribute("aria-pressed", draft ? "true" : "false");
       if (visibilityPublishedBtn)
-        visibilityPublishedBtn.setAttribute(
-          "aria-pressed",
-          draft ? "false" : "true",
-        );
+        visibilityPublishedBtn.setAttribute("aria-pressed", draft ? "false" : "true");
       if (statusBadgeEl) {
         statusBadgeEl.textContent = draft ? "Draft" : "Published";
         statusBadgeEl.classList.toggle("badge--draft", !!draft);
@@ -342,13 +327,8 @@
       if (!range) return false;
       const { startContainer, endContainer } = range;
       if (!startContainer || !endContainer) return false;
-      if (!startContainer.isConnected || !endContainer.isConnected)
-        return false;
-      if (
-        !rtfEditor.contains(startContainer) ||
-        !rtfEditor.contains(endContainer)
-      )
-        return false;
+      if (!startContainer.isConnected || !endContainer.isConnected) return false;
+      if (!rtfEditor.contains(startContainer) || !rtfEditor.contains(endContainer)) return false;
       return true;
     };
 
@@ -369,11 +349,7 @@
 
     const getTextNodeAtOffset = (offset) => {
       let remaining = Math.max(0, offset);
-      const walker = document.createTreeWalker(
-        rtfEditor,
-        NodeFilter.SHOW_TEXT,
-        null,
-      );
+      const walker = document.createTreeWalker(rtfEditor, NodeFilter.SHOW_TEXT, null);
       let node = walker.nextNode();
       while (node) {
         const len = node.textContent.length;
@@ -392,10 +368,7 @@
       if (!sel || sel.rangeCount === 0) return;
       const range = sel.getRangeAt(0);
       const { startContainer, endContainer } = range;
-      if (
-        !rtfEditor.contains(startContainer) ||
-        !rtfEditor.contains(endContainer)
-      ) {
+      if (!rtfEditor.contains(startContainer) || !rtfEditor.contains(endContainer)) {
         return;
       }
       savedRange = range.cloneRange();
@@ -458,10 +431,7 @@
       const isMarkdown = editorMode === "markdown";
       mdWrap.hidden = !isMarkdown;
       rtfWrap.hidden = isMarkdown;
-      modeMarkdownBtn?.setAttribute(
-        "aria-pressed",
-        isMarkdown ? "true" : "false",
-      );
+      modeMarkdownBtn?.setAttribute("aria-pressed", isMarkdown ? "true" : "false");
       modeRtfBtn?.setAttribute("aria-pressed", !isMarkdown ? "true" : "false");
       modeMarkdownBtn?.classList.toggle("chip--primary", isMarkdown);
       modeRtfBtn?.classList.toggle("chip--primary", !isMarkdown);
@@ -509,11 +479,9 @@
       if (data.meta) {
         const meta = data.meta;
         if (typeof meta.title === "string") titleEl.value = meta.title;
-        if (typeof meta.description === "string")
-          excerptEl.value = meta.description;
+        if (typeof meta.description === "string") excerptEl.value = meta.description;
         if (coverUrlEl) {
-          coverUrlEl.value =
-            typeof meta.coverUrl === "string" ? meta.coverUrl : "";
+          coverUrlEl.value = typeof meta.coverUrl === "string" ? meta.coverUrl : "";
         }
         if (Array.isArray(meta.tags)) {
           tagInputEl.value = meta.tags.join(", ");
@@ -592,9 +560,7 @@
     });
 
     visibilityDraftBtn?.addEventListener("click", () => setDraftState(true));
-    visibilityPublishedBtn?.addEventListener("click", () =>
-      setDraftState(false),
-    );
+    visibilityPublishedBtn?.addEventListener("click", () => setDraftState(false));
     modeMarkdownBtn?.addEventListener("click", () => setMode("markdown"));
     modeRtfBtn?.addEventListener("click", () => setMode("rtf"));
 
@@ -720,12 +686,11 @@
           },
           credentials: "same-origin",
           body: JSON.stringify(body),
-        },
+        }
       );
       if (resp.status === 401) {
         location.href =
-          "/login?return_to=" +
-          encodeURIComponent(location.pathname + location.search);
+          "/login?return_to=" + encodeURIComponent(location.pathname + location.search);
         return null;
       }
       if (resp.status === 404) throw new Error("Post not found");
@@ -774,7 +739,7 @@
             method: "DELETE",
             headers: { Accept: "application/json" },
             credentials: "same-origin",
-          },
+          }
         );
         if (!resp.ok) {
           const data = await resp.json().catch(() => ({}));

@@ -474,7 +474,7 @@ ctxMenu.addEventListener("click", (ev) => {
   } else if (action === "color") {
     const val = prompt(
       "Stroke color (e.g. #f87171 or red). Leave blank to reset:",
-      edge.color || "",
+      edge.color || ""
     );
     if (val === null) return;
     const v = val.trim();
@@ -488,13 +488,10 @@ ctxMenu.addEventListener("click", (ev) => {
 
 function normalizeIncomingBoard(raw = {}) {
   const fallbackId =
-    raw.id ||
-    boardIdFromGlobals ||
-    `board_${Math.random().toString(36).slice(2, 8)}`;
+    raw.id || boardIdFromGlobals || `board_${Math.random().toString(36).slice(2, 8)}`;
   const nodes = Array.isArray(raw.nodes)
     ? raw.nodes.map((n, idx) => {
-        const nodeId =
-          n?.id || `n_${Math.random().toString(36).slice(2, 8)}_${idx}`;
+        const nodeId = n?.id || `n_${Math.random().toString(36).slice(2, 8)}_${idx}`;
         const baseData =
           n && typeof n.data === "object" && n.data !== null
             ? { ...n.data }
@@ -506,10 +503,7 @@ function normalizeIncomingBoard(raw = {}) {
                 linkUrl: n?.linkUrl ?? null,
                 imageUrl: n?.imageUrl ?? null,
                 tags: Array.isArray(n?.tags) ? [...n.tags] : [],
-                meta:
-                  typeof n?.meta === "object" && n.meta !== null
-                    ? { ...n.meta }
-                    : {},
+                meta: typeof n?.meta === "object" && n.meta !== null ? { ...n.meta } : {},
               };
         if (!Array.isArray(baseData.tags)) baseData.tags = [];
         if (!baseData.meta || typeof baseData.meta !== "object") {
@@ -555,8 +549,7 @@ function normalizeIncomingBoard(raw = {}) {
     ).toLowerCase(),
     schemaVersion: raw.schemaVersion ?? window.__globals.schemaVersion ?? 1,
     layout: raw.layout ?? null,
-    meta:
-      typeof raw.meta === "object" && raw.meta !== null ? { ...raw.meta } : {},
+    meta: typeof raw.meta === "object" && raw.meta !== null ? { ...raw.meta } : {},
     nodes,
     edges,
     createdAt: raw.createdAtISO || raw.createdAt || new Date().toISOString(),
@@ -568,12 +561,9 @@ function syncGlobalsFromBoard(b) {
   if (!b || typeof window === "undefined" || !window.__globals) return;
   window.__globals.boardId = b.id || window.__globals.boardId || "";
   window.__globals.boardTitle = b.title || window.__globals.boardTitle || "";
-  window.__globals.boardVisibility =
-    b.visibility || window.__globals.boardVisibility || "private";
-  window.__globals.boardStatus =
-    b.status || window.__globals.boardStatus || "draft";
-  window.__globals.schemaVersion =
-    b.schemaVersion || window.__globals.schemaVersion || 1;
+  window.__globals.boardVisibility = b.visibility || window.__globals.boardVisibility || "private";
+  window.__globals.boardStatus = b.status || window.__globals.boardStatus || "draft";
+  window.__globals.schemaVersion = b.schemaVersion || window.__globals.schemaVersion || 1;
 }
 
 let selectedNodeId = null;
@@ -643,8 +633,7 @@ function buildSavePayload() {
   return {
     id: board.id,
     title: board.title || "Untitled Board",
-    visibility:
-      board.visibility || window.__globals.boardVisibility || "private",
+    visibility: board.visibility || window.__globals.boardVisibility || "private",
     status: board.status || window.__globals.boardStatus || "draft",
     schemaVersion: board.schemaVersion || window.__globals.schemaVersion || 1,
     layout: board.layout ?? null,
@@ -709,9 +698,7 @@ function addNode(type, at = { x: 100, y: 100 }, payload = {}) {
 function addEdge(sourceId, targetId) {
   if (!canEdit) return;
   if (!sourceId || !targetId || sourceId === targetId) return;
-  const already = board.edges.find(
-    (e) => e.sourceId === sourceId && e.targetId === targetId,
-  );
+  const already = board.edges.find((e) => e.sourceId === sourceId && e.targetId === targetId);
   if (already) return;
   board.edges.push({ id: genId("e"), sourceId, targetId });
   markDirty();
@@ -722,7 +709,7 @@ function removeSelection() {
   if (!canEdit) return;
   if (selectedNodeId) {
     board.edges = board.edges.filter(
-      (e) => e.sourceId !== selectedNodeId && e.targetId !== selectedNodeId,
+      (e) => e.sourceId !== selectedNodeId && e.targetId !== selectedNodeId
     );
     board.nodes = board.nodes.filter((n) => n.id !== selectedNodeId);
     setStatus("Node deleted.");
@@ -994,11 +981,7 @@ function renderNode(n) {
   const titleEl = el.querySelector(".node__title");
   titleEl.setAttribute(
     "data-placeholder",
-    n.type === "text"
-      ? "Text title"
-      : n.type === "image"
-        ? "Image title"
-        : "Link title",
+    n.type === "text" ? "Text title" : n.type === "image" ? "Image title" : "Link title"
   );
   // Preserve existing title; allow empty to show placeholder
   titleEl.textContent =
@@ -1190,8 +1173,7 @@ function renderNode(n) {
     const rich = el.querySelector(".rich");
     if (rtb && rich) {
       const field = n.type === "text" ? "html" : "descHtml";
-      const isOptionalDesc =
-        field === "descHtml" && (n.type === "image" || n.type === "link");
+      const isOptionalDesc = field === "descHtml" && (n.type === "image" || n.type === "link");
 
       function startEditing() {
         if (rich.getAttribute("contenteditable") === "true") return;
@@ -1316,9 +1298,7 @@ function renderNode(n) {
   const resizerEl = el.querySelector(".node__resizer");
   if (resizerEl) {
     resizerEl.style.display =
-      n.type === "text" || n.type === "image" || n.type === "link"
-        ? ""
-        : "none";
+      n.type === "text" || n.type === "image" || n.type === "link" ? "" : "none";
   }
 }
 
@@ -1490,10 +1470,7 @@ function renderEdges() {
     if (e.label) {
       const tx = (a1.x + a2.x) / 2;
       const ty = (a1.y + a2.y) / 2 - 2; // closer to the curve
-      const text = document.createElementNS(
-        "http://www.w3.org/2000/svg",
-        "text",
-      );
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
       text.setAttribute("x", tx);
       text.setAttribute("y", ty);
       text.setAttribute("class", "edge__label");
@@ -1543,19 +1520,13 @@ function renderEdges() {
     g.appendChild(path);
 
     // Add endpoint circles
-    const startCircle = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "circle",
-    );
+    const startCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     startCircle.setAttribute("cx", a1.x);
     startCircle.setAttribute("cy", a1.y);
     startCircle.setAttribute("r", "4");
     startCircle.setAttribute("class", "edge__endpoint");
 
-    const endCircle = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "circle",
-    );
+    const endCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     endCircle.setAttribute("cx", a2.x);
     endCircle.setAttribute("cy", a2.y);
     endCircle.setAttribute("r", "4");
@@ -1602,7 +1573,7 @@ function escapeHtml(s) {
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;",
-      })[c],
+      })[c]
   );
 }
 function escapeAttr(s) {
@@ -1625,7 +1596,7 @@ function renderTagChips(n, hostEl) {
     const chip = document.createElement("span");
     chip.className = "chip";
     chip.innerHTML = `<span>#${escapeHtml(
-      tag,
+      tag
     )}</span> <button title="Remove tag" data-i="${i}">✕</button>`;
     chip.querySelector("button").addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -1725,12 +1696,8 @@ async function fetchLinkPreview(url) {
 function renderLinkCard(preview, href) {
   const title = escapeHtml(preview?.title || href || "Link");
   const desc = escapeHtml(preview?.description || "");
-  const site = escapeHtml(
-    preview?.siteName || (href ? new URL(href).hostname : ""),
-  );
-  const icon = preview?.icon
-    ? `<img class="icon" src="${escapeAttr(preview.icon)}" alt="">`
-    : "";
+  const site = escapeHtml(preview?.siteName || (href ? new URL(href).hostname : ""));
+  const icon = preview?.icon ? `<img class="icon" src="${escapeAttr(preview.icon)}" alt="">` : "";
   const img = preview?.image
     ? `<img class="thumb" src="${escapeAttr(preview.image)}" alt="">`
     : `<div class="thumb"></div>`;
@@ -1748,8 +1715,7 @@ function renderLinkCard(preview, href) {
 }
 
 function validateImported(json) {
-  if (!json || typeof json !== "object")
-    throw new Error("File is not a JSON object");
+  if (!json || typeof json !== "object") throw new Error("File is not a JSON object");
   if (!Array.isArray(json.nodes) || !Array.isArray(json.edges))
     throw new Error("Missing nodes/edges arrays");
   // Minimal normalization: ensure required fields exist
@@ -1827,8 +1793,7 @@ function topoLayers() {
     const rest = nodes.map((n) => n.id).filter((id) => !placed.has(id));
     // group into chunks of up to 5 per layer to avoid stacking all in one
     const chunk = 5;
-    for (let i = 0; i < rest.length; i += chunk)
-      layers.push(rest.slice(i, i + chunk));
+    for (let i = 0; i < rest.length; i += chunk) layers.push(rest.slice(i, i + chunk));
   }
   return layers;
 }
@@ -1903,26 +1868,15 @@ adjustBoardHeight();
 if (canEdit) {
   const addTextBtn = $("#addText");
   addTextBtn?.addEventListener("click", () =>
-    addNode("text", viewCenter(), { text: "New note..." }),
+    addNode("text", viewCenter(), { text: "New note..." })
   );
-  $("#addImage")?.addEventListener("click", () =>
-    addNode("image", viewCenter()),
-  );
+  $("#addImage")?.addEventListener("click", () => addNode("image", viewCenter()));
   $("#addLink")?.addEventListener("click", () => addNode("link", viewCenter()));
   $("#connect")?.addEventListener("click", toggleConnectMode);
-  document
-    .getElementById("autoLayout")
-    ?.addEventListener("click", () => autoLayout("LR"));
+  document.getElementById("autoLayout")?.addEventListener("click", () => autoLayout("LR"));
   importBtn.onclick = () => importFile.click();
 } else {
-  [
-    "addText",
-    "addImage",
-    "addLink",
-    "connect",
-    "autoLayout",
-    "importBtn",
-  ].forEach((id) => {
+  ["addText", "addImage", "addLink", "connect", "autoLayout", "importBtn"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.setAttribute("disabled", "true");
@@ -1981,7 +1935,7 @@ importFile.addEventListener("change", async (e) => {
 
       if (validateJson.boardId === board.id) {
         const ok = confirm(
-          `You're importing the SAME board (ID: ${validateJson.boardId}). Replace the current board with the imported one?`,
+          `You're importing the SAME board (ID: ${validateJson.boardId}). Replace the current board with the imported one?`
         );
         if (!ok) {
           setStatus("Import cancelled.");
@@ -2016,7 +1970,7 @@ importFile.addEventListener("change", async (e) => {
       const validated = validateImported(json);
       if (validated.id === board.id) {
         const ok = confirm(
-          `You're importing the SAME board (ID: ${validated.id}). Replace the current board with the imported one?`,
+          `You're importing the SAME board (ID: ${validated.id}). Replace the current board with the imported one?`
         );
         if (!ok) {
           setStatus("Import cancelled.");
@@ -2093,9 +2047,7 @@ function viewCenter() {
 // Settings modal wiring (always visible; non-owners see read-only UI)
 (() => {
   const settingsBtn = document.getElementById("settingsBtn");
-  const settingsModal = document.querySelector(
-    '[data-modal="papertrail-settings"]',
-  );
+  const settingsModal = document.querySelector('[data-modal="papertrail-settings"]');
   const settingsClose = document.getElementById("settingsClose");
   const visibilitySelect = document.getElementById("visibilitySelect");
   const statusSelect = document.getElementById("statusSelect");
@@ -2105,13 +2057,7 @@ function viewCenter() {
   const confirmIdInput = document.getElementById("confirmIdInput");
   const settingsNotice = document.getElementById("settingsNotice");
 
-  if (
-    !settingsModal ||
-    !titleInput ||
-    !visibilitySelect ||
-    !statusSelect ||
-    !saveMetaBtn
-  ) {
+  if (!settingsModal || !titleInput || !visibilitySelect || !statusSelect || !saveMetaBtn) {
     return;
   }
 
@@ -2119,15 +2065,9 @@ function viewCenter() {
     if (!settingsModal) return;
     // initialize values from server-globals and from current UI
     titleInput.value =
-      window.__globals.boardTitle ||
-      document.getElementById("boardName").textContent ||
-      "";
-    visibilitySelect.value = (
-      window.__globals.boardVisibility || "public"
-    ).toLowerCase();
-    statusSelect.value = (
-      window.__globals.boardStatus || "draft"
-    ).toLowerCase();
+      window.__globals.boardTitle || document.getElementById("boardName").textContent || "";
+    visibilitySelect.value = (window.__globals.boardVisibility || "public").toLowerCase();
+    statusSelect.value = (window.__globals.boardStatus || "draft").toLowerCase();
     if (window.ModalRuntime?.open) {
       window.ModalRuntime.open(settingsModal);
     } else {
@@ -2168,10 +2108,7 @@ function viewCenter() {
     closeSettings();
   });
   settingsModal?.addEventListener("click", (e) => {
-    if (
-      !window.ModalRuntime &&
-      e.target?.classList?.contains("modal__backdrop")
-    ) {
+    if (!window.ModalRuntime && e.target?.classList?.contains("modal__backdrop")) {
       closeSettings();
     }
   });
@@ -2207,9 +2144,7 @@ function viewCenter() {
       alert("Type the exact board id to confirm deletion.");
       return;
     }
-    if (
-      !confirm("This will permanently delete the board and its data. Continue?")
-    ) {
+    if (!confirm("This will permanently delete the board and its data. Continue?")) {
       return;
     }
     try {
@@ -2357,8 +2292,7 @@ async function saveBoard() {
 
 function resetBoard() {
   if (!canEdit) return;
-  if (!confirm("Clear all nodes/edges? This will NOT save automatically."))
-    return;
+  if (!confirm("Clear all nodes/edges? This will NOT save automatically.")) return;
   const now = new Date().toISOString();
   board = {
     id: board.id || "board-1",

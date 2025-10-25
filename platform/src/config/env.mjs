@@ -26,21 +26,13 @@ const __distDir = path.join(__rootdir, "dist");
 
 const __runtimeDir = preferDist ? __distDir : __srcDir;
 
-const __publicdir = preferDist
-  ? path.join(__distDir, "public")
-  : path.join(__srcDir, "public");
+const __publicdir = preferDist ? path.join(__distDir, "public") : path.join(__srcDir, "public");
 
-const __templatedir = preferDist
-  ? path.join(__distDir, "views")
-  : path.join(__srcDir, "views");
+const __templatedir = preferDist ? path.join(__distDir, "views") : path.join(__srcDir, "views");
 
-const __pluginsDir = preferDist
-  ? path.join(__distDir, "plugins")
-  : path.join(__srcDir, "plugins");
+const __pluginsDir = preferDist ? path.join(__distDir, "plugins") : path.join(__srcDir, "plugins");
 
-const __datadir = path.resolve(
-  process.env.__datadir || path.join(__rootdir, "data"),
-);
+const __datadir = path.resolve(process.env.__datadir || path.join(__rootdir, "data"));
 
 const splitCsv = (input) =>
   String(input || "")
@@ -66,8 +58,7 @@ const baseTemplate = Object.freeze({
   AUTH_ARGON2_MEMORY: Number(process.env.AUTH_ARGON2_MEMORY ?? 19456),
   AUTH_ARGON2_PARALLELISM: Number(process.env.AUTH_ARGON2_PARALLELISM ?? 1),
   AUTH_PASSWORD_MIN_LENGTH: Number(process.env.AUTH_PASSWORD_MIN_LENGTH ?? 8),
-  AUTH_SESSION_COOKIE_NAME:
-    process.env.AUTH_SESSION_COOKIE_NAME || "svg_session",
+  AUTH_SESSION_COOKIE_NAME: process.env.AUTH_SESSION_COOKIE_NAME || "svg_session",
   AUTH_SESSION_TTL_HOURS: Number(process.env.AUTH_SESSION_TTL_HOURS ?? 720),
 
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
@@ -75,10 +66,7 @@ const baseTemplate = Object.freeze({
   DEFAULT_USER_ROLE: process.env.DEFAULT_USER_ROLE || "platform:user",
   SIGNUP_POLICY: process.env.SIGNUP_POLICY || "invite", // 'open' or 'invite'
 
-  FEATURE_TERMS_REQUIRE_ACCEPTANCE: toBool(
-    process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE,
-    false,
-  ),
+  FEATURE_TERMS_REQUIRE_ACCEPTANCE: toBool(process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE, false),
 
   EMAIL_SMTP_URL: process.env.EMAIL_SMTP_URL || "",
   EMAIL_SMTP_HOST: process.env.EMAIL_SMTP_HOST || "",
@@ -88,27 +76,17 @@ const baseTemplate = Object.freeze({
   EMAIL_SMTP_PASSWORD: process.env.EMAIL_SMTP_PASSWORD || "",
   EMAIL_SMTP_IGNORE_TLS: toBool(process.env.EMAIL_SMTP_IGNORE_TLS, false),
   EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || "no-reply@localhost",
-  EMAIL_FROM_NAME:
-    process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Sovereign",
+  EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Sovereign",
   EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || "",
   EMAIL_DELIVERY_BYPASS: toBool(process.env.EMAIL_DELIVERY_BYPASS, true),
 
   // TODO: We may need to fetch these from plugin manifest
   FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
-  FT_PROJECT_TYPE_PAPERTRAIL: toBool(
-    process.env.FT_PROJECT_TYPE_PAPERTRAIL,
-    false,
-  ),
-  FT_PROJECT_TYPE_WORKSPACE: toBool(
-    process.env.FT_PROJECT_TYPE_WORKSPACE,
-    false,
-  ),
+  FT_PROJECT_TYPE_PAPERTRAIL: toBool(process.env.FT_PROJECT_TYPE_PAPERTRAIL, false),
+  FT_PROJECT_TYPE_WORKSPACE: toBool(process.env.FT_PROJECT_TYPE_WORKSPACE, false),
 
   GUEST_LOGIN_ENABLED: toBool(process.env.GUEST_LOGIN_ENABLED, false),
-  GUEST_LOGIN_ENABLED_BYPASS_LOGIN: toBool(
-    process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
-    false,
-  ),
+  GUEST_LOGIN_ENABLED_BYPASS_LOGIN: toBool(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN, false),
 
   LOCALE_DEFAULT: process.env.DEFAULT_LOCALE || "en-US",
   LOCALES_SUPPORTED: baseLocales,
@@ -215,10 +193,7 @@ const SETTING_OVERRIDES = {
     const num = toPositiveInt(value);
     if (num && num > 0) {
       config.SESSION_TTL_MS = num;
-      config.AUTH_SESSION_TTL_HOURS = Math.max(
-        1,
-        Math.round(num / (1000 * 60 * 60)),
-      );
+      config.AUTH_SESSION_TTL_HOURS = Math.max(1, Math.round(num / (1000 * 60 * 60)));
     }
   },
   "auth.cookie.name": (config, value) => {
@@ -242,22 +217,16 @@ const SETTING_OVERRIDES = {
     config.EMAIL_REPLY_TO = str ?? "";
   },
   "feature.guest.login.enabled": (config, value) => {
-    config.GUEST_LOGIN_ENABLED = toBool(
-      value,
-      config.GUEST_LOGIN_ENABLED ?? false,
-    );
+    config.GUEST_LOGIN_ENABLED = toBool(value, config.GUEST_LOGIN_ENABLED ?? false);
   },
   "feature.guest.login.enabled.bypass": (config, value) => {
     config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN = toBool(
       value,
-      config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN ?? false,
+      config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN ?? false
     );
   },
   "feature.email.delivery.bypass": (config, value) => {
-    config.EMAIL_DELIVERY_BYPASS = toBool(
-      value,
-      config.EMAIL_DELIVERY_BYPASS ?? true,
-    );
+    config.EMAIL_DELIVERY_BYPASS = toBool(value, config.EMAIL_DELIVERY_BYPASS ?? true);
   },
   "email.smtp.url": (config, value) => {
     const str = toStringValue(value);
@@ -276,10 +245,7 @@ const SETTING_OVERRIDES = {
     config.EMAIL_SMTP_SECURE = toBool(value, config.EMAIL_SMTP_SECURE ?? false);
   },
   "email.smtp.ignore_tls": (config, value) => {
-    config.EMAIL_SMTP_IGNORE_TLS = toBool(
-      value,
-      config.EMAIL_SMTP_IGNORE_TLS ?? false,
-    );
+    config.EMAIL_SMTP_IGNORE_TLS = toBool(value, config.EMAIL_SMTP_IGNORE_TLS ?? false);
   },
   "email.smtp.user": (config, value) => {
     const str = toStringValue(value);
@@ -295,7 +261,7 @@ const SETTING_OVERRIDES = {
   "feature.terms.require_acceptance": (config, value) => {
     config.FEATURE_TERMS_REQUIRE_ACCEPTANCE = toBool(
       value,
-      config.FEATURE_TERMS_REQUIRE_ACCEPTANCE ?? false,
+      config.FEATURE_TERMS_REQUIRE_ACCEPTANCE ?? false
     );
   },
   "signup.policy": (config, value) => {
@@ -327,24 +293,17 @@ const finalizeConfig = (config) => {
   const result = { ...config };
 
   const sessionTtlMsCandidate =
-    typeof result.SESSION_TTL_MS === "number" &&
-    Number.isFinite(result.SESSION_TTL_MS)
+    typeof result.SESSION_TTL_MS === "number" && Number.isFinite(result.SESSION_TTL_MS)
       ? result.SESSION_TTL_MS
       : null;
 
-  const fallbackTtlMs =
-    1000 * 60 * 60 * Number(result.AUTH_SESSION_TTL_HOURS ?? 720);
+  const fallbackTtlMs = 1000 * 60 * 60 * Number(result.AUTH_SESSION_TTL_HOURS ?? 720);
 
   const sessionTtlMs =
-    sessionTtlMsCandidate && sessionTtlMsCandidate > 0
-      ? sessionTtlMsCandidate
-      : fallbackTtlMs;
+    sessionTtlMsCandidate && sessionTtlMsCandidate > 0 ? sessionTtlMsCandidate : fallbackTtlMs;
 
   result.SESSION_TTL_MS = sessionTtlMs;
-  result.AUTH_SESSION_TTL_HOURS = Math.max(
-    1,
-    Math.round(sessionTtlMs / (1000 * 60 * 60)),
-  );
+  result.AUTH_SESSION_TTL_HOURS = Math.max(1, Math.round(sessionTtlMs / (1000 * 60 * 60)));
 
   result.COOKIE_OPTS = Object.freeze({
     httpOnly: true,
@@ -359,7 +318,7 @@ const finalizeConfig = (config) => {
   result.LOCALES_SUPPORTED = Object.freeze(
     Array.isArray(result.LOCALES_SUPPORTED)
       ? result.LOCALES_SUPPORTED.map((locale) => String(locale))
-      : [],
+      : []
   );
 
   result.APP_SETTINGS = Object.freeze({ ...config.APP_SETTINGS });
@@ -413,11 +372,7 @@ const mapRowsByScope = (rows) => {
 
 const refreshSettings = async (force = false) => {
   const now = Date.now();
-  if (
-    !force &&
-    settingsLoaded &&
-    now - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS
-  ) {
+  if (!force && settingsLoaded && now - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS) {
     return;
   }
 
@@ -458,9 +413,7 @@ const scheduleRefresh = (force = false) => {
 
   if (
     refreshPromise ||
-    (!force &&
-      settingsLoaded &&
-      Date.now() - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS)
+    (!force && settingsLoaded && Date.now() - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS)
   ) {
     return;
   }

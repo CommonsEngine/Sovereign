@@ -32,10 +32,7 @@ export default async function useJSX(req, res, next) {
         const p = `/src/views/${viewPath}${ext}`;
         try {
           if (dev) {
-            const fsPath = path.join(
-              rootDir,
-              p.startsWith("/") ? p.slice(1) : p,
-            );
+            const fsPath = path.join(rootDir, p.startsWith("/") ? p.slice(1) : p);
             try {
               await fs.access(fsPath);
             } catch {
@@ -58,19 +55,13 @@ export default async function useJSX(req, res, next) {
       if (!mod) {
         res
           .status(500)
-          .send(
-            `Could not find JSX view module for "${viewPath}" (looked for .tsx/.jsx/.ts/.js).`,
-          );
+          .send(`Could not find JSX view module for "${viewPath}" (looked for .tsx/.jsx/.ts/.js).`);
         return;
       }
 
       const Component = mod.default || mod.Component || null;
       if (!Component) {
-        res
-          .status(500)
-          .send(
-            `Module "${resolvedPath}" has no default export React component.`,
-          );
+        res.status(500).send(`Module "${resolvedPath}" has no default export React component.`);
         return;
       }
 
@@ -84,9 +75,7 @@ export default async function useJSX(req, res, next) {
       };
 
       // Render HTML
-      const appHTML = renderToString(
-        React.createElement(Component, componentProps),
-      );
+      const appHTML = renderToString(React.createElement(Component, componentProps));
 
       // Try to resolve a matching client entry for hydration during dev (optional)
       let hydrateScript = "";
@@ -112,9 +101,7 @@ export default async function useJSX(req, res, next) {
       }
 
       const headHtml = await renderHead(res);
-      const htmlLang = escapeAttr(
-        res.locals?.head?.lang?.short || res.locals?.head?.lang || "en",
-      );
+      const htmlLang = escapeAttr(res.locals?.head?.lang?.short || res.locals?.head?.lang || "en");
 
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.send(`<!doctype html>
@@ -145,17 +132,13 @@ async function renderHead(res) {
   };
 
   return new Promise((resolve, reject) => {
-    res.app.render(
-      "_partials/layout/head",
-      { ...locals, layout: false },
-      (err, rendered) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rendered || "");
-        }
-      },
-    );
+    res.app.render("_partials/layout/head", { ...locals, layout: false }, (err, rendered) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rendered || "");
+      }
+    });
   }).catch(() => {
     const title = (locals.head && locals.head.title) || "Sovereign";
     const version = locals.app?.version || "0.0.0";

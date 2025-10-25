@@ -1,33 +1,22 @@
 import { prisma } from "$/services/database.mjs";
-import {
-  verifyPassword,
-  createSession,
-  createRandomGuestUser,
-} from "$/utils/auth.mjs";
+import { verifyPassword, createSession, createRandomGuestUser } from "$/utils/auth.mjs";
 import logger from "$/services/logger.mjs";
 import env from "$/config/env.mjs";
 
-const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } =
-  env();
+const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } = env();
 
 export default async function login(req, res) {
   try {
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
 
     const { email, password, return_to } = req.body || {};
-    const emailNorm =
-      typeof email === "string" ? email.trim().toLowerCase() : "";
+    const emailNorm = typeof email === "string" ? email.trim().toLowerCase() : "";
     const pwd = typeof password === "string" ? password : "";
 
     // Basic validations
-    if (
-      typeof emailNorm !== "string" ||
-      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm) ||
-      !pwd
-    ) {
+    if (typeof emailNorm !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm) || !pwd) {
       if (isFormContent) {
         return res.status(400).render("login", {
           error: "Please enter a valid email and password.",
@@ -117,8 +106,7 @@ export default async function login(req, res) {
     if (!user.passwordHash) {
       const accept = String(req.headers["accept"] || "");
       const isFormContent =
-        req.is("application/x-www-form-urlencoded") ||
-        accept.includes("text/html");
+        req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
       const msg =
         "Your account is not fully set up. Please use the invite/verification link to set your password.";
       if (isFormContent) {
@@ -129,8 +117,7 @@ export default async function login(req, res) {
               .toLowerCase()
               .trim(),
           },
-          return_to:
-            typeof req.body?.return_to === "string" ? req.body.return_to : "",
+          return_to: typeof req.body?.return_to === "string" ? req.body.return_to : "",
         });
       }
       return res.status(403).json({ error: "Password not set" });
@@ -155,10 +142,7 @@ export default async function login(req, res) {
     });
 
     if (isFormContent) {
-      const dest =
-        typeof return_to === "string" && return_to.startsWith("/")
-          ? return_to
-          : "/";
+      const dest = typeof return_to === "string" && return_to.startsWith("/") ? return_to : "/";
       return res.redirect(302, dest);
     }
     return res.json({ ok: true });
@@ -166,8 +150,7 @@ export default async function login(req, res) {
     logger.error("✗ /login error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     if (isFormContent) {
       return res.status(500).render("login", {
         error: "Login failed. Please try again.",
@@ -199,8 +182,7 @@ export async function viewLogin(req, res) {
   }
   const justRegistered = String(req.query.registered || "") === "1";
   const justReset = String(req.query.reset || "") === "1";
-  const returnTo =
-    typeof req.query.return_to === "string" ? req.query.return_to : "";
+  const returnTo = typeof req.query.return_to === "string" ? req.query.return_to : "";
   const forgotMode = String(req.query.forgot || "") === "1";
   const token = typeof req.query.token === "string" ? req.query.token : "";
   const resetMode = !!token;

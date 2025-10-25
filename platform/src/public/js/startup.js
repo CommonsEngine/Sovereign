@@ -17,8 +17,7 @@
   }
 
   function register(name, fn) {
-    if (!name || typeof fn !== "function")
-      throw new Error("register(name, fn) required");
+    if (!name || typeof fn !== "function") throw new Error("register(name, fn) required");
     tasks.set(name, {
       fn,
       status: "idle",
@@ -75,8 +74,7 @@
   async function runAll(options) {
     const { parallel = true } = options || {};
     const names = [...tasks.keys()];
-    if (parallel)
-      return Promise.all(names.map((n) => runTask(n).catch((e) => e)));
+    if (parallel) return Promise.all(names.map((n) => runTask(n).catch((e) => e)));
     const results = [];
     for (const n of names) {
       try {

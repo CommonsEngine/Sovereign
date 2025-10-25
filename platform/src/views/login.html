@@ -13,16 +13,15 @@
 
       <section class="auth" aria-label="Sign in">
         <h2 class="auth__title">
-          {{#if reset_mode}}Reset password{{else if forgot_mode}}Forgot your
-          password{{else}}Sign in{{/if}}
+          {{#if reset_mode}}Reset password{{else if forgot_mode}}Forgot your password{{else}}Sign
+          in{{/if}}
         </h2>
         <div class="auth__card">
           {{#if success}}
           <div class="alert alert--success">{{success}}</div>
           {{/if}} {{#if error}}
           <div class="alert alert--error">{{error}}</div>
-          {{/if}} {{!-- LOGIN FORM --}} {{#unless forgot_mode}} {{#unless
-          reset_mode}}
+          {{/if}} {{!-- LOGIN FORM --}} {{#unless forgot_mode}} {{#unless reset_mode}}
           <form class="form" method="post" action="/login">
             <input type="hidden" name="return_to" value="{{return_to}}" />
             <div class="field">
@@ -50,17 +49,14 @@
             </div>
             <div class="actions">
               <a class="link" href="/login?forgot=1">Forgot your password?</a>
-              <button class="button button--primary chip" type="submit">
-                Sign in
-              </button>
+              <button class="button button--primary chip" type="submit">Sign in</button>
             </div>
           </form>
           {{#if allow_signup}}
           <div class="divider"></div>
           <div class="actions">
             <span style="color: #64748b; font-size: 13px"
-              >Don’t have an account?
-              <a class="link" href="/register">Create account</a></span
+              >Don’t have an account? <a class="link" href="/register">Create account</a></span
             >
           </div>
           {{/if}} {{#if guest_enabled}}
@@ -68,8 +64,7 @@
           <div class="actions">
             <a class="link" href="/auth/guest">Continue as guest</a>
           </div>
-          {{/if}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if
-          forgot_mode}}
+          {{/if}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if forgot_mode}}
           <form class="form" method="post" action="/auth/password/forgot">
             <div class="field">
               <label for="email">Email</label>
@@ -85,9 +80,7 @@
             </div>
             <div class="actions">
               <a class="link" href="/login">Back to sign in</a>
-              <button class="button button--primary chip" type="submit">
-                Send reset link
-              </button>
+              <button class="button button--primary chip" type="submit">Send reset link</button>
             </div>
             {{#if dev_reset_url}}
             <div class="divider"></div>
@@ -124,9 +117,7 @@
             </div>
             <div class="actions">
               <a class="link" href="/login">Back to sign in</a>
-              <button class="button button--primary chip" type="submit">
-                Update password
-              </button>
+              <button class="button button--primary chip" type="submit">Update password</button>
             </div>
           </form>
           {{/if}}

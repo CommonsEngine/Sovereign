@@ -58,17 +58,11 @@
         color: var(--color-text-secondary);
         border-radius: var(--radius-s, 8px);
         transition:
-          background-color var(--transition-fast, 120ms)
-            var(--transition-easing-standard, ease),
-          color var(--transition-fast, 120ms)
-            var(--transition-easing-standard, ease);
+          background-color var(--transition-fast, 120ms) var(--transition-easing-standard, ease),
+          color var(--transition-fast, 120ms) var(--transition-easing-standard, ease);
       }
       .card__bar-icon:hover {
-        background: color-mix(
-          in oklab,
-          var(--color-danger),
-          var(--color-bg-primary) 92%
-        );
+        background: color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 92%);
         color: var(--color-danger);
       }
       .card__bar-icon svg {
@@ -317,9 +311,7 @@
                 <tr class="error-row" hidden>
                   <td colspan="6" class="empty">
                     Failed to load posts
-                    <button id="retry-posts" class="chip" type="button">
-                      Retry
-                    </button>
+                    <button id="retry-posts" class="chip" type="button">Retry</button>
                   </td>
                 </tr>
                 <!-- Empty state (shown by script when filtered or no posts) -->
@@ -398,17 +390,13 @@
               <div class="flex row justify-start items-center">
                 <div class="subtle flex-1">Created</div>
                 <div id="m-created" class="flex-1">
-                  <time datetime="{{project.createdAtISO}}"
-                    >{{project.createdAtDisplay}}</time
-                  >
+                  <time datetime="{{project.createdAtISO}}">{{project.createdAtDisplay}}</time>
                 </div>
               </div>
               <div class="flex row justify-start items-center">
                 <div class="subtle flex-1">Updated</div>
                 <div id="m-updated" class="flex-1">
-                  <time datetime="{{project.updatedAtISO}}"
-                    >{{project.updatedAtDisplay}}</time
-                  >
+                  <time datetime="{{project.updatedAtISO}}">{{project.updatedAtDisplay}}</time>
                 </div>
               </div>
             </div>

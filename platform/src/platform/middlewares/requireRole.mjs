@@ -43,9 +43,7 @@ function userHasRole(user, allowedRoles, allowIfEmpty = true) {
     if (!roleObj) continue;
     const roleId = roleObj.id !== undefined ? String(roleObj.id) : null;
     const roleKey = roleObj.key ? String(roleObj.key).toLowerCase() : null;
-    const roleLabel = roleObj.label
-      ? String(roleObj.label).toLowerCase()
-      : null;
+    const roleLabel = roleObj.label ? String(roleObj.label).toLowerCase() : null;
 
     if (roleId && allowedRoles.has(roleId)) return true;
     if (roleKey && allowedRoles.has(roleKey)) return true;
@@ -92,11 +90,8 @@ function userHasCapability(user, allowedCapabilities) {
  */
 export default function requireRole(allowed = []) {
   const raw = Array.isArray(allowed) ? allowed : [allowed];
-  const allowedSet = new Set(
-    raw.map(normalizeAllowedValue).filter((v) => v !== null),
-  );
-  const { roles: allowedRoles, capabilities: allowedCaps } =
-    splitAllowedSet(allowedSet);
+  const allowedSet = new Set(raw.map(normalizeAllowedValue).filter((v) => v !== null));
+  const { roles: allowedRoles, capabilities: allowedCaps } = splitAllowedSet(allowedSet);
   const allowRolesIfEmpty = allowedCaps.size === 0;
 
   return function roleGuard(req, res, next) {

@@ -28,9 +28,7 @@
   const emptyRow = tbody?.querySelector(".empty-row");
   const loadingRow = tbody?.querySelector(".loading-row");
   const errorRow = tbody?.querySelector(".error-row");
-  const retryConnectionBtn = document.querySelector(
-    '[data-action="retry-connection"]',
-  );
+  const retryConnectionBtn = document.querySelector('[data-action="retry-connection"]');
 
   let rows = [];
 
@@ -59,22 +57,14 @@
   }
 
   function makePostRow(projectId, post) {
-    const title =
-      (post.title && post.title.trim()) ||
-      (post.filename || "").replace(/\.md$/i, "");
-    const description =
-      (typeof post.description === "string" && post.description) || "";
-    const tagsText = Array.isArray(post.tags)
-      ? post.tags.join(", ")
-      : post.tags || "";
+    const title = (post.title && post.title.trim()) || (post.filename || "").replace(/\.md$/i, "");
+    const description = (typeof post.description === "string" && post.description) || "";
+    const tagsText = Array.isArray(post.tags) ? post.tags.join(", ") : post.tags || "";
     const statusLabel = post.status || (post.draft ? "Draft" : "Published");
     const hrefEdit = `/blog/${projectId}/post/${encodeURIComponent(post.filename)}?edit=true`;
     const publishSource = post.pubDate || post.modified;
-    const { iso, label } = publishSource
-      ? fmtDate(publishSource)
-      : { iso: "", label: "—" };
-    const excerpt =
-      typeof post.excerpt === "string" ? post.excerpt : description;
+    const { iso, label } = publishSource ? fmtDate(publishSource) : { iso: "", label: "—" };
+    const excerpt = typeof post.excerpt === "string" ? post.excerpt : description;
 
     const tr = document.createElement("tr");
     tr.dataset.title = title;
@@ -147,7 +137,7 @@
           ">": "&gt;",
           '"': "&quot;",
           "'": "&#39;",
-        })[c],
+        })[c]
     );
   }
   function escapeAttr(s) {
@@ -156,9 +146,7 @@
 
   function clearDataRows() {
     Array.from(
-      tbody.querySelectorAll(
-        "tr:not(.empty-row):not(.loading-row):not(.error-row)",
-      ),
+      tbody.querySelectorAll("tr:not(.empty-row):not(.loading-row):not(.error-row)")
     ).forEach((n) => n.remove());
     rows = [];
   }
@@ -177,13 +165,10 @@
   }
 
   async function fetchPosts(projectId) {
-    const resp = await fetch(
-      `/api/blog/${encodeURIComponent(projectId)}/post/all`,
-      {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      },
-    );
+    const resp = await fetch(`/api/blog/${encodeURIComponent(projectId)}/post/all`, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     return Array.isArray(data.posts) ? data.posts : [];
@@ -205,9 +190,7 @@
       tbody.appendChild(frag);
 
       rows = Array.from(
-        tbody.querySelectorAll(
-          "tr:not(.empty-row):not(.loading-row):not(.error-row)",
-        ),
+        tbody.querySelectorAll("tr:not(.empty-row):not(.loading-row):not(.error-row)")
       );
       if (emptyRow) emptyRow.hidden = rows.length !== 0;
       const countEl = document.getElementById("m-count");
@@ -277,7 +260,7 @@
           method: "DELETE",
           headers: { Accept: "application/json" },
           credentials: "same-origin",
-        },
+        }
       );
 
       if (!resp.ok) {
@@ -291,9 +274,7 @@
 
       tr?.remove();
       rows = Array.from(
-        tbody.querySelectorAll(
-          "tr:not(.empty-row):not(.loading-row):not(.error-row)",
-        ),
+        tbody.querySelectorAll("tr:not(.empty-row):not(.loading-row):not(.error-row)")
       );
 
       const countEl = document.getElementById("m-count");
@@ -366,9 +347,7 @@
         .then(() => window.location.reload())
         .catch((err) => {
           console.error("Retry connection failed", err);
-          window.alert(
-            err?.message || "Failed to reconnect. Please try again later.",
-          );
+          window.alert(err?.message || "Failed to reconnect. Please try again later.");
         })
         .finally(() => {
           retryConnectionBtn.disabled = false;

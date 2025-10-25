@@ -41,9 +41,7 @@ function stubOwnerAccess(projectId, userId = "u_owner") {
       (!("status" in where) || where.status === "active");
 
     const orConditions = Array.isArray(where.OR) ? where.OR : [];
-    const matchesCurrentUser = orConditions.some(
-      (cond) => cond?.userId === userId,
-    );
+    const matchesCurrentUser = orConditions.some((cond) => cond?.userId === userId);
 
     if (matchesCurrentUser || matchesOwnerRole) {
       return {
@@ -131,9 +129,7 @@ test("create issues owner invite and syncs primary owner", async (t) => {
   assert.equal(res.payload.member.email, "invitee@example.com");
   assert.equal(res.payload.member.status, "pending");
   assert.equal(txCreateCalls.length, 1);
-  const syncCall = txFindFirstCalls.find(
-    (call) => call?.where?.role === "owner",
-  );
+  const syncCall = txFindFirstCalls.find((call) => call?.where?.role === "owner");
   assert.ok(syncCall, "expected syncProjectPrimaryOwner to search for owners");
 });
 
@@ -186,7 +182,7 @@ test("update prevents removing last active owner", async (t) => {
   assert.equal(res.statusCode, 400);
   assert.ok(
     res.payload?.error?.includes("At least one active owner"),
-    "expected ownership guard error",
+    "expected ownership guard error"
   );
   assert.equal(txUpdateCalls.length, 0);
 });
@@ -244,8 +240,6 @@ test("remove deletes contributor and syncs owners", async (t) => {
   assert.equal(res.ended, true);
   assert.equal(deleteCalls.length, 1);
   assert.equal(deleteCalls[0].where.id, memberId);
-  const syncCall = txFindFirstCalls.find(
-    (call) => call?.where?.role === "owner",
-  );
+  const syncCall = txFindFirstCalls.find((call) => call?.where?.role === "owner");
   assert.ok(syncCall, "expected owner sync lookup after removal");
 });

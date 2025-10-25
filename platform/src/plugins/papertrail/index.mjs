@@ -134,11 +134,7 @@ export async function render(_, resolve) {
         if (err?.name === "ProjectAccessError") {
           const status = err.status ?? 403;
           const message =
-            status === 404
-              ? "Not Found"
-              : status === 400
-                ? "Bad Request"
-                : "Forbidden";
+            status === 404 ? "Not Found" : status === 400 ? "Bad Request" : "Forbidden";
           const description =
             status === 404
               ? "Project not found"

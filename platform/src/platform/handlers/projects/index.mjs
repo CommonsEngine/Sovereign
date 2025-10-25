@@ -1,9 +1,5 @@
 import { prisma } from "$/services/database.mjs";
-import {
-  getGitManager,
-  getOrInitGitManager,
-  disposeGitManager,
-} from "$/libs/git/registry.mjs";
+import { getGitManager, getOrInitGitManager, disposeGitManager } from "$/libs/git/registry.mjs";
 import logger from "$/services/logger.mjs";
 import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 import { uuid } from "$/utils/id.mjs";
@@ -100,12 +96,7 @@ export async function viewProject(req, res) {
     } catch (err) {
       if (err?.name === "ProjectAccessError") {
         const status = err.status ?? 403;
-        const message =
-          status === 404
-            ? "Not Found"
-            : status === 400
-              ? "Bad Request"
-              : "Forbidden";
+        const message = status === 404 ? "Not Found" : status === 400 ? "Bad Request" : "Forbidden";
         const description =
           status === 404
             ? "Project not found"

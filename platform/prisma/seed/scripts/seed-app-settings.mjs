@@ -23,16 +23,12 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "env.app.tagline",
-    value:
-      process.env.APP_TAGLINE ?? pkg.tagline ?? "Reclaim your digital freedom.",
+    value: process.env.APP_TAGLINE ?? pkg.tagline ?? "Reclaim your digital freedom.",
   },
   {
     scope: "platform",
     key: "env.app.description",
-    value:
-      process.env.APP_DESCRIPTION ??
-      pkg.description ??
-      "A Sovereign application",
+    value: process.env.APP_DESCRIPTION ?? pkg.description ?? "A Sovereign application",
   },
   {
     scope: "platform",
@@ -57,19 +53,12 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "email.from.name",
-    value:
-      process.env.EMAIL_FROM_NAME ??
-      process.env.APP_NAME ??
-      pkg.title ??
-      "Sovereign",
+    value: process.env.EMAIL_FROM_NAME ?? process.env.APP_NAME ?? pkg.title ?? "Sovereign",
   },
   {
     scope: "platform",
     key: "email.from.address",
-    value:
-      process.env.EMAIL_FROM_ADDRESS ??
-      process.env.EMAIL_FROM ??
-      "no-reply@localhost",
+    value: process.env.EMAIL_FROM_ADDRESS ?? process.env.EMAIL_FROM ?? "no-reply@localhost",
   },
   {
     scope: "platform",
@@ -90,8 +79,7 @@ const defaultConfigs = [
     scope: "platform",
     key: "email.smtp.port",
     value:
-      process.env.EMAIL_SMTP_PORT &&
-      !Number.isNaN(Number(process.env.EMAIL_SMTP_PORT))
+      process.env.EMAIL_SMTP_PORT && !Number.isNaN(Number(process.env.EMAIL_SMTP_PORT))
         ? Number(process.env.EMAIL_SMTP_PORT)
         : 587,
   },
@@ -118,8 +106,7 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "feature.guest.login.enabled.bypass",
-    value:
-      parseBoolLike(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN) ?? "false",
+    value: parseBoolLike(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN) ?? "false",
   },
   {
     scope: "platform",
@@ -171,8 +158,7 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "feature.terms.require_acceptance",
-    value:
-      parseBoolLike(process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE) ?? "false",
+    value: parseBoolLike(process.env.FEATURE_TERMS_REQUIRE_ACCEPTANCE) ?? "false",
   },
 ];
 

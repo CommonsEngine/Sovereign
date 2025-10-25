@@ -131,9 +131,7 @@ A Sovereign application</textarea
 
               <div class="flex col gap-xs">
                 <div class="field">
-                  <label class="label" for="defaultUserRole"
-                    >Default User Role</label
-                  >
+                  <label class="label" for="defaultUserRole">Default User Role</label>
                   <input
                     id="defaultUserRole"
                     class="input"
@@ -153,21 +151,11 @@ A Sovereign application</textarea
 
               <div class="flex col gap-xs">
                 <div class="field">
-                  <label class="label" for="passwordMinLength"
-                    >Password Min Length</label
-                  >
-                  <input
-                    id="passwordMinLength"
-                    class="input"
-                    type="number"
-                    min="4"
-                    value="8"
-                  />
+                  <label class="label" for="passwordMinLength">Password Min Length</label>
+                  <input id="passwordMinLength" class="input" type="number" min="4" value="8" />
                 </div>
                 <div class="field">
-                  <label class="label" for="sessionTtlMs"
-                    >Session TTL (ms)</label
-                  >
+                  <label class="label" for="sessionTtlMs">Session TTL (ms)</label>
                   <input
                     id="sessionTtlMs"
                     class="input"
@@ -181,9 +169,7 @@ A Sovereign application</textarea
 
               <div class="flex col gap-xs">
                 <div class="field">
-                  <label class="label" for="cookieName"
-                    >Session Cookie Name</label
-                  >
+                  <label class="label" for="cookieName">Session Cookie Name</label>
                   <input
                     id="cookieName"
                     class="input"
@@ -229,9 +215,7 @@ A Sovereign application</textarea
                 >
                   Save changes
                 </button>
-                <button id="reset-app" class="button chip" type="button">
-                  Reset
-                </button>
+                <button id="reset-app" class="button chip" type="button">Reset</button>
               </div>
             </form>
           </div>
@@ -245,17 +229,10 @@ A Sovereign application</textarea
               <div class="flex col gap-xs">
                 <div class="field">
                   <label class="label" for="emailFromName">From Name</label>
-                  <input
-                    id="emailFromName"
-                    class="input"
-                    type="text"
-                    placeholder="Sovereign"
-                  />
+                  <input id="emailFromName" class="input" type="text" placeholder="Sovereign" />
                 </div>
                 <div class="field">
-                  <label class="label" for="emailFromAddress"
-                    >From Address</label
-                  >
+                  <label class="label" for="emailFromAddress">From Address</label>
                   <input
                     id="emailFromAddress"
                     class="input"
@@ -274,9 +251,7 @@ A Sovereign application</textarea
                     type="email"
                     placeholder="support@example.com"
                   />
-                  <div class="form__helptext">
-                    Optional: leave blank to use the From address.
-                  </div>
+                  <div class="form__helptext">Optional: leave blank to use the From address.</div>
                 </div>
                 <div class="field">
                   <label class="label" style="display: block">Delivery</label>
@@ -305,12 +280,7 @@ A Sovereign application</textarea
               <div class="flex col gap-xs">
                 <div class="field">
                   <label class="label" for="smtpHost">SMTP Host</label>
-                  <input
-                    id="smtpHost"
-                    class="input"
-                    type="text"
-                    placeholder="mail.example.com"
-                  />
+                  <input id="smtpHost" class="input" type="text" placeholder="mail.example.com" />
                 </div>
                 <div class="field">
                   <label class="label" for="smtpPort">SMTP Port</label>
@@ -344,12 +314,7 @@ A Sovereign application</textarea
               <div class="flex col gap-xs">
                 <div class="field">
                   <label class="label" for="smtpUser">SMTP Username</label>
-                  <input
-                    id="smtpUser"
-                    class="input"
-                    type="text"
-                    placeholder="smtp-user"
-                  />
+                  <input id="smtpUser" class="input" type="text" placeholder="smtp-user" />
                 </div>
                 <div class="field">
                   <label class="label" for="smtpPassword">SMTP Password</label>
@@ -364,15 +329,10 @@ A Sovereign application</textarea
               </div>
 
               <div class="flex gap-2xs row-reverse actions">
-                <button
-                  class="button button--primary chip chip--primary"
-                  type="submit"
-                >
+                <button class="button button--primary chip chip--primary" type="submit">
                   Save changes
                 </button>
-                <button id="reset-email" class="button chip" type="button">
-                  Reset
-                </button>
+                <button id="reset-email" class="button chip" type="button">Reset</button>
               </div>
             </form>
           </div>
@@ -385,9 +345,7 @@ A Sovereign application</textarea
             <form id="loc-form" class="form card__form">
               <div class="flex col gap-xs">
                 <div class="field">
-                  <label class="label" for="defaultLocale"
-                    >Default Locale</label
-                  >
+                  <label class="label" for="defaultLocale">Default Locale</label>
                   <select id="defaultLocale" class="input" data-default="en-US">
                     <option value="en-US" selected>English (US)</option>
                     <option value="en-GB">English (UK)</option>
@@ -401,9 +359,7 @@ A Sovereign application</textarea
                   </select>
                 </div>
                 <div class="field">
-                  <label class="label" for="defaultCurrency"
-                    >Default Currency</label
-                  >
+                  <label class="label" for="defaultCurrency">Default Currency</label>
                   <input
                     id="defaultCurrency"
                     class="input"
@@ -418,9 +374,7 @@ A Sovereign application</textarea
 
               <div class="flex col gap-xs">
                 <div class="field">
-                  <label class="label" for="supportedLocales"
-                    >Supported Locales</label
-                  >
+                  <label class="label" for="supportedLocales">Supported Locales</label>
                   <textarea
                     id="supportedLocales"
                     class="input"
@@ -431,9 +385,7 @@ A Sovereign application</textarea
                   >
 en-US</textarea
                   >
-                  <div class="form__helptext">
-                    Comma separated list of locale codes.
-                  </div>
+                  <div class="form__helptext">Comma separated list of locale codes.</div>
                 </div>
               </div>
 
@@ -454,9 +406,7 @@ en-US</textarea
                     <option value="Asia/Tokyo">Asia/Tokyo</option>
                     <option value="Australia/Sydney">Australia/Sydney</option> -->
                   </select>
-                  <div class="form__helptext">
-                    Used for displaying dates/times across the app.
-                  </div>
+                  <div class="form__helptext">Used for displaying dates/times across the app.</div>
                 </div>
               </div>
 
@@ -468,9 +418,7 @@ en-US</textarea
                 >
                   Save changes
                 </button>
-                <button id="reset-loc" class="button chip" type="button">
-                  Reset
-                </button>
+                <button id="reset-loc" class="button chip" type="button">Reset</button>
               </div>
             </form>
           </div>
@@ -506,21 +454,17 @@ en-US</textarea
         "email.smtp.user": { id: "smtpUser" },
         "email.smtp.password": {
           id: "smtpPassword",
-          toInput: (value) =>
-            value === null || value === undefined ? "" : value,
+          toInput: (value) => (value === null || value === undefined ? "" : value),
         },
         "env.locale.default": { id: "defaultLocale" },
         "env.locale.supported": {
           id: "supportedLocales",
-          toInput: (value) =>
-            Array.isArray(value) ? value.join(",") : String(value ?? ""),
+          toInput: (value) => (Array.isArray(value) ? value.join(",") : String(value ?? "")),
         },
         "env.currency.default": {
           id: "defaultCurrency",
           toInput: (value) =>
-            typeof value === "string"
-              ? value.toUpperCase()
-              : String(value ?? ""),
+            typeof value === "string" ? value.toUpperCase() : String(value ?? ""),
         },
         "env.timezone.default": { id: "timeZone" },
       };
@@ -558,10 +502,7 @@ en-US</textarea
         const field = document.getElementById(id);
         if (!field) return;
 
-        const value =
-          typeof config.toInput === "function"
-            ? config.toInput(rawValue)
-            : rawValue;
+        const value = typeof config.toInput === "function" ? config.toInput(rawValue) : rawValue;
 
         if (field.type === "checkbox") {
           field.checked = toBoolean(value);
@@ -569,13 +510,9 @@ en-US</textarea
         }
 
         if (field.tagName === "SELECT") {
-          const selectValue = Array.isArray(value)
-            ? String(value[0] ?? "")
-            : (value ?? "");
+          const selectValue = Array.isArray(value) ? String(value[0] ?? "") : (value ?? "");
           if (typeof selectValue === "string" && selectValue) {
-            const hasOption = Array.from(field.options).some(
-              (opt) => opt.value === selectValue,
-            );
+            const hasOption = Array.from(field.options).some((opt) => opt.value === selectValue);
             if (!hasOption) {
               const opt = document.createElement("option");
               opt.value = selectValue;
@@ -628,8 +565,7 @@ en-US</textarea
       function markFieldError(field, hasError) {
         if (!field) return;
         field.classList.toggle("input--error", hasError);
-        const messageEl =
-          field.parentElement?.querySelector(".help.help--error");
+        const messageEl = field.parentElement?.querySelector(".help.help--error");
         if (messageEl) {
           messageEl.style.display = hasError ? "block" : "none";
         }
@@ -706,13 +642,9 @@ en-US</textarea
 
         const defaultLocaleField = document.getElementById("defaultLocale");
         markFieldError(defaultLocaleField, false);
-        const normalizedDefaultLocale = normalizeLocaleInput(
-          defaultLocaleField.value,
-        );
+        const normalizedDefaultLocale = normalizeLocaleInput(defaultLocaleField.value);
         if (!normalizedDefaultLocale) {
-          errors.push(
-            "Default locale must be a valid locale code (e.g., en-US).",
-          );
+          errors.push("Default locale must be a valid locale code (e.g., en-US).");
           markFieldError(defaultLocaleField, true);
         } else {
           defaultLocaleField.value = normalizedDefaultLocale;
@@ -823,9 +755,7 @@ en-US</textarea
           }
 
           if (!res.ok) {
-            const errMsg =
-              (data && data.error) ||
-              `Failed to save settings (status ${res.status})`;
+            const errMsg = (data && data.error) || `Failed to save settings (status ${res.status})`;
             const details =
               Array.isArray(data?.details) && data.details.length
                 ? `\n${data.details.join("\n")}`
@@ -840,191 +770,158 @@ en-US</textarea
         } finally {
           if (submitter) {
             submitter.disabled = false;
-            submitter.textContent =
-              submitter.dataset.prevText || submitter.textContent;
+            submitter.textContent = submitter.dataset.prevText || submitter.textContent;
             delete submitter.dataset.prevText;
           }
         }
       }
 
-      document
-        .getElementById("email-form")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          const submitter =
-            e.submitter || form.querySelector('[type="submit"]');
+      document.getElementById("email-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const submitter = e.submitter || form.querySelector('[type="submit"]');
 
-          const errors = validateEmailForm();
-          if (errors.length > 0) {
-            alert(errors.join("\n"));
-            return;
-          }
+        const errors = validateEmailForm();
+        if (errors.length > 0) {
+          alert(errors.join("\n"));
+          return;
+        }
 
-          const fromName = document
-            .getElementById("emailFromName")
-            .value.trim();
-          const fromAddress = document
-            .getElementById("emailFromAddress")
-            .value.trim();
-          const replyTo = document.getElementById("emailReplyTo").value.trim();
-          const bypass = document.getElementById("emailBypass").checked;
-          const smtpUrl = document.getElementById("smtpUrl").value.trim();
-          const smtpHost = document.getElementById("smtpHost").value.trim();
-          const smtpPortRaw = document.getElementById("smtpPort").value.trim();
-          const smtpPort = smtpPortRaw
-            ? Number.parseInt(smtpPortRaw, 10)
-            : null;
-          const smtpSecure = document.getElementById("smtpSecure").checked;
-          const smtpIgnoreTls =
-            document.getElementById("smtpIgnoreTls").checked;
-          const smtpUser = document.getElementById("smtpUser").value.trim();
-          const smtpPassword = document.getElementById("smtpPassword").value;
+        const fromName = document.getElementById("emailFromName").value.trim();
+        const fromAddress = document.getElementById("emailFromAddress").value.trim();
+        const replyTo = document.getElementById("emailReplyTo").value.trim();
+        const bypass = document.getElementById("emailBypass").checked;
+        const smtpUrl = document.getElementById("smtpUrl").value.trim();
+        const smtpHost = document.getElementById("smtpHost").value.trim();
+        const smtpPortRaw = document.getElementById("smtpPort").value.trim();
+        const smtpPort = smtpPortRaw ? Number.parseInt(smtpPortRaw, 10) : null;
+        const smtpSecure = document.getElementById("smtpSecure").checked;
+        const smtpIgnoreTls = document.getElementById("smtpIgnoreTls").checked;
+        const smtpUser = document.getElementById("smtpUser").value.trim();
+        const smtpPassword = document.getElementById("smtpPassword").value;
 
-          const entries = [
-            { key: "email.from.name", value: fromName || null },
-            { key: "email.from.address", value: fromAddress || null },
-            { key: "email.reply_to", value: replyTo || null },
-            { key: "feature.email.delivery.bypass", value: bypass },
-            { key: "email.smtp.url", value: smtpUrl || null },
-            { key: "email.smtp.host", value: smtpHost || null },
-            {
-              key: "email.smtp.port",
-              value:
-                smtpPort !== null && Number.isFinite(smtpPort)
-                  ? smtpPort
-                  : null,
-            },
-            { key: "email.smtp.secure", value: smtpSecure },
-            { key: "email.smtp.ignore_tls", value: smtpIgnoreTls },
-            { key: "email.smtp.user", value: smtpUser || null },
-            {
-              key: "email.smtp.password",
-              value:
-                smtpPassword && smtpPassword.length > 0 ? smtpPassword : null,
-            },
-          ];
+        const entries = [
+          { key: "email.from.name", value: fromName || null },
+          { key: "email.from.address", value: fromAddress || null },
+          { key: "email.reply_to", value: replyTo || null },
+          { key: "feature.email.delivery.bypass", value: bypass },
+          { key: "email.smtp.url", value: smtpUrl || null },
+          { key: "email.smtp.host", value: smtpHost || null },
+          {
+            key: "email.smtp.port",
+            value: smtpPort !== null && Number.isFinite(smtpPort) ? smtpPort : null,
+          },
+          { key: "email.smtp.secure", value: smtpSecure },
+          { key: "email.smtp.ignore_tls", value: smtpIgnoreTls },
+          { key: "email.smtp.user", value: smtpUser || null },
+          {
+            key: "email.smtp.password",
+            value: smtpPassword && smtpPassword.length > 0 ? smtpPassword : null,
+          },
+        ];
 
-          await sendSettings(entries, submitter, "Email settings saved.");
-        });
+        await sendSettings(entries, submitter, "Email settings saved.");
+      });
 
-      document
-        .getElementById("app-form")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          const submitter =
-            e.submitter || form.querySelector('[type="submit"]');
+      document.getElementById("app-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const submitter = e.submitter || form.querySelector('[type="submit"]');
 
-          const errors = validateAppForm();
-          if (errors.length > 0) {
-            alert(errors.join("\n"));
-            return;
-          }
+        const errors = validateAppForm();
+        if (errors.length > 0) {
+          alert(errors.join("\n"));
+          return;
+        }
 
-          const appName = document.getElementById("appName").value.trim();
-          const appTagline = document.getElementById("appTagline").value.trim();
-          const appDescription = document
-            .getElementById("appDescription")
-            .value.trim();
-          const baseUrl = document.getElementById("baseUrl").value.trim();
-          const appVersion = document.getElementById("appVersion").value.trim();
-          const defaultUserRole = document
-            .getElementById("defaultUserRole")
-            .value.trim();
-          const signupPolicy =
-            document.getElementById("signupPolicy").value || "invite";
-          const passwordMinLengthRaw = Number.parseInt(
-            document.getElementById("passwordMinLength").value,
-            10,
-          );
-          const passwordMinLength = Number.isFinite(passwordMinLengthRaw)
-            ? Math.max(4, passwordMinLengthRaw)
-            : 8;
-          const sessionTtlRaw = Number.parseInt(
-            document.getElementById("sessionTtlMs").value,
-            10,
-          );
-          const sessionTtlMs = Number.isFinite(sessionTtlRaw)
-            ? Math.max(60000, sessionTtlRaw)
-            : 24 * 60 * 60 * 1000;
-          const cookieName = document.getElementById("cookieName").value.trim();
-          const allowGuest = document.getElementById("allowGuest").checked;
-          const guestBypass = document.getElementById("guestBypass").checked;
-          const requireTerms = document.getElementById("requireTerms").checked;
-          const dateFormat = document.getElementById("dateFormat").value;
+        const appName = document.getElementById("appName").value.trim();
+        const appTagline = document.getElementById("appTagline").value.trim();
+        const appDescription = document.getElementById("appDescription").value.trim();
+        const baseUrl = document.getElementById("baseUrl").value.trim();
+        const appVersion = document.getElementById("appVersion").value.trim();
+        const defaultUserRole = document.getElementById("defaultUserRole").value.trim();
+        const signupPolicy = document.getElementById("signupPolicy").value || "invite";
+        const passwordMinLengthRaw = Number.parseInt(
+          document.getElementById("passwordMinLength").value,
+          10
+        );
+        const passwordMinLength = Number.isFinite(passwordMinLengthRaw)
+          ? Math.max(4, passwordMinLengthRaw)
+          : 8;
+        const sessionTtlRaw = Number.parseInt(document.getElementById("sessionTtlMs").value, 10);
+        const sessionTtlMs = Number.isFinite(sessionTtlRaw)
+          ? Math.max(60000, sessionTtlRaw)
+          : 24 * 60 * 60 * 1000;
+        const cookieName = document.getElementById("cookieName").value.trim();
+        const allowGuest = document.getElementById("allowGuest").checked;
+        const guestBypass = document.getElementById("guestBypass").checked;
+        const requireTerms = document.getElementById("requireTerms").checked;
+        const dateFormat = document.getElementById("dateFormat").value;
 
-          const entries = [
-            { key: "env.app.name", value: appName },
-            { key: "env.app.tagline", value: appTagline || null },
-            { key: "env.app.description", value: appDescription || null },
-            { key: "env.app.version", value: appVersion || null },
-            { key: "env.app.url", value: baseUrl || null },
-            { key: "default.user.role", value: defaultUserRole || null },
-            { key: "signup.policy", value: signupPolicy },
-            { key: "auth.password.min_length", value: passwordMinLength },
-            { key: "auth.session.ttl_ms", value: sessionTtlMs },
-            { key: "auth.cookie.name", value: cookieName || "svg_session" },
-            {
-              key: "feature.guest.login.enabled",
-              value: allowGuest,
-            },
-            {
-              key: "feature.guest.login.enabled.bypass",
-              value: guestBypass,
-            },
-            {
-              key: "feature.terms.require_acceptance",
-              value: requireTerms,
-            },
-            { key: "ui.date.format", value: dateFormat },
-          ];
+        const entries = [
+          { key: "env.app.name", value: appName },
+          { key: "env.app.tagline", value: appTagline || null },
+          { key: "env.app.description", value: appDescription || null },
+          { key: "env.app.version", value: appVersion || null },
+          { key: "env.app.url", value: baseUrl || null },
+          { key: "default.user.role", value: defaultUserRole || null },
+          { key: "signup.policy", value: signupPolicy },
+          { key: "auth.password.min_length", value: passwordMinLength },
+          { key: "auth.session.ttl_ms", value: sessionTtlMs },
+          { key: "auth.cookie.name", value: cookieName || "svg_session" },
+          {
+            key: "feature.guest.login.enabled",
+            value: allowGuest,
+          },
+          {
+            key: "feature.guest.login.enabled.bypass",
+            value: guestBypass,
+          },
+          {
+            key: "feature.terms.require_acceptance",
+            value: requireTerms,
+          },
+          { key: "ui.date.format", value: dateFormat },
+        ];
 
-          await sendSettings(entries, submitter, "App settings saved.");
-        });
+        await sendSettings(entries, submitter, "App settings saved.");
+      });
 
-      document
-        .getElementById("loc-form")
-        .addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const form = e.currentTarget;
-          const submitter =
-            e.submitter || form.querySelector('[type="submit"]');
-          const errors = validateLocalizationForm();
-          if (errors.length > 0) {
-            alert(errors.join("\n"));
-            return;
-          }
-          const defaultLocale = document.getElementById("defaultLocale").value;
-          const supportedLocalesRaw =
-            document.getElementById("supportedLocales").value;
-          const supportedLocales = supportedLocalesRaw
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .map((locale) => normalizeLocaleInput(locale))
-            .filter(Boolean);
-          const defaultCurrency = document
-            .getElementById("defaultCurrency")
-            .value.trim()
-            .toUpperCase();
-          const timeZone = document.getElementById("timeZone").value;
+      document.getElementById("loc-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const submitter = e.submitter || form.querySelector('[type="submit"]');
+        const errors = validateLocalizationForm();
+        if (errors.length > 0) {
+          alert(errors.join("\n"));
+          return;
+        }
+        const defaultLocale = document.getElementById("defaultLocale").value;
+        const supportedLocalesRaw = document.getElementById("supportedLocales").value;
+        const supportedLocales = supportedLocalesRaw
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((locale) => normalizeLocaleInput(locale))
+          .filter(Boolean);
+        const defaultCurrency = document
+          .getElementById("defaultCurrency")
+          .value.trim()
+          .toUpperCase();
+        const timeZone = document.getElementById("timeZone").value;
 
-          const entries = [
-            { key: "env.locale.default", value: defaultLocale },
-            {
-              key: "env.locale.supported",
-              value:
-                supportedLocales.length > 0
-                  ? supportedLocales
-                  : [defaultLocale],
-            },
-            { key: "env.currency.default", value: defaultCurrency || "USD" },
-            { key: "env.timezone.default", value: timeZone },
-          ];
+        const entries = [
+          { key: "env.locale.default", value: defaultLocale },
+          {
+            key: "env.locale.supported",
+            value: supportedLocales.length > 0 ? supportedLocales : [defaultLocale],
+          },
+          { key: "env.currency.default", value: defaultCurrency || "USD" },
+          { key: "env.timezone.default", value: timeZone },
+        ];
 
-          await sendSettings(entries, submitter, "Localization saved.");
-        });
+        await sendSettings(entries, submitter, "Localization saved.");
+      });
 
       loadSettings();
 
@@ -1046,10 +943,7 @@ en-US</textarea
         const currencyInput = document.getElementById("defaultCurrency");
         currencyInput.value = currencyInput.dataset.default || "USD";
         const sel = document.getElementById("timeZone");
-        sel.value =
-          sel.dataset.default ||
-          sel.querySelector("option[selected]")?.value ||
-          "UTC";
+        sel.value = sel.dataset.default || sel.querySelector("option[selected]")?.value || "UTC";
       });
     </script>
   </body>

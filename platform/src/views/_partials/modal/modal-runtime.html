@@ -39,8 +39,7 @@
       e.preventDefault();
       const key = opener.getAttribute("data-modal-open");
       const modal =
-        document.querySelector(`[data-modal="${CSS.escape(key)}"]`) ||
-        document.querySelector(key); // allow CSS selector (e.g., #id)
+        document.querySelector(`[data-modal="${CSS.escape(key)}"]`) || document.querySelector(key); // allow CSS selector (e.g., #id)
       openModal(modal);
     });
 

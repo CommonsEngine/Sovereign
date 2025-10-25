@@ -20,11 +20,7 @@
 
     for (const p of projects) {
       if (!p || !p.id) continue;
-      if (
-        document.querySelector(
-          `.projects__card[data-project-id="${CSS.escape(p.id)}"]`,
-        )
-      )
+      if (document.querySelector(`.projects__card[data-project-id="${CSS.escape(p.id)}"]`))
         continue;
 
       const article = document.createElement("article");
@@ -127,9 +123,7 @@
   // Inline-edit / delete logic moved here
   // -------------------------
   function findCardById(id) {
-    return document.querySelector(
-      `.projects__card[data-project-id="${CSS.escape(id)}"]`,
-    );
+    return document.querySelector(`.projects__card[data-project-id="${CSS.escape(id)}"]`);
   }
 
   async function deleteProject(id) {

@@ -34,22 +34,14 @@
               aria-hidden="true"
               focusable="false"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M12 5v14m7-7H5"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" />
             </svg>
           </span>
           <span>Create new project</span>
         </button>
 
         {{> modal/modal-runtime}} {{> modal/create-project}} {{#each projects}}
-        <article
-          class="projects__card"
-          data-project-id="{{this.id}}"
-          data-owned="{{this.owned}}"
-        >
+        <article class="projects__card" data-project-id="{{this.id}}" data-owned="{{this.owned}}">
           <div class="projects__card-row">
             {{#if this.owned}}
             <div

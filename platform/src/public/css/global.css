@@ -56,8 +56,7 @@
 
   /* Fonts */
   --font-sans:
-    ui-sans-serif, system-ui, Inter, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+    ui-sans-serif, system-ui, Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   /* Sizes */
@@ -127,12 +126,9 @@
   --color-info: #38bdf8; /* sky-400 */
 
   /* Elevation (dark mode benefits from subtle light glows) */
-  --shadow-s:
-    0 1px 2px rgba(255, 255, 255, 0.04), 0 1px 3px rgba(255, 255, 255, 0.06);
-  --shadow-m:
-    0 2px 6px rgba(255, 255, 255, 0.06), 0 4px 12px rgba(255, 255, 255, 0.08);
-  --shadow-l:
-    0 8px 24px rgba(255, 255, 255, 0.06), 0 16px 48px rgba(255, 255, 255, 0.05);
+  --shadow-s: 0 1px 2px rgba(255, 255, 255, 0.04), 0 1px 3px rgba(255, 255, 255, 0.06);
+  --shadow-m: 0 2px 6px rgba(255, 255, 255, 0.06), 0 4px 12px rgba(255, 255, 255, 0.08);
+  --shadow-l: 0 8px 24px rgba(255, 255, 255, 0.06), 0 16px 48px rgba(255, 255, 255, 0.05);
 
   /* Focus ring: mix accent with black for dark context */
   --shadow-focus: 0 0 0 3px color-mix(in oklab, var(--color-accent), black 60%);
@@ -523,13 +519,7 @@
     cursor: pointer;
   }
   /* Accent color for native controls */
-  :where(
-    input[type="checkbox"],
-    input[type="radio"],
-    input[type="range"],
-    progress,
-    meter
-  ) {
+  :where(input[type="checkbox"], input[type="radio"], input[type="range"], progress, meter) {
     accent-color: var(--color-accent);
   }
   /* Disabled form fields */

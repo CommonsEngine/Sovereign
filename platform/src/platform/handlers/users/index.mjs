@@ -65,10 +65,7 @@ function formatRelative(value) {
 }
 
 function buildDisplayName(user) {
-  const nameParts = [user.firstName, user.lastName]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+  const nameParts = [user.firstName, user.lastName].filter(Boolean).join(" ").trim();
   if (nameParts) return nameParts;
   if (user.name) return user.name;
   if (user.primaryEmail?.email) return user.primaryEmail.email;
@@ -169,20 +166,14 @@ export async function viewUsers(req, res) {
       const inviteSent = inviteToken
         ? formatDateTime(inviteToken.createdAt)
         : { iso: "", display: "" };
-      const inviteSentRelative = inviteToken
-        ? formatRelative(inviteToken.createdAt)
-        : "";
+      const inviteSentRelative = inviteToken ? formatRelative(inviteToken.createdAt) : "";
       const inviteExpires = inviteToken
         ? formatDateTime(inviteToken.expiresAt)
         : { iso: "", display: "" };
-      const inviteExpired = inviteToken
-        ? toDate(inviteToken.expiresAt) < new Date()
-        : false;
+      const inviteExpired = inviteToken ? toDate(inviteToken.expiresAt) < new Date() : false;
       const projectsOwned = user.projectContributions?.length ?? 0;
       const projectsAssigned = projectsOwned;
-      const projectsSummary = `${projectsOwned} ${
-        projectsOwned === 1 ? "project" : "projects"
-      }`;
+      const projectsSummary = `${projectsOwned} ${projectsOwned === 1 ? "project" : "projects"}`;
 
       return {
         id: user.id,
@@ -233,7 +224,7 @@ export async function viewUsers(req, res) {
         if (user.status === "suspended") acc.suspended += 1;
         return acc;
       },
-      { total: 0, active: 0, invited: 0, suspended: 0 },
+      { total: 0, active: 0, invited: 0, suspended: 0 }
     );
 
     const stats = [
@@ -301,9 +292,7 @@ export async function deleteUser(req, res) {
       return res.status(400).json({ error: "Missing user id" });
     }
     if (req.user?.id === userId) {
-      return res
-        .status(400)
-        .json({ error: "You cannot delete your own account." });
+      return res.status(400).json({ error: "You cannot delete your own account." });
     }
 
     const existing = await prisma.user.findUnique({
@@ -319,9 +308,7 @@ export async function deleteUser(req, res) {
         where: { userId },
         select: { projectId: true },
       });
-      const projectIds = Array.from(
-        new Set(memberships.map((m) => m.projectId)),
-      );
+      const projectIds = Array.from(new Set(memberships.map((m) => m.projectId)));
 
       await tx.projectContributor.deleteMany({ where: { userId } });
 

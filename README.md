@@ -295,20 +295,15 @@ A custom Express helper/middleware, `res.renderJSX(viewPath, props)`, is availab
 Example route (from `src/index.mjs`):
 
 ```js
-app.get(
-  "/example/react/*",
-  requireAuth,
-  exposeGlobals,
-  async (req, res, next) => {
-    try {
-      await res.renderJSX("example/react/index", {
-        path: req.params[0] || "",
-      });
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+app.get("/example/react/*", requireAuth, exposeGlobals, async (req, res, next) => {
+  try {
+    await res.renderJSX("example/react/index", {
+      path: req.params[0] || "",
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 ```
 
 The above renders the React component from `src/views/example/react/index.jsx`.
@@ -384,10 +379,7 @@ import React from "react";
 import { hydrateRoot } from "react-dom/client";
 import ReactApp from "./index.jsx";
 
-hydrateRoot(
-  document.getElementById("app"),
-  <ReactApp {...window.__SSR_PROPS__} />,
-);
+hydrateRoot(document.getElementById("app"), <ReactApp {...window.__SSR_PROPS__} />);
 ```
 
 When running in development (`yarn dev`), Vite automatically loads this client entry to hydrate the SSR HTML.

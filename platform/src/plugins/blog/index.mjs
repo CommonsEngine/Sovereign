@@ -1,11 +1,7 @@
 // TODO: Recieve git, prisma, logger etc as DI via context
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
-import {
-  getOrInitGitManager,
-  getGitManager,
-  disposeGitManager,
-} from "$/libs/git/registry.mjs";
+import { getOrInitGitManager, getGitManager, disposeGitManager } from "$/libs/git/registry.mjs";
 import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 
 import apiRoutes from "./routes/api.mjs";
@@ -119,11 +115,7 @@ export async function render(_, resolve) {
         if (err?.name === "ProjectAccessError") {
           const status = err.status ?? 403;
           const message =
-            status === 404
-              ? "Not Found"
-              : status === 400
-                ? "Bad Request"
-                : "Forbidden";
+            status === 404 ? "Not Found" : status === 400 ? "Bad Request" : "Forbidden";
           const description =
             status === 404
               ? "Project not found"

@@ -161,9 +161,7 @@ const boards = [
 
 function Home() {
   return (
-    <section
-      style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}
-    >
+    <section style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
       <header
         style={{
           display: "flex",
@@ -171,9 +169,7 @@ function Home() {
           gap: "0.75rem",
         }}
       >
-        <h2 style={{ fontSize: "clamp(1.75rem, 3vw, 2.25rem)", margin: 0 }}>
-          Your Kanban Boards
-        </h2>
+        <h2 style={{ fontSize: "clamp(1.75rem, 3vw, 2.25rem)", margin: 0 }}>Your Kanban Boards</h2>
         <p
           style={{
             margin: 0,
@@ -182,8 +178,8 @@ function Home() {
             lineHeight: 1.6,
           }}
         >
-          Keep track of priorities, surface blockers early, and give your team a
-          calm overview of the work that matters most.
+          Keep track of priorities, surface blockers early, and give your team a calm overview of
+          the work that matters most.
         </p>
       </header>
 
@@ -286,9 +282,7 @@ function Board() {
           gap: "0.75rem",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: "clamp(1.6rem, 2.5vw, 2rem)" }}>
-          Board Overview
-        </h2>
+        <h2 style={{ margin: 0, fontSize: "clamp(1.6rem, 2.5vw, 2rem)" }}>Board Overview</h2>
         <p
           style={{
             margin: 0,
@@ -297,8 +291,8 @@ function Board() {
             lineHeight: 1.6,
           }}
         >
-          Explore the columns, identify bottlenecks, and inspire focus. Add a
-          Note about how your real board works here.
+          Explore the columns, identify bottlenecks, and inspire focus. Add a Note about how your
+          real board works here.
         </p>
       </div>
 
@@ -319,9 +313,7 @@ function Board() {
               }}
             >
               <h3 style={{ margin: 0 }}>{column}</h3>
-              <span style={{ color: colors.textMuted, fontSize: "0.85rem" }}>
-                0 cards
-              </span>
+              <span style={{ color: colors.textMuted, fontSize: "0.85rem" }}>0 cards</span>
             </header>
             <p style={{ margin: 0, color: colors.textMuted }}>
               Populate this column with sample data to showcase interactions.
@@ -344,15 +336,10 @@ function BoardById() {
         gap: "clamp(1rem, 2vw, 1.75rem)",
       }}
     >
-      <header
-        style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}
-      >
-        <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw, 2.25rem)" }}>
-          Board {id}
-        </h2>
+      <header style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+        <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw, 2.25rem)" }}>Board {id}</h2>
         <p style={{ margin: 0, color: colors.textMuted }}>
-          Use this route to demo parameters, routing transitions, or fetch data
-          for board{" "}
+          Use this route to demo parameters, routing transitions, or fetch data for board{" "}
           <code
             style={{
               color: colors.accent,
@@ -369,18 +356,15 @@ function BoardById() {
         {[
           {
             title: "Key Metrics",
-            description:
-              "Highlight counts, velocity, or workloads from your API.",
+            description: "Highlight counts, velocity, or workloads from your API.",
           },
           {
             title: "Recent Activity",
-            description:
-              "Render actual activity (server-side) or hydrate with client data.",
+            description: "Render actual activity (server-side) or hydrate with client data.",
           },
           {
             title: "Team Notes",
-            description:
-              "Add collaborative context—this is where comments can live.",
+            description: "Add collaborative context—this is where comments can live.",
           },
         ].map((panel) => (
           <article
@@ -392,9 +376,7 @@ function BoardById() {
             }}
           >
             <h3 style={{ margin: 0, fontSize: "1.1rem" }}>{panel.title}</h3>
-            <p style={{ margin: "0.35rem 0 0", color: colors.textMuted }}>
-              {panel.description}
-            </p>
+            <p style={{ margin: "0.35rem 0 0", color: colors.textMuted }}>{panel.description}</p>
           </article>
         ))}
       </div>
@@ -439,8 +421,8 @@ function AppShell({ children }) {
                 maxWidth: "560px",
               }}
             >
-              A polished playground to showcase React SSR + hydration alongside
-              the Sovereign Handlebars stack.
+              A polished playground to showcase React SSR + hydration alongside the Sovereign
+              Handlebars stack.
             </p>
           </div>
         </div>
@@ -455,9 +437,7 @@ function AppShell({ children }) {
         </nav>
       </header>
 
-      <section
-        style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}
-      >
+      <section style={{ display: "flex", flexDirection: "column", gap: "2.5rem" }}>
         {children}
       </section>
     </Layout>
@@ -520,9 +500,7 @@ function NotFound() {
         boxShadow: shadows.s,
       }}
     >
-      <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw, 2.35rem)" }}>
-        Coming soon
-      </h2>
+      <h2 style={{ margin: 0, fontSize: "clamp(1.75rem, 3vw, 2.35rem)" }}>Coming soon</h2>
       <p
         style={{
           margin: 0,
@@ -530,9 +508,8 @@ function NotFound() {
           color: colors.textSecondary,
         }}
       >
-        Feeling adventurous? Extend this demo by adding dynamic data, persisted
-        cards, or team activity streams. React views can mix SSR and client
-        renders freely.
+        Feeling adventurous? Extend this demo by adding dynamic data, persisted cards, or team
+        activity streams. React views can mix SSR and client renders freely.
       </p>
       <PrimaryLink href="/" highlight>
         Back to dashboard

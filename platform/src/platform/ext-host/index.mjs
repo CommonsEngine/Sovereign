@@ -14,9 +14,7 @@ function resolvePluginsDir(pluginsDir) {
     throw new Error("pluginsDir is required to initialize the extension host");
   }
 
-  const parsed = path.isAbsolute(pluginsDir)
-    ? pluginsDir
-    : path.join(process.cwd(), pluginsDir);
+  const parsed = path.isAbsolute(pluginsDir) ? pluginsDir : path.join(process.cwd(), pluginsDir);
 
   return parsed;
 }
@@ -32,9 +30,7 @@ export default async function createExtHost(_, options = {}) {
     pluginCandidates = await fs.readdir(__pluginsDir, { withFileTypes: true });
   } catch (err) {
     if (err.code === "ENOENT") {
-      logger?.warn?.(
-        `Extension host: plugins directory "${__pluginsDir}" does not exist.`,
-      );
+      logger?.warn?.(`Extension host: plugins directory "${__pluginsDir}" does not exist.`);
       return [];
     }
     throw err;
@@ -55,7 +51,7 @@ export default async function createExtHost(_, options = {}) {
           formatError(`missing plugin.json file`, {
             pluginDir,
             pluginManifestPath,
-          }),
+          })
         );
         continue;
       }
@@ -70,7 +66,7 @@ export default async function createExtHost(_, options = {}) {
         formatError(`invalid JSON: ${err.message}`, {
           pluginDir,
           pluginManifestPath,
-        }),
+        })
       );
       continue;
     }

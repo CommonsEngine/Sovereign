@@ -28,10 +28,8 @@
     text-decoration: none;
     font-size: 20px;
     transition:
-      background-color var(--transition-base, 200ms)
-        var(--transition-easing-standard, ease),
-      color var(--transition-base, 200ms)
-        var(--transition-easing-standard, ease);
+      background-color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
+      color var(--transition-base, 200ms) var(--transition-easing-standard, ease);
   }
   .sidebar__brand:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
@@ -69,12 +67,9 @@
     color: var(--color-text-primary);
     text-decoration: none;
     transition:
-      background-color var(--transition-base, 200ms)
-        var(--transition-easing-standard, ease),
-      color var(--transition-base, 200ms)
-        var(--transition-easing-standard, ease),
-      opacity var(--transition-fast, 120ms)
-        var(--transition-easing-standard, ease);
+      background-color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
+      color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
+      opacity var(--transition-fast, 120ms) var(--transition-easing-standard, ease);
   }
 
   .sidebar__btn:hover {

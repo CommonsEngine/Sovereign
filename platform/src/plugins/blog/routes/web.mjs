@@ -10,20 +10,8 @@ const router = express.Router();
 
 router.use([requireAuth, exposeGlobals]);
 
-router.get(
-  "/:projectId/configure",
-  requireFeature("blog"),
-  indexHandler.viewProjectConfigure,
-);
-router.get(
-  "/:projectId/post/new",
-  requireFeature("blog"),
-  indexHandler.viewPostCreate,
-);
-router.get(
-  "/:projectId/post/:fp",
-  requireFeature("blog"),
-  indexHandler.viewPostEdit,
-);
+router.get("/:projectId/configure", requireFeature("blog"), indexHandler.viewProjectConfigure);
+router.get("/:projectId/post/new", requireFeature("blog"), indexHandler.viewPostCreate);
+router.get("/:projectId/post/:fp", requireFeature("blog"), indexHandler.viewPostEdit);
 
 export default router;

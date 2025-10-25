@@ -1,8 +1,4 @@
-import {
-  getSessionWithUser,
-  getOrCreateSingletonGuestUser,
-  createSession,
-} from "$/utils/auth.mjs";
+import { getSessionWithUser, getOrCreateSingletonGuestUser, createSession } from "$/utils/auth.mjs";
 import env from "$/config/env.mjs";
 
 const {
@@ -18,8 +14,7 @@ export async function requireAuth(req, res, next) {
 
   const primaryEmail = session?.user?.primaryEmail?.email || null;
   const roles = Array.isArray(session?.user?.roles) ? session.user.roles : [];
-  const capabilities =
-    (session && session.user && session.user.capabilities) || {};
+  const capabilities = (session && session.user && session.user.capabilities) || {};
 
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     // API Auth Block Starts here
@@ -32,8 +27,7 @@ export async function requireAuth(req, res, next) {
       id: session.userId,
       name: session.user.name,
       email: primaryEmail,
-      primaryEmailId:
-        session.user.primaryEmail?.id || session.user.primaryEmailId || null,
+      primaryEmailId: session.user.primaryEmail?.id || session.user.primaryEmailId || null,
       roles,
       role: roles[0] || null,
       capabilities,
@@ -48,8 +42,7 @@ export async function requireAuth(req, res, next) {
         const guest = await getOrCreateSingletonGuestUser();
         await createSession(req, res, guest);
         const guestEmail = Array.isArray(guest.emails)
-          ? guest.emails.find((e) => e.isPrimary)?.email ||
-            guest.emails[0]?.email
+          ? guest.emails.find((e) => e.isPrimary)?.email || guest.emails[0]?.email
           : null;
         const guestEmailId = Array.isArray(guest.emails)
           ? guest.emails.find((e) => e.isPrimary)?.id || guest.emails[0]?.id
@@ -75,8 +68,7 @@ export async function requireAuth(req, res, next) {
         id: session.userId,
         name: session.user.name,
         email: primaryEmail,
-        primaryEmailId:
-          session.user.primaryEmail?.id || session.user.primaryEmailId || null,
+        primaryEmailId: session.user.primaryEmail?.id || session.user.primaryEmailId || null,
         roles,
         role: roles[0] || null,
         capabilities,
@@ -92,8 +84,7 @@ export async function disallowIfAuthed(req, res, next) {
   const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
   if (session) {
-    const rt =
-      typeof req.query.return_to === "string" ? req.query.return_to : "";
+    const rt = typeof req.query.return_to === "string" ? req.query.return_to : "";
     const dest = rt && rt.startsWith("/") ? rt : "/";
     return res.redirect(302, dest);
   }

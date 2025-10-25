@@ -80,12 +80,7 @@ const createTransporter = async (config) => {
     if (config.EMAIL_SMTP_URL) {
       transporter = nodemailer.createTransport(config.EMAIL_SMTP_URL);
     } else if (config.EMAIL_SMTP_HOST) {
-      const {
-        EMAIL_SMTP_HOST,
-        EMAIL_SMTP_PORT,
-        EMAIL_SMTP_SECURE,
-        EMAIL_SMTP_IGNORE_TLS,
-      } = config;
+      const { EMAIL_SMTP_HOST, EMAIL_SMTP_PORT, EMAIL_SMTP_SECURE, EMAIL_SMTP_IGNORE_TLS } = config;
       const transportConfig = {
         host: EMAIL_SMTP_HOST,
         port: Number.isFinite(EMAIL_SMTP_PORT) ? Number(EMAIL_SMTP_PORT) : 587,
@@ -103,9 +98,7 @@ const createTransporter = async (config) => {
       transporter = nodemailer.createTransport({
         jsonTransport: true,
       });
-      logger.warn(
-        "Email transport fallback: using jsonTransport (emails will not be delivered)",
-      );
+      logger.warn("Email transport fallback: using jsonTransport (emails will not be delivered)");
     }
   } catch (err) {
     logger.error("✗ Failed to configure email transporter", err);

@@ -13,9 +13,7 @@
     <div class="modal__body">
       <form class="modal__form" data-modal-form novalidate>
         <div class="modal__field">
-          <label class="modal__label" for="user-display-name-input"
-            >Display Name</label
-          >
+          <label class="modal__label" for="user-display-name-input">Display Name</label>
           <input
             id="user-display-name-input"
             class="modal__input input"
@@ -59,9 +57,7 @@
 
       <!-- Success state: show invite URL to copy/share -->
       <div class="modal__result" data-modal-result style="display: none">
-        <p>
-          User created. Share this link with the user to complete registration:
-        </p>
+        <p>User created. Share this link with the user to complete registration:</p>
         <div class="copyrow">
           <input type="url" class="input" data-invite-url readonly />
           <button type="button" class="chip" data-copy-invite>Copy</button>
@@ -71,11 +67,7 @@
 
     <footer class="modal__footer">
       <button type="button" class="chip button" data-modal-close>Close</button>
-      <button
-        type="button"
-        class="chip chip--primary button button--primary"
-        data-modal-submit
-      >
+      <button type="button" class="chip chip--primary button button--primary" data-modal-submit>
         Create
       </button>
     </footer>
@@ -83,9 +75,7 @@
 
   <script>
     // Create-User submission handler (scoped to this modal only)
-    (function initCreateUserModal(
-      root = document.querySelector('[data-modal="create-user"]'),
-    ) {
+    (function initCreateUserModal(root = document.querySelector('[data-modal="create-user"]')) {
       if (!root) return;
 
       const form = root.querySelector("[data-modal-form]");

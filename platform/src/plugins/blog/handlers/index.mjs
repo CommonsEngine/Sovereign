@@ -1,17 +1,10 @@
 import path from "path";
 
 import { prisma } from "$/services/database.mjs";
-import {
-  getGitManager,
-  getOrInitGitManager,
-  disposeGitManager,
-} from "$/libs/git/registry.mjs";
+import { getGitManager, getOrInitGitManager, disposeGitManager } from "$/libs/git/registry.mjs";
 import FileManager from "$/libs/fs.mjs";
 import logger from "$/services/logger.mjs";
-import {
-  ensureProjectAccess,
-  ProjectAccessError,
-} from "$/utils/projectAccess.mjs";
+import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.mjs";
 
 const PAPERTRAIL_BOARD_SELECT = {
   id: true,
@@ -93,12 +86,7 @@ async function getBlogProjectAccess(req, res, projectId, options = {}) {
       if (responseType === "json") {
         res.status(status).json({ error: err.message });
       } else {
-        const message =
-          status === 404
-            ? "Not found"
-            : status === 400
-              ? "Bad request"
-              : "Forbidden";
+        const message = status === 404 ? "Not found" : status === 400 ? "Bad request" : "Forbidden";
         const description =
           status === 404
             ? "Project not found"
@@ -254,10 +242,7 @@ export async function viewPostEdit(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      logger.warn(
-        "Pull latest failed before opening post:",
-        err?.message || err,
-      );
+      logger.warn("Pull latest failed before opening post:", err?.message || err);
     }
 
     // Read file contents
@@ -334,8 +319,7 @@ export async function getAllPosts(req, res) {
 
     // 1) Fetch project id from URL params
     const projectId = req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
     const access = await getBlogProjectAccess(req, res, projectId, {
@@ -379,10 +363,7 @@ export async function getAllPosts(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      logger.warn(
-        "Failed to pull latest before listing posts:",
-        err?.message || err,
-      );
+      logger.warn("Failed to pull latest before listing posts:", err?.message || err);
       // continue to read local working tree
     }
 
@@ -399,18 +380,14 @@ export async function getAllPosts(req, res) {
           raw = await fm.readFile(file.filename);
           [meta, body] = parseFrontmatter(raw);
         } catch (err) {
-          logger.warn(
-            `Failed to parse frontmatter for ${file.filename}: ${err?.message || err}`,
-          );
+          logger.warn(`Failed to parse frontmatter for ${file.filename}: ${err?.message || err}`);
         }
 
         const tags = normalizeTags(meta.tags);
         const draft = meta.draft === true;
         const status = draft ? "Draft" : "Published";
         const modifiedISO =
-          file.modified instanceof Date
-            ? file.modified.toISOString()
-            : file.modified || "";
+          file.modified instanceof Date ? file.modified.toISOString() : file.modified || "";
 
         return {
           filename: file.filename,
@@ -418,19 +395,17 @@ export async function getAllPosts(req, res) {
             typeof meta.title === "string" && meta.title.trim()
               ? meta.title.trim()
               : file.filename.replace(/\.md$/i, ""),
-          description:
-            typeof meta.description === "string" ? meta.description : "",
+          description: typeof meta.description === "string" ? meta.description : "",
           tags,
           status,
           draft,
           pubDate: typeof meta.pubDate === "string" ? meta.pubDate : null,
-          updatedDate:
-            typeof meta.updatedDate === "string" ? meta.updatedDate : null,
+          updatedDate: typeof meta.updatedDate === "string" ? meta.updatedDate : null,
           modified: modifiedISO,
           size: file.size,
           excerpt: makeExcerpt(body),
         };
-      }),
+      })
     );
 
     return res.status(200).json({ posts });
@@ -447,8 +422,7 @@ export async function updatePost(req, res) {
 
     // Project id
     const projectId = req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     // Filename (route param preferred), and content (markdown)
     const rawName =
@@ -457,9 +431,7 @@ export async function updatePost(req, res) {
       "";
     const filename = path.basename(String(rawName).trim());
     if (!filename || !/\.md$/i.test(filename)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid filename. Expected a .md file." });
+      return res.status(400).json({ error: "Invalid filename. Expected a .md file." });
     }
 
     // Validate payload: content + optional meta fields
@@ -478,12 +450,10 @@ export async function updatePost(req, res) {
 
     // Normalize meta updates (only apply provided keys)
     const updates = {};
-    if (typeof req.body?.title === "string")
-      updates.title = req.body.title.trim().slice(0, 300);
+    if (typeof req.body?.title === "string") updates.title = req.body.title.trim().slice(0, 300);
     if (typeof req.body?.description === "string")
       updates.description = req.body.description.trim();
-    if (typeof req.body?.coverUrl === "string")
-      updates.coverUrl = req.body.coverUrl.trim();
+    if (typeof req.body?.coverUrl === "string") updates.coverUrl = req.body.coverUrl.trim();
     else if (req.body?.coverUrl === null) updates.coverUrl = "";
 
     if (typeof req.body?.pubDate === "string") {
@@ -545,8 +515,7 @@ export async function updatePost(req, res) {
       } catch (err) {
         logger.error("✗ Git manager init failed during update:", err);
         return res.status(400).json({
-          error:
-            "Failed to access repository. Please verify the configuration.",
+          error: "Failed to access repository. Please verify the configuration.",
         });
       }
     }
@@ -628,9 +597,7 @@ export async function updatePost(req, res) {
       if (parts.has) {
         // Update frontmatter with provided meta only, replace body with incoming content
         const fmUpdated =
-          Object.keys(updates).length > 0
-            ? updateFrontmatter(parts.fm, updates)
-            : parts.fm;
+          Object.keys(updates).length > 0 ? updateFrontmatter(parts.fm, updates) : parts.fm;
         finalText = `---\n${fmUpdated}\n---\n\n${incoming || ""}`;
       } else {
         // Original had no frontmatter: preserve structure (no frontmatter)
@@ -686,8 +653,7 @@ export async function updatePost(req, res) {
 
     // Handle slug/path rename AFTER saving content
     try {
-      const desiredPathRaw =
-        typeof req.body?.path === "string" ? req.body.path.trim() : "";
+      const desiredPathRaw = typeof req.body?.path === "string" ? req.body.path.trim() : "";
       let desiredBase = desiredPathRaw ? path.basename(desiredPathRaw) : "";
 
       if (desiredBase) {
@@ -710,9 +676,7 @@ export async function updatePost(req, res) {
             exists = false;
           }
           if (exists) {
-            return res
-              .status(409)
-              .json({ error: "A post with that slug already exists." });
+            return res.status(409).json({ error: "A post with that slug already exists." });
           }
 
           await fs.rename(oldFsPath, newFsPath);
@@ -721,12 +685,10 @@ export async function updatePost(req, res) {
 
           resultingFilename = desiredBase;
           const redirectUrl = `/p/${encodeURIComponent(
-            projectId,
+            projectId
           )}/blog/post/${encodeURIComponent(desiredBase)}?edit=true`;
           const relativeDir = (cfg.contentDir || "").trim();
-          const finalPath = relativeDir
-            ? `${relativeDir}/${desiredBase}`
-            : desiredBase;
+          const finalPath = relativeDir ? `${relativeDir}/${desiredBase}` : desiredBase;
 
           return res.status(200).json({
             updated: true,
@@ -744,9 +706,7 @@ export async function updatePost(req, res) {
     }
 
     const relativeDir = (cfg.contentDir || "").trim();
-    const finalPath = relativeDir
-      ? `${relativeDir}/${resultingFilename}`
-      : resultingFilename;
+    const finalPath = relativeDir ? `${relativeDir}/${resultingFilename}` : resultingFilename;
 
     // Normal success (no rename)
     return res.status(200).json({
@@ -768,8 +728,7 @@ export async function deletePost(req, res) {
 
     // Project id
     const projectId = req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     // File name (from route param, body, or query)
     const rawName =
@@ -779,9 +738,7 @@ export async function deletePost(req, res) {
       "";
     const filename = path.basename(String(rawName).trim());
     if (!filename || !/\.md$/i.test(filename)) {
-      return res
-        .status(400)
-        .json({ error: "Invalid filename. Expected a .md file." });
+      return res.status(400).json({ error: "Invalid filename. Expected a .md file." });
     }
 
     // Verify ownership and type
@@ -825,8 +782,7 @@ export async function deletePost(req, res) {
       } catch (err) {
         logger.error("✗ Git connect failed during delete:", err);
         return res.status(400).json({
-          error:
-            "Failed to connect to repository. Please verify the configuration.",
+          error: "Failed to connect to repository. Please verify the configuration.",
         });
       }
     }
@@ -872,8 +828,7 @@ export async function deletePost(req, res) {
     if (!pushed && publishError) {
       const msg = String(publishError?.message || publishError);
       if (/non-fast-forward|fetch first|rejected/i.test(msg)) {
-        responsePayload.hint =
-          "Remote has new commits. Pull/rebase locally then retry publish.";
+        responsePayload.hint = "Remote has new commits. Pull/rebase locally then retry publish.";
       }
       responsePayload.error = "Repository push failed";
       responsePayload.detail = msg;
@@ -894,8 +849,7 @@ export async function publishPost(req, res) {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const projectId = req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     // Verify ownership and type
     const access = await getBlogProjectAccess(req, res, projectId, {
@@ -938,8 +892,7 @@ export async function publishPost(req, res) {
       } catch (err) {
         logger.error("✗ Git connect failed during publish:", err);
         return res.status(400).json({
-          error:
-            "Failed to connect to repository. Please verify the configuration.",
+          error: "Failed to connect to repository. Please verify the configuration.",
         });
       }
     }
@@ -952,20 +905,14 @@ export async function publishPost(req, res) {
       // continue; publish may still succeed if fast-forward
     }
 
-    const rawMsg =
-      typeof req.body?.message === "string" ? req.body.message : null;
-    const commitMessage = (rawMsg || "Update with Sovereign")
-      .toString()
-      .trim()
-      .slice(0, 200);
+    const rawMsg = typeof req.body?.message === "string" ? req.body.message : null;
+    const commitMessage = (rawMsg || "Update with Sovereign").toString().trim().slice(0, 200);
 
     const result = await gm.publish(commitMessage);
 
     // Normalize response
     if (result && result.message && /No changes/i.test(result.message)) {
-      return res
-        .status(200)
-        .json({ published: false, message: result.message });
+      return res.status(200).json({ published: false, message: result.message });
     }
 
     return res.status(200).json({
@@ -977,9 +924,7 @@ export async function publishPost(req, res) {
     // Common non-fast-forward hint
     const msg = String(err?.message || err);
     const nonFastForward = /non-fast-forward|fetch first|rejected/i.test(msg);
-    const hint = nonFastForward
-      ? "Remote has new commits. Pull/rebase then try again."
-      : undefined;
+    const hint = nonFastForward ? "Remote has new commits. Pull/rebase then try again." : undefined;
     return res.status(nonFastForward ? 409 : 500).json({
       error: "Failed to publish changes",
       hint,
@@ -1061,10 +1006,7 @@ export async function viewPostCreate(req, res) {
     try {
       await gm.pullLatest();
     } catch (err) {
-      logger.warn(
-        "Pull latest failed before creating post:",
-        err?.message || err,
-      );
+      logger.warn("Pull latest failed before creating post:", err?.message || err);
       // continue; we'll still create locally
     }
 
@@ -1131,7 +1073,7 @@ export async function viewPostCreate(req, res) {
     // Redirect to edit page for the newly created post
     return res.redirect(
       302,
-      `/blog/${projectId}/post/${encodeURIComponent(finalFilename)}?edit=true`,
+      `/blog/${projectId}/post/${encodeURIComponent(finalFilename)}?edit=true`
     );
   } catch (err) {
     logger.error("✗ Create post flow failed:", err);
@@ -1147,8 +1089,7 @@ export async function viewPostCreate(req, res) {
 export async function retryConnection(req, res) {
   try {
     const projectId = req.params?.id || req.params?.projectId;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     const access = await getBlogProjectAccess(req, res, projectId, {
       roles: ["owner", "editor"],
@@ -1239,12 +1180,7 @@ export async function viewProjectConfigure(req, res) {
     } catch (err) {
       if (err?.name === "ProjectAccessError") {
         const status = err.status ?? 403;
-        const message =
-          status === 404
-            ? "Not Found"
-            : status === 400
-              ? "Bad Request"
-              : "Forbidden";
+        const message = status === 404 ? "Not Found" : status === 400 ? "Bad Request" : "Forbidden";
         const description =
           status === 404
             ? "Project not found"
@@ -1317,25 +1253,19 @@ export async function configureProject(req, res) {
     const raw = req.body || {};
 
     const repoUrl = String(raw.repoUrl || "").trim();
-    if (!repoUrl)
-      return res.status(400).json({ error: "Repository URL is required" });
+    if (!repoUrl) return res.status(400).json({ error: "Repository URL is required" });
 
-    const branch = (
-      String(raw.branch || raw.defaultBranch || "main").trim() || "main"
-    ).slice(0, 80);
-    const contentDirRaw =
-      typeof raw.contentDir === "string" ? raw.contentDir : "";
+    const branch = (String(raw.branch || raw.defaultBranch || "main").trim() || "main").slice(
+      0,
+      80
+    );
+    const contentDirRaw = typeof raw.contentDir === "string" ? raw.contentDir : "";
     const contentDir = contentDirRaw.trim().slice(0, 200) || null;
     const gitUserName =
-      typeof raw.gitUserName === "string"
-        ? raw.gitUserName.trim().slice(0, 120)
-        : null;
+      typeof raw.gitUserName === "string" ? raw.gitUserName.trim().slice(0, 120) : null;
     const gitUserEmail =
-      typeof raw.gitUserEmail === "string"
-        ? raw.gitUserEmail.trim().slice(0, 120)
-        : null;
-    const gitAuthToken =
-      typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
+      typeof raw.gitUserEmail === "string" ? raw.gitUserEmail.trim().slice(0, 120) : null;
+    const gitAuthToken = typeof raw.gitAuthToken === "string" ? raw.gitAuthToken.trim() : null;
 
     // 1) Validate by connecting once and prime the in-memory connection
     try {

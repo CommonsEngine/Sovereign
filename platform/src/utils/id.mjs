@@ -17,9 +17,7 @@ export function uuid(prefix = "", salt = "") {
 
   // Build core and ensure only allowed characters, then clamp to budget
   const maxCore = Math.max(3, maxTotal - String(prefix).length);
-  const core = `${ts}${rand}${extra}`
-    .replace(/[^A-Za-z0-9_-]/g, "")
-    .slice(0, maxCore);
+  const core = `${ts}${rand}${extra}`.replace(/[^A-Za-z0-9_-]/g, "").slice(0, maxCore);
 
   return `${prefix}${core}`.trim();
 }

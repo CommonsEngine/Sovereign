@@ -101,14 +101,7 @@ async function collectReactViewEntries() {
 async function collectPluginServerEntries() {
   const entries = [];
   const allowedExts = new Set([".mjs", ".js", ".ts", ".tsx", ".jsx"]);
-  const skipDirs = new Set([
-    "public",
-    "views",
-    "prisma",
-    "ui",
-    "node_modules",
-    "dist",
-  ]);
+  const skipDirs = new Set(["public", "views", "prisma", "ui", "node_modules", "dist"]);
 
   async function walk(dir) {
     let dirents;

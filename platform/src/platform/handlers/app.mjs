@@ -105,9 +105,7 @@ function normalizeLocale(value, field) {
 
 function normalizeLocaleList(value) {
   if (Array.isArray(value)) {
-    const locales = value
-      .map((v) => normalizeLocale(v, "Supported locale"))
-      .filter(Boolean);
+    const locales = value.map((v) => normalizeLocale(v, "Supported locale")).filter(Boolean);
     if (locales.length === 0) {
       throw new Error("Supported locales cannot be empty");
     }
@@ -199,8 +197,7 @@ function normalizeSettingValue(key, rawValue) {
       const normalized = normalizeRequiredString(value, "Signup policy");
       if (!ALLOWED_SIGNUP_POLICIES.has(normalized)) {
         throw new Error(
-          "Signup policy must be one of: " +
-            Array.from(ALLOWED_SIGNUP_POLICIES).join(", "),
+          "Signup policy must be one of: " + Array.from(ALLOWED_SIGNUP_POLICIES).join(", ")
         );
       }
       return normalized;
@@ -227,8 +224,7 @@ function normalizeSettingValue(key, rawValue) {
       const normalized = normalizeString(value, { allowEmpty: false });
       if (!ALLOWED_DATE_FORMATS.has(normalized)) {
         throw new Error(
-          "Date format must be one of: " +
-            Array.from(ALLOWED_DATE_FORMATS).join(", "),
+          "Date format must be one of: " + Array.from(ALLOWED_DATE_FORMATS).join(", ")
         );
       }
       return normalized;
@@ -318,8 +314,7 @@ export async function updateAppSettings(req, res) {
   }
 
   const defaultScope =
-    (typeof payload?.scope === "string" && payload.scope.trim()) ||
-    DEFAULT_SCOPE;
+    (typeof payload?.scope === "string" && payload.scope.trim()) || DEFAULT_SCOPE;
 
   const updates = [];
   const errors = [];
@@ -327,27 +322,19 @@ export async function updateAppSettings(req, res) {
   for (let idx = 0; idx < rawUpdates.length; idx += 1) {
     const entry = rawUpdates[idx];
     if (!entry || typeof entry !== "object") {
-      return res
-        .status(400)
-        .json({ error: `Invalid settings entry at index ${idx}` });
+      return res.status(400).json({ error: `Invalid settings entry at index ${idx}` });
     }
 
     const key = typeof entry.key === "string" ? entry.key.trim() : "";
     if (!key) {
-      return res
-        .status(400)
-        .json({ error: `Missing key for settings entry at index ${idx}` });
+      return res.status(400).json({ error: `Missing key for settings entry at index ${idx}` });
     }
     if (key.length > KEY_MAX_LENGTH) {
-      return res
-        .status(400)
-        .json({ error: `Key too long for settings entry at index ${idx}` });
+      return res.status(400).json({ error: `Key too long for settings entry at index ${idx}` });
     }
 
     const scope =
-      typeof entry.scope === "string" && entry.scope.trim()
-        ? entry.scope.trim()
-        : defaultScope;
+      typeof entry.scope === "string" && entry.scope.trim() ? entry.scope.trim() : defaultScope;
 
     try {
       const normalizedValue = normalizeSettingValue(key, entry.value);
@@ -380,8 +367,8 @@ export async function updateAppSettings(req, res) {
           update: { value },
           create: { scope, key, value },
           select: { key: true, scope: true, value: true },
-        }),
-      ),
+        })
+      )
     );
 
     const version = await prisma.versionRegistry.upsert({

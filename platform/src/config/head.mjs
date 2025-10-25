@@ -43,8 +43,7 @@ const normalizeMeta = (m) =>
 // Precompute normalized defaults once
 const DEFAULT_META_NORMALIZED = Object.freeze(DEFAULTS.meta.map(normalizeMeta));
 
-const keyOfMeta = (m) =>
-  m.name ? `n:${m.name}` : m.property ? `p:${m.property}` : "";
+const keyOfMeta = (m) => (m.name ? `n:${m.name}` : m.property ? `p:${m.property}` : "");
 const keyOfLink = (l) => `${l.rel}:${l.href}`;
 
 // Merge with last-wins semantics
@@ -84,32 +83,22 @@ export const headConfig = {
 
     const absCanonical = baseUrl ? toAbsolute(baseUrl, path) : "/";
     const absImage =
-      image ||
-      DEFAULTS.meta.find((m) => m.name === "og:image")?.content ||
-      "/assets/og-image.png";
+      image || DEFAULTS.meta.find((m) => m.name === "og:image")?.content || "/assets/og-image.png";
 
     // Build override meta and normalize OG only for overrides once
     const overrideMeta = [
       ...(title ? [{ name: "og:title", content: title }] : []),
-      ...(description
-        ? [{ name: "og:description", content: description }]
-        : []),
+      ...(description ? [{ name: "og:description", content: description }] : []),
       ...(baseUrl ? [{ name: "og:url", content: absCanonical }] : []),
       ...(absImage ? [{ name: "twitter:image", content: absImage }] : []),
-      ...(themeColorLight
-        ? [{ name: "theme-color", content: themeColorLight }]
-        : []),
+      ...(themeColorLight ? [{ name: "theme-color", content: themeColorLight }] : []),
       ...extraMeta,
     ].map(normalizeMeta);
 
-    const metaFinal = mergeLastWins(
-      DEFAULT_META_NORMALIZED,
-      overrideMeta,
-      keyOfMeta,
-    );
+    const metaFinal = mergeLastWins(DEFAULT_META_NORMALIZED, overrideMeta, keyOfMeta);
 
     const defaultLinks = DEFAULTS.link.map((l) =>
-      l.rel === "canonical" && baseUrl ? { ...l, href: absCanonical } : l,
+      l.rel === "canonical" && baseUrl ? { ...l, href: absCanonical } : l
     );
     const linkFinal = mergeLastWins(defaultLinks, extraLink, keyOfLink);
 

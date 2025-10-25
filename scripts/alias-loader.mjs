@@ -2,10 +2,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ALIAS_PREFIX = "$/";
-const projectRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const aliasRoot = path.join(projectRoot, "src");
 
 export async function resolve(specifier, context, defaultResolve) {

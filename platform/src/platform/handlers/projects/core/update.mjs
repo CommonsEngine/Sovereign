@@ -1,9 +1,6 @@
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
-import {
-  ensureProjectAccess,
-  ProjectAccessError,
-} from "$/utils/projectAccess.mjs";
+import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.mjs";
 
 export default async function update(req, res) {
   try {
@@ -11,8 +8,7 @@ export default async function update(req, res) {
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const projectId = req.params?.id || req.body?.id;
-    if (!projectId)
-      return res.status(400).json({ error: "Missing project id" });
+    if (!projectId) return res.status(400).json({ error: "Missing project id" });
 
     try {
       await ensureProjectAccess({
@@ -29,8 +25,7 @@ export default async function update(req, res) {
 
     const raw = req.body || {};
 
-    const name =
-      typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : undefined;
+    const name = typeof raw.name === "string" ? raw.name.trim().slice(0, 120) : undefined;
 
     if (!name || name.length === 0) {
       return res.status(400).json({ error: "Invalid name" });

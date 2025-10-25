@@ -31,11 +31,7 @@ export default async function seedTestUsers(prisma) {
   }
 
   const requestedRoleKeys = Array.from(
-    new Set(
-      entries
-        .flatMap((u) => (Array.isArray(u.roles) ? u.roles : []))
-        .filter(Boolean),
-    ),
+    new Set(entries.flatMap((u) => (Array.isArray(u.roles) ? u.roles : [])).filter(Boolean))
   );
 
   const roles =
@@ -71,9 +67,7 @@ export default async function seedTestUsers(prisma) {
     } = entry;
 
     if (devOnly && !isDev) {
-      console.log(
-        `seedTestUsers: skipping devOnly user ${name} in non-development env`,
-      );
+      console.log(`seedTestUsers: skipping devOnly user ${name} in non-development env`);
       continue;
     }
 
@@ -129,8 +123,8 @@ export default async function seedTestUsers(prisma) {
       new Set(
         (Array.isArray(entryRoles) ? entryRoles : [])
           .map((key) => (typeof key === "string" ? key.trim() : ""))
-          .filter(Boolean),
-      ),
+          .filter(Boolean)
+      )
     );
 
     const desiredRoles = [];

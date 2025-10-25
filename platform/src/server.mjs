@@ -30,15 +30,7 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import env from "$/config/env.mjs";
 
 const config = env();
-const {
-  __publicdir,
-  __runtimeDir,
-  __templatedir,
-  __datadir,
-  PORT,
-  NODE_ENV,
-  APP_VERSION,
-} = config;
+const { __publicdir, __runtimeDir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
 
 // Ensure data root exist at startup
 await fs.mkdir(__datadir, { recursive: true });
@@ -71,10 +63,7 @@ export default async function createServer({ plugins }) {
   for (const p of plugins || []) {
     const namespace = p.namespace;
 
-    pluginsMap.set(
-      namespace,
-      path.join(__runtimeDir, `plugins/${namespace}/index.mjs`),
-    );
+    pluginsMap.set(namespace, path.join(__runtimeDir, `plugins/${namespace}/index.mjs`));
 
     // Directories
     templateDirs.push(path.join(__runtimeDir, `plugins/${namespace}/views`));
@@ -98,17 +87,13 @@ export default async function createServer({ plugins }) {
     if (p?.routes?.web) {
       webRouters.push({
         base: `/${namespace}`,
-        router: await import(
-          path.join(__runtimeDir, "plugins", namespace, "routes", "web.mjs")
-        ),
+        router: await import(path.join(__runtimeDir, "plugins", namespace, "routes", "web.mjs")),
       });
     }
     if (p?.routes?.api) {
       apiRouters.push({
         base: `/api/${namespace}`,
-        router: await import(
-          path.join(__runtimeDir, `plugins/${namespace}/routes/api.mjs`)
-        ),
+        router: await import(path.join(__runtimeDir, `plugins/${namespace}/routes/api.mjs`)),
       });
     }
   }
@@ -146,7 +131,7 @@ export default async function createServer({ plugins }) {
       defaultLayout: false,
       partialsDir: path.join(__templatedir, "_partials"),
       helpers: hbsHelpers,
-    }),
+    })
   );
   app.set("view engine", "html");
   app.set("views", templateDirs);
@@ -206,7 +191,7 @@ export default async function createServer({ plugins }) {
           res.setHeader("Cache-Control", "no-store");
         }
       },
-    }),
+    })
   );
   app.use("/uploads", uploadConfigs);
 
@@ -215,19 +200,14 @@ export default async function createServer({ plugins }) {
 
   // --- Demo routes ---
   // Example route for React-SSR handled view (captures any subpath)
-  app.get(
-    /^\/example\/react(?:\/(.*))?$/,
-    requireAuth,
-    exposeGlobals,
-    async (req, res, next) => {
-      try {
-        const subpath = req.params[0] || "";
-        await res.renderJSX("example/react/index", { path: subpath });
-      } catch (e) {
-        next(e);
-      }
-    },
-  );
+  app.get(/^\/example\/react(?:\/(.*))?$/, requireAuth, exposeGlobals, async (req, res, next) => {
+    try {
+      const subpath = req.params[0] || "";
+      await res.renderJSX("example/react/index", { path: subpath });
+    } catch (e) {
+      next(e);
+    }
+  });
 
   // Auth Routes
   app.post("/auth/invite", requireAuth, authHandler.inviteUser);
@@ -241,12 +221,7 @@ export default async function createServer({ plugins }) {
   app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
   app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
   app.post("/login", authHandler.login);
-  app.get(
-    "/register",
-    disallowIfAuthed,
-    exposeGlobals,
-    authHandler.viewRegister,
-  );
+  app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
   app.post("/register", authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
 
@@ -256,14 +231,14 @@ export default async function createServer({ plugins }) {
     requireAuth,
     exposeGlobals,
     requireRole(["platform:admin", "tenant:admin", "project:admin"]),
-    usersHandler.viewUsers,
+    usersHandler.viewUsers
   );
   // User Routes (API)
   app.delete(
     "/api/users/:id",
     requireAuth,
     requireRole(["platform:admin"]),
-    usersHandler.deleteUser,
+    usersHandler.deleteUser
   );
 
   // Settings Routes (Web)
@@ -272,20 +247,15 @@ export default async function createServer({ plugins }) {
     requireAuth,
     exposeGlobals,
     requireRole(["platform:admin", "tenant:admin", "project:admin"]),
-    settingsHandler.viewSettings,
+    settingsHandler.viewSettings
   );
   // Settings Routes (API)
-  app.get(
-    "/api/settings",
-    requireAuth,
-    requireRole(["platform:admin"]),
-    appHandler.getAppSettings,
-  );
+  app.get("/api/settings", requireAuth, requireRole(["platform:admin"]), appHandler.getAppSettings);
   app.patch(
     "/api/settings",
     requireAuth,
     requireRole(["platform:admin"]),
-    appHandler.updateAppSettings,
+    appHandler.updateAppSettings
   );
 
   // Project Routes (Web)
@@ -346,21 +316,9 @@ export default async function createServer({ plugins }) {
   app.patch("/api/projects/:id", requireAuth, projectsHandler.update);
   app.delete("/api/projects/:id", requireAuth, projectsHandler.remove);
   app.get("/api/projects/:id/shares", requireAuth, projectSharesHandler.list);
-  app.post(
-    "/api/projects/:id/shares",
-    requireAuth,
-    projectSharesHandler.create,
-  );
-  app.patch(
-    "/api/projects/:id/shares/:memberId",
-    requireAuth,
-    projectSharesHandler.update,
-  );
-  app.delete(
-    "/api/projects/:id/shares/:memberId",
-    requireAuth,
-    projectSharesHandler.remove,
-  );
+  app.post("/api/projects/:id/shares", requireAuth, projectSharesHandler.create);
+  app.patch("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.update);
+  app.delete("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.remove);
 
   // Plugins Routes (Web)
   for (const { base, router } of webRouters) {
@@ -373,8 +331,7 @@ export default async function createServer({ plugins }) {
 
   // 404
   app.use((req, res) => {
-    if (req.path.startsWith("/api/"))
-      return res.status(404).json({ error: "Not found" });
+    if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
     return res.status(404).render("error", {
       code: 404,
       message: "Page not found",

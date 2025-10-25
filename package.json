@@ -19,7 +19,20 @@
     "format:check": "prettier --check .",
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
-    "lint": "eslint . --fix"
+    "lint": "eslint . --fix",
+    "prisma:compose": "node tools/database-prisma-compose.mjs",
+    "db:generate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma generate --schema platform/prisma/schema.prisma",
+    "db:migrate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --create-only --schema platform/prisma/schema.prisma",
+    "db:apply": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --schema platform/prisma/schema.prisma",
+    "db:deploy": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate deploy --schema platform/prisma/schema.prisma",
+    "db:studio": "yarn workspace @sovereign/platform prisma studio --schema platform/prisma/schema.prisma",
+    "db:seed": "node tools/database-seed-all.mjs",
+    "db:reset": "node tools/database-reset.sh"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.18.0",
+    "execa": "^9.6.0",
+    "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",

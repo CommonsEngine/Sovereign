@@ -4,9 +4,7 @@ import logger from "$/services/logger.mjs";
 export default async function getAll(req, res) {
   try {
     const userId = req.user?.id;
-    const email = req.user?.email
-      ? String(req.user.email).trim().toLowerCase()
-      : null;
+    const email = req.user?.email ? String(req.user.email).trim().toLowerCase() : null;
     const membershipConditions = [];
     if (userId) membershipConditions.push({ userId });
     if (email) membershipConditions.push({ invitedEmail: email });
@@ -45,15 +43,12 @@ export default async function getAll(req, res) {
     const projects = projectsRaw
       .map((p) => ({
         ...p,
-        owned: p.contributors.some(
-          (member) => member.userId === userId && member.role === "owner",
-        ),
+        owned: p.contributors.some((member) => member.userId === userId && member.role === "owner"),
         shared:
           (p.contributors?.length ?? 0) > 1 ||
           p.contributors.some(
             (member) =>
-              member.role !== "owner" ||
-              (member.role === "owner" && member.userId !== userId),
+              member.role !== "owner" || (member.role === "owner" && member.userId !== userId)
           ),
       }))
       .sort((a, b) => b.createdAt - a.createdAt /* newest first */)

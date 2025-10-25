@@ -12,9 +12,7 @@ const toAbsoluteUrl = (relativePath = "") => {
   const base = String(APP_URL || "").replace(/\/+$/, "");
   if (!relativePath) return base;
   if (/^https?:\/\//i.test(relativePath)) return relativePath;
-  const normalized = relativePath.startsWith("/")
-    ? relativePath
-    : `/${relativePath}`;
+  const normalized = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
   return `${base}${normalized}`;
 };
 
@@ -65,8 +63,7 @@ export async function inviteUser(req, res) {
     }
 
     // ensure roleId is an integer now
-    if (!Number.isInteger(roleId))
-      return res.status(400).json({ error: "Invalid role" });
+    if (!Number.isInteger(roleId)) return res.status(400).json({ error: "Invalid role" });
 
     // Try to find an existing user by email
     const existingEmail = await prisma.userEmail.findUnique({
@@ -79,8 +76,7 @@ export async function inviteUser(req, res) {
     if (existingEmail && existingEmail.user) {
       // Update user details without clobbering the unique 'name' field
       const updates = {};
-      if (!existingEmail.user.firstName && firstName)
-        updates.firstName = firstName;
+      if (!existingEmail.user.firstName && firstName) updates.firstName = firstName;
       if (!existingEmail.user.lastName && lastName) updates.lastName = lastName;
       // only set status to invited if user is not already active
       if (existingEmail.user.status !== "active") updates.status = "invited";
@@ -262,11 +258,9 @@ export async function forgotPassword(req, res) {
   try {
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     const { email } = req.body || {};
-    const emailNorm =
-      typeof email === "string" ? email.trim().toLowerCase() : "";
+    const emailNorm = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm)) {
       if (isFormContent) {
@@ -348,8 +342,7 @@ export async function forgotPassword(req, res) {
     logger.error("✗ /auth/password/forgot error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     if (isFormContent) {
       return res.status(500).render("login", {
         error: "Failed to process request.",
@@ -366,8 +359,7 @@ export async function resetPassword(req, res) {
   try {
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     const { token, password, confirm_password } = req.body || {};
     const tkn = typeof token === "string" ? token : "";
     const pwd = typeof password === "string" ? password : "";
@@ -385,19 +377,14 @@ export async function resetPassword(req, res) {
     if (pwd.length < 6 || !/[A-Za-z]/.test(pwd) || !/\d/.test(pwd)) {
       if (isFormContent) {
         return res.status(400).render("login", {
-          error:
-            "Password must be at least 6 characters and include a letter and a number.",
+          error: "Password must be at least 6 characters and include a letter and a number.",
           reset_mode: true,
           token: tkn,
         });
       }
       return res.status(400).json({ error: "Weak password" });
     }
-    if (
-      isFormContent &&
-      typeof confirm_password === "string" &&
-      pwd !== confirm_password
-    ) {
+    if (isFormContent && typeof confirm_password === "string" && pwd !== confirm_password) {
       return res.status(400).render("login", {
         error: "Passwords do not match.",
         reset_mode: true,
@@ -434,8 +421,7 @@ export async function resetPassword(req, res) {
     logger.error("✗ /auth/password/reset error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     if (isFormContent) {
       return res.status(500).render("login", {
         error: "Failed to reset password. Please try again.",
@@ -450,15 +436,12 @@ export async function resetPassword(req, res) {
 export async function verifyToken(req, res) {
   try {
     const accept = String(req.headers["accept"] || "");
-    const wantsHtml =
-      accept.includes("text/html") || !accept.includes("application/json");
+    const wantsHtml = accept.includes("text/html") || !accept.includes("application/json");
 
     const token = String(req.query.token || "");
     if (!token) {
       if (wantsHtml) {
-        return res
-          .status(400)
-          .render("verify", { ok: false, error: "Missing token" });
+        return res.status(400).render("verify", { ok: false, error: "Missing token" });
       }
       return res.status(400).json({ error: "Missing token" });
     }
@@ -467,9 +450,7 @@ export async function verifyToken(req, res) {
 
     if (!vt || vt.expiresAt < new Date() || vt.purpose !== "email-verify") {
       if (wantsHtml) {
-        return res
-          .status(400)
-          .render("verify", { ok: false, error: "Invalid or expired link." });
+        return res.status(400).render("verify", { ok: false, error: "Invalid or expired link." });
       }
       return res.status(400).json({ error: "Invalid/expired token" });
     }
@@ -494,12 +475,9 @@ export async function verifyToken(req, res) {
   } catch (err) {
     logger.error("✗ /auth/verify error", err);
     const accept = String(req.headers["accept"] || "");
-    const wantsHtml =
-      accept.includes("text/html") || !accept.includes("application/json");
+    const wantsHtml = accept.includes("text/html") || !accept.includes("application/json");
     if (wantsHtml) {
-      return res
-        .status(500)
-        .render("verify", { ok: false, error: "Verification failed." });
+      return res.status(500).render("verify", { ok: false, error: "Verification failed." });
     }
     return res.status(500).json({ error: "Verify failed" });
   }

@@ -35,7 +35,7 @@ export default class FileManager {
             modified: stats.mtime,
             size: stats.size,
           };
-        }),
+        })
       );
 
       fileDetails.sort((a, b) => b.modified - a.modified);

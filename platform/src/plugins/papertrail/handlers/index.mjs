@@ -13,15 +13,11 @@ import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 import { uuid } from "$/utils/id.mjs";
 
 const PAPERTRAIL_DATA_ROOT = path.resolve(
-  process.env.PAPERTRAIL_DATA_ROOT || path.join(process.cwd(), "data", "pt"),
+  process.env.PAPERTRAIL_DATA_ROOT || path.join(process.cwd(), "data", "pt")
 );
 
-const MAX_UPLOAD_BYTES = Number(
-  process.env.PAPERTRAIL_UPLOAD_MAX_BYTES ?? 10 * 1024 * 1024,
-);
-const MAX_IMPORT_BUNDLE_BYTES = Number(
-  process.env.PAPERTRAIL_IMPORT_MAX_BYTES ?? 50 * 1024 * 1024,
-);
+const MAX_UPLOAD_BYTES = Number(process.env.PAPERTRAIL_UPLOAD_MAX_BYTES ?? 10 * 1024 * 1024);
+const MAX_IMPORT_BUNDLE_BYTES = Number(process.env.PAPERTRAIL_IMPORT_MAX_BYTES ?? 50 * 1024 * 1024);
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -268,23 +264,15 @@ function serializeBoard(board, project) {
     visibility: project?.scope ?? null,
     status: project?.status ?? null,
     createdAtISO:
-      board.createdAt instanceof Date
-        ? board.createdAt.toISOString()
-        : (board.createdAt ?? null),
+      board.createdAt instanceof Date ? board.createdAt.toISOString() : (board.createdAt ?? null),
     updatedAtISO:
-      board.updatedAt instanceof Date
-        ? board.updatedAt.toISOString()
-        : (board.updatedAt ?? null),
+      board.updatedAt instanceof Date ? board.updatedAt.toISOString() : (board.updatedAt ?? null),
     stats: {
       nodes: board._count?.nodes ?? 0,
       edges: board._count?.edges ?? 0,
     },
-    nodes: Array.isArray(board.nodes)
-      ? board.nodes.map((node) => serializeNode(node))
-      : [],
-    edges: Array.isArray(board.edges)
-      ? board.edges.map((edge) => serializeEdge(edge))
-      : [],
+    nodes: Array.isArray(board.nodes) ? board.nodes.map((node) => serializeNode(node)) : [],
+    edges: Array.isArray(board.edges) ? board.edges.map((edge) => serializeEdge(edge)) : [],
     project: serializeProject(project),
   };
 }
@@ -414,14 +402,11 @@ function normalizeBoardPayload(raw = {}, { board }) {
   for (const maybeNode of nodesInput) {
     if (!maybeNode || typeof maybeNode !== "object") continue;
 
-    const idCandidate =
-      typeof maybeNode.id === "string" ? maybeNode.id.trim() : "";
+    const idCandidate = typeof maybeNode.id === "string" ? maybeNode.id.trim() : "";
     const id = idCandidate || uuid("ptn_");
 
     const typeCandidate =
-      typeof maybeNode.type === "string"
-        ? maybeNode.type.trim().toLowerCase()
-        : "text";
+      typeof maybeNode.type === "string" ? maybeNode.type.trim().toLowerCase() : "text";
     const type = allowedTypes.has(typeCandidate) ? typeCandidate : "text";
 
     const x = Number(maybeNode.x);
@@ -430,9 +415,7 @@ function normalizeBoardPayload(raw = {}, { board }) {
     const h = Number(maybeNode.h);
 
     const data =
-      typeof maybeNode.data === "object" && maybeNode.data !== null
-        ? maybeNode.data
-        : {};
+      typeof maybeNode.data === "object" && maybeNode.data !== null ? maybeNode.data : {};
     const meta =
       typeof maybeNode.meta === "object" && maybeNode.meta !== null
         ? maybeNode.meta
@@ -441,28 +424,14 @@ function normalizeBoardPayload(raw = {}, { board }) {
           : {};
 
     const tagsRaw = Array.isArray(data.tags) ? data.tags : [];
-    const tags = tagsRaw
-      .map((t) => sanitizeTagValue(t))
-      .filter((t) => typeof t === "string");
+    const tags = tagsRaw.map((t) => sanitizeTagValue(t)).filter((t) => typeof t === "string");
 
-    const title =
-      typeof data.title === "string" ? data.title.trim().slice(0, 240) : null;
-    const text =
-      typeof data.text === "string" ? data.text.trim().slice(0, 4000) : null;
-    const html =
-      typeof data.html === "string" ? data.html.trim().slice(0, 10000) : null;
-    const descHtml =
-      typeof data.descHtml === "string"
-        ? data.descHtml.trim().slice(0, 8000)
-        : null;
-    const linkUrl =
-      typeof data.linkUrl === "string"
-        ? data.linkUrl.trim().slice(0, 2000)
-        : null;
-    const imageUrl =
-      typeof data.imageUrl === "string"
-        ? data.imageUrl.trim().slice(0, 2000)
-        : null;
+    const title = typeof data.title === "string" ? data.title.trim().slice(0, 240) : null;
+    const text = typeof data.text === "string" ? data.text.trim().slice(0, 4000) : null;
+    const html = typeof data.html === "string" ? data.html.trim().slice(0, 10000) : null;
+    const descHtml = typeof data.descHtml === "string" ? data.descHtml.trim().slice(0, 8000) : null;
+    const linkUrl = typeof data.linkUrl === "string" ? data.linkUrl.trim().slice(0, 2000) : null;
+    const imageUrl = typeof data.imageUrl === "string" ? data.imageUrl.trim().slice(0, 2000) : null;
 
     const nodePayload = {
       id,
@@ -491,25 +460,16 @@ function normalizeBoardPayload(raw = {}, { board }) {
   for (const maybeEdge of edgesInput) {
     if (!maybeEdge || typeof maybeEdge !== "object") continue;
 
-    const sourceId =
-      typeof maybeEdge.sourceId === "string" ? maybeEdge.sourceId.trim() : null;
-    const targetId =
-      typeof maybeEdge.targetId === "string" ? maybeEdge.targetId.trim() : null;
+    const sourceId = typeof maybeEdge.sourceId === "string" ? maybeEdge.sourceId.trim() : null;
+    const targetId = typeof maybeEdge.targetId === "string" ? maybeEdge.targetId.trim() : null;
     if (!sourceId || !targetId) continue;
     if (!nodeMap.has(sourceId) || !nodeMap.has(targetId)) continue;
 
-    const idCandidate =
-      typeof maybeEdge.id === "string" ? maybeEdge.id.trim() : "";
+    const idCandidate = typeof maybeEdge.id === "string" ? maybeEdge.id.trim() : "";
     const id = idCandidate || uuid("pte_");
 
-    const label =
-      typeof maybeEdge.label === "string"
-        ? maybeEdge.label.trim().slice(0, 240)
-        : null;
-    const color =
-      typeof maybeEdge.color === "string"
-        ? maybeEdge.color.trim().slice(0, 32)
-        : null;
+    const label = typeof maybeEdge.label === "string" ? maybeEdge.label.trim().slice(0, 240) : null;
+    const color = typeof maybeEdge.color === "string" ? maybeEdge.color.trim().slice(0, 32) : null;
 
     sanitizedEdges.push({
       id,
@@ -543,10 +503,7 @@ async function writeBoardSnapshot({ projectId, boardId, payload }) {
         data: boardUpdate,
       });
 
-      if (
-        payload.projectUpdates &&
-        Object.keys(payload.projectUpdates).length
-      ) {
+      if (payload.projectUpdates && Object.keys(payload.projectUpdates).length) {
         await tx.project.update({
           where: { id: projectId },
           data: payload.projectUpdates,
@@ -655,9 +612,7 @@ export async function getBoard(req, res) {
     });
   } catch (err) {
     logger.error("✗ papertrail.getBoard failed:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to load papertrail board data" });
+    return res.status(500).json({ error: "Failed to load papertrail board data" });
   }
 }
 
@@ -739,13 +694,8 @@ export async function updateBoard(req, res) {
 
     const projectUpdates = normalizeProjectUpdates(req.body);
 
-    if (
-      Object.keys(boardUpdates).length === 0 &&
-      Object.keys(projectUpdates).length === 0
-    ) {
-      return res
-        .status(400)
-        .json({ error: "No board fields were provided for update" });
+    if (Object.keys(boardUpdates).length === 0 && Object.keys(projectUpdates).length === 0) {
+      return res.status(400).json({ error: "No board fields were provided for update" });
     }
 
     const { board, project } = await prisma.$transaction(async (tx) => {
@@ -780,9 +730,7 @@ export async function updateBoard(req, res) {
     return res.json({ board: serializeBoard(board, project) });
   } catch (err) {
     logger.error("✗ papertrail.updateBoard failed:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to update papertrail board metadata" });
+    return res.status(500).json({ error: "Failed to update papertrail board metadata" });
   }
 }
 
@@ -851,8 +799,7 @@ function buildValidationResponse(boardJson) {
     boardJson && typeof boardJson.id === "string" && boardJson.id.trim()
       ? boardJson.id.trim()
       : "board-1";
-  const title =
-    boardJson && typeof boardJson.title === "string" ? boardJson.title : "";
+  const title = boardJson && typeof boardJson.title === "string" ? boardJson.title : "";
   return { boardId, title };
 }
 
@@ -873,9 +820,7 @@ export async function validateImportBundle(req, res) {
       return res.status(400).json({ error: "Bundle file required" });
     }
     if (req.file.size > MAX_IMPORT_BUNDLE_BYTES) {
-      return res
-        .status(400)
-        .json({ error: "Bundle exceeds maximum allowed size" });
+      return res.status(400).json({ error: "Bundle exceeds maximum allowed size" });
     }
 
     const info = await withTempDir("pt-validate-", async (tempDir) => {
@@ -938,9 +883,7 @@ export async function importBoard(req, res) {
     if (req.file && req.file.buffer) {
       // ZIP import
       if (req.file.size > MAX_IMPORT_BUNDLE_BYTES) {
-        return res
-          .status(400)
-          .json({ error: "Bundle exceeds maximum allowed size" });
+        return res.status(400).json({ error: "Bundle exceeds maximum allowed size" });
       }
 
       const result = await withTempDir("pt-import-", async (tempDir) => {
@@ -1116,10 +1059,7 @@ export async function uploadAttachment(req, res) {
       return res.status(400).json({ error: "Invalid upload destination" });
     }
 
-    const nodeId =
-      typeof req.body?.nodeId === "string"
-        ? req.body.nodeId.trim() || null
-        : null;
+    const nodeId = typeof req.body?.nodeId === "string" ? req.body.nodeId.trim() || null : null;
 
     const targetNodeId = nodeId ?? board.id;
 
@@ -1151,14 +1091,10 @@ export async function uploadAttachment(req, res) {
       },
     });
 
-    return res
-      .status(201)
-      .json({ attachment: { ...attachment, url: publicUrl } });
+    return res.status(201).json({ attachment: { ...attachment, url: publicUrl } });
   } catch (err) {
     logger.error("✗ papertrail.uploadAttachment failed:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to upload papertrail attachment" });
+    return res.status(500).json({ error: "Failed to upload papertrail attachment" });
   }
 }
 

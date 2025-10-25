@@ -12,7 +12,7 @@ export default function secure(_, res, next) {
       "img-src 'self' data: blob: https: http:",
       "connect-src 'self'",
       "frame-ancestors 'self'",
-    ].join("; "),
+    ].join("; ")
   );
   next();
 }

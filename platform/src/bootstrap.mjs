@@ -1,9 +1,6 @@
 import "dotenv/config";
 
-import {
-  connectPrismaWithRetry,
-  gracefulShutdown,
-} from "$/services/database.mjs";
+import { connectPrismaWithRetry, gracefulShutdown } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
 import createExtHost from "$/platform/ext-host/index.mjs";
 import env from "$/config/env.mjs";
@@ -29,19 +26,15 @@ async function bootstrap() {
     const server = await createServer(extHost);
     server.start();
 
-    const enabledPlugins = extHost?.plugins.map(
-      (plugin) => `${plugin.name}@${plugin.version}`,
-    );
+    const enabledPlugins = extHost?.plugins.map((plugin) => `${plugin.name}@${plugin.version}`);
 
     logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
     logger.info(`  ➜  Version: ${server.appVersion}`);
     logger.info(`  ➜  Environment: ${server.nodeEnv}`);
     logger.info(
       `  ➜  Loaded plugins: ${
-        enabledPlugins && enabledPlugins.length
-          ? enabledPlugins.join(", ")
-          : "none"
-      }`,
+        enabledPlugins && enabledPlugins.length ? enabledPlugins.join(", ") : "none"
+      }`
     );
 
     const shutdown = async (signal) => {

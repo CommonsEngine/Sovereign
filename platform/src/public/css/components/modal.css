@@ -130,32 +130,14 @@
     margin-bottom: var(--space-2xs, 4px);
   }
   .modal__alert--error {
-    background: color-mix(
-      in oklab,
-      var(--color-danger),
-      var(--color-bg-primary) 85%
-    );
-    border: 1px solid
-      color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 70%);
-    color: color-mix(
-      in oklab,
-      var(--color-danger),
-      var(--color-text-primary) 40%
-    );
+    background: color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 85%);
+    border: 1px solid color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 70%);
+    color: color-mix(in oklab, var(--color-danger), var(--color-text-primary) 40%);
   }
   .modal__alert--success {
-    background: color-mix(
-      in oklab,
-      var(--color-success),
-      var(--color-bg-primary) 85%
-    );
-    border: 1px solid
-      color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
-    color: color-mix(
-      in oklab,
-      var(--color-success),
-      var(--color-text-primary) 40%
-    );
+    background: color-mix(in oklab, var(--color-success), var(--color-bg-primary) 85%);
+    border: 1px solid color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
+    color: color-mix(in oklab, var(--color-success), var(--color-text-primary) 40%);
   }
 
   /* Footer */

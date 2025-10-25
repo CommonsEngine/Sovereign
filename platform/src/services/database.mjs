@@ -32,14 +32,12 @@ export async function connectPrismaWithRetry(maxRetries = 5, delayMs = 2000) {
     } catch (err) {
       attempt++;
       if (attempt >= maxRetries) {
-        logger.error(
-          `✗ Failed to connect to the database after ${maxRetries} attempts. Exiting.`,
-        );
+        logger.error(`✗ Failed to connect to the database after ${maxRetries} attempts. Exiting.`);
         process.exit(1);
       }
       logger.warn(
         `✗ Database connection failed (attempt ${attempt}/${maxRetries}). Retrying in ${delayMs}ms...`,
-        err,
+        err
       );
       await sleep(delayMs);
     }

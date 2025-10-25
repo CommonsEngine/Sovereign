@@ -69,9 +69,7 @@ export async function fetchLinkPreview(req, res) {
 
     const pick = (re) => {
       const match = html.match(re);
-      return match
-        ? (match[1] || match[2] || match[3] || "").toString().trim()
-        : "";
+      return match ? (match[1] || match[2] || match[3] || "").toString().trim() : "";
     };
     const abs = (input) => {
       if (!input) return null;
@@ -83,42 +81,28 @@ export async function fetchLinkPreview(req, res) {
     };
 
     const ogTitle =
-      pick(
-        /<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) ||
-      pick(
-        /<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:title["'][^>]*>/i,
-      );
+      pick(/<meta[^>]+property=["']og:title["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+      pick(/<meta[^>]+content=["']([^"']+)["'][^>]*property=["']og:title["'][^>]*>/i);
 
-    const title =
-      ogTitle || pick(/<title[^>]*>([^<]*)<\/title>/i) || parsed.hostname;
+    const title = ogTitle || pick(/<title[^>]*>([^<]*)<\/title>/i) || parsed.hostname;
 
     const ogDesc =
-      pick(
-        /<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) ||
-      pick(
-        /<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) ||
-      pick(
-        /<meta[^>]+content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i,
-      );
+      pick(/<meta[^>]+property=["']og:description["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+      pick(/<meta[^>]+name=["']description["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+      pick(/<meta[^>]+content=["']([^"']+)["'][^>]*name=["']description["'][^>]*>/i);
 
     const siteName =
-      pick(
-        /<meta[^>]+property=["']og:site_name["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-      ) || parsed.hostname;
+      pick(/<meta[^>]+property=["']og:site_name["'][^>]*content=["']([^"']+)["'][^>]*>/i) ||
+      parsed.hostname;
 
-    const ogImg = pick(
-      /<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i,
-    );
+    const ogImg = pick(/<meta[^>]+property=["']og:image["'][^>]*content=["']([^"']+)["'][^>]*>/i);
 
     const iconHref =
       pick(
-        /<link[^>]+rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["'][^>]*>/i,
+        /<link[^>]+rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*href=["']([^"']+)["'][^>]*>/i
       ) ||
       pick(
-        /<link[^>]+href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/i,
+        /<link[^>]+href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon|apple-touch-icon)["'][^>]*>/i
       );
 
     const cleanTitle = String(title || "")

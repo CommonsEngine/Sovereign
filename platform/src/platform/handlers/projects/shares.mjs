@@ -54,14 +54,12 @@ function buildMemberPayload(member, currentUser) {
   const currentUserId = currentUser?.id ?? null;
   const currentEmail = normalizeEmail(currentUser?.email ?? null);
 
-  const baseEmail =
-    member.invitedEmail || member.user?.primaryEmail?.email || null;
+  const baseEmail = member.invitedEmail || member.user?.primaryEmail?.email || null;
   const email = baseEmail ? normalizeEmail(baseEmail) : null;
   const firstName = member.user?.firstName?.trim() || "";
   const lastName = member.user?.lastName?.trim() || "";
   const nameParts = [firstName, lastName].filter(Boolean);
-  const displayName =
-    nameParts.join(" ") || member.user?.name || baseEmail || "Pending member";
+  const displayName = nameParts.join(" ") || member.user?.name || baseEmail || "Pending member";
 
   return {
     id: member.id,
@@ -90,10 +88,7 @@ async function ensureAnotherActiveOwner(tx, projectId, excludingMemberId) {
     },
   });
   if (remainingOwners === 0) {
-    throw new ProjectShareError(
-      400,
-      "At least one active owner is required for every project.",
-    );
+    throw new ProjectShareError(400, "At least one active owner is required for every project.");
   }
 }
 
@@ -125,9 +120,7 @@ export async function list(req, res) {
       orderBy: [{ invitedAt: "asc" }, { createdAt: "asc" }],
       select: MEMBER_SELECT,
     });
-    const members = membersRaw.map((member) =>
-      buildMemberPayload(member, req.user),
-    );
+    const members = membersRaw.map((member) => buildMemberPayload(member, req.user));
 
     return res.json({
       members,
@@ -158,15 +151,12 @@ export async function create(req, res) {
       return res.status(400).json({ error: "Invalid role" });
     }
 
-    const userId =
-      typeof raw.userId === "string" && raw.userId.trim()
-        ? raw.userId.trim()
-        : null;
+    const userId = typeof raw.userId === "string" && raw.userId.trim() ? raw.userId.trim() : null;
     const email = normalizeEmail(
       raw.email ||
         raw.userEmail ||
         raw.invitedEmail ||
-        (typeof raw.identifier === "string" ? raw.identifier : null),
+        (typeof raw.identifier === "string" ? raw.identifier : null)
     );
 
     if (!userId && !email) {
@@ -191,8 +181,7 @@ export async function create(req, res) {
         if (!targetUser) {
           throw new ProjectShareError(404, "User not found");
         }
-        inviteEmail =
-          inviteEmail || normalizeEmail(targetUser.primaryEmail?.email ?? null);
+        inviteEmail = inviteEmail || normalizeEmail(targetUser.primaryEmail?.email ?? null);
       } else if (inviteEmail) {
         const emailRecord = await tx.userEmail.findUnique({
           where: { email: inviteEmail },
@@ -233,9 +222,7 @@ export async function create(req, res) {
             userId: targetUser?.id ?? existing.userId,
             invitedEmail: inviteEmail ?? existing.invitedEmail,
             status: targetUser ? "active" : existing.status,
-            acceptedAt: targetUser
-              ? existing.acceptedAt || now
-              : existing.acceptedAt,
+            acceptedAt: targetUser ? existing.acceptedAt || now : existing.acceptedAt,
           },
           select: MEMBER_SELECT,
         });
@@ -334,18 +321,14 @@ export async function update(req, res) {
       }
 
       if (updates.status === "active" && !member.userId) {
-        throw new ProjectShareError(
-          400,
-          "Cannot activate a pending invite until the user joins.",
-        );
+        throw new ProjectShareError(400, "Cannot activate a pending invite until the user joins.");
       }
 
       const data = {};
       if (updates.role) data.role = updates.role;
       if (updates.status) {
         data.status = updates.status;
-        data.acceptedAt =
-          updates.status === "active" ? new Date() : member.acceptedAt;
+        data.acceptedAt = updates.status === "active" ? new Date() : member.acceptedAt;
         if (updates.status !== "active") {
           data.acceptedAt = null;
         }
@@ -357,11 +340,7 @@ export async function update(req, res) {
         select: MEMBER_SELECT,
       });
 
-      if (
-        member.role === "owner" ||
-        updates.role === "owner" ||
-        updates.status
-      ) {
+      if (member.role === "owner" || updates.role === "owner" || updates.status) {
         await syncProjectPrimaryOwner(projectId, { tx });
       }
 

@@ -80,8 +80,7 @@ function buildUserSnapshot(user, primaryEmail) {
     lastName: user.lastName ?? null,
     pictureUrl: user.pictureUrl ?? null,
     primaryEmail: safePrimary,
-    primaryEmailId:
-      safePrimary?.id ?? user.primaryEmailId ?? user.sessionEmailId ?? null,
+    primaryEmailId: safePrimary?.id ?? user.primaryEmailId ?? user.sessionEmailId ?? null,
   };
 }
 
@@ -235,10 +234,7 @@ export async function createSession(req, res, user) {
           anonymized: 2,
           deny: 1,
         };
-        if (
-          !capabilities[key] ||
-          precedence[value] > precedence[capabilities[key]]
-        ) {
+        if (!capabilities[key] || precedence[value] > precedence[capabilities[key]]) {
           capabilities[key] = value;
         }
       }

@@ -84,9 +84,7 @@ export default async function create(req, res) {
             data: {
               projectId: projectRecord.id,
               userId,
-              invitedEmail: req.user?.email
-                ? String(req.user.email).trim().toLowerCase()
-                : null,
+              invitedEmail: req.user?.email ? String(req.user.email).trim().toLowerCase() : null,
               role: "owner",
               status: "active",
               acceptedAt: new Date(),
@@ -138,9 +136,7 @@ export default async function create(req, res) {
         userId,
         error: lastError,
       });
-      return res
-        .status(409)
-        .json({ error: "Unable to generate unique project slug" });
+      return res.status(409).json({ error: "Unable to generate unique project slug" });
     }
 
     // TODO: Use slug in URL if desired

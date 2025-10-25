@@ -11,9 +11,7 @@ const toAbsoluteUrl = (relativePath = "") => {
   const base = String(APP_URL || "").replace(/\/+$/, "");
   if (!relativePath) return base;
   if (/^https?:\/\//i.test(relativePath)) return relativePath;
-  const normalized = relativePath.startsWith("/")
-    ? relativePath
-    : `/${relativePath}`;
+  const normalized = relativePath.startsWith("/") ? relativePath : `/${relativePath}`;
   return `${base}${normalized}`;
 };
 
@@ -22,12 +20,10 @@ export default async function register(req, res) {
     // Decide response mode: HTML form vs JSON API
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
 
     // Pull fields (form may pass additional fields like confirm_password)
-    const { first_name, last_name, email, password, confirm_password } =
-      req.body || {};
+    const { first_name, last_name, email, password, confirm_password } = req.body || {};
 
     // Invite-only: require a valid invite token
     const token = String(req.query?.token || req.body?.token || "");
@@ -94,8 +90,7 @@ export default async function register(req, res) {
         return res.status(400).json({ error: "Invalid invite" });
       }
 
-      const emailNorm =
-        typeof email === "string" ? email.trim().toLowerCase() : "";
+      const emailNorm = typeof email === "string" ? email.trim().toLowerCase() : "";
       // If an email was provided, ensure it matches the invited primary email (if present)
       if (
         emailNorm &&
@@ -113,13 +108,8 @@ export default async function register(req, res) {
 
       // Validate password strength
       const passStr = typeof password === "string" ? password : "";
-      if (
-        passStr.length < 6 ||
-        !/[A-Za-z]/.test(passStr) ||
-        !/\d/.test(passStr)
-      ) {
-        const msg =
-          "Password must be at least 6 characters and include a letter and a number.";
+      if (passStr.length < 6 || !/[A-Za-z]/.test(passStr) || !/\d/.test(passStr)) {
+        const msg = "Password must be at least 6 characters and include a letter and a number.";
         if (isFormContent) {
           return res.status(400).render("register", {
             error: msg,
@@ -189,8 +179,7 @@ export default async function register(req, res) {
     const firstName = typeof first_name === "string" ? first_name.trim() : "";
     const lastName = typeof last_name === "string" ? last_name.trim() : "";
     const name = [firstName, lastName].join("_").toLowerCase();
-    const emailNorm =
-      typeof email === "string" ? email.trim().toLowerCase() : "";
+    const emailNorm = typeof email === "string" ? email.trim().toLowerCase() : "";
 
     // Validate First name (required, 2–80 chars)
     if (firstName.length < 2 || firstName.length > 80) {
@@ -225,8 +214,7 @@ export default async function register(req, res) {
     // Validate username (required)
     // Rules: 3–24 chars, starts with a letter, then letters/numbers/._-
     const usernameOk =
-      typeof name === "string" &&
-      /^[A-Za-z][A-Za-z0-9._-]{2,23}$/.test(name || "");
+      typeof name === "string" && /^[A-Za-z][A-Za-z0-9._-]{2,23}$/.test(name || "");
     if (!usernameOk) {
       if (isFormContent) {
         return res.status(400).render("register", {
@@ -239,16 +227,11 @@ export default async function register(req, res) {
           },
         });
       }
-      return res
-        .status(400)
-        .json({ error: "Invalid username", code: "BAD_USERNAME" });
+      return res.status(400).json({ error: "Invalid username", code: "BAD_USERNAME" });
     }
 
     // Validate email
-    if (
-      typeof emailNorm !== "string" ||
-      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm)
-    ) {
+    if (typeof emailNorm !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm)) {
       if (isFormContent) {
         return res.status(400).render("register", {
           error: "Please enter a valid email address.",
@@ -264,15 +247,10 @@ export default async function register(req, res) {
 
     // Validate password: length ≥ 6 AND contains at least one letter and one number
     const passStr = typeof password === "string" ? password : "";
-    if (
-      passStr.length < 6 ||
-      !/[A-Za-z]/.test(passStr) ||
-      !/\d/.test(passStr)
-    ) {
+    if (passStr.length < 6 || !/[A-Za-z]/.test(passStr) || !/\d/.test(passStr)) {
       if (isFormContent) {
         return res.status(400).render("register", {
-          error:
-            "Password must be at least 6 characters and include a letter and a number.",
+          error: "Password must be at least 6 characters and include a letter and a number.",
           values: {
             first_name: firstName,
             last_name: lastName,
@@ -284,11 +262,7 @@ export default async function register(req, res) {
     }
 
     // Confirm password (only checked for form flow; API clients can omit)
-    if (
-      isFormContent &&
-      typeof confirm_password === "string" &&
-      passStr !== confirm_password
-    ) {
+    if (isFormContent && typeof confirm_password === "string" && passStr !== confirm_password) {
       return res.status(400).render("register", {
         error: "Passwords do not match.",
         values: {
@@ -396,12 +370,8 @@ export default async function register(req, res) {
         },
       });
 
-      const uniqueProjectIds = Array.from(
-        new Set(pendingContributors.map((m) => m.projectId)),
-      );
-      await Promise.all(
-        uniqueProjectIds.map((projectId) => syncProjectPrimaryOwner(projectId)),
-      );
+      const uniqueProjectIds = Array.from(new Set(pendingContributors.map((m) => m.projectId)));
+      await Promise.all(uniqueProjectIds.map((projectId) => syncProjectPrimaryOwner(projectId)));
     }
 
     // Optional: email verification token (kept consistent with existing API)
@@ -416,8 +386,7 @@ export default async function register(req, res) {
     });
 
     const verifyUrl = toAbsoluteUrl(`/auth/verify?token=${verificationToken}`);
-    const displayName =
-      `${firstName || ""} ${lastName || ""}`.trim() || emailNorm;
+    const displayName = `${firstName || ""} ${lastName || ""}`.trim() || emailNorm;
     const verifyText = [
       `Hi ${displayName},`,
       "",
@@ -460,8 +429,7 @@ export default async function register(req, res) {
     logger.error("✗ /register error", err);
     const accept = String(req.headers["accept"] || "");
     const isFormContent =
-      req.is("application/x-www-form-urlencoded") ||
-      accept.includes("text/html");
+      req.is("application/x-www-form-urlencoded") || accept.includes("text/html");
     if (isFormContent) {
       return res.status(500).render("register", {
         error: "Registration failed. Please try again.",
