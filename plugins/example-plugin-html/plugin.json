@@ -6,6 +6,7 @@
   },
   "name": "@sovereign/example-plugin-html",
   "version": "0.1.0",
+  "type": "html",
   "platformCapabilities": {
     "database": true,
     "gitManager": false,

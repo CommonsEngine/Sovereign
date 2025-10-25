@@ -6,6 +6,7 @@
   },
   "name": "@sovereign/example-plugin-react",
   "version": "0.1.0",
+  "type": "react",
   "platformCapabilities": {
     "database": true,
     "gitManager": false,
