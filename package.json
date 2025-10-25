@@ -1,51 +1,78 @@
 {
+  "name": "sovereign",
+  "description": "Reclaim your digital freedom.",
   "private": true,
-  "name": "@sovereign/core",
-  "version": "0.7.3",
-  "description": "Core runtime and service framework for the Sovereign platform",
-  "main": "./dist/bootstrap.mjs",
+  "version": "3",
+  "license": "AGPL-3.0",
+  "cliVersion": "0.1.0",
   "bin": {
     "sv": "./bin/sv.mjs"
   },
-  "manifest": {
-    "title": "Sovereign",
-    "tagline": "Reclaim your digital freedom.",
-    "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
-    "main": "./src/bootstrap.mjs",
-    "cli": {
-      "version": "0.1.0"
-    }
-  },
+  "workspaces": [
+    "platform",
+    "plugins/*"
+  ],
   "scripts": {
-    "init:prepare": "cp .env.example .env",
-    "init:start": "yarn run prisma:reset && yarn prisma db push && yarn run prisma:seed",
-    "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs dist/bootstrap.mjs",
-    "start:src": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
-    "dev": "nodemon",
-    "build": "node ./scripts/build.mjs",
-    "reset": "yarn prisma:reset",
-    "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
-    "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "init:prepare": "yarn workspace @sovereign/platform init:prepare",
+    "init:setup": "yarn workspace @sovereign/platform init:setup",
+    "bootstrap": "yarn install",
+    "build": "yarn workspaces run build",
+    "dev": "yarn workspace @sovereign/platform dev",
     "postinstall": "husky",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed/index.mjs",
-    "prisma:reset": "prisma/reset.sh",
     "format:check": "prettier --check .",
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
-    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format",
-    "check": "yarn format:check && yarn lint:check && yarn prisma validate"
+    "prisma:legacy": "yarn workspace @sovereign/platform prisma generate --schema prisma/schema.prisma",
+    "prisma:compose": "node tools/database-prisma-compose.mjs",
+    "db:generate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma generate --schema platform/prisma/schema.prisma",
+    "db:migrate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --create-only --schema platform/prisma/schema.prisma",
+    "db:apply": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --schema platform/prisma/schema.prisma",
+    "db:deploy": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate deploy --schema platform/prisma/schema.prisma",
+    "db:studio": "yarn workspace @sovereign/platform prisma studio --schema platform/prisma/schema.prisma",
+    "db:seed": "node tools/database-seed-all.mjs",
+    "db:reset": "node tools/database-reset.sh"
   },
-  "nodemonConfig": {
-    "watch": [
-      "src",
-      "public"
-    ],
-    "ext": "mjs,js,jsx,json,html,css",
-    "exec": "node --import ./scripts/register-alias.mjs src/bootstrap.mjs",
-    "signal": "SIGTERM"
+  "dependencies": {
+    "@prisma/client": "^6.18.0",
+    "execa": "^9.6.0",
+    "fast-glob": "^3.3.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.36.0",
+    "eslint": "^9.36.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^17.23.1",
+    "eslint-plugin-promise": "^7.2.1",
+    "prettier": "^3.3.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "yarn@1.22.22",
+  "repository": "https://github.com/CommonsEngine/Sovereign#readme",
+  "bugs": {
+    "url": "https://github.com/CommonsEngine/Sovereign/issues",
+    "email": "mailtokasun@gmail.com"
+  },
+  "contributors": [
+    {
+      "name": "Kasun Benthara",
+      "email": "mailtokasun@gmail.com",
+      "url": "https://github.com/kasunben"
+    },
+    {
+      "name": "Dishan Rajapaksha",
+      "email": "DishanRajapaksha@email.com",
+      "url": "https://github.com/DishanRajapaksha"
+    }
+  ],
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/kasunben"
   },
   "keywords": [
     "sovereign",
@@ -74,71 +101,5 @@
     "open-infrastructure",
     "civic-tech",
     "commonsengine"
-  ],
-  "repository": "https://github.com/CommonsEngine/Sovereign#readme",
-  "bugs": {
-    "url": "https://github.com/CommonsEngine/Sovereign/issues",
-    "email": "mailtokasun@gmail.com"
-  },
-  "contributors": [
-    {
-      "name": "Kasun Benthara",
-      "email": "mailtokasun@gmail.com",
-      "url": "https://github.com/kasunben"
-    },
-    {
-      "name": "Dishan Rajapaksha",
-      "email": "DishanRajapaksha@email.com",
-      "url": "https://github.com/DishanRajapaksha"
-    }
-  ],
-  "funding": {
-    "type": "individual",
-    "url": "https://github.com/sponsors/kasunben"
-  },
-  "license": "AGPL-3.0",
-  "engines": {
-    "node": ">=20"
-  },
-  "packageManager": "yarn@1.22.22",
-  "dependencies": {
-    "@prisma/client": "^6.16.3",
-    "ajv": "^8.17.1",
-    "archiver": "^7.0.1",
-    "argon2": "^0.44.0",
-    "bcryptjs": "^3.0.2",
-    "compression": "^1.8.1",
-    "cookie-parser": "^1.4.7",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "express-handlebars": "^8.0.2",
-    "helmet": "^8.1.0",
-    "morgan": "^1.10.1",
-    "multer": "^2.0.2",
-    "node-fetch": "^3.3.2",
-    "nodemailer": "^7.0.9",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.4",
-    "sharp": "^0.34.3",
-    "simple-git": "^3.28.0",
-    "unzipper": "^0.12.3"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.36.0",
-    "@vitejs/plugin-react": "^5.0.4",
-    "esbuild": "^0.21.5",
-    "eslint": "^9.36.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-n": "^17.23.1",
-    "eslint-plugin-promise": "^7.2.1",
-    "globals": "^16.4.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.6",
-    "nodemon": "^3.1.10",
-    "prettier": "^3.3.3",
-    "prisma": "^6.16.3",
-    "vite": "^7.1.10"
-  }
+  ]
 }

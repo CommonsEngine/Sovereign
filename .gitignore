@@ -1,13 +1,19 @@
-.DS_Store
+# Generated / ignored files
 node_modules
+dist
+build
+.eslintcache
+.DS_Store
 package-lock.json
 .yarn
-dist/
 
+# Prisma
 /generated/prisma
 /prisma/data/sovereign.db
 
+# FS
 /data/*
 !/data/.gitkeep
 
 .env
+devOnly/

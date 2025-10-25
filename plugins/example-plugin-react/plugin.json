@@ -1,0 +1,29 @@
+{
+  "sovereign": {
+    "schemaVersion": 1,
+    "engine": "0.7.3",
+    "entryPoints": ["launcher", "sidebar"]
+  },
+  "name": "@sovereign/example-plugin-react",
+  "description": "Sovereign Example Plugin - React",
+  "version": "0.1.0",
+  "type": "react",
+  "devOnly": true,
+  "draft": false,
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "platformCapabilities": {
+    "database": true,
+    "gitManager": false,
+    "fs": false,
+    "logger": false,
+    "mailer": false
+  },
+  "userCapabilities": [
+    {
+      "key": "user:plugin.example_plugin_react.feature",
+      "description": "Enable the plugin.",
+      "roles": ["platform:user"]
+    }
+  ]
+}

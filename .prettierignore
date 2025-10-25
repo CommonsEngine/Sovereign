@@ -5,6 +5,6 @@ prisma/migrations/*
 prisma/reset.sh
 prisma/schema.prisma
 # Ignore Handlebars templates that use conditional attrs
-src/**/views/_partials/layout/head.html
-src/**/views/register.html
-src/plugins/blog/views/blog/editor.html
+platform/src/views/_partials/layout/head.html
+platform/src/views/register.html
+plugins/blog/views/blog/editor.html
