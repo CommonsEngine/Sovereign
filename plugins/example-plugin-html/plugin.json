@@ -5,9 +5,12 @@
     "entryPoints": ["launcher", "sidebar"]
   },
   "name": "@sovereign/example-plugin-html",
+  "description": "Sovereign Example Plugin - HTML",
   "version": "0.1.0",
   "type": "html",
   "devOnly": true,
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
   "platformCapabilities": {
     "database": true,
     "gitManager": false,

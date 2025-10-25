@@ -5,7 +5,7 @@ import logger from "$/services/logger.mjs";
 import createExtHost from "$/platform/ext-host/index.mjs";
 import env from "$/config/env.mjs";
 
-import createServer from "./server.mjs";
+import createServer from "./src/server.mjs";
 
 global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
 

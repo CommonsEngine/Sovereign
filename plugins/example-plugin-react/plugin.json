@@ -5,9 +5,12 @@
     "entryPoints": ["launcher", "sidebar"]
   },
   "name": "@sovereign/example-plugin-react",
+  "description": "Sovereign Example Plugin - React",
   "version": "0.1.0",
   "type": "react",
   "devOnly": true,
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
   "platformCapabilities": {
     "database": true,
     "gitManager": false,
