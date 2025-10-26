@@ -4,7 +4,8 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher"]
   },
-  "name": "@sovereign/blog",
+  "id": "@sovereign/blog",
+  "name": "Blog",
   "description": "Sovereign Blog",
   "version": "1.0.0-alpha.7",
   "type": "html",
