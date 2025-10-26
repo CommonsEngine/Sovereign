@@ -1,3 +1,13 @@
+@layer styled.misc {
+  .sv-loading-bar {
+    background-color: red;
+    height: 3px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+  }
+}
+
 @layer styled.layout {
   .sv-page {
     --no-op: 0;
@@ -31,17 +41,7 @@
   }
 }
 
-@layer styled.misc {
-  .sv-loading-bar {
-    background-color: red;
-    height: 3px;
-    width: 100%;
-    position: absolute;
-    top: 0;
-  }
-}
-
-@layer styled.sidebar {
+@layer styled.sv-sidebar {
   .sv-sidebar {
     display: flex;
     flex-direction: column;
@@ -69,7 +69,7 @@
       background-color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
       color var(--transition-base, 200ms) var(--transition-easing-standard, ease);
   }
-  .sidebar__brand:focus-visible {
+  .sv-sidebar__brand:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
     outline-offset: 2px;
   }
@@ -78,6 +78,80 @@
     width: 100%;
     background: var(--color-border-primary);
     margin: 8px 0;
+  }
+
+  .sv-sidebar__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+  }
+  .sv-sidebar__btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-primary);
+    box-shadow: var(--shadow-s);
+    color: var(--color-text-primary) !important;
+    text-decoration: none;
+    transition:
+      background-color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
+      color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
+      opacity var(--transition-fast, 120ms) var(--transition-easing-standard, ease);
+  }
+
+  .sv-sidebar__btn:hover {
+    background-color: var(--color-border-tertiary);
+    opacity: var(--opacity-hover, 0.85);
+  }
+
+  .sv-sidebar__btn.is-active,
+  .sv-sidebar__btn[aria-current="page"] {
+    background: var(--color-border-tertiary);
+    border: 1px solid var(--color-border-primary);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-s);
+  }
+  .sv-sidebar__btn:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+  .sv-sidebar__btn svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    pointer-events: none;
+  }
+  .sv-sidebar__spacer {
+    flex: 1;
+    width: 100%;
+  }
+  .sv-sidebar__bottom {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    padding-bottom: 5px;
+  }
+  /* Responsive modifiers */
+  @media (max-width: 640px) {
+    .sv-sidebar__btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+    .sv-sidebar__brand {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
   }
 }
 
