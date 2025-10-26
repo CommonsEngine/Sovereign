@@ -23,7 +23,9 @@ export default async function createExtHost(_, options = {}) {
   const __pluginsDir = resolvePluginsDir(options.pluginsDir);
 
   let pluginCandidates;
-  const plugins = [];
+
+  const plugins = {};
+  const enabledPlugins = [];
 
   // Read plugins directory to identify pluginCandidates
   try {
@@ -67,15 +69,22 @@ export default async function createExtHost(_, options = {}) {
     // TODO: Normalize pluginManifest
 
     if (allowPlugin) {
-      plugins.push({
+      let entry = path.join(plugingRoot, "index.html");
+      if (pluginManifest.type === "react") entry = path.join(plugingRoot, "dist", "index.js");
+
+      plugins[namespace] = {
         namespace,
+        entry,
         plugingRoot,
         ...pluginManifest,
-      });
+      };
+
+      enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
     }
   }
 
   return {
     plugins,
+    enabledPlugins,
   };
 }
