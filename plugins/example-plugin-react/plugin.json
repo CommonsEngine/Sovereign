@@ -4,7 +4,8 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher", "sidebar"]
   },
-  "name": "@sovereign/example-plugin-react",
+  "id": "@sovereign/example-plugin-react",
+  "name": "Example Plugin React",
   "description": "Sovereign Example Plugin - React",
   "version": "0.1.0",
   "type": "react",

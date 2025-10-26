@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+     {{#if styles}} {{#each styles}}
+    <link rel="stylesheet" href="{{this}}" />
+    {{/each}} {{/if}} {{{pluginHead}}}
+  </head>
+  <body class="page page--with-sidebar">
+    <div data-startup-spinner class="loading-bar" style="display: none"></div>
+
+    {{> sidebar projects_active=true}} {{> userbar}}
+
+    <div id="plugin-root">
+      {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
+      <section class="card">
+        <h2 class="card__title">Loading plugin…</h2>
+        <p class="subtle">Hang tight while we prepare this workspace.</p>
+      </section>
+      {{/if}}
+    </div>
+
+    <script src="/js/startup.js" defer></script>
+    {{#if scripts}} {{#each scripts}}
+    <script src="{{this}}" defer></script>
+    {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
+  </body>
+</html>

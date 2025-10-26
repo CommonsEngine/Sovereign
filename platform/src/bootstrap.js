@@ -24,14 +24,14 @@ export async function bootstrap() {
     const server = await createServer(extHost);
     server.start();
 
-    const enabledPlugins = extHost?.plugins.map((plugin) => `${plugin.name}@${plugin.version}`);
-
     logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
     logger.info(`  ➜  Version: ${server.appVersion}`);
     logger.info(`  ➜  Environment: ${server.nodeEnv}`);
     logger.info(
       `  ➜  Loaded plugins: ${
-        enabledPlugins && enabledPlugins.length ? enabledPlugins.join(", ") : "none"
+        extHost?.enabledPlugins && extHost?.enabledPlugins.length
+          ? extHost?.enabledPlugins.join(", ")
+          : "none"
       }`
     );
 

@@ -19,11 +19,20 @@ export default defineConfig({
       name: "ExamplePluginReact",
     },
     rollupOptions: {
-      output: { inlineDynamicImports: true },
+      output: {
+        inlineDynamicImports: true,
+        // Put all non-entry assets (images, fonts, css) under dist/assets *
+        assetFileNames: "assets/[name][extname]",
+        // Keep any extra chunks (shouldn't occur with inlineDynamicImports) under assets just in case
+        // chunkFileNames: "assets/[name]-[hash].js"
+      },
     },
     outDir: "dist",
-    assetsDir: "",
+    assetsDir: "assets",
+    assetsInlineLimit: 0,
+    cssCodeSplit: false,
     emptyOutDir: true,
+    copyPublicDir: false, // prevent Vite from copying the public/ folder to dist/ root
   },
   // rollupOptions: {
   //   external: ["react", "react-dom"],

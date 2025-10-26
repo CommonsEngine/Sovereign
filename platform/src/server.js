@@ -21,6 +21,8 @@ import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
+import * as projectsHandler from "$/handlers/projects/index.mjs";
+import * as projectSharesHandler from "$/handlers/projects/shares.mjs";
 import * as appHandler from "$/handlers/app.mjs";
 
 import hbsHelpers from "$/utils/hbsHelpers.mjs";
@@ -28,10 +30,101 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
+const { __rootdir, __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
 
-export default async function createServer() {
+const EXTERNAL_URL_PATTERN = /^(?:[a-z]+:)?\/\//i;
+
+const BLANK_RE = /^\s*$/;
+
+function isExternalUrl(candidate) {
+  if (!candidate) return false;
+  return EXTERNAL_URL_PATTERN.test(candidate) || candidate.startsWith("/");
+}
+
+function resolvePluginAsset(namespace, assetPath) {
+  if (!assetPath) return assetPath;
+  if (isExternalUrl(assetPath)) return assetPath;
+  return `/plugins/${namespace}/${assetPath.replace(/^\.\//, "")}`;
+}
+
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function extractPluginSections(markup, namespace) {
+  const headMatch = markup.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  const bodyMatch = markup.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+
+  let headContent = headMatch ? headMatch[1].trim() : "";
+  let bodyContent = bodyMatch ? bodyMatch[1].trim() : markup.trim();
+
+  const styles = [];
+  headContent = headContent.replace(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/gi, (tag) => {
+    const hrefMatch = tag.match(/\bhref=["']([^"']+)["']/i);
+    if (hrefMatch) styles.push(resolvePluginAsset(namespace, hrefMatch[1]));
+    return "";
+  });
+
+  const externalScripts = [];
+  const inlineScripts = [];
+
+  const stripScripts = (source) =>
+    source.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, (tag, inline = "") => {
+      const srcMatch = tag.match(/\bsrc=["']([^"']+)["']/i);
+      if (srcMatch) {
+        externalScripts.push(resolvePluginAsset(namespace, srcMatch[1]));
+      } else if (!BLANK_RE.test(inline)) {
+        inlineScripts.push(inline.trim());
+      }
+      return "";
+    });
+
+  headContent = stripScripts(headContent);
+  bodyContent = stripScripts(bodyContent);
+
+  headContent = headContent
+    .replace(/<!doctype[\s\S]*?>/gi, "")
+    .replace(/<title[\s\S]*?<\/title>/gi, "")
+    .replace(/<meta[^>]+charset[^>]*>/gi, "")
+    .replace(/<meta[^>]+viewport[^>]*>/gi, "");
+
+  return {
+    pluginHead: headContent.trim(),
+    pluginMarkup: bodyContent.trim(),
+    styles: unique(styles),
+    scripts: unique(externalScripts),
+    inlineScripts,
+  };
+}
+
+async function pathExists(targetPath) {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch (err) {
+    if (err?.code === "ENOENT") return false;
+    throw err;
+  }
+}
+
+export default async function createServer({ plugins, usePluginsGlobals }) {
   const app = express();
+
+  async function renderPluginTemplate(viewPath, locals) {
+    return new Promise((resolve, reject) => {
+      app.render(
+        viewPath,
+        {
+          layout: false,
+          ...locals,
+        },
+        (err, html) => {
+          if (err) return reject(err);
+          resolve(html);
+        }
+      );
+    });
+  }
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
@@ -121,6 +214,27 @@ export default async function createServer() {
     },
   };
   app.use(express.static(__publicdir, staticOptions));
+  app.use(express.static(path.join(__rootdir, "plugins", "example-plugin-react", "public"), staticOptions));
+  app.use(express.static(path.join(__rootdir, "plugins", "example-plugin-react", "dist", "assets"), staticOptions));
+
+  if (plugins && Object.keys(plugins).length) {
+    for (const [namespace, pluginDef] of Object.entries(plugins)) {
+      if (!pluginDef?.plugingRoot) continue;
+
+      if (pluginDef.type === "react") {
+        const distDir = path.join(pluginDef.plugingRoot, "dist");
+        if (await pathExists(distDir)) {
+          app.use(`/plugins/${namespace}`, express.static(distDir, staticOptions));
+        }
+        continue;
+      }
+
+      const publicDir = path.join(pluginDef.plugingRoot, "public");
+      if (await pathExists(publicDir)) {
+        app.use(`/plugins/${namespace}`, express.static(publicDir, staticOptions));
+      }
+    }
+  }
 
   app.use(
     "/uploads",
@@ -156,7 +270,7 @@ export default async function createServer() {
   app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
 
   // Web Routes
-  app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
+  app.get("/", requireAuth, exposeGlobals, usePluginsGlobals, indexHandler.viewIndex);
   app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
   app.post("/login", authHandler.login);
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
@@ -196,7 +310,212 @@ export default async function createServer() {
     appHandler.updateAppSettings
   );
 
-  // TODO: Put Project/Plugin Routes here.
+  // Project Routes (API)
+  app.post("/api/projects", requireAuth, projectsHandler.create);
+  app.get("/api/projects", requireAuth, projectsHandler.getAll);
+  app.patch("/api/projects/:id", requireAuth, projectsHandler.update);
+  app.delete("/api/projects/:id", requireAuth, projectsHandler.remove);
+  app.get("/api/projects/:id/shares", requireAuth, projectSharesHandler.list);
+  app.post("/api/projects/:id/shares", requireAuth, projectSharesHandler.create);
+  app.patch("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.update);
+  app.delete("/api/projects/:id/shares/:memberId", requireAuth, projectSharesHandler.remove);
+
+  app.get("/p/:projectId", requireAuth, exposeGlobals, usePluginsGlobals, async (req, res) => {
+    try {
+      const projectId = req.params.projectId;
+      if (!projectId) {
+        return res.status(400).render("error", {
+          code: 400,
+          message: "Bad Request",
+          description: "Missing project id",
+        });
+      }
+
+      // Resolve ownership
+      // TODO: Fix the query by quering by role (all allowed roles)
+      const projectContributions = await prisma.projectContributor.findFirst({
+        where: { projectId, userId: req.user.id, status: "active" },
+        select: { role: true },
+      });
+
+      if (!["owner", "editor", "admin"].includes(projectContributions?.role)) {
+        return res.status(403).render("error", {
+          code: 403,
+          message: "Forbidden",
+          description: "You are not authorized!",
+        });
+      }
+
+      // Fetch Project with metadata for shell + plugin bootstrapping
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+        select: {
+          id: true,
+          type: true,
+          name: true,
+          status: true,
+        },
+      });
+
+      if (!project) {
+        return res.status(404).render("error", {
+          code: 404,
+          message: "Project not found",
+          description: "We couldn't locate this project.",
+        });
+      }
+
+      const namespace = project.type;
+      const plugin = plugins?.[namespace];
+
+      if (!plugin) {
+        return res.status(404).render("error", {
+          code: 404,
+          message: "Plugin unavailable",
+          description: "This project is linked to a plugin that is not installed.",
+        });
+      }
+
+      const platformTitle = res.locals?.head?.title || "Sovereign";
+      const pageTitle = plugin.name || project.name || namespace;
+
+      res.locals.head = {
+        ...res.locals.head,
+        title: `${pageTitle} · ${platformTitle}`,
+        link: unique([
+          ...(res.locals.head?.link || []),
+          { rel: "canonical", href: `/p/${projectId}` },
+        ]),
+      };
+
+      const baseStyles = [
+        "/css/components/sidebar.css",
+        "/css/components/userbar.css",
+        "/css/components/card.css",
+        "/css/components/modal.css",
+        "/css/components/breadcrumb.css",
+        "/example-plugin-react.css"
+      ];
+
+      const shellModel = {
+        layout: false,
+        head: res.locals.head,
+        page: {
+          title: pageTitle,
+        },
+        pluginMarkup: "",
+        pluginHead: "",
+        styles: baseStyles,
+        scripts: [],
+        inlineScripts: "",
+      };
+
+      const inlineScriptBlocks = [];
+
+      if (plugin.type === "html") {
+        try {
+          const renderedPlugin = await renderPluginTemplate(plugin.entry, {
+            project,
+            plugin,
+            user: req.user,
+          });
+          const extracted = extractPluginSections(renderedPlugin, namespace);
+          shellModel.pluginMarkup = extracted.pluginMarkup;
+          shellModel.pluginHead = extracted.pluginHead;
+          shellModel.styles = unique([...shellModel.styles, ...extracted.styles]);
+          shellModel.scripts = unique([...shellModel.scripts, ...extracted.scripts]);
+          if (extracted.inlineScripts.length) {
+            inlineScriptBlocks.push(
+              ...extracted.inlineScripts.map((code) => `<script>${code}</script>`)
+            );
+          }
+        } catch (renderErr) {
+          logger.error("✗ Failed to render HTML plugin template:", renderErr);
+          shellModel.pluginMarkup =
+            '<section class="card card--error"><p>Failed to render plugin template.</p></section>';
+        }
+      } else if (plugin.type === "react") {
+        const entryBasename = path.basename(plugin.entry);
+        const entryUrl = resolvePluginAsset(namespace, entryBasename);
+        shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
+
+        const resolvedNodeEnv = JSON.stringify(NODE_ENV || "production");
+        inlineScriptBlocks.push(
+          `<script>(function(){const g=globalThis;g.global ||= g;g.process ||= { env: {} };g.process.env ||= {};if(!g.process.env.NODE_ENV) g.process.env.NODE_ENV = ${resolvedNodeEnv};})();</script>`
+        );
+
+        const distDir = path.join(plugin.plugingRoot, "dist");
+        if (await pathExists(distDir)) {
+          try {
+            const assets = await fs.readdir(distDir);
+            const cssAssets = assets.filter((file) => file.endsWith(".css"));
+            if (cssAssets.length) {
+              const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
+              shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
+              inlineScriptBlocks.push(
+                `<script>(function(){const head=document.head;const styles=${JSON.stringify(
+                  cssHrefs
+                )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
+              );
+            }
+          } catch (assetErr) {
+            logger.warn(`Unable to read built assets for plugin "${namespace}"`, assetErr);
+          }
+        }
+      } else {
+        shellModel.pluginMarkup =
+          '<section class="card card--warning"><p>This plugin type is not supported yet.</p></section>';
+      }
+
+      const bootContext = {
+        plugin: {
+          id: plugin.id,
+          name: plugin.name,
+          namespace,
+          type: plugin.type,
+          version: plugin.version,
+        },
+        project: {
+          id: project.id,
+          name: project.name,
+          type: project.type,
+          status: project.status,
+        },
+      };
+
+      inlineScriptBlocks.push(
+        `<script>window.Sovereign ??= {}; window.Sovereign.pluginContext = ${JSON.stringify(
+          bootContext
+        )};</script>`
+      );
+
+      shellModel.inlineScripts = inlineScriptBlocks.join("\n");
+      shellModel.styles = unique(shellModel.styles);
+      shellModel.scripts = unique(shellModel.scripts);
+
+      logger.debug(
+        {
+          namespace,
+          pluginScripts: shellModel.scripts,
+          pluginStyles: shellModel.styles,
+          pluginHead: shellModel.pluginHead?.length,
+        },
+        "Serving plugin shell"
+      );
+
+      return res.render("layouts/index", shellModel);
+    } catch (err) {
+      logger.error("✗ Render project page failed:", err);
+      return res.status(500).render("error", {
+        code: 500,
+        message: "Oops!",
+        description: "Failed to load project",
+        error: err?.message || String(err),
+      });
+    }
+  });
+
+  // TODO: Plugins routes
 
   // 404
   app.use((req, res) => {

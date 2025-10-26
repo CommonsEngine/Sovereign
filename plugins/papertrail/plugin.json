@@ -4,7 +4,8 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher"]
   },
-  "name": "@kasunben/papertrail",
+  "id": "@kasunben/papertrail",
+  "name": "PaperTtrail",
   "description": "Sovereign PaperTrail",
   "version": "1.0.0-alpha.7",
   "type": "html",
