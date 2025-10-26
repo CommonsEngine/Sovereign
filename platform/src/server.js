@@ -31,17 +31,7 @@ import hbsHelpers from "$/utils/hbsHelpers.mjs";
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __rootdir, __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
-
-async function pathExists(targetPath) {
-  try {
-    await fs.access(targetPath);
-    return true;
-  } catch (err) {
-    if (err?.code === "ENOENT") return false;
-    throw err;
-  }
-}
+const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
 
 export default async function createServer({ plugins, pluginsPublicAssetsDirs }) {
   const app = express();
@@ -135,26 +125,8 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
   };
   app.use(express.static(__publicdir, staticOptions));
 
-  if (plugins) {
-    for (const [namespace, pluginDef] of Object.entries(plugins)) {
-      if (!pluginDef?.plugingRoot) continue;
-
-      const mountPath = `/plugins/${namespace}`;
-
-      if (pluginDef.type === "react") {
-        const distDir = path.join(pluginDef.plugingRoot, "dist");
-        // eslint-disable-next-line no-await-in-loop
-        if (await pathExists(distDir)) {
-          app.use(mountPath, express.static(distDir, staticOptions));
-        }
-      }
-
-      const publicDir = path.join(pluginDef.plugingRoot, "public");
-      // eslint-disable-next-line no-await-in-loop
-      if (await pathExists(publicDir)) {
-        app.use(mountPath, express.static(publicDir, staticOptions));
-      }
-    }
+  for (const { base, dir } of pluginsPublicAssetsDirs) {
+    app.use(base, express.static(dir, staticOptions));
   }
 
   app.use(

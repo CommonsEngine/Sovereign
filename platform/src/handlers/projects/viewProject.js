@@ -211,6 +211,9 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       const entryUrl = resolvePluginAsset(namespace, entryBasename);
       shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
 
+      // Add plugin base stylesheet
+      baseStyles.push(`/${namespace}.css`);
+
       const resolvedNodeEnv = JSON.stringify(process.env.NODE_ENV || "production");
       inlineScriptBlocks.push(
         `<script>(function(){const g=globalThis;g.global ||= g;g.process ||= { env: {} };g.process.env ||= {};if(!g.process.env.NODE_ENV) g.process.env.NODE_ENV = ${resolvedNodeEnv};})();</script>`

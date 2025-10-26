@@ -71,7 +71,20 @@ export default async function createExtHost(_, options = {}) {
 
     if (allowPlugin) {
       let entry = path.join(plugingRoot, "index.html");
-      if (pluginManifest.type === "react") entry = path.join(plugingRoot, "dist", "index.js");
+
+      if (pluginManifest.type === "react") {
+        entry = path.join(plugingRoot, "dist", "index.js");
+
+        pluginsPublicAssetsDirs.push({ base: "/", dir: path.join(plugingRoot, "dist", "assets") });
+        pluginsPublicAssetsDirs.push({
+          base: `/plugins/${namespace}/`,
+          dir: path.join(plugingRoot, "dist"),
+        });
+      }
+      pluginsPublicAssetsDirs.push({
+        base: "/",
+        dir: path.join(plugingRoot, "public"),
+      });
 
       plugins[namespace] = {
         namespace,
@@ -81,7 +94,6 @@ export default async function createExtHost(_, options = {}) {
       };
 
       enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
-      pluginsPublicAssetsDirs.push(path.join(plugingRoot, "public"));
     }
   }
 
