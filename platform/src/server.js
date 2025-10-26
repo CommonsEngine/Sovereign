@@ -22,15 +22,28 @@ import * as authHandler from "$/handlers/auth/index.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
 import * as appHandler from "$/handlers/app.mjs";
+import viewProject from "$/handlers/projects/viewProject.js";
+
+import apiProjects from "$/routes/api/projects.js";
 
 import hbsHelpers from "$/utils/hbsHelpers.mjs";
 
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
+const { __rootdir, __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
 
-export default async function createServer() {
+async function pathExists(targetPath) {
+  try {
+    await fs.access(targetPath);
+    return true;
+  } catch (err) {
+    if (err?.code === "ENOENT") return false;
+    throw err;
+  }
+}
+
+export default async function createServer({ plugins, pluginsPublicAssetsDirs }) {
   const app = express();
 
   // Ensure data root exist at startup
@@ -122,6 +135,28 @@ export default async function createServer() {
   };
   app.use(express.static(__publicdir, staticOptions));
 
+  if (plugins) {
+    for (const [namespace, pluginDef] of Object.entries(plugins)) {
+      if (!pluginDef?.plugingRoot) continue;
+
+      const mountPath = `/plugins/${namespace}`;
+
+      if (pluginDef.type === "react") {
+        const distDir = path.join(pluginDef.plugingRoot, "dist");
+        // eslint-disable-next-line no-await-in-loop
+        if (await pathExists(distDir)) {
+          app.use(mountPath, express.static(distDir, staticOptions));
+        }
+      }
+
+      const publicDir = path.join(pluginDef.plugingRoot, "public");
+      // eslint-disable-next-line no-await-in-loop
+      if (await pathExists(publicDir)) {
+        app.use(mountPath, express.static(publicDir, staticOptions));
+      }
+    }
+  }
+
   app.use(
     "/uploads",
     express.static(path.join(__datadir, "upload"), {
@@ -196,7 +231,13 @@ export default async function createServer() {
     appHandler.updateAppSettings
   );
 
-  // TODO: Put Project/Plugin Routes here.
+  // Project Routes
+  app.use("/api/projects", apiProjects);
+  app.get("/p/:projectId", requireAuth, exposeGlobals, (req, res, next) =>
+    viewProject(req, res, next, { plugins, app })
+  );
+
+  // TODO: Put Plugin Routes here.
 
   // 404
   app.use((req, res) => {

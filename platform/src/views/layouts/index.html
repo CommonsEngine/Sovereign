@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    <title>Simple Two-Column Layout</title>
+    {{#if styles}} {{#each styles}}
+    <link rel="stylesheet" href="{{this}}" />
+    {{/each}} {{/if}} {{{pluginHead}}}
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        width: 60px;
+        background: #f3f4f6;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+      }
+
+      /* Main area */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* Header inside main */
+      .header {
+        position: sticky;
+        top: 0;
+        background: #e5e7eb;
+        height: 60px;
+      }
+
+      .content {
+        flex: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <aside class="sidebar">Sidebar</aside>
+    <main class="main">
+      <header class="header">Header</header>
+      <div id="plugin-root" class="content">
+        {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
+        <section class="card">
+          <h2 class="card__title">Loading plugin…</h2>
+          <p class="subtle">Hang tight while we prepare this workspace.</p>
+        </section>
+        {{/if}}
+      </div>
+    </main>
+    {{#if scripts}} {{#each scripts}}
+    <script src="{{this}}" defer></script>
+    {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
+  </body>
+</html>

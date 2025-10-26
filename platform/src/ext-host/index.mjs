@@ -26,6 +26,7 @@ export default async function createExtHost(_, options = {}) {
 
   const plugins = {};
   const enabledPlugins = [];
+  const pluginsPublicAssetsDirs = [];
 
   // Read plugins directory to identify pluginCandidates
   try {
@@ -80,11 +81,13 @@ export default async function createExtHost(_, options = {}) {
       };
 
       enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
+      pluginsPublicAssetsDirs.push(path.join(plugingRoot, "public"));
     }
   }
 
   return {
     plugins,
     enabledPlugins,
+    pluginsPublicAssetsDirs,
   };
 }
