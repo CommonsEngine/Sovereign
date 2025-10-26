@@ -1,10 +1,10 @@
-<aside class="sidebar" aria-label="Primary">
-  <a class="sidebar__brand" href="/" title="Sovereign"> S </a>
-  <div class="sidebar__divider" role="separator" aria-hidden="true"></div>
-  <nav class="sidebar__nav">
+<aside class="sv-sidebar" aria-label="Primary">
+  <a class="sv-sidebar__brand" href="/" title="Sovereign"> S </a>
+  <div class="sv-sidebar__divider" role="separator" aria-hidden="true"></div>
+  <nav class="sv-sidebar__nav">
     <!-- Projects -->
     <a
-      class="sidebar__btn{{#if projects_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if projects_active}} is-active{{/if}}"
       href="/"
       title="Projects"
       aria-label="Projects"
@@ -30,7 +30,7 @@
     <!-- Users -->
     {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
-      class="sidebar__btn{{#if users_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if users_active}} is-active{{/if}}"
       href="/users"
       title="Users"
       aria-label="Users"
@@ -56,8 +56,8 @@
     {{/if}}
   </nav>
 
-  <div class="sidebar__spacer"></div>
-  <div class="sidebar__bottom">
+  <div class="sv-sidebar__spacer"></div>
+  <div class="sv-sidebar__bottom">
     <!-- Settings -->
     {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a

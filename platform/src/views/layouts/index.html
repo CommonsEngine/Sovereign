@@ -1,67 +1,34 @@
 <!doctype html>
 <html lang="{{head.lang.short}}">
   <head>
-    <title>Simple Two-Column Layout</title>
-    {{#if styles}} {{#each styles}}
-    <link rel="stylesheet" href="{{this}}" />
-    {{/each}} {{/if}} {{{pluginHead}}}
-    <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-      }
-
-      body {
-        display: flex;
-        min-height: 100vh;
-      }
-
-      /* Sidebar */
-      .sidebar {
-        width: 60px;
-        background: #f3f4f6;
-        position: sticky;
-        top: 0;
-        height: 100vh;
-      }
-
-      /* Main area */
-      .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-      }
-
-      /* Header inside main */
-      .header {
-        position: sticky;
-        top: 0;
-        background: #e5e7eb;
-        height: 60px;
-      }
-
-      .content {
-        flex: 1;
-      }
-    </style>
+    {{> layout/head}}
   </head>
-  <body>
-    <aside class="sidebar">Sidebar</aside>
-    <main class="main">
-      <header class="header">Header</header>
-      <div id="plugin-root" class="content">
-        {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
-        <section class="card">
-          <h2 class="card__title">Loading plugin…</h2>
-          <p class="subtle">Hang tight while we prepare this workspace.</p>
-        </section>
-        {{/if}}
-      </div>
+  <body class="sv-page sv-page--shell">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
+
+    <aside class="sv-sidebar" aria-label="Primary">
+      <a class="sv-sidebar__brand" href="/" title="Sovereign"> S </a>
+      <div class="sv-sidebar__divider" role="separator" aria-hidden="true"></div>
+    </aside>
+    <main>
+      <header class="sv-header">
+        <div class="sv-header__user" role="navigation" aria-label="User">
+          <span class="sv-header__user-greeting">Ayubowan! <strong>john</strong></span>
+          <details class="sv-header__user-menu">
+            <summary class="sv-header__user-avatar" title="john">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" fill="#111" />
+                <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#111" />
+              </svg>
+            </summary>
+            <div class="sv-header__user-menu-panel" role="menu" aria-label="User menu">
+              <a class="sv-header__user-menu-item" href="/logout" role="menuitem">Logout</a>
+            </div>
+          </details>
+        </div>
+      </header>
+      <section>Section</section>
     </main>
-    {{#if scripts}} {{#each scripts}}
-    <script src="{{this}}" defer></script>
-    {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
   </body>
 </html>
