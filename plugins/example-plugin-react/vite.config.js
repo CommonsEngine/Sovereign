@@ -1,7 +1,8 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,22 +20,29 @@ export default defineConfig({
       name: "ExamplePluginReact",
     },
     rollupOptions: {
-      output: { inlineDynamicImports: true },
+      /**
+       * TODO: Uncomment rollupOptions, once configured platfrom to include react deps by default.
+       * <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+       * <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+       */
+      // external: ["react", "react-dom"],
+      output: {
+        inlineDynamicImports: true,
+        // Put all non-entry assets (images, fonts, css) under dist/assets *
+        assetFileNames: "assets/[name][extname]",
+        // globals: {
+        //   react: "React",
+        //   "react-dom": "ReactDOM",
+        // }
+      },
     },
     outDir: "dist",
-    assetsDir: "",
+    assetsDir: "assets",
+    assetsInlineLimit: 0,
+    cssCodeSplit: false,
     emptyOutDir: true,
+    copyPublicDir: false, // prevent Vite from copying the public/ folder to dist/ root
   },
-  // rollupOptions: {
-  //   external: ["react", "react-dom"],
-  //   output: {
-  //     inlineDynamicImports: true,
-  //     globals: {
-  //       react: "React",
-  //       "react-dom": "ReactDOM",
-  //     },
-  //   },
-  // },
   server: {
     port: 4002,
   },
@@ -42,9 +50,3 @@ export default defineConfig({
     port: 8002,
   },
 });
-
-/**
- * TODO: Uncomment rollupOptions, once configured platfrom to include react deps by default.
- * <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
- * <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
- */
