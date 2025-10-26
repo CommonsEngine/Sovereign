@@ -28,7 +28,17 @@
           </details>
         </div>
       </header>
-      <section>Section</section>
+      <section id="plugin-root">
+        {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
+        <section>
+          <h3>Loading plugin…</h3>
+          <p>Hang tight while we prepare this workspace.</p>
+        </section>
+        {{/if}}
+      </section>
     </main>
+    {{#if scripts}} {{#each scripts}}
+    <script src="{{this}}" defer></script>
+    {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
   </body>
 </html>
