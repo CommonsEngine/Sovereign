@@ -282,7 +282,7 @@
 
   .sv-header__user-menu-item {
     display: block;
-    padding: 8px 10px 0;
+    padding: 8px 10px;
     border-radius: var(--radius-m);
     color: var(--color-text-primary) !important;
     text-decoration: none;
