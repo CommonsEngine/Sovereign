@@ -34,7 +34,11 @@ export default async function createExtHost(_, options = {}) {
   } catch (err) {
     if (err.code === "ENOENT") {
       logger?.warn?.(`Extension host: plugins directory "${__pluginsDir}" does not exist.`);
-      return [];
+      return {
+        plugins: {},
+        enabledPlugins: [],
+        pluginsPublicAssetsDirs: [],
+      };
     }
     throw err;
   }

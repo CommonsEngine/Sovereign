@@ -1,4 +1,5 @@
 require("dotenv").config();
 
-// TODO: use dist/ instead /src for production
-require("./src/bootstrap.js").bootstrap();
+const bootstrapPath =
+  process.env.NODE_ENV === "production" ? "./dist/bootstrap.js" : "./src/bootstrap.js";
+require(bootstrapPath).bootstrap();

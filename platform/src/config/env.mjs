@@ -1,5 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
 import { prisma } from "../services/database.mjs";
 import { toBool } from "../utils/misc.mjs";
@@ -8,9 +9,31 @@ import pkg from "../config/pkg.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const maybeResolveRoot = (startDir) => {
+  if (!startDir) return null;
+  let dir = path.resolve(startDir);
+
+  while (true) {
+    const marker = path.join(dir, "platform", "package.json");
+    if (fs.existsSync(marker)) {
+      return dir;
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      return null;
+    }
+
+    dir = parent;
+  }
+};
+
 const resolveRoot = () => {
-  // TODO: Resolve this properly.
-  return path.resolve(__dirname, "../../../");
+  return (
+    maybeResolveRoot(__dirname) ??
+    maybeResolveRoot(process.cwd()) ??
+    path.resolve(__dirname, "../../../")
+  );
 };
 
 const preferDist =

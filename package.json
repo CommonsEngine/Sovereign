@@ -14,10 +14,11 @@
   ],
   "scripts": {
     "init:prepare": "yarn workspace @sovereign/platform init:prepare",
-    "init:setup": "yarn workspace @sovereign/platform init:setup",
+    "init:setup": "yarn workspace @sovereign/platform init:setup && yarn build",
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
     "dev": "yarn workspace @sovereign/platform dev",
+    "start": "yarn workspace @sovereign/platform start",
     "postinstall": "husky",
     "format:check": "prettier --check .",
     "format": "prettier --ignore-path .prettierignore --write .",
