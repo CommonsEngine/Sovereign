@@ -31,8 +31,8 @@ export default async function create(req, res) {
     const allowedTypes = new Set();
     if (flags?.blog) allowedTypes.add("blog");
     if (flags?.papertrail) allowedTypes.add("papertrail");
-    if (flags?.papertrail) allowedTypes.add("example-plugin-html");
-    if (flags?.papertrail) allowedTypes.add("example-plugin-react");
+    if (flags?.papertrail) allowedTypes.add("example-plugin-static");
+    if (flags?.papertrail) allowedTypes.add("example-plugin-spa");
 
     // add other types conditionally...
     // allowed scopes

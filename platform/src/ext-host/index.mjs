@@ -72,7 +72,7 @@ export default async function createExtHost(_, options = {}) {
     if (allowPlugin) {
       let entry = path.join(plugingRoot, "index.html");
 
-      if (pluginManifest.type === "react") {
+      if (pluginManifest.type === "spa") {
         entry = path.join(plugingRoot, "dist", "index.js");
 
         pluginsPublicAssetsDirs.push({ base: "/", dir: path.join(plugingRoot, "dist", "assets") });

@@ -1,16 +1,17 @@
 @layer pg.index {
   .sv-project__grid {
+    --project-card-w: 360px; /* fixed card width for 3-up layout on wide screens */
+    justify-content: flex-start;
     display: flex;
     flex-wrap: wrap;
     gap: 16px; /* space between cards */
     max-width: 1200px; /* optional: container width */
     margin: 0 auto;
-    padding: 16px;
+    padding: 8px 0;
     box-sizing: border-box;
   }
   .sv-projects__card {
-    flex: 1 1 calc(25% - 16px); /* 4 per row (minus gap) */
-    min-width: 250px; /* prevent shrinking too small */
+    flex: 0 0 var(--project-card-w); /* fixed width cards; wrap to 3 per row within 1200px */
     background: #f3f4f6;
     padding: 16px;
     box-sizing: border-box;
@@ -184,17 +185,12 @@
   /* Make it responsive: fewer per row on small screens */
   @media (max-width: 1024px) {
     .sv-projects__card {
-      flex: 1 1 calc(33.333% - 16px); /* 3 per row */
-    }
+      flex: 1 1 calc(50% - 16px);
+    } /* 2 per row on medium screens */
   }
   @media (max-width: 768px) {
     .sv-projects__card {
-      flex: 1 1 calc(50% - 16px); /* 2 per row */
-    }
-  }
-  @media (max-width: 480px) {
-    .sv-projects__card {
-      flex: 1 1 100%; /* single column on mobile */
-    }
+      flex: 1 1 100%;
+    } /* 1 per row on small screens */
   }
 }

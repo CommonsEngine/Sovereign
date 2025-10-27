@@ -8,9 +8,9 @@
   "name": "Blog",
   "description": "Sovereign Blog",
   "version": "1.0.0-alpha.7",
-  "type": "html",
+  "type": "dynamic",
   "devOnly": true,
-  "draft": true,
+  "draft": false,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "platformCapabilities": {

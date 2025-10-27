@@ -1,4 +1,3 @@
-// eslint-disable-next-line n/no-extraneous-import
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();

@@ -4,11 +4,11 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher", "sidebar"]
   },
-  "id": "@sovereign/example-plugin-html",
-  "name": "Example Plugin Html",
-  "description": "Sovereign Example Plugin - HTML",
+  "id": "@sovereign/example-plugin-spa",
+  "name": "Example SPA Plugin",
+  "description": "Sovereign Example Plugin - SPA",
   "version": "0.1.0",
-  "type": "html",
+  "type": "spa",
   "devOnly": true,
   "draft": false,
   "author": "Sovereign Core Team",
@@ -22,7 +22,7 @@
   },
   "userCapabilities": [
     {
-      "key": "user:plugin.example_plugin_html.feature",
+      "key": "user:plugin.example_plugin_react.feature",
       "description": "Enable the plugin.",
       "roles": ["platform:user"]
     }

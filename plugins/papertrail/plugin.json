@@ -8,7 +8,7 @@
   "name": "PaperTrail",
   "description": "Sovereign PaperTrail",
   "version": "1.0.0-alpha.7",
-  "type": "html",
+  "type": "dynamic",
   "devOnly": true,
   "draft": true,
   "author": "Sovereign Core Team",

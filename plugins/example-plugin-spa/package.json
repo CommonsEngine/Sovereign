@@ -1,5 +1,5 @@
 {
-  "name": "@sovereign/example-plugin-react",
+  "name": "@sovereign/example-plugin-spa",
   "version": "0.1.0",
   "private": true,
   "type": "module",

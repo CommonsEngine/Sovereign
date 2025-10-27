@@ -4,11 +4,11 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher", "sidebar"]
   },
-  "id": "@sovereign/example-plugin-react",
-  "name": "Example Plugin React",
-  "description": "Sovereign Example Plugin - React",
+  "id": "@sovereign/example-plugin-static",
+  "name": "Example Static Plugin",
+  "description": "Sovereign Example Plugin - HTML",
   "version": "0.1.0",
-  "type": "react",
+  "type": "static",
   "devOnly": true,
   "draft": false,
   "author": "Sovereign Core Team",
@@ -22,7 +22,7 @@
   },
   "userCapabilities": [
     {
-      "key": "user:plugin.example_plugin_react.feature",
+      "key": "user:plugin.example_plugin_html.feature",
       "description": "Enable the plugin.",
       "roles": ["platform:user"]
     }

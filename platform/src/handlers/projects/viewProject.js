@@ -139,7 +139,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       });
     }
 
-    const allowedPluginTypes = ["html", "react"];
+    const allowedPluginTypes = ["static", "spa"];
     if (!allowedPluginTypes.includes(plugin?.type)) {
       return res.status(404).render("error", {
         code: 404,
@@ -162,7 +162,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
     };
     const inlineScriptBlocks = [];
 
-    if (plugin.type === "html") {
+    if (plugin.type === "static") {
       // Utils
       async function renderHtmlPlugin(viewPath, locals) {
         return new Promise((resolve, reject) => {
@@ -209,7 +209,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       }
     }
 
-    if (plugin.type === "react") {
+    if (plugin.type === "spa") {
       const entryBasename = path.basename(plugin.entry);
       const entryUrl = resolvePluginAsset(namespace, entryBasename);
       shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
