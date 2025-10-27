@@ -6,6 +6,18 @@
     position: absolute;
     top: 0;
   }
+  .sv-link {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-size: 13px;
+  }
+  .sv-link:hover {
+    text-decoration: wavy;
+  }
+  .sv-link:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
 }
 
 @layer styled.layout {
@@ -17,7 +29,7 @@
     margin: 0;
     min-height: 100vh;
   }
-  .sv-page--shell > aside {
+  .sv-sidebar {
     width: 56px;
     position: sticky;
     top: 0;
@@ -30,13 +42,13 @@
     flex-direction: column;
     min-height: 100vh;
   }
-  .sv-page--shell > main > .sv-header {
+  .sv-header {
     min-height: 60px;
     position: sticky;
     top: 0;
     flex-shrink: 0;
   }
-  .sv-page--shell > main > .sv-container {
+  .sv-container {
     flex: 1;
     overflow-y: scroll;
   }
@@ -108,12 +120,6 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-muted, #6b7280);
-  }
-}
-
-@layer styled.sv-button {
-  .sv-button {
-    --no-op: 0;
   }
 }
 
@@ -700,5 +706,16 @@
     display: flex;
     flex-direction: row-reverse;
     gap: var(--space-xs);
+  }
+}
+
+@layer components.button {
+  .sv-button {
+    --no-op: 0;
+  }
+  .sv-button--primary {
+    background-color: var(--color-primary);
+    color: var(--color-primary-inverse);
+    border: none;
   }
 }

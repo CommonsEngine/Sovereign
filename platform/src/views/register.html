@@ -2,17 +2,17 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <link rel="stylesheet" href="/css/pages/register.css" />
+    <link rel="stylesheet" href="/css/sv_pg_auth.css" />
   </head>
-  <body class="page page--fullwidth page--register">
-    <main class="page__wrap">
-      <section class="hero" aria-label="Intro">
-        <h1 class="hero__title">Sovereign</h1>
-        <p class="hero__tagline">Reclaim your digital freedom.</p>
+  <body class="sv-page sv-page__auth-register">
+    <main class="auth__page sv-center">
+      <section class="auth__page-header text-align-center" aria-label="Intro">
+        <h1 class="auth__page-header-title">Sovereign</h1>
+        <p class="auth__page-header-tagline">Reclaim your digital freedom.</p>
       </section>
 
-      <section class="auth" aria-label="Register">
-        <h2 class="auth__title">Create account</h2>
+      <section class="auth__card-wrapper" aria-label="Register">
+        <h2 class="auth__card-title">Create account</h2>
         <div class="auth__card">
           <form class="form" method="post" action="{{#if token}}/register?token={{token}}{{else}}/register{{/if}}">
             {{#if success}}<div class="alert alert--success">{{success}}</div>{{/if}}
@@ -80,8 +80,8 @@
               />
             </div>
             <div class="actions">
-              <a class="link" href="/login">Already have an account?</a>
-              <button class="button button--primary chip" type="submit">
+              <a class="sv-link" href="/login">Already have an account?</a>
+              <button class="button sv-button sv-button--primary" type="submit">
                 Register
               </button>
             </div>

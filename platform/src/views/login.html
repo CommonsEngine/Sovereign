@@ -2,17 +2,17 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <link rel="stylesheet" href="/css/pages/login.css" />
+    <link rel="stylesheet" href="/css/sv_pg_auth.css" />
   </head>
-  <body class="page page--fullwidth page--login">
-    <main class="page__wrap">
-      <section class="hero" aria-label="Intro">
-        <h1 class="hero__title">Sovereign</h1>
-        <p class="hero__tagline">Reclaim your digital freedom</p>
+  <body class="sv-page sv-page__auth-login">
+    <main class="auth__page sv-center">
+      <section class="auth__page-header text-align-center" aria-label="Intro">
+        <h1 class="auth__page-header-title">Sovereign</h1>
+        <p class="auth__page-header-tagline">Reclaim your digital freedom</p>
       </section>
 
-      <section class="auth" aria-label="Sign in">
-        <h2 class="auth__title">
+      <section class="auth__card-wrapper" aria-label="Sign in">
+        <h2 class="auth__card-title">
           {{#if reset_mode}}Reset password{{else if forgot_mode}}Forgot your password{{else}}Sign
           in{{/if}}
         </h2>
@@ -48,21 +48,21 @@
               />
             </div>
             <div class="actions">
-              <a class="link" href="/login?forgot=1">Forgot your password?</a>
-              <button class="button button--primary chip" type="submit">Sign in</button>
+              <a class="sv-link" href="/login?forgot=1">Forgot your password?</a>
+              <button class="button sv-button sv-button--primary" type="submit">Sign in</button>
             </div>
           </form>
           {{#if allow_signup}}
           <div class="divider"></div>
           <div class="actions">
             <span style="color: #64748b; font-size: 13px"
-              >Don’t have an account? <a class="link" href="/register">Create account</a></span
+              >Don’t have an account? <a class="sv-link" href="/register">Create account</a></span
             >
           </div>
           {{/if}} {{#if guest_enabled}}
           <div class="divider"></div>
           <div class="actions">
-            <a class="link" href="/auth/guest">Continue as guest</a>
+            <a class="sv-link" href="/auth/guest">Continue as guest</a>
           </div>
           {{/if}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if forgot_mode}}
           <form class="form" method="post" action="/auth/password/forgot">
@@ -79,14 +79,16 @@
               />
             </div>
             <div class="actions">
-              <a class="link" href="/login">Back to sign in</a>
-              <button class="button button--primary chip" type="submit">Send reset link</button>
+              <a class="sv-link" href="/login">Back to sign in</a>
+              <button class="button sv-button sv-button--primary" type="submit">
+                Send reset link
+              </button>
             </div>
             {{#if dev_reset_url}}
             <div class="divider"></div>
             <div class="actions">
               <span style="color: #64748b; font-size: 12px">Dev:</span>
-              <a class="link" href="{{dev_reset_url}}">Open reset link</a>
+              <a class="sv-link" href="{{dev_reset_url}}">Open reset link</a>
             </div>
             {{/if}}
           </form>
@@ -116,8 +118,10 @@
               />
             </div>
             <div class="actions">
-              <a class="link" href="/login">Back to sign in</a>
-              <button class="button button--primary chip" type="submit">Update password</button>
+              <a class="sv-link" href="/login">Back to sign in</a>
+              <button class="button sv-button sv-button--primary" type="submit">
+                Update password
+              </button>
             </div>
           </form>
           {{/if}}

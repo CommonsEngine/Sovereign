@@ -44,6 +44,16 @@
 .margin-right-xs {
   margin-right: var(--space-xs);
 }
+.padding-none {
+  padding: 0;
+}
+.padding-l {
+  padding: var(--space-l);
+}
+/* Typography */
+.text-align-center {
+  text-align: center;
+}
 /* Container */
 .sv-grid {
   display: flex;
@@ -51,7 +61,6 @@
   gap: var(--space-m, 1rem); /* you can override this */
   box-sizing: border-box;
 }
-
 /* Columns — default 12-column system */
 
 /* 1 of 12 (≈8.333%) */
