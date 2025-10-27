@@ -87,6 +87,7 @@ export default [
       ],
       "n/no-process-exit": "off",
       "import/no-unresolved": "off", // TODO: Make this for some specific files
+      "n/no-extraneous-import": "off", // TODO: Make this for some specific files
     },
   },
 ];
