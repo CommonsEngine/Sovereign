@@ -22,12 +22,12 @@
 
 @layer styled.layout {
   .sv-page {
-    --no-op: 0;
-  }
-  .sv-page--shell {
     display: flex;
     margin: 0;
     min-height: 100vh;
+  }
+  .sv-page--shell {
+    --no-op: 0;
   }
   .sv-sidebar {
     width: 56px;
@@ -36,7 +36,7 @@
     height: 100vh;
     flex-shrink: 0;
   }
-  .sv-page--shell > main {
+  .sv-page > main {
     flex: 1;
     display: flex;
     flex-direction: column;
