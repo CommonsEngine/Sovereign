@@ -450,7 +450,9 @@ export async function verifyToken(req, res) {
 
     if (!vt || vt.expiresAt < new Date() || vt.purpose !== "email-verify") {
       if (wantsHtml) {
-        return res.status(400).render("verify", { ok: false, error: "Invalid or expired link." });
+        return res
+          .status(400)
+          .render("auth/verify-token", { ok: false, error: "Invalid or expired link." });
       }
       return res.status(400).json({ error: "Invalid/expired token" });
     }
