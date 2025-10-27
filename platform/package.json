@@ -1,0 +1,74 @@
+{
+  "private": true,
+  "name": "@sovereign/platform",
+  "version": "0.7.3",
+  "description": "Core runtime and service framework for the Sovereign platform",
+  "license": "AGPL-3.0",
+  "main": "./index.cjs",
+  "type": "module",
+  "manifest": {
+    "title": "Sovereign",
+    "tagline": "Reclaim your digital freedom.",
+    "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
+    "main": "./src/bootstrap.js"
+  },
+  "scripts": {
+    "init:prepare": "cp .env.example .env && yarn prisma db push --schema prisma/schema.prisma",
+    "init:setup": "yarn run prisma:seed",
+    "start": "NODE_ENV=production node --import ./scripts/register-alias.mjs ./index.cjs",
+    "start:src": "node --import ./scripts/register-alias.mjs ./index.cjs",
+    "dev": "nodemon",
+    "build": "node ./scripts/build.mjs",
+    "reset": "yarn prisma:reset",
+    "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "prisma:seed": "node prisma/seed/index.mjs",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema prisma/schema.prisma",
+    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format --schema prisma/schema.prisma",
+    "check": "yarn format:check && yarn lint:check && yarn prisma validate"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src",
+      "public"
+    ],
+    "ext": "mjs,cjs,js,jsx,json,html,css",
+    "exec": "node --import ./scripts/register-alias.mjs ./index.cjs",
+    "signal": "SIGTERM"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.3",
+    "ajv": "^8.17.1",
+    "archiver": "^7.0.1",
+    "argon2": "^0.44.0",
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.2",
+    "handlebars": "^4.7.8",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.0.2",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^7.0.9",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4",
+    "sharp": "^0.34.3",
+    "simple-git": "^3.28.0",
+    "unzipper": "^0.12.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.0.4",
+    "esbuild": "^0.21.5",
+    "globals": "^16.4.0",
+    "nodemon": "^3.1.10",
+    "prisma": "^6.16.3",
+    "vite": "^7.1.10"
+  }
+}

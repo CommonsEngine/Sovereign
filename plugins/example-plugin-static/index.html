@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Example Plugin React Test</title>
+
+    <style>
+      .header2 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #111827;
+        color: #fff;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+      }
+      img.logo {
+        width: 120px;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header2">
+      <h1>🚀 Example Plugin Test Page</h1>
+      <img src="./assets/logo-test.png" alt="Logo" class="logo" />
+    </div>
+
+    <main>
+      <h3>HTML Plugin</h3>
+      <p>React plugin should mount inside <code>#plugin-root</code>.</p>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec lacinia luctus purus bibendum
+        pellentesque. Praesent feugiat augue consectetur ligula maximus, at ultricies ligula
+        imperdiet. Ut porta faucibus metus. Phasellus at condimentum ante. Orci varius natoque
+        penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam ut magna eget
+        purus hendrerit condimentum. Curabitur lacinia nisi hendrerit, euismod urna a, gravida
+        justo. In purus risus, pulvinar id placerat nec, sagittis et massa. Vestibulum vitae
+        eleifend arcu.
+      </p>
+    </main>
+
+    <!-- Example IIFE build -->
+    <script src="./index.js"></script>
+    <script>
+      console.log("This is an inline script");
+    </script>
+  </body>
+</html>

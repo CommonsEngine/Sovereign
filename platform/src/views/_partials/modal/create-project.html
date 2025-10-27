@@ -1,0 +1,223 @@
+<div data-modal="create-project" class="sv-modal" hidden>
+  <div class="sv-modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="sv-modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="project-modal-title"
+  >
+    <header class="sv-modal__header">
+      <h3 id="project-modal-title" class="sv-modal__title">Create new project</h3>
+    </header>
+
+    <div class="sv-modal__body">
+      <form class="sv-modal__form" data-modal-form novalidate>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-name-input">Name</label>
+          <input
+            id="project-name-input"
+            class="sv-modal__input input"
+            type="text"
+            maxlength="120"
+            placeholder="Eg. My Workspace"
+            data-modal-autofocus
+          />
+        </div>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-type-input">Type</label>
+          <select id="project-type-input" class="sv-modal__input input">
+            <!-- TODO: Populate options from server side -->
+            <option value="blog" selected>Blog</option>
+            <option value="papertrail">PaperTrail</option>
+            <option value="example-plugin-static" selected>Example Static Plugin</option>
+            <option value="example-plugin-spa">Example SPA Plugin</option>
+          </select>
+        </div>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-scope-input">Scope</label>
+          <select id="project-scope-input" class="sv-modal__input input">
+            <!-- TODO: Populate options from server side -->
+            <option value="private" selected>Private</option>
+            <option value="org">Organization</option>
+            <option value="public">Public</option>
+          </select>
+        </div>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-desc-input">Description</label>
+          <textarea
+            id="project-desc-input"
+            class="sv-modal__input input"
+            rows="3"
+            maxlength="500"
+            placeholder="Briefly describe the project—purpose, key features, and initial goals."
+          ></textarea>
+        </div>
+
+        <div
+          class="sv-modal__alert modal__alert--error"
+          data-modal-alert="error"
+          style="display: none"
+        ></div>
+      </form>
+    </div>
+
+    <footer class="sv-modal__footer">
+      <button type="button" class="chip button" data-modal-close>Cancel</button>
+      <button
+        type="submit"
+        class="chip chip--primary button button--primary"
+        formnovalidate
+        data-modal-submit
+      >
+        Create
+      </button>
+    </footer>
+  </div>
+
+  <script>
+    // Project-specific submission, still generic DOM lookups within the modal
+    (function initProjectModal(root = document.querySelector('[data-modal="create-project"]')) {
+      if (!root) return;
+      const form = root.querySelector("[data-modal-form]");
+      const err = root.querySelector('[data-modal-alert="error"]');
+      const nameEl = root.querySelector("#project-name-input");
+      const typeEl = root.querySelector("#project-type-input");
+      const scopeEl = root.querySelector("#project-scope-input");
+      const descEl = root.querySelector("#project-desc-input");
+      const submitBtn = root.querySelector("[data-modal-submit]");
+
+      // helper to show per-field error element
+      function setFieldError(el, message) {
+        if (!el) return;
+        el.setAttribute("aria-invalid", !!message);
+        let e = el.closest(".modal__field")?.querySelector(".field-error");
+        if (message) {
+          if (!e) {
+            e = document.createElement("div");
+            e.className = "field-error";
+            e.style.color = "#b00020";
+            e.style.fontSize = "0.9rem";
+            e.style.marginTop = "6px";
+            el.closest(".modal__field")?.appendChild(e);
+          }
+          e.textContent = message;
+        } else if (e) {
+          e.textContent = "";
+        }
+      }
+
+      // basic validation logic
+      function validate() {
+        const errors = {};
+        const name = (nameEl?.value || "").trim();
+        const desc = (descEl?.value || "").trim();
+        const type = typeEl?.value || "";
+        const scope = scopeEl?.value || "";
+
+        if (!name) errors.name = "Project name is required.";
+        else if (name.length > 120) errors.name = "Name must be 120 characters or fewer.";
+
+        if (desc.length > 500) errors.desc = "Description must be 500 characters or fewer.";
+
+        // ensure type/scope are one of the available options
+        if (typeEl && ![...typeEl.options].some((o) => o.value === type)) {
+          errors.type = "Invalid project type.";
+        }
+        if (scopeEl && ![...scopeEl.options].some((o) => o.value === scope)) {
+          errors.scope = "Invalid project scope.";
+        }
+
+        // reflect errors to UI
+        setFieldError(nameEl, errors.name || "");
+        setFieldError(descEl, errors.desc || "");
+        setFieldError(typeEl, errors.type || "");
+        setFieldError(scopeEl, errors.scope || "");
+
+        const valid = Object.keys(errors).length === 0;
+        if (submitBtn) submitBtn.disabled = !valid;
+        return { valid, errors };
+      }
+
+      // Reset form and error when modal is closed
+      function resetForm() {
+        form?.reset();
+        if (err) {
+          err.textContent = "";
+          err.style.display = "none";
+        }
+        // clear per-field errors
+        setFieldError(nameEl, "");
+        setFieldError(descEl, "");
+        setFieldError(typeEl, "");
+        setFieldError(scopeEl, "");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+      // Observe the hidden attribute toggled by the modal runtime
+      const modalObserver = new MutationObserver((mutList) => {
+        for (const m of mutList) {
+          if (m.type === "attributes" && m.attributeName === "hidden") {
+            if (root.hasAttribute("hidden")) resetForm();
+          }
+        }
+      });
+      modalObserver.observe(root, {
+        attributes: true,
+        attributeFilter: ["hidden"],
+      });
+
+      // live-validate on input
+      [nameEl, descEl, typeEl, scopeEl].forEach((el) => {
+        if (!el) return;
+        el.addEventListener("input", () => validate());
+        el.addEventListener("blur", () => validate());
+      });
+
+      root.addEventListener("click", async (e) => {
+        const submit = e.target.closest("[data-modal-submit]");
+        if (!submit) return;
+        e.preventDefault();
+        if (err) err.style.display = "none";
+
+        const { valid, errors } = validate();
+        if (!valid) {
+          // focus first invalid field
+          if (errors.name) nameEl?.focus();
+          else if (errors.type) typeEl?.focus();
+          else if (errors.scope) scopeEl?.focus();
+          else if (errors.desc) descEl?.focus();
+          return;
+        }
+
+        const payload = {
+          name: (nameEl?.value || "Untitled").trim().slice(0, 120),
+          type: typeEl?.value || "blog",
+          scope: scopeEl?.value || "private",
+          desc: (descEl?.value || "").trim().slice(0, 500),
+        };
+        if (!payload.name) {
+          nameEl?.focus();
+          return;
+        }
+
+        try {
+          const resp = await fetch("/api/projects", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) throw new Error(data?.error || "Failed to create project");
+
+          window.ModalRuntime?.close(root);
+          if (data?.id) window.location.href = data?.url;
+          else window.location.reload();
+        } catch (ex) {
+          if (err) {
+            err.textContent = ex?.message || "Failed to create project";
+            err.style.display = "block";
+          }
+        }
+      });
+    })();
+  </script>
+</div>
