@@ -89,6 +89,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
         code: 400,
         message: "Bad Request",
         description: "Missing project id",
+        nodeEnv: process.env.NODE_ENV,
       });
     }
 
@@ -104,6 +105,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
         code: 403,
         message: "Forbidden",
         description: "You are not authorized!",
+        nodeEnv: process.env.NODE_ENV,
       });
     }
 
@@ -201,7 +203,8 @@ export default async function viewProject(req, res, _, { plugins, app }) {
           code: 400,
           message: "Bad Request",
           description: "Rendering HTML Plugin Failed!",
-          error: err?.message || String(err),
+          error: err?.stack || err?.message || String(err),
+          nodeEnv: process.env.NODE_ENV,
         });
       }
     }
@@ -285,7 +288,8 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       code: 500,
       message: "Oops!",
       description: "Failed to load project",
-      error: err?.message || String(err),
+      error: err?.stack || err?.message || String(err),
+      nodeEnv: process.env.NODE_ENV,
     });
   }
 }

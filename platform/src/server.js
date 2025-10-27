@@ -8,6 +8,8 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
+import "$/utils/hbsHelpers.mjs";
+
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
 
@@ -25,8 +27,6 @@ import * as appHandler from "$/handlers/app.mjs";
 import viewProject from "$/handlers/projects/viewProject.js";
 
 import apiProjects from "$/routes/api/projects.js";
-
-import hbsHelpers from "$/utils/hbsHelpers.mjs";
 
 import env from "$/config/env.mjs";
 
@@ -79,7 +79,6 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
       extname: ".html",
       defaultLayout: false,
       partialsDir: path.join(__templatedir, "_partials"),
-      helpers: hbsHelpers,
     })
   );
   app.set("view engine", "html");
@@ -218,6 +217,7 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
       code: 404,
       message: "Page not found",
       description: "The page you’re looking for doesn’t exist.",
+      nodeEnv: process.env.NODE_ENV,
     });
   });
 
@@ -232,6 +232,8 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
       code: 500,
       message: "Something went wrong",
       description: "Please try again later.",
+      error: err.stack,
+      nodeEnv: process.env.NODE_ENV,
     });
   });
 

@@ -279,7 +279,8 @@ export async function viewUsers(req, res) {
       code: 500,
       message: "Oops!",
       description: "Failed to load users",
-      error: err?.message || String(err),
+      error: err?.stack || err?.message || String(err),
+      nodeEnv: process.env.NODE_ENV,
     });
   }
 }

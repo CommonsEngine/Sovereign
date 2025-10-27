@@ -57,6 +57,53 @@
   }
 }
 
+@layer styled.typography {
+  /* Base style for all headings */
+  [class^="sv-h"],
+  [class*=" sv-h"] {
+    font-family: var(--font-sans);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-xs);
+    margin: 0 0 var(--space-xs);
+    color: var(--color-text-primary, #0f172a);
+  }
+  /* H1 — Page titles */
+  .sv-h1 {
+    font-size: clamp(2rem, 4vw, 2.5rem); /* ~32–40px */
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  /* H2 — Section titles */
+  .sv-h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem); /* ~24–32px */
+    font-weight: 700;
+  }
+  /* H3 — Subsection titles */
+  .sv-h3 {
+    font-size: clamp(1.25rem, 2.5vw, 1.5rem); /* ~20–24px */
+    font-weight: 600;
+  }
+  /* H4 — Small headings (cards, modules) */
+  .sv-h4 {
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+  }
+  /* H5 — Minor labels or subtitles */
+  .sv-h5 {
+    font-size: 1rem; /* 16px */
+    font-weight: 500;
+    color: var(--color-text-secondary, #475569);
+  }
+  /* H6 — Tiny uppercase labels (optional) */
+  .sv-h6 {
+    font-size: 0.875rem; /* 14px */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted, #6b7280);
+  }
+}
+
 @layer styled.sv-sidebar {
   .sv-sidebar {
     display: flex;
@@ -95,7 +142,6 @@
     background: var(--color-border-primary);
     margin: 8px 0;
   }
-
   .sv-sidebar__nav {
     display: flex;
     flex-direction: column;

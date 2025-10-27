@@ -87,6 +87,7 @@ export async function viewProject(req, res) {
         code: 400,
         message: "Bad Request",
         description: "Missing project id",
+        nodeEnv: process.env.NODE_ENV,
       });
     }
 
@@ -108,6 +109,8 @@ export async function viewProject(req, res) {
             code: status,
             message,
             description,
+            error: err?.stack || err?.message || String(err),
+            nodeEnv: process.env.NODE_ENV,
           });
         }
       }
@@ -289,6 +292,7 @@ export async function viewProject(req, res) {
       code: 404,
       message: "Not Found",
       description: "Project not found",
+      nodeEnv: process.env.NODE_ENV,
     });
   } catch (err) {
     logger.error("✗ Render project page failed:", err);
@@ -296,7 +300,8 @@ export async function viewProject(req, res) {
       code: 500,
       message: "Oops!",
       description: "Failed to load project",
-      error: err?.message || String(err),
+      error: err?.stack || err?.message || String(err),
+      nodeEnv: process.env.NODE_ENV,
     });
   }
 }

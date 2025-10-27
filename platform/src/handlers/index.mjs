@@ -14,7 +14,8 @@ export async function viewIndex(_, res) {
       code: 500,
       message: "Oops!",
       description: "Failed to load projects",
-      error: err?.message || String(err),
+      error: err?.stack || err?.message || String(err),
+      nodeEnv: process.env.NODE_ENV,
     });
   }
 }

@@ -1,0 +1,31 @@
+.flex {
+  display: flex;
+}
+.col {
+  flex-direction: column;
+}
+.row {
+  flex-direction: row;
+}
+.align-items-center {
+  align-items: center;
+}
+.justify-content-center {
+  justify-content: center;
+}
+.sv-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+}
+.gap-s {
+  gap: var(--space-s);
+}
+.gap-m {
+  gap: var(--space-m);
+}
+.gap-l {
+  gap: var(--space-l);
+}
