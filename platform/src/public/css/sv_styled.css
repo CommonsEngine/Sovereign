@@ -45,12 +45,18 @@
     width: 100%;
     box-sizing: border-box;
   }
-  .sv-page--center {
+  .sv-page__wrap--center {
     max-width: 1200px;
     margin: 0 auto;
   }
-  .sv-page--center .sv-page__title {
-    padding: 0 20px 0;
+  .sv-page__header {
+    --no-op: 0;
+  }
+  .sv-page__title {
+    --no-op: 0;
+  }
+  .sv-page__subtitle {
+    --no-op: 0;
   }
   .sv-page__grid {
     --no-op: 0;
@@ -101,6 +107,12 @@
     text-transform: uppercase;
     letter-spacing: 0.04em;
     color: var(--color-text-muted, #6b7280);
+  }
+}
+
+@layer styled.sv-button {
+  .sv-button {
+    --no-op: 0;
   }
 }
 
@@ -287,5 +299,56 @@
   .sv-header__user-menu-item:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
     outline-offset: 2px;
+  }
+}
+
+@layer components.breadcrumb {
+  .sv-breadcrumb {
+    margin: var(--space-xs) 0;
+    font-size: var(--font-size-s);
+    color: var(--color-text-secondary);
+  }
+
+  .sv-breadcrumb__list {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+  }
+
+  .sv-breadcrumb__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .sv-breadcrumb__item + .sv-breadcrumb__item::before {
+    content: "/";
+    color: var(--color-text-muted);
+  }
+
+  .sv-breadcrumb__link {
+    color: inherit;
+    text-decoration: none;
+    padding: var(--space-2xs) var(--space-xs);
+    border-radius: var(--radius-s);
+    transition:
+      color var(--transition-base) var(--transition-easing-standard),
+      background-color var(--transition-base) var(--transition-easing-standard);
+  }
+
+  .sv-breadcrumb__link:hover,
+  .sv-breadcrumb__link:focus-visible {
+    background: var(--color-bg-secondary);
+    color: var(--color-text-primary);
+    outline: none; /* base layer already provides a global focus ring on links */
+  }
+
+  .sv-breadcrumb__current {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
   }
 }
