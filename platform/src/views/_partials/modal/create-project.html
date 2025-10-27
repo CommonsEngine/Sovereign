@@ -1,26 +1,31 @@
-<div data-modal="create-project" class="modal" hidden>
-  <div class="modal__backdrop" data-modal-close aria-hidden="true"></div>
-  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="project-modal-title">
-    <header class="modal__header">
-      <h3 id="project-modal-title" class="modal__title">Create new project</h3>
+<div data-modal="create-project" class="sv-modal" hidden>
+  <div class="sv-modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="sv-modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="project-modal-title"
+  >
+    <header class="sv-modal__header">
+      <h3 id="project-modal-title" class="sv-modal__title">Create new project</h3>
     </header>
 
-    <div class="modal__body">
-      <form class="modal__form" data-modal-form novalidate>
-        <div class="modal__field">
-          <label class="modal__label" for="project-name-input">Name</label>
+    <div class="sv-modal__body">
+      <form class="sv-modal__form" data-modal-form novalidate>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-name-input">Name</label>
           <input
             id="project-name-input"
-            class="modal__input input"
+            class="sv-modal__input input"
             type="text"
             maxlength="120"
             placeholder="Eg. My Workspace"
             data-modal-autofocus
           />
         </div>
-        <div class="modal__field">
-          <label class="modal__label" for="project-type-input">Type</label>
-          <select id="project-type-input" class="modal__input input">
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-type-input">Type</label>
+          <select id="project-type-input" class="sv-modal__input input">
             <!-- TODO: Populate options from server side -->
             <option value="blog" selected>Blog</option>
             <option value="papertrail">PaperTrail</option>
@@ -28,20 +33,20 @@
             <option value="example-plugin-react">Example Plugin React</option>
           </select>
         </div>
-        <div class="modal__field">
-          <label class="modal__label" for="project-scope-input">Scope</label>
-          <select id="project-scope-input" class="modal__input input">
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-scope-input">Scope</label>
+          <select id="project-scope-input" class="sv-modal__input input">
             <!-- TODO: Populate options from server side -->
             <option value="private" selected>Private</option>
             <option value="org">Organization</option>
             <option value="public">Public</option>
           </select>
         </div>
-        <div class="modal__field">
-          <label class="modal__label" for="project-desc-input">Description</label>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="project-desc-input">Description</label>
           <textarea
             id="project-desc-input"
-            class="modal__input input"
+            class="sv-modal__input input"
             rows="3"
             maxlength="500"
             placeholder="Briefly describe the project—purpose, key features, and initial goals."
@@ -49,14 +54,14 @@
         </div>
 
         <div
-          class="modal__alert modal__alert--error"
+          class="sv-modal__alert modal__alert--error"
           data-modal-alert="error"
           style="display: none"
         ></div>
       </form>
     </div>
 
-    <footer class="modal__footer">
+    <footer class="sv-modal__footer">
       <button type="button" class="chip button" data-modal-close>Cancel</button>
       <button
         type="submit"

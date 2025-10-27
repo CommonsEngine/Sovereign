@@ -353,3 +353,329 @@
     font-weight: var(--font-weight-semibold);
   }
 }
+
+@layer components.card {
+  .sv-card {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--space-s);
+    box-shadow: var(--shadow-s);
+    overflow: hidden;
+  }
+  .sv-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--color-border-primary);
+    background: var(--color-bg-secondary);
+  }
+  .sv-card__header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sv-card__header-search-input {
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--color-text-primary);
+    width: clamp(180px, 24vw, 260px);
+    box-shadow: var(--shadow-s);
+    font-size: 14px;
+  }
+  .sv-card__header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    box-shadow: var(--shadow-s);
+    padding: 0;
+  }
+  .sv-card__header-icon:hover {
+    opacity: var(--opacity-hover, 0.85);
+  }
+  .sv-card__header-icon:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+  .sv-card__header-icon svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    pointer-events: none;
+  }
+  .sv-card__body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .sv-card fieldset {
+    border: none;
+  }
+}
+
+@layer components.table {
+  .sv-table__wrap {
+    overflow: auto;
+  }
+  .sv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .sv-table th,
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border-primary);
+    vertical-align: middle;
+    line-height: var(--line-height-s);
+  }
+  .sv-table th {
+    text-align: left;
+    color: var(--color-text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .sv-table td .strong {
+    font-weight: 600;
+    color: var(--color-text-primary);
+  }
+  .sv-table td .subtle {
+    color: var(--color-text-muted);
+    font-size: 12px;
+  }
+  .sv-table td .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    text-transform: capitalize;
+  }
+  .sv-table td .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border-primary);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    background: var(--color-bg-primary);
+    margin-right: 6px;
+  }
+  .sv-table td .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sv-table td .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 36px;
+    min-height: 32px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: var(--shadow-s);
+  }
+  .sv-table td .chip--danger {
+    color: var(--color-danger);
+  }
+  .sv-table td .chip:hover {
+    opacity: var(--opacity-hover, 0.85);
+  }
+  .sv-table d .chip:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+  .sv-table td .chip svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    pointer-events: none;
+  }
+  .sv-table td.empty {
+    color: var(--color-text-secondary);
+    padding: 16px;
+    text-align: center;
+    font-size: small;
+  }
+}
+
+@layer components {
+  .sv-modal-open {
+    overflow: hidden;
+  }
+  .sv-modal[hidden] {
+    display: none !important;
+  }
+  .sv-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+  }
+  /* Backdrop */
+  .sv-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: saturate(120%) blur(1.5px);
+  }
+  /* Dialog shell */
+  .sv-modal__dialog {
+    position: relative;
+    width: min(560px, calc(100% - 24px));
+    max-height: calc(100dvh - 24px);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-primary);
+    border-radius: var(--radius-l, 12px);
+    box-shadow: var(--shadow-l);
+    overflow: hidden; /* keep header/footer pinned, body scrolls */
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+  /* Header */
+  .sv-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs, 8px);
+    padding: var(--space-m);
+    border-bottom: 1px solid var(--color-border-primary);
+    background: var(--color-bg-secondary);
+  }
+  .sv-modal__title {
+    font-size: var(--font-size-m, 16px);
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+  /* Close button */
+  .sv-modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: var(--radius-s, 8px);
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+  }
+  .sv-modal__close:hover {
+    background: var(--color-bg-secondary);
+  }
+  .sv-modal__close:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
+    outline-offset: 2px;
+  }
+  .sv-modal__close svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    pointer-events: none;
+  }
+  /* Body */
+  .sv-modal__body {
+    padding: var(--space-s, 14px) var(--space-m, 16px);
+    overflow: auto;
+    display: grid;
+    gap: var(--space-xs, 12px);
+  }
+  /* Form */
+  .sv-modal__form {
+    display: contents; /* let header/body/footer control layout */
+  }
+  /* Fields */
+  .sv-modal__field {
+    display: grid;
+    gap: 6px;
+  }
+  .sv-modal__label {
+    font-size: var(--font-size-s, 13px);
+    color: var(--color-text-secondary);
+  }
+  .sv-modal__input {
+    width: 100%;
+  }
+  .sv-modal__result {
+    font-size: var(--font-size-s, 13px);
+    padding: var(--space-s);
+    background-color: #faffe9;
+    border-radius: var(--space-s);
+    margin-top: var(--space-xs);
+  }
+  .sv-modal__result input {
+    font-family: var(--font-mono);
+    font-size: var(--font-size-xs);
+  }
+  /* Alerts */
+  .sv-modal__alert {
+    display: none; /* toggled by script */
+    border-radius: var(--radius-m, 10px);
+    padding: 10px 12px;
+    font-size: var(--font-size-s, 13px);
+    margin-bottom: var(--space-2xs, 4px);
+  }
+  .sv-modal__alert--error {
+    background: color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 85%);
+    border: 1px solid color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 70%);
+    color: color-mix(in oklab, var(--color-danger), var(--color-text-primary) 40%);
+  }
+  .sv-modal__alert--success {
+    background: color-mix(in oklab, var(--color-success), var(--color-bg-primary) 85%);
+    border: 1px solid color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
+    color: color-mix(in oklab, var(--color-success), var(--color-text-primary) 40%);
+  }
+  /* Footer */
+  .sv-modal__footer {
+    display: flex;
+    gap: var(--space-xs, 8px);
+    justify-content: flex-end;
+    padding: 12px 16px;
+    border-top: 1px solid var(--color-border-primary);
+    background: var(--color-bg-secondary);
+  }
+  /* Buttons inside modal */
+  .sv-modal__button {
+    /* uses your .button styles; this adds spacing consistency */
+    --no-op: 0; /* workaround for empty rule */
+  }
+  /* Responsive */
+  @media (max-width: 640px) {
+    .sv-modal__dialog {
+      width: calc(100% - 16px);
+      max-height: calc(100dvh - 16px);
+      border-radius: var(--radius-m, 10px);
+    }
+  }
+  /* Motion */
+  @media (prefers-reduced-motion: reduce) {
+    .sv-modal__backdrop {
+      backdrop-filter: none;
+    }
+  }
+}

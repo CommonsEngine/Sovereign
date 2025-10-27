@@ -32,3 +32,89 @@
 .gap-l {
   gap: var(--space-l);
 }
+/* Container */
+.sv-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-m, 1rem); /* you can override this */
+  box-sizing: border-box;
+}
+
+/* Columns — default 12-column system */
+
+/* 1 of 12 (≈8.333%) */
+.sv-col-1 {
+  flex: 0 0 calc(100% / 12 * 1 - var(--space-m));
+}
+
+/* 2 of 12 (≈16.666%) */
+.sv-col-2 {
+  flex: 0 0 calc(100% / 12 * 2 - var(--space-m));
+}
+
+/* 3 of 12 (25%) */
+.sv-col-3 {
+  flex: 0 0 calc(100% / 12 * 3 - var(--space-m));
+}
+
+/* 4 of 12 (33.333%) */
+.sv-col-4 {
+  flex: 0 0 calc(100% / 12 * 4 - var(--space-m));
+}
+
+/* 5 of 12 (41.666%) */
+.sv-col-5 {
+  flex: 0 0 calc(100% / 12 * 5 - var(--space-m));
+}
+
+/* 6 of 12 (50%) */
+.sv-col-6 {
+  flex: 0 0 calc(100% / 12 * 6 - var(--space-m));
+}
+
+/* 7 of 12 (58.333%) */
+.sv-col-7 {
+  flex: 0 0 calc(100% / 12 * 7 - var(--space-m));
+}
+
+/* 8 of 12 (66.666%) */
+.sv-col-8 {
+  flex: 0 0 calc(100% / 12 * 8 - var(--space-m));
+}
+
+/* 9 of 12 (75%) */
+.sv-col-9 {
+  flex: 0 0 calc(100% / 12 * 9 - var(--space-m));
+}
+
+/* 10 of 12 (83.333%) */
+.sv-col-10 {
+  flex: 0 0 calc(100% / 12 * 10 - var(--space-m));
+}
+
+/* 11 of 12 (91.666%) */
+.sv-col-11 {
+  flex: 0 0 calc(100% / 12 * 11 - var(--space-m));
+}
+
+/* 12 of 12 (100%) */
+.sv-col-12 {
+  flex: 0 0 calc(100% / 12 * 12 - var(--space-m));
+}
+
+/* Stretching / auto layouts */
+.sv-col-auto {
+  flex: 1 1 auto;
+}
+
+/* Optional alignment helpers */
+.sv-grid.center {
+  justify-content: center;
+  align-items: center;
+}
+.sv-grid.middle {
+  align-items: center;
+}
+.sv-grid.right {
+  justify-content: flex-end;
+}
