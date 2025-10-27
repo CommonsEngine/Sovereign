@@ -126,6 +126,7 @@ function escapeAttr(value) {
   return String(value ?? "").replace(/"/g, "&quot;");
 }
 
+// TODO: To maintain the consistance, use /platform/src/views/_partials/layout/head.html here for Html Head as well instead of harcodeding them
 async function renderHead(res) {
   const locals = {
     ...res.locals,
@@ -146,6 +147,8 @@ async function renderHead(res) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${title}</title>
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
-<link rel="stylesheet" href="/css/global.css?v=${version}" />`;
+<link rel="stylesheet" href="/css/sv_base.css?v=${version}" />
+<link rel="stylesheet" href="/css/sv_styled.css?v=${version}" />
+<link rel="stylesheet" href="/css/sv_utility.css?v=${version}" />`;
   });
 }

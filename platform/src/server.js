@@ -31,7 +31,7 @@ import apiProjects from "$/routes/api/projects.js";
 import env from "$/config/env.mjs";
 
 const config = env();
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, APP_VERSION } = config;
+const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
 export default async function createServer({ plugins, pluginsPublicAssetsDirs }) {
   const app = express();
@@ -142,16 +142,18 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
     })
   );
 
-  // --- Demo routes ---
-  // Example route for React-SSR handled view (captures any subpath)
-  app.get(/^\/example\/react(?:\/(.*))?$/, requireAuth, exposeGlobals, async (req, res, next) => {
-    try {
-      const subpath = req.params[0] || "";
-      await res.renderJSX("example/react/index", { path: subpath });
-    } catch (e) {
-      next(e);
-    }
-  }); // TODO: Remove once the platfrom is ready
+  if (!IS_PROD) {
+    // --- Demo routes ---
+    // Example route for React-SSR handled view (captures any subpath)
+    app.get(/^\/example\/react(?:\/(.*))?$/, requireAuth, exposeGlobals, async (req, res, next) => {
+      try {
+        const subpath = req.params[0] || "";
+        await res.renderJSX("example/react/index", { path: subpath });
+      } catch (e) {
+        next(e);
+      }
+    });
+  }
 
   // Auth Routes
   app.post("/auth/invite", requireAuth, authHandler.inviteUser);
