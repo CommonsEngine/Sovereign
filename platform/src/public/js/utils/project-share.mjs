@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 const SHARE_ROLE_LABELS = {
   owner: "Owner",
   editor: "Editor",
@@ -210,7 +211,7 @@ export function initProjectShareModal(options = {}) {
     setLoading(true, { withoutRender: true });
     render();
     try {
-      const response = await fetch(baseApi, {
+      const response = await window.fetch(baseApi, {
         method: "GET",
         headers: { Accept: "application/json" },
       });
@@ -246,7 +247,7 @@ export function initProjectShareModal(options = {}) {
     }
     setError("");
     try {
-      const response = await fetch(baseApi, {
+      const response = await window.fetch(baseApi, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, role }),
@@ -279,7 +280,7 @@ export function initProjectShareModal(options = {}) {
     state.busy.add(contributorId);
     render();
     try {
-      const response = await fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
+      const response = await window.fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role }),
@@ -309,7 +310,7 @@ export function initProjectShareModal(options = {}) {
     state.busy.add(contributorId);
     render();
     try {
-      const response = await fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
+      const response = await window.fetch(`${baseApi}/${encodeURIComponent(contributorId)}`, {
         method: "DELETE",
         headers: { Accept: "application/json" },
       });
