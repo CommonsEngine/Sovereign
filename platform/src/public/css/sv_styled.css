@@ -39,6 +39,19 @@
   .sv-page--shell > main > section {
     flex: 1;
   }
+  .sv-page__wrap {
+    margin: 0;
+    padding: 40px 0 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .sv-page--center {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .sv-page__grid {
+    --no-op: 0;
+  }
 }
 
 @layer styled.sv-sidebar {

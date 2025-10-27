@@ -26,7 +26,6 @@
         />
       </svg>
     </a>
-
     <!-- Users -->
     {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
@@ -61,7 +60,7 @@
     <!-- Settings -->
     {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
-      class="sidebar__btn{{#if settings_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if settings_active}} is-active{{/if}}"
       href="/settings"
       title="Settings"
       aria-label="Settings"

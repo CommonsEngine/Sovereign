@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Simple StartupManager that attaches to window for non-module usage
 (function () {
   if (window.StartupManager) return;
@@ -12,6 +13,7 @@
         cb(snapshot);
       } catch (e) {
         /* swallow */
+        console.log(e);
       }
     });
   }

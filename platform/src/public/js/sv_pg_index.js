@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // Uses global StartupManager for index page specific startup tasks
 (function () {
   const SM = window.StartupManager;
@@ -7,7 +8,7 @@
   }
 
   async function fetchProjects() {
-    const resp = await fetch("/api/projects");
+    const resp = await window.fetch("/api/projects");
     if (!resp.ok) throw new Error("Failed to fetch projects");
     return resp.json();
   }
@@ -20,20 +21,20 @@
 
     for (const p of projects) {
       if (!p || !p.id) continue;
-      if (document.querySelector(`.projects__card[data-project-id="${CSS.escape(p.id)}"]`))
+      if (document.querySelector(`.sv-projects__card[data-project-id="${CSS.escape(p.id)}"]`))
         continue;
 
       const article = document.createElement("article");
-      article.className = "projects__card";
+      article.className = "sv-projects__card";
       article.setAttribute("data-project-id", p.id);
       article.setAttribute("data-owned", p.owned ? "true" : "false");
       article.setAttribute("data-shared", p.shared ? "true" : "false");
 
       const row = document.createElement("div");
-      row.className = "projects__card-row";
+      row.className = "sv-projects__card-row";
 
       const titleDiv = document.createElement("div");
-      titleDiv.className = "projects__card-title";
+      titleDiv.className = "sv-projects__card-title";
       if (p.owned) {
         titleDiv.setAttribute("data-inline-edit", "name");
         titleDiv.setAttribute("title", "Double-click to rename");
@@ -42,7 +43,7 @@
       titleDiv.textContent = p.name || "Untitled";
 
       const badge = document.createElement("span");
-      badge.className = "projects__card-badge projects__card-badge--status";
+      badge.className = "sv-projects__card-badge sv-projects__card-badge--status";
       badge.textContent = p.status || "";
 
       row.appendChild(titleDiv);
@@ -50,24 +51,24 @@
       article.appendChild(row);
 
       const metaInfo = document.createElement("div");
-      metaInfo.className = "projects__card-meta projects__card-meta--info";
+      metaInfo.className = "sv-projects__card-meta sv-projects__card-meta--info";
       if (p.scope) {
         const chip = document.createElement("span");
-        chip.className = "projects__card-chip projects__card-chip--scope";
+        chip.className = "sv-projects__card-chip sv-projects__card-chip--scope";
         chip.title = "Scope";
         chip.textContent = p.scope;
         metaInfo.appendChild(chip);
       }
       if (p.type) {
         const chip = document.createElement("span");
-        chip.className = "projects__card-chip projects__card-chip--type";
+        chip.className = "sv-projects__card-chip sv-projects__card-chip--type";
         chip.title = "Type";
         chip.textContent = p.type;
         metaInfo.appendChild(chip);
       }
       if (p.shared) {
         const chip = document.createElement("span");
-        chip.className = "projects__card-chip projects__card-chip--shared";
+        chip.className = "sv-projects__card-chip sv-projects__card-chip--shared";
         chip.title = p.owned ? "Shared with teammates" : "Shared project";
         chip.textContent = p.owned ? "Shared" : "Shared with you";
         metaInfo.appendChild(chip);
@@ -75,7 +76,7 @@
       article.appendChild(metaInfo);
 
       const metaDate = document.createElement("div");
-      metaDate.className = "projects__card-meta projects__card-meta--date";
+      metaDate.className = "sv-projects__card-meta sv-projects__card-meta--date";
       const timeEl = document.createElement("time");
       timeEl.className = "created-at";
       if (p.createdAt) {
@@ -87,17 +88,17 @@
       article.appendChild(metaDate);
 
       const actions = document.createElement("div");
-      actions.className = "projects__card-actions";
+      actions.className = "sv-projects__card-actions";
 
       const openLink = document.createElement("a");
-      openLink.className = "projects__card-link";
+      openLink.className = "sv-projects__card-link";
       openLink.href = p.url || `/p/${encodeURIComponent(p.id)}`;
       openLink.textContent = "Open";
       actions.appendChild(openLink);
 
       if (p.owned) {
         const delBtn = document.createElement("button");
-        delBtn.className = "projects__card-delete";
+        delBtn.className = "sv-projects__card-delete";
         delBtn.type = "button";
         delBtn.title = "Delete project";
         delBtn.setAttribute("aria-label", "Delete project");
@@ -123,7 +124,7 @@
   // Inline-edit / delete logic moved here
   // -------------------------
   function findCardById(id) {
-    return document.querySelector(`.projects__card[data-project-id="${CSS.escape(id)}"]`);
+    return document.querySelector(`.sv-projects__card[data-project-id="${CSS.escape(id)}"]`);
   }
 
   async function deleteProject(id) {
@@ -131,7 +132,7 @@
     if (!card) return;
     if (!confirm("This will permanently delete the project. Continue?")) return;
     try {
-      const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+      const resp = await window.fetch(`/api/projects/${encodeURIComponent(id)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirm: true }),
@@ -146,7 +147,7 @@
 
   // start inline edit on a title element
   function startTitleEdit(titleEl) {
-    const card = titleEl.closest(".projects__card");
+    const card = titleEl.closest(".sv-projects__card");
     if (!card || card.dataset.owned !== "true") return;
     if (card.dataset.editing === "name") return;
 
@@ -189,7 +190,7 @@
       if (next === prev) return cancel();
       try {
         titleEl.setAttribute("aria-busy", "true");
-        const resp = await fetch(`/api/projects/${encodeURIComponent(id)}`, {
+        const resp = await window.fetch(`/api/projects/${encodeURIComponent(id)}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: next }),
@@ -284,7 +285,7 @@
     try {
       await SM.runAll({ parallel: true });
     } catch (e) {
-      console.error("Startup errors", SM.getState());
+      console.error("Startup errors", SM.getState(), e);
     }
   });
 })();
