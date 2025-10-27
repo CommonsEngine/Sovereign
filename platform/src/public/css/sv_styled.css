@@ -30,14 +30,15 @@
     flex-direction: column;
     min-height: 100vh;
   }
-  .sv-page--shell > main > header {
+  .sv-page--shell > main > .sv-header {
     min-height: 60px;
     position: sticky;
     top: 0;
     flex-shrink: 0;
   }
-  .sv-page--shell > main > section {
+  .sv-page--shell > main > .sv-container {
     flex: 1;
+    overflow-y: scroll;
   }
   .sv-page__wrap {
     margin: 0;

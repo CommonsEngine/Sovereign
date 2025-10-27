@@ -9,113 +9,26 @@
     <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
 
     {{> sidebar}}
-    <main class="sv-container">
+    <main>
       {{> header}}
-      <div class="sv-page__wrap sv-page__wrap--center">
-        <header class="sv-page__header">
-          <div>
-            <h2 class="sv-page__title">Projects</h2>
-          </div>
-        </header>
-
-        {{> modal/modal-runtime}} {{> modal/create-project}}
-        <div id="grid" class="sv-page__grid sv-project__grid">
-          <button
-            type="button"
-            class="sv-projects__card sv-projects__card--new"
-            data-modal-open="create-project"
-            aria-haspopup="dialog"
-            aria-label="Create a new project"
-          >
-            <span class="sv-projects__add-icon" aria-hidden="true">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" />
-              </svg>
-            </span>
-            <span>Create new project</span>
-          </button>
-
-          {{#each projects}}
-          <article
-            class="sv-projects__card"
-            data-project-id="{{this.id}}"
-            data-owned="{{this.owned}}"
-          >
-            <div class="sv-projects__card-row">
-              {{#if this.owned}}
-              <div
-                class="sv-projects__card-title"
-                data-inline-edit="name"
-                title="Double-click to rename"
-                tabindex="0"
-              >
-                {{this.name}}
-              </div>
-              {{else}}
-              <div class="sv-projects__card-title">{{this.name}}</div>
-              {{/if}}
-              <span
-                class="sv-projects__card-badge sv-projects__card-badge--status"
-                aria-label="Status: {{this.status}}"
-                >{{this.status}}</span
-              >
+      <div class="sv-container">
+        <div class="sv-page__wrap sv-page__wrap--center">
+          <header class="sv-page__header">
+            <div>
+              <h2 class="sv-page__title">Projects</h2>
             </div>
+          </header>
 
-            <div class="sv-projects__card-meta sv-projects__card-meta--info">
-              {{#if this.scope}}
-              <span
-                class="sv-projects__card-chip sv-projects__card-chip--scope"
-                title="Scope"
-                aria-label="Scope: {{this.scope}}"
-                >{{this.scope}}</span
-              >
-              {{/if}} {{#if this.type}}
-              <span
-                class="sv-projects__card-chip sv-projects__card-chip--type"
-                title="Type"
-                aria-label="Type: {{this.type}}"
-                >{{this.type}}</span
-              >
-              {{/if}} {{#if this.shared}}
-              <span
-                class="sv-projects__card-chip sv-projects__card-chip--shared"
-                title="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
-                aria-label="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
-                >{{#if this.owned}}Shared{{else}}Shared with you{{/if}}</span
-              >
-              {{/if}}
-            </div>
-
-            <div class="sv-projects__card-meta sv-projects__card-meta--date">
-              <time
-                class="created-at"
-                datetime="{{this.createdAt}}"
-                data-date="{{this.createdAt}}"
-                aria-label="{{#if this.createdAt}}Created at {{this.createdAt}}{{else}}Created date loading{{/if}}"
-              >
-                {{#if this.createdAt}}{{this.createdAt}}{{else}}Loading…{{/if}}
-              </time>
-            </div>
-
-            <div class="sv-projects__card-actions">
-              <a class="sv-projects__card-link" href="/p/{{this.id}}">Open</a>
-              {{#if this.owned}}
-              <button
-                class="sv-projects__card-delete"
-                type="button"
-                title="Delete project"
-                aria-label="Delete project"
-                data-action="delete"
-                data-id="{{this.id}}"
-              >
+          {{> modal/modal-runtime}} {{> modal/create-project}}
+          <div id="grid" class="sv-page__grid sv-project__grid">
+            <button
+              type="button"
+              class="sv-projects__card sv-projects__card--new"
+              data-modal-open="create-project"
+              aria-haspopup="dialog"
+              aria-label="Create a new project"
+            >
+              <span class="sv-projects__add-icon" aria-hidden="true">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -123,18 +36,107 @@
                   stroke="currentColor"
                   stroke-width="1.5"
                   aria-hidden="true"
+                  focusable="false"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
-                  />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m7-7H5" />
                 </svg>
-              </button>
-              {{/if}}
-            </div>
-          </article>
-          {{/each}}
+              </span>
+              <span>Create new project</span>
+            </button>
+
+            {{#each projects}}
+            <article
+              class="sv-projects__card"
+              data-project-id="{{this.id}}"
+              data-owned="{{this.owned}}"
+            >
+              <div class="sv-projects__card-row">
+                {{#if this.owned}}
+                <div
+                  class="sv-projects__card-title"
+                  data-inline-edit="name"
+                  title="Double-click to rename"
+                  tabindex="0"
+                >
+                  {{this.name}}
+                </div>
+                {{else}}
+                <div class="sv-projects__card-title">{{this.name}}</div>
+                {{/if}}
+                <span
+                  class="sv-projects__card-badge sv-projects__card-badge--status"
+                  aria-label="Status: {{this.status}}"
+                  >{{this.status}}</span
+                >
+              </div>
+
+              <div class="sv-projects__card-meta sv-projects__card-meta--info">
+                {{#if this.scope}}
+                <span
+                  class="sv-projects__card-chip sv-projects__card-chip--scope"
+                  title="Scope"
+                  aria-label="Scope: {{this.scope}}"
+                  >{{this.scope}}</span
+                >
+                {{/if}} {{#if this.type}}
+                <span
+                  class="sv-projects__card-chip sv-projects__card-chip--type"
+                  title="Type"
+                  aria-label="Type: {{this.type}}"
+                  >{{this.type}}</span
+                >
+                {{/if}} {{#if this.shared}}
+                <span
+                  class="sv-projects__card-chip sv-projects__card-chip--shared"
+                  title="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
+                  aria-label="{{#if this.owned}}Shared with teammates{{else}}Shared project{{/if}}"
+                  >{{#if this.owned}}Shared{{else}}Shared with you{{/if}}</span
+                >
+                {{/if}}
+              </div>
+
+              <div class="sv-projects__card-meta sv-projects__card-meta--date">
+                <time
+                  class="created-at"
+                  datetime="{{this.createdAt}}"
+                  data-date="{{this.createdAt}}"
+                  aria-label="{{#if this.createdAt}}Created at {{this.createdAt}}{{else}}Created date loading{{/if}}"
+                >
+                  {{#if this.createdAt}}{{this.createdAt}}{{else}}Loading…{{/if}}
+                </time>
+              </div>
+
+              <div class="sv-projects__card-actions">
+                <a class="sv-projects__card-link" href="/p/{{this.id}}">Open</a>
+                {{#if this.owned}}
+                <button
+                  class="sv-projects__card-delete"
+                  type="button"
+                  title="Delete project"
+                  aria-label="Delete project"
+                  data-action="delete"
+                  data-id="{{this.id}}"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    aria-hidden="true"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                    />
+                  </svg>
+                </button>
+                {{/if}}
+              </div>
+            </article>
+            {{/each}}
+          </div>
         </div>
       </div>
     </main>
