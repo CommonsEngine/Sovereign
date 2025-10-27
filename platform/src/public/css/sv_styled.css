@@ -49,6 +49,9 @@
     max-width: 1200px;
     margin: 0 auto;
   }
+  .sv-page--center .sv-page__title {
+    padding: 0 20px 0;
+  }
   .sv-page__grid {
     --no-op: 0;
   }
