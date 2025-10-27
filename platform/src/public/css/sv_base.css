@@ -376,6 +376,59 @@
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
     outline-offset: 2px;
   }
+  /* Reset and base appearance */
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--color-border-primary, #d1d5db);
+    border-radius: 4px;
+    background-color: var(--color-surface, #fff);
+    cursor: pointer;
+    position: relative;
+    vertical-align: middle;
+    transition: all 0.15s ease-in-out;
+    padding: 8px;
+  }
+
+  /* Checked state */
+  input[type="checkbox"]:checked {
+    background-color: var(--color-primary, #3b82f6);
+    border-color: var(--color-primary, #3b82f6);
+  }
+
+  /* Checkmark */
+  input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* Hover state */
+  input[type="checkbox"]:hover {
+    border-color: var(--color-primary, #3b82f6);
+  }
+
+  /* Focus ring (keyboard accessibility) */
+  input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--color-primary, #3b82f6);
+    outline-offset: 2px;
+  }
+
+  /* Disabled state */
+  input[type="checkbox"]:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   button {
     font-size: var(--font-size-s);
     cursor: pointer;

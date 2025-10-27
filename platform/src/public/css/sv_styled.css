@@ -236,6 +236,7 @@
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    background-color: var(--color-bg-primary);
   }
   .sv-header__user {
     display: inline-flex;
@@ -519,7 +520,7 @@
   }
 }
 
-@layer components {
+@layer components.modal {
   .sv-modal-open {
     overflow: hidden;
   }
@@ -677,5 +678,26 @@
     .sv-modal__backdrop {
       backdrop-filter: none;
     }
+  }
+}
+
+@layer components.form {
+  .sv-form {
+    --no-op: 0;
+  }
+  .sv-form__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+  .sv-form__field-helptext {
+    font-size: smaller;
+    color: var(--color-text-muted);
+    padding: 4px 0 0;
+  }
+  .sv-form__actions {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: var(--space-xs);
   }
 }
