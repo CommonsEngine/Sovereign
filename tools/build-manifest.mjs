@@ -1,3 +1,5 @@
+/* eslint-disable import/order */
+import dotenv from "dotenv";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +20,9 @@ const __rootdir = path.resolve(__dirname, "..");
 const __pluginsDir = path.join(__rootdir, "plugins");
 const __finalManifestPath = path.join(__rootdir, "manifest.json");
 
+dotenv.config({ path: path.join(__dirname, "..", "platform", ".env") });
+
+// Default Manifest Object
 const manifest = {
   title: "Sovereign",
   tagline: "Reclaim your digital freedom.",
@@ -55,11 +60,6 @@ const buildManifest = async () => {
     if (!candidate.isDirectory?.()) continue;
     const namespace = candidate.name;
     const plugingRoot = path.join(__pluginsDir, namespace);
-
-    const publicDir = path.join(plugingRoot, "public");
-    const distDir = path.join(plugingRoot, "dist");
-    const assetsDir = path.join(distDir, "assets");
-    const viewsDir = path.join(plugingRoot, "views");
 
     const pluginManifestPath = path.join(plugingRoot, "plugin.json");
 
@@ -109,7 +109,16 @@ const buildManifest = async () => {
       );
     }
 
-    const entry = path.join(plugingRoot, "dist", "index.js");
+    const publicDir = path.join(plugingRoot, "public");
+    const distDir = path.join(plugingRoot, "dist");
+    const assetsDir = path.join(distDir, "assets");
+    const viewsDir = path.join(plugingRoot, "views");
+
+    let entry = path.join(plugingRoot, "dist", "index.js");
+    // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
+    if (pluginManifest.type === "custom") {
+      entry = path.join(plugingRoot, "index.js");
+    }
 
     manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
 
