@@ -3,6 +3,7 @@
   "description": "Reclaim your digital freedom.",
   "private": true,
   "version": "3",
+  "cliVersion": "0.1.0",
   "license": "AGPL-3.0",
   "bin": {
     "sv": "./bin/sv.mjs"
@@ -16,6 +17,7 @@
     "init:setup": "yarn workspace @sovereign/platform init:setup && yarn build",
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
+    "postbuild": "yarn build:manifest",
     "build:manifest": "node tools/build-manifest.mjs",
     "dev": "yarn workspace @sovereign/platform dev",
     "start": "yarn workspace @sovereign/platform start",

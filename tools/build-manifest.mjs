@@ -7,6 +7,7 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
+const plarfotmPkg = require("../platform/package.json");
 
 function formatError(message, options = {}) {
   const { pluginDir, manifestPath } = options;
@@ -17,21 +18,31 @@ function formatError(message, options = {}) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __rootdir = path.resolve(__dirname, "..");
-const __pluginsDir = path.join(__rootdir, "plugins");
+const __pluginsdir = path.join(__rootdir, "plugins");
 const __finalManifestPath = path.join(__rootdir, "manifest.json");
 
 dotenv.config({ path: path.join(__dirname, "..", "platform", ".env") });
 
 // Default Manifest Object
 const manifest = {
-  title: "Sovereign",
-  tagline: "Reclaim your digital freedom.",
-  description:
-    "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
-  keywords: pkg.keywords,
+  platform: {
+    version: plarfotmPkg.version,
+    title: "Sovereign",
+    tagline: "Reclaim your digital freedom.",
+    description:
+      "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
+    keywords: pkg.keywords,
+  },
+  core: {
+    version: pkg.version,
+  },
+  cli: {
+    version: pkg.cliVersion,
+  },
   plugins: {},
-  enabledPlugins: [],
+  enabledPlugins: [], // [@<org>/<ns>]
   __rootdir,
+  __pluginsdir,
   __assets: [],
   __views: [],
   __routes: {},
@@ -43,10 +54,10 @@ const buildManifest = async () => {
   // Read plugins directory to identify pluginCandidates
   let pluginCandidates;
   try {
-    pluginCandidates = await fs.readdir(__pluginsDir, { withFileTypes: true });
+    pluginCandidates = await fs.readdir(__pluginsdir, { withFileTypes: true });
   } catch (err) {
     if (err.code === "ENOENT") {
-      console?.warn?.(`Extension host: plugins directory "${__pluginsDir}" does not exist.`);
+      console?.warn?.(`Extension host: plugins directory "${__pluginsdir}" does not exist.`);
       return {
         plugins: {},
         enabledPlugins: [],
@@ -59,7 +70,7 @@ const buildManifest = async () => {
   for (const candidate of pluginCandidates) {
     if (!candidate.isDirectory?.()) continue;
     const namespace = candidate.name;
-    const plugingRoot = path.join(__pluginsDir, namespace);
+    const plugingRoot = path.join(__pluginsdir, namespace);
 
     const pluginManifestPath = path.join(plugingRoot, "plugin.json");
 
@@ -92,83 +103,106 @@ const buildManifest = async () => {
       continue;
     }
 
-    if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
-      console?.warn?.(
-        formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
-          manifestPath: pluginManifestPath,
-          pluginDir: plugingRoot,
-        })
-      );
-    }
-    if (!pluginManifest?.version) {
-      console?.warn?.(
-        formatError(`missing version in plugin.json`, {
-          manifestPath: pluginManifestPath,
-          pluginDir: plugingRoot,
-        })
-      );
-    }
+    // TODO: Validate the schema
+    // TODO: Normalize pluginManifest
+    // TODO: Intergrity Check
 
-    const publicDir = path.join(plugingRoot, "public");
-    const distDir = path.join(plugingRoot, "dist");
-    const assetsDir = path.join(distDir, "assets");
-    const viewsDir = path.join(plugingRoot, "views");
+    const isEnabledPlugin =
+      (process.env.NODE_ENV === "production" || pluginManifest.devOnly) && !pluginManifest.draft;
 
-    let entry = path.join(plugingRoot, "dist", "index.js");
-    // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
-    if (pluginManifest.type === "custom") {
-      entry = path.join(plugingRoot, "index.js");
-    }
+    if (isEnabledPlugin) {
+      manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
 
-    manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
-
-    try {
-      await fs.access(publicDir);
-      manifest.__assets.push({ base: "/", dir: publicDir });
-    } catch {
-      console?.warn(`error access: ${publicDir}`);
-    }
-
-    if (pluginManifest.type === "spa") {
-      try {
-        await fs.access(distDir);
-        manifest.__assets.push({ base: `/plugins/${namespace}/`, dir: distDir });
-      } catch {
-        console?.warn(`error access: ${distDir}`);
+      if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
+        console?.warn?.(
+          formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
+            manifestPath: pluginManifestPath,
+            pluginDir: plugingRoot,
+          })
+        );
       }
-      try {
-        await fs.access(assetsDir);
-        manifest.__assets.push({ base: `/plugins/${namespace}/assets`, dir: assetsDir });
-      } catch {
-        console?.warn(`error access: ${assetsDir}`);
-      }
-    }
-
-    if (pluginManifest.type === "custom") {
-      try {
-        await fs.access(viewsDir);
-        manifest.__views.push({ base: namespace, dir: viewsDir });
-      } catch {
-        console?.warn(`error access: ${viewsDir}`);
+      if (!pluginManifest?.version) {
+        console?.warn?.(
+          formatError(`missing version in plugin.json`, {
+            manifestPath: pluginManifestPath,
+            pluginDir: plugingRoot,
+          })
+        );
       }
 
-      manifest.__routes[namespace] = {
-        api: {
-          base: `plugins/${namespace}`,
-          path: path.join(plugingRoot, "routes", "api", "index.js"),
-        },
-        web: {
-          base: `plugins/${namespace}`,
-          path: path.join(plugingRoot, "routes", "web", "index.js"),
-        },
+      const publicDir = path.join(plugingRoot, "public");
+      const distDir = path.join(plugingRoot, "dist");
+      const assetsDir = path.join(distDir, "assets");
+      const viewsDir = path.join(plugingRoot, "views");
+
+      let entry = path.join(plugingRoot, "dist", "index.js");
+      // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
+      if (pluginManifest.type === "custom") {
+        entry = path.join(plugingRoot, "index.js");
+      }
+
+      try {
+        await fs.access(publicDir);
+        manifest.__assets.push({ base: "/", dir: publicDir });
+      } catch {
+        console?.warn(`error access: ${publicDir}`);
+      }
+
+      if (pluginManifest.type === "spa") {
+        try {
+          await fs.access(distDir);
+          manifest.__assets.push({ base: `/plugins/${namespace}/`, dir: distDir });
+        } catch {
+          console?.warn(`error access: ${distDir}`);
+        }
+        try {
+          await fs.access(assetsDir);
+          manifest.__assets.push({ base: `/`, dir: assetsDir });
+        } catch {
+          console?.warn(`error access: ${assetsDir}`);
+        }
+      }
+
+      if (pluginManifest.type === "custom") {
+        try {
+          await fs.access(viewsDir);
+          manifest.__views.push({ base: namespace, dir: viewsDir });
+        } catch {
+          console?.warn(`error access: ${viewsDir}`);
+        }
+
+        // build routes
+        manifest.__routes[namespace] = {};
+
+        const apiRoutesPath = path.join(plugingRoot, "routes", "api", "index.js");
+        try {
+          await fs.access(apiRoutesPath);
+          manifest.__routes[namespace]["api"] = {
+            base: `/plugins/${namespace}`,
+            path: apiRoutesPath,
+          };
+        } catch {
+          console?.warn(`error access: ${apiRoutesPath}`);
+        }
+
+        const webRoutesPath = path.join(plugingRoot, "routes", "web", "index.js");
+        try {
+          await fs.access(webRoutesPath);
+          manifest.__routes[namespace]["web"] = {
+            base: `/${namespace}`,
+            path: webRoutesPath,
+          };
+        } catch {
+          console?.warn(`error access: ${webRoutesPath}`);
+        }
+      }
+
+      plugins[namespace] = {
+        namespace,
+        entry,
+        ...pluginManifest,
       };
     }
-
-    plugins[namespace] = {
-      namespace,
-      entry,
-      ...pluginManifest,
-    };
   }
 
   const outputManifest = {

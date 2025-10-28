@@ -1,4 +1,6 @@
 {
   "name": "@kasunben/papertrail",
-  "private": true
+  "private": true,
+  "version": "1.0.0-alpha.7",
+  "type": "module"
 }

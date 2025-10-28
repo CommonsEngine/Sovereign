@@ -4,7 +4,7 @@ import { requireAuth } from "$/platform/middlewares/auth.mjs";
 import exposeGlobals from "$/platform/middlewares/exposeGlobals.mjs";
 import requireFeature from "$/platform/middlewares/requireFeature.mjs";
 
-import * as indexHandler from "../handlers/index.mjs";
+import * as indexHandler from "../../handlers/index.mjs";
 
 const router = express.Router();
 
