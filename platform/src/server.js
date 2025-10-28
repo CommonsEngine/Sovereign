@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
+import { pathToFileURL } from "url";
 
 import "$/utils/hbsHelpers.mjs";
 
@@ -33,13 +34,11 @@ import env from "$/config/env.mjs";
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
-export default async function createServer({ plugins, __assets, __views, __partials }) {
+export default async function createServer({ plugins, __assets, __views, __partials, __routes }) {
   const app = express();
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
-
-  console.log(__partials);
 
   // Vite is used for JSX/TSX SSR in dev (middleware mode)
   let createViteServer;
@@ -221,7 +220,74 @@ export default async function createServer({ plugins, __assets, __views, __parti
     viewProject(req, res, next, { plugins, app })
   );
 
-  // TODO: Put Plugin Routes here.
+  /** --- Plugin Routes (entry-point router mode) ---
+   * Each entry in `__routes[namespace]` is expected to look like:
+   * {
+   *  web: { base: "plugins/<ns>", path: "/abs/path/to/routes/web/index.js" },
+   *  api: { base: "plugins/<ns>", path: "/abs/path/to/routes/api/index.js" }
+   * }
+   * The module at `path` must export an Express Router (default, named `router`,
+   * or a factory function returning a router).
+   **/
+  if (__routes && typeof __routes === "object") {
+    const kinds = ["web", "api"];
+
+    for (const ns of Object.keys(__routes)) {
+      const cfgByKind = __routes[ns] || {};
+
+      for (const kind of kinds) {
+        const cfg = cfgByKind[kind];
+
+        if (cfg) {
+          const baseClean = (cfg.base || `plugins/${ns}`).replace(/^\/+|\/+$/g, "");
+          const mountBase = kind === "web" ? `/${baseClean}` : `/api/${baseClean}`;
+          const entryAbs = path.resolve(cfg.path);
+          const entryUrl = pathToFileURL(entryAbs).href;
+
+          try {
+            const mod = await import(entryUrl);
+            const router =
+              mod?.default && typeof mod.default === "function" && mod.default.name === "router"
+                ? mod.default
+                : mod?.default && typeof mod.default === "function" && mod.default.name !== "router"
+                  ? mod.default
+                  : mod?.router
+                    ? mod.router
+                    : typeof mod === "function"
+                      ? mod()
+                      : null;
+
+            // If default export is a function but not an Express Router yet, try invoking it
+            let resolvedRouter = router;
+
+            // If it's a function (factory), call it with context
+            if (typeof router === "function" && !router.stack) {
+              try {
+                // TODO: Finalize plugin context
+                // This should be compile based on plugin.platformCapabilities[]
+                resolvedRouter = router({ env: { nodeEnv: process.env.NODE_ENV }, logger });
+              } catch (err) {
+                logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
+                continue;
+              }
+            }
+
+            if (!resolvedRouter || typeof resolvedRouter !== "function" || !resolvedRouter.stack) {
+              logger.warn(
+                `[plugins] ${ns}/${kind}: entry did not export an Express Router at ${entryAbs}`
+              );
+              continue;
+            }
+
+            app.use(mountBase, resolvedRouter, requireAuth);
+            logger.info(`[plugins] mounted ${kind} routes for "${ns}" at ${mountBase}`);
+          } catch (err) {
+            logger.error(`[plugins] failed to load ${ns}/${kind} from ${entryAbs}:`, err);
+          }
+        }
+      }
+    }
+  }
 
   // 404
   app.use((req, res) => {

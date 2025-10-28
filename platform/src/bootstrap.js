@@ -12,8 +12,6 @@ export async function bootstrap(manifest) {
   logger.info("🚀 Starting Sovereign platform...");
   const start = Date.now();
 
-  console.log();
-
   try {
     await connectPrismaWithRetry();
 
