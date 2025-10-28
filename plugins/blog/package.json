@@ -2,5 +2,8 @@
   "name": "@sovereign/blog",
   "private": true,
   "version": "1.0.0-alpha.7",
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build step for this package'"
+  }
 }
