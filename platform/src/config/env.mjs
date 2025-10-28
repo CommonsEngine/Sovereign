@@ -1,47 +1,21 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import fs from "node:fs";
 
-import { prisma } from "../services/database.mjs";
-import { toBool } from "../utils/misc.mjs";
-import pkg from "../config/pkg.mjs";
+import { prisma } from "$/services/database.mjs";
+import { toBool } from "$/utils/misc.mjs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import pkg from "./pkg.mjs";
 
-const maybeResolveRoot = (startDir) => {
-  if (!startDir) return null;
-  let dir = path.resolve(startDir);
-
-  while (true) {
-    const marker = path.join(dir, "platform", "package.json");
-    if (fs.existsSync(marker)) {
-      return dir;
-    }
-
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      return null;
-    }
-
-    dir = parent;
-  }
-};
-
-const resolveRoot = () => {
-  return (
-    maybeResolveRoot(__dirname) ??
-    maybeResolveRoot(process.cwd()) ??
-    path.resolve(__dirname, "../../../")
-  );
-};
+// TODO: Combine with Databse values
 
 const preferDist =
   (process.env.NODE_ENV || "development") === "production" ||
   process.env.PREFER_DIST_BUILD === "true";
 
-const __rootdir = resolveRoot();
+const __rootdir = path.resolve(process.env.ROOT_DIR);
+const __pluginsDir = path.resolve(process.env.PLUGIN_DIR || path.join(__rootdir, "plugins"));
+
 const __platformDir = path.join(__rootdir, "platform");
+
 const __srcDir = path.join(__platformDir, "src");
 const __distDir = path.join(__platformDir, "dist");
 
@@ -50,8 +24,6 @@ const __runtimeDir = preferDist ? __distDir : __srcDir;
 const __publicdir = preferDist ? path.join(__distDir, "public") : path.join(__srcDir, "public");
 
 const __templatedir = preferDist ? path.join(__distDir, "views") : path.join(__srcDir, "views");
-
-const __pluginsDir = path.join(__rootdir, "plugins");
 
 const __datadir = path.resolve(process.env.__datadir || path.join(__rootdir, "data"));
 
