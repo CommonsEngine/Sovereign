@@ -35,14 +35,19 @@ import express from "express";
 export default ({ logger }) => {
   const router = express.Router();
 
-  router.get("/", async (req, res) => {
-    res.render("blog/index");
-  });
-
   router.get("/:id", async (req, res) => {
     const posts = [];
     logger.info(`[blog] fetched ${posts.length} posts`);
     res.render("blog/index", { posts });
+  });
+
+  router.get("/:id/editor", async (req, res) => {
+    console.log("++++");
+    res.render("blog/editor");
+  });
+
+  router.get("/:id/configure", async (req, res) => {
+    res.render("blog/configure");
   });
 
   return router;
