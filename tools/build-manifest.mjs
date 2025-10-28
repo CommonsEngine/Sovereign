@@ -129,7 +129,7 @@ const buildManifest = async () => {
       }
       try {
         await fs.access(assetsDir);
-        manifest.__assets.push({ base: `/plugins/${namespace}/assets/`, dir: assetsDir });
+        manifest.__assets.push({ base: `/plugins/${namespace}/assets`, dir: assetsDir });
       } catch {
         console?.warn(`error access: ${assetsDir}`);
       }
