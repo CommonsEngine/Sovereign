@@ -8,7 +8,7 @@ const path = require("path");
 const manifestPath = path.resolve(__dirname, "..", "manifest.json");
 
 if (!fs.existsSync(manifestPath)) {
-  console.error("Missing manifest.json at project root.");
+  console.error("✗ Missing manifest.json at project root.");
   process.exit(1);
 }
 let manifest;
@@ -16,12 +16,12 @@ let manifest;
 try {
   manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 } catch (error) {
-  console.error("Failed to load manifest.json:", error);
+  console.error("✗ Failed to load manifest.json:", error);
   process.exit(1);
 }
 
 if (!manifest || typeof manifest.__rootdir !== "string" || manifest.__rootdir.length === 0) {
-  console.error("manifest.json missing __rootdir entry.");
+  console.error("✗ manifest.json missing __rootdir entry.");
   process.exit(1);
 }
 

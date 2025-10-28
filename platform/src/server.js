@@ -9,8 +9,6 @@ import fs from "fs/promises";
 import path from "path";
 import { pathToFileURL } from "url";
 
-import "$/utils/hbsHelpers.mjs";
-
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
 
@@ -31,20 +29,22 @@ import apiProjects from "$/routes/api/projects.js";
 
 import env from "$/config/env.mjs";
 
+import "$/utils/hbsHelpers.mjs";
+
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
 export default async function createServer(manifest) {
-  const { plugins, __assets, __views, __partials, __routes, __spaentrypoints } = manifest;
-
   const app = express();
+
+  const { plugins, __assets, __views, __partials, __routes, __spaentrypoints } = manifest;
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
 
   // Vite is used for JSX/TSX SSR in dev (middleware mode)
   let createViteServer;
-  if (process.env.NODE_ENV !== "production") {
+  if (!IS_PROD) {
     // Lazy require to avoid hard dependency in production builds
     ({ createServer: createViteServer } = await import("vite"));
   }
@@ -63,7 +63,19 @@ export default async function createServer(manifest) {
   app.set("trust proxy", 1);
 
   // Core middleware
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: IS_PROD
+        ? {
+            useDefaults: true,
+            directives: {
+              "script-src": ["'self'", "'unsafe-inline'"], // replace inline with nonces later
+              "img-src": ["'self'", "data:"],
+            },
+          }
+        : false,
+    })
+  );
   app.use(compression());
   app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
   app.use(express.json({ limit: "1mb" }));
@@ -99,7 +111,7 @@ export default async function createServer(manifest) {
   app.set("view cache", NODE_ENV === "production");
 
   // Serve everything under /public at the root
-  // TODO: Consider moving it into a small utility like utils/cacheHeaders.mjs
+  // TODO: Consider moving this into a small utility like utils/cacheHeaders.mjs
   // since we’ll likely reuse it for plugin assets.
   const staticOptions = {
     index: false,
@@ -136,8 +148,8 @@ export default async function createServer(manifest) {
   app.use(express.static(__publicdir, staticOptions));
 
   for (const { base, dir } of __assets) {
-    const resolvedDir = path.resolve(dir);
-    app.use(base, express.static(resolvedDir, staticOptions));
+    const cleaned = `/${String(base).replace(/^\/+|\/+$/g, "")}`;
+    app.use(cleaned, express.static(path.resolve(dir), staticOptions));
   }
 
   app.use(
@@ -219,6 +231,15 @@ export default async function createServer(manifest) {
   // Project Routes
   app.use("/api/projects", apiProjects);
 
+  // SPA Routes
+  if (__spaentrypoints && Array.isArray(__spaentrypoints)) {
+    for (const { ns } of __spaentrypoints) {
+      app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
+        return pluginHandler.renderSPA(req, res, next, { app, plugins });
+      });
+    }
+  }
+
   /** --- Plugin Routes (entry-point router mode) ---
    * Each entry in `__routes[namespace]` is expected to look like:
    * {
@@ -264,7 +285,8 @@ export default async function createServer(manifest) {
               try {
                 // TODO: Finalize plugin context
                 // This should be compile based on plugin.platformCapabilities[]
-                resolvedRouter = router({ env: { nodeEnv: process.env.NODE_ENV }, logger });
+                const pluginContext = { env: { nodeEnv: NODE_ENV }, logger };
+                resolvedRouter = router(pluginContext);
               } catch (err) {
                 logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
                 continue;
@@ -278,22 +300,13 @@ export default async function createServer(manifest) {
               continue;
             }
 
-            app.use(mountBase, resolvedRouter, requireAuth);
+            app.use(mountBase, requireAuth, resolvedRouter);
             logger.info(`[plugins] mounted ${kind} routes for "${ns}" at ${mountBase}`);
           } catch (err) {
             logger.error(`[plugins] failed to load ${ns}/${kind} from ${entryAbs}:`, err);
           }
         }
       }
-    }
-  }
-
-  // SPA Routes
-  if (__spaentrypoints && typeof __routes === "object" && Array.isArray(__spaentrypoints)) {
-    for (const { ns } of __spaentrypoints) {
-      app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
-        return pluginHandler.renderSPA(req, res, next, { app, plugins });
-      });
     }
   }
 
@@ -304,7 +317,6 @@ export default async function createServer(manifest) {
       code: 404,
       message: "Page not found",
       description: "The page you’re looking for doesn’t exist.",
-      nodeEnv: process.env.NODE_ENV,
     });
   });
 
@@ -320,7 +332,7 @@ export default async function createServer(manifest) {
       message: "Something went wrong",
       description: "Please try again later.",
       error: err.stack,
-      nodeEnv: process.env.NODE_ENV,
+      nodeEnv: NODE_ENV,
     });
   });
 

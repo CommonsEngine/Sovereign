@@ -36,6 +36,10 @@ export default ({ logger }) => {
   const router = express.Router();
 
   router.get("/", async (req, res) => {
+    res.render("blog/index");
+  });
+
+  router.get("/:id", async (req, res) => {
     const posts = [];
     logger.info(`[blog] fetched ${posts.length} posts`);
     res.render("blog/index", { posts });

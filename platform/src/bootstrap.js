@@ -10,8 +10,8 @@ global.sovereign = { logger }; // Make logger globally accessible (e.g., in Pris
 
 export async function bootstrap(manifest) {
   logger.info("🚀 Starting Sovereign platform...");
-  logger.info(`- Root directory: ${manifest.__rootdir}`);
-  logger.info(`- Plugin directory: ${manifest.__pluginsdir}`);
+  logger.info(`➜ Root directory: ${manifest.__rootdir}`);
+  logger.info(`➜ Plugin directory: ${manifest.__pluginsdir}`);
   const start = Date.now();
 
   try {

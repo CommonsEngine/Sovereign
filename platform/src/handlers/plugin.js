@@ -88,7 +88,6 @@ export async function renderSPA(req, res, _, { plugins }) {
         code: 400,
         message: "Bad Request",
         description: "Missing project id",
-        nodeEnv: process.env.NODE_ENV,
       });
     }
 
@@ -104,7 +103,6 @@ export async function renderSPA(req, res, _, { plugins }) {
         code: 403,
         message: "Forbidden",
         description: "You are not authorized!",
-        nodeEnv: process.env.NODE_ENV,
       });
     }
 
@@ -159,7 +157,6 @@ export async function renderSPA(req, res, _, { plugins }) {
         code: 500,
         message: "Plugin Misconfigured",
         description: `Failed to resolve plugin root for "${namespace}".`,
-        nodeEnv: process.env.NODE_ENV,
       });
     }
 
