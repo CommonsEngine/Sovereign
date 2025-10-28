@@ -45,6 +45,7 @@ const manifest = {
   __pluginsdir,
   __assets: [],
   __views: [],
+  __partials: [],
   __routes: {},
 };
 
@@ -133,7 +134,6 @@ const buildManifest = async () => {
       const publicDir = path.join(plugingRoot, "public");
       const distDir = path.join(plugingRoot, "dist");
       const assetsDir = path.join(distDir, "assets");
-      const viewsDir = path.join(plugingRoot, "views");
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
@@ -164,6 +164,8 @@ const buildManifest = async () => {
       }
 
       if (pluginManifest.type === "custom") {
+        //__views
+        const viewsDir = path.join(plugingRoot, "views");
         try {
           await fs.access(viewsDir);
           manifest.__views.push({ base: namespace, dir: viewsDir });
@@ -171,7 +173,16 @@ const buildManifest = async () => {
           console?.warn(`error access: ${viewsDir}`);
         }
 
-        // build routes
+        // __partials
+        const __partialsdir = path.join(plugingRoot, "views", "_partials");
+        try {
+          await fs.access(__partialsdir);
+          manifest.__partials.push({ base: namespace, dir: __partialsdir });
+        } catch {
+          console?.warn(`error access: ${__partialsdir}`);
+        }
+
+        // __routes
         manifest.__routes[namespace] = {};
 
         const apiRoutesPath = path.join(plugingRoot, "routes", "api", "index.js");

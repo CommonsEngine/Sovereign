@@ -1,23 +1,26 @@
+import path from "node:path";
+
 import { connectPrismaWithRetry, gracefulShutdown } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
 import createExtHost from "$/ext-host/index.mjs";
-import env from "$/config/env.mjs";
 
 import createServer from "./server.js";
 
 global.sovereign = { logger }; // Make logger globally accessible (e.g., in Prisma hooks)
 
-export async function bootstrap() {
+export async function bootstrap(manifest) {
   logger.info("🚀 Starting Sovereign platform...");
   const start = Date.now();
+
+  console.log();
 
   try {
     await connectPrismaWithRetry();
 
     // Discovers and mounts all plugins under /__runtimeDir/plugins/*
-    const { __pluginsDir } = env();
-    logger.info(`- Plugin directory: ${__pluginsDir}`);
-    const extHost = await createExtHost({}, { pluginsDir: __pluginsDir });
+    const __pluginsdir = path.resolve(manifest.__pluginsdir);
+    logger.info(`- Plugin directory: ${__pluginsdir}`);
+    const extHost = await createExtHost(manifest, { pluginsDir: __pluginsdir });
 
     logger.info("- Initializing HTTP server...");
     // This sets up Express, middlewares, coreRoutes etc.
@@ -29,8 +32,8 @@ export async function bootstrap() {
     logger.info(`  ➜  Environment: ${server.nodeEnv}`);
     logger.info(
       `  ➜  Loaded plugins: ${
-        extHost?.enabledPlugins && extHost?.enabledPlugins.length
-          ? extHost?.enabledPlugins.join(", ")
+        manifest?.enabledPlugins && manifest?.enabledPlugins.length
+          ? manifest?.enabledPlugins.join(", ")
           : "none"
       }`
     );

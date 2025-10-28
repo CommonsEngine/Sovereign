@@ -33,11 +33,13 @@ import env from "$/config/env.mjs";
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
-export default async function createServer({ plugins, pluginsPublicAssetsDirs }) {
+export default async function createServer({ plugins, __assets, __views, __partials }) {
   const app = express();
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
+
+  console.log(__partials);
 
   // Vite is used for JSX/TSX SSR in dev (middleware mode)
   let createViteServer;
@@ -78,11 +80,19 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
     hbsEngine({
       extname: ".html",
       defaultLayout: false,
-      partialsDir: path.join(__templatedir, "_partials"),
+      partialsDir: [
+        path.join(__templatedir, "_partials"),
+        ...__partials.map(({ dir }) => path.resolve(dir)),
+      ],
     })
   );
   app.set("view engine", "html");
-  app.set("views", __templatedir);
+  /** TODO:
+   * - Maybe we can expose a new render method to handle rendering logic in plugins
+   * - Currently, plugins need to keep their views manually scoped, we need a way to improve DX here.
+   * - app.renderScoped()
+   */
+  app.set("views", [__templatedir, ...__views.map(({ dir }) => path.resolve(dir))]);
 
   // Enable template caching in production
   app.set("view cache", NODE_ENV === "production");
@@ -124,8 +134,9 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
   };
   app.use(express.static(__publicdir, staticOptions));
 
-  for (const { base, dir } of pluginsPublicAssetsDirs) {
-    app.use(base, express.static(dir, staticOptions));
+  for (const { base, dir } of __assets) {
+    const resolvedDir = path.resolve(dir);
+    app.use(base, express.static(resolvedDir, staticOptions));
   }
 
   app.use(
