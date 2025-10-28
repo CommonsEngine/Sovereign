@@ -17,6 +17,7 @@ import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
 import requireRole from "$/middlewares/requireRole.mjs";
+import ensurePluginLayout from "./middlewares/ensurePluginLayout.js";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
@@ -93,6 +94,7 @@ export default async function createServer(manifest) {
     hbsEngine({
       extname: ".html",
       defaultLayout: false,
+      layoutsDir: path.join(__templatedir, "layouts"),
       partialsDir: [
         path.join(__templatedir, "_partials"),
         ...__partials.map(({ dir }) => path.resolve(dir)),
@@ -300,7 +302,12 @@ export default async function createServer(manifest) {
               continue;
             }
 
-            app.use(mountBase, requireAuth, resolvedRouter);
+            const middlewares = [requireAuth, exposeGlobals];
+            if (kind === "web") {
+              middlewares.push(ensurePluginLayout("custom/index"));
+            }
+
+            app.use(mountBase, ...middlewares, resolvedRouter);
             logger.info(`[plugins] mounted ${kind} routes for "${ns}" at ${mountBase}`);
           } catch (err) {
             logger.error(`[plugins] failed to load ${ns}/${kind} from ${entryAbs}:`, err);

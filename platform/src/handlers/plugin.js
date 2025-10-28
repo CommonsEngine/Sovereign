@@ -244,7 +244,7 @@ export async function renderSPA(req, res, _, { plugins }) {
       pluginHead: shellModel.pluginHead?.length,
     });
 
-    return res.render("layouts/index", shellModel);
+    return res.render("layouts/spa/index", shellModel);
   } catch (err) {
     logger.error("✗ Render project page failed:", err);
     return res.status(500).render("error", {

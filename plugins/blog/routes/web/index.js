@@ -42,7 +42,6 @@ export default ({ logger }) => {
   });
 
   router.get("/:id/editor", async (req, res) => {
-    console.log("++++");
     res.render("blog/editor");
   });
 
