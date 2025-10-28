@@ -52,39 +52,6 @@ A plugin is defined by a `plugin.json` manifest with the `index.mjs` entry. The 
 
 Each plugin sits under `plugins/<namespace>` with a predictable layout:
 
-_Example `static` plugin:_
-
-```
-plugins/
-  example-plugin-custom/
-    prisma/           # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
-      extension.prisma
-      seeds.js
-    routes/          # (optional) new plugin-specific routes to the platform API
-    public/          # static assets served under /plugins/<ns>/...
-    docs/
-      my-doc.html    # this file will server `/example-plugin-custom/:projectId/docs/my-doc.html`
-    index.html
-    index.mjs        # plugin entry (exports hooks used by the platform)
-```
-
-_Example `dynamic` plugin:_
-
-```
-plugins/
-  example-plugin-dynamic/
-    prisma/           # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
-      extension.prisma
-      seeds.js
-    handlers/        # business logic (service layer)
-    public/          # static assets served under /plugins/<ns>/...
-    routes/          # Express route modules (web + api) when needed
-    views/           # Handlebars or JSX views (if applicable)
-    index.mjs        # plugin entry (exports hooks used by the platform)
-    index.html
-    plugin.json      # manifest (see below)
-```
-
 _Example `spa` plugin:_
 
 ```
@@ -98,9 +65,32 @@ plugins/
       seeds.js
     public/          # static assets served under /plugins/<ns>/...
     src/             # Surce files (React, Vue, Svelte, Angular)
-    index.mjs        # plugin entry (exports hooks used by the platform)
+    index.js         # plugin entry (exports hooks used by the platform)
     package.json
     plugin.json      # manifest (see below)
+    package.json     # (optional) NPM Package entry
+```
+
+_Example `custom` plugin:_
+
+```
+plugins/
+  example-plugin-custom/
+    prisma/           # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
+      extension.prisma
+      seeds.js
+    handlers/        # business logic (service layer)
+    public/          # static assets served under /plugins/<ns>/...
+    routes/          # Express route modules (web + api) when needed
+      web
+        index.js
+      api
+        index.js
+    views/           # Handlebars or JSX views (if applicable)
+    index.js         # exports hooks used by the platform
+    index.html
+    plugin.json      # manifest (see below)
+    package.json     # NPM Package entry (Optional)
 ```
 
 > During build, core code is emitted to `platform/dist`, while plugins manage their own `dist/` outputs (e.g., via Vite/Rollup) that the platform serves directly. This preserves the structure expected by the runtime and avoids `*.json.json` / `*.html.html` or `.mjs -> .js` skew.
@@ -120,7 +110,7 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
   "name": "Blog",
   "description": "Sovereign Blog",
   "version": "1.0.0-alpha.7", // semver of the plugin itself
-  "type": "dynamic",
+  "type": "custom",
   "devOnly": true, // whether the plugin is production ready or not.
   "draft": false, // whether allow/disallow mounting
   "author": "Sovereign Core Team",
@@ -157,13 +147,17 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
     },
     // …additional granular post.* capabilities elided for brevity…
   ],
-
   "events": {}, // (reserved) event contracts the plugin can emit/consume
   "prisma": {}, // (reserved) plugin-owned Prisma schema modules
 }
 ```
 
 _Source: sample `plugin.json` shipped with the repo._
+
+#### Versioning & Compatibility
+
+- Core checks `plugin.sovereign.engine` against the running engine version. Incompatible plugins are skipped with a warning.
+- Use semver for plugin `version`; core can surface upgrade prompts when a newer compatible version is present.
 
 #### Entry file (`index.mjs`)
 
@@ -172,63 +166,24 @@ _Source: sample `plugin.json` shipped with the repo._
 A conventional entry exposes lightweight helpers the core invokes to mount the plugin. Minimal example:
 
 ```js
-// plugins/blog/index.mjs
-/**
- * Plugin: Route registry
- * ----------------------
- * Exposes the plugin's Express routers to the Sovereign extension host.
- * - web: non-API routes (e.g., SSR pages)
- * - api: REST or GraphQL endpoints for plugin data operations
- *
- * The extension host mounts these under a plugin-specific base path,
- * e.g., `/api/<plugin-namespace>` for API and `/<plugin-namespace>` for web.
- *
- * This object should remain declarative and side-effect free.
- */
-export const routes = { web: webRoutes, api: apiRoutes };
+// plugins/*/index.js
 
-export async function configure(_, resolve) {
-  // optional: return an Express handler or configuration metadata
-  return resolve(async (req, res) => {
-    // configuration logic
-  });
-}
+async function onInstall() {}
 
-/**
- * render
- * ------
- * Handles server-rendered index view for the plugin (if applicable).
- *
- * Typical Flow
- * 1) Resolve and authorize request context
- * 2) Prepare or fetch data relevant to the view
- * 3) Render a Handlebars or React SSR template with that data
- *
- * Parameters
- * - _: (reserved for dependency injection; receives context in future)
- * - resolve(fn): wrapper that produces an Express route handler
- *
- * Returns
- * - Express handler that renders a view or error template.
- *
- * Notes
- * - This is optional; plugins without UI can omit it.
- * - Avoid leaking secrets or raw config into templates.
- */
-export async function render(_, resolve) {
-  return resolve(async (req, res) => {
-    // render logic goes here
-  });
-}
+async function onBuild() {}
 
-export function getRoutes() {
-  return routes;
-}
+async function onEnable() {}
+
+async function onDisable() {}
+
+async function onRemove() {}
 ```
 
 #### Routing conventions
 
-- Web routes mount under `/plugins/<namespace>` by default; APIs under `/api/plugins/<namespace>`.
+> Only applicable for `custom` plugins
+
+- Web routes mount under `/plugins/<namespace>` from by default; APIs under `/api/plugins/<namespace>`.
 - A plugin can customize its base mount path from the entry file. (TBA later)
 
 #### RBAC & Capabilities
@@ -236,11 +191,6 @@ export function getRoutes() {
 - Plugins **declare** capabilities in `plugin.json`; these are merged into the global RBAC graph at boot. (TBA)
 - At request time, middleware exposes `req.can('user:plugin.blog.post.create')` / `res.locals.capabilities` for templates.
 - For idempotent imports or repeated enabling, capabilities are upserted.
-
-#### Versioning & Compatibility
-
-- Core checks `plugin.sovereign.engine` against the running engine version. Incompatible plugins are skipped with a warning.
-- Use semver for plugin `version`; core can surface upgrade prompts when a newer compatible version is present.
 
 #### CLI (v0.1.0) — managing plugins
 
