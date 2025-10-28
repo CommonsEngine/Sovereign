@@ -83,7 +83,7 @@
           });
           const data = await resp.json().catch(() => ({}));
           if (!resp.ok) throw new Error(data?.error || "Save failed");
-          window.location.replace(`/p/${encodeURIComponent(projectId)}`);
+          window.location.replace(`/blog/${encodeURIComponent(projectId)}`);
         } catch (ex) {
           if (ex instanceof TypeError && attempt === 0) {
             // transient network error, retry once

@@ -80,6 +80,7 @@ export default async function create(req, res) {
             },
             select: {
               id: true,
+              type: true,
             },
           });
 
@@ -142,11 +143,7 @@ export default async function create(req, res) {
       return res.status(409).json({ error: "Unable to generate unique project slug" });
     }
 
-    // TODO: Use slug in URL if desired
-    const url =
-      type === "blog"
-        ? `/${type}/${createdProject.project.id}/configure`
-        : `/p/${createdProject.project.id}`;
+    const url = `/${createdProject.project.type}/${createdProject.project.id}`;
 
     return res.status(201).json({
       ok: true,

@@ -2156,7 +2156,7 @@ function viewCenter() {
       showStatus("Board deleted", { ttl: 1200 });
       setTimeout(() => {
         if (PROJECT_ID) {
-          window.location.href = `/p/${PROJECT_ID}`;
+          window.location.href = `/papertrail/${PROJECT_ID}`;
         } else {
           window.location.reload();
         }

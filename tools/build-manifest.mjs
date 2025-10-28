@@ -41,12 +41,14 @@ const manifest = {
   },
   plugins: {},
   enabledPlugins: [], // [@<org>/<ns>]
+  allowedPluginTypes: [],
   __rootdir,
   __pluginsdir,
   __assets: [],
   __views: [],
   __partials: [],
   __routes: {},
+  __spaentrypoints: [],
 };
 
 const buildManifest = async () => {
@@ -112,6 +114,8 @@ const buildManifest = async () => {
       (process.env.NODE_ENV === "production" || pluginManifest.devOnly) && !pluginManifest.draft;
 
     if (isEnabledPlugin) {
+      manifest.allowedPluginTypes.push(pluginManifest?.type);
+
       manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
 
       if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
@@ -145,7 +149,7 @@ const buildManifest = async () => {
         await fs.access(publicDir);
         manifest.__assets.push({ base: "/", dir: publicDir });
       } catch {
-        console?.warn(`error access: ${publicDir}`);
+        console?.warn(`✗ error access: ${publicDir}`);
       }
 
       if (pluginManifest.type === "spa") {
@@ -153,13 +157,19 @@ const buildManifest = async () => {
           await fs.access(distDir);
           manifest.__assets.push({ base: `/plugins/${namespace}/`, dir: distDir });
         } catch {
-          console?.warn(`error access: ${distDir}`);
+          console?.warn(`✗ error access: ${distDir}`);
         }
         try {
           await fs.access(assetsDir);
           manifest.__assets.push({ base: `/`, dir: assetsDir });
         } catch {
-          console?.warn(`error access: ${assetsDir}`);
+          console?.warn(`✗ error access: ${assetsDir}`);
+        }
+        try {
+          await fs.access(entry);
+          manifest.__spaentrypoints.push({ ns: namespace, entry });
+        } catch {
+          console?.warn(`✗ error access: ${assetsDir}`);
         }
       }
 
@@ -170,7 +180,7 @@ const buildManifest = async () => {
           await fs.access(viewsDir);
           manifest.__views.push({ base: namespace, dir: viewsDir });
         } catch {
-          console?.warn(`error access: ${viewsDir}`);
+          console?.warn(`✗ error access: ${viewsDir}`);
         }
 
         // __partials
@@ -179,7 +189,7 @@ const buildManifest = async () => {
           await fs.access(__partialsdir);
           manifest.__partials.push({ base: namespace, dir: __partialsdir });
         } catch {
-          console?.warn(`error access: ${__partialsdir}`);
+          console?.warn(`✗ error access: ${__partialsdir}`);
         }
 
         // __routes
@@ -193,7 +203,7 @@ const buildManifest = async () => {
             path: apiRoutesPath,
           };
         } catch {
-          console?.warn(`error access: ${apiRoutesPath}`);
+          console?.warn(`✗ error access: ${apiRoutesPath}`);
         }
 
         const webRoutesPath = path.join(plugingRoot, "routes", "web", "index.js");
@@ -204,7 +214,7 @@ const buildManifest = async () => {
             path: webRoutesPath,
           };
         } catch {
-          console?.warn(`error access: ${webRoutesPath}`);
+          console?.warn(`✗ error access: ${webRoutesPath}`);
         }
       }
 
@@ -218,6 +228,7 @@ const buildManifest = async () => {
 
   const outputManifest = {
     ...manifest,
+    allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
     plugins: {
       ...manifest.plugins,
       ...plugins,

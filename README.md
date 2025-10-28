@@ -63,7 +63,7 @@ plugins/
     routes/          # (optional) new plugin-specific routes to the platform API
     public/          # static assets served under /plugins/<ns>/...
     docs/
-      my-doc.html    # this file will server `/p/:projectId/docs/my-doc.html`
+      my-doc.html    # this file will server `/example-plugin-custom/:projectId/docs/my-doc.html`
     index.html
     index.mjs        # plugin entry (exports hooks used by the platform)
 ```

@@ -25,7 +25,7 @@ import * as authHandler from "$/handlers/auth/index.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
 import * as appHandler from "$/handlers/app.mjs";
-import viewProject from "$/handlers/projects/viewProject.js";
+import * as pluginHandler from "./handlers/plugin.js";
 
 import apiProjects from "$/routes/api/projects.js";
 
@@ -34,7 +34,9 @@ import env from "$/config/env.mjs";
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
-export default async function createServer({ plugins, __assets, __views, __partials, __routes }) {
+export default async function createServer(manifest) {
+  const { plugins, __assets, __views, __partials, __routes, __spaentrypoints } = manifest;
+
   const app = express();
 
   // Ensure data root exist at startup
@@ -216,9 +218,6 @@ export default async function createServer({ plugins, __assets, __views, __parti
 
   // Project Routes
   app.use("/api/projects", apiProjects);
-  app.get("/p/:projectId", requireAuth, exposeGlobals, (req, res, next) =>
-    viewProject(req, res, next, { plugins, app })
-  );
 
   /** --- Plugin Routes (entry-point router mode) ---
    * Each entry in `__routes[namespace]` is expected to look like:
@@ -286,6 +285,15 @@ export default async function createServer({ plugins, __assets, __views, __parti
           }
         }
       }
+    }
+  }
+
+  // SPA Routes
+  if (__spaentrypoints && typeof __routes === "object" && Array.isArray(__spaentrypoints)) {
+    for (const { ns } of __spaentrypoints) {
+      app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
+        return pluginHandler.renderSPA(req, res, next, { app, plugins });
+      });
     }
   }
 
