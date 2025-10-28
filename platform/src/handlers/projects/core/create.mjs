@@ -31,7 +31,7 @@ export default async function create(req, res) {
     const allowedTypes = new Set();
     if (flags?.blog) allowedTypes.add("blog");
     if (flags?.papertrail) allowedTypes.add("papertrail");
-    if (flags?.papertrail) allowedTypes.add("example-plugin-static");
+    if (flags?.papertrail) allowedTypes.add("example-plugin-custom");
     if (flags?.papertrail) allowedTypes.add("example-plugin-spa");
 
     // add other types conditionally...

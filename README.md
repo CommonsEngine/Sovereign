@@ -43,11 +43,10 @@ A plugin is defined by a `plugin.json` manifest with the `index.mjs` entry. The 
 
 #### Plugin Types
 
-| **Type**  | **Description**                                   | **Notes**                        |
-| --------- | ------------------------------------------------- | -------------------------------- |
-| `static`  | Static HTML pages, file-system based routing      | e.g. Markdown → HTML, no runtime |
-| `spa`     | SPA frontends (React, Vue, Svelte, Angular)       | Pure client-side rendering       |
-| `dynamic` | Dynamic HTML/JS hybrid plugin with Express routes | Server-driven, dynamic content   |
+| **Type** | **Description**                                   | **Notes**                      |
+| -------- | ------------------------------------------------- | ------------------------------ |
+| `spa`    | SPA frontends (React, Vue, Svelte, Angular)       | Pure client-side rendering     |
+| `custom` | Dynamic HTML/JS hybrid plugin with Express routes | Server-driven, dynamic content |
 
 #### Directory Layout
 
@@ -57,7 +56,7 @@ _Example `static` plugin:_
 
 ```
 plugins/
-  example-plugin-static/
+  example-plugin-custom/
     prisma/           # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
       extension.prisma
       seeds.js

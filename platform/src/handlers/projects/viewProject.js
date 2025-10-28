@@ -128,6 +128,8 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       });
     }
 
+    console.log("-->", plugins);
+
     const namespace = project.type;
     const plugin = plugins?.[namespace];
 
@@ -139,7 +141,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
       });
     }
 
-    const allowedPluginTypes = ["static", "spa"];
+    const allowedPluginTypes = ["custom", "spa"];
     if (!allowedPluginTypes.includes(plugin?.type)) {
       return res.status(404).render("error", {
         code: 404,
@@ -162,7 +164,7 @@ export default async function viewProject(req, res, _, { plugins, app }) {
     };
     const inlineScriptBlocks = [];
 
-    if (plugin.type === "static") {
+    if (plugin.type === "custom") {
       // Utils
       async function renderHtmlPlugin(viewPath, locals) {
         return new Promise((resolve, reject) => {

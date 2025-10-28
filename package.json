@@ -4,7 +4,6 @@
   "private": true,
   "version": "3",
   "license": "AGPL-3.0",
-  "cliVersion": "0.1.0",
   "bin": {
     "sv": "./bin/sv.mjs"
   },
@@ -17,6 +16,7 @@
     "init:setup": "yarn workspace @sovereign/platform init:setup && yarn build",
     "bootstrap": "yarn install",
     "build": "yarn workspaces run build",
+    "build:manifest": "node tools/build-manifest.mjs",
     "dev": "yarn workspace @sovereign/platform dev",
     "start": "yarn workspace @sovereign/platform start",
     "postinstall": "husky",
