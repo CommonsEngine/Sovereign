@@ -92,7 +92,7 @@
 
       const openLink = document.createElement("a");
       openLink.className = "sv-projects__card-link";
-      openLink.href = p.url || `/p/${encodeURIComponent(p.id)}`;
+      openLink.href = `/${p.type}/${encodeURIComponent(p.id)}`;
       openLink.textContent = "Open";
       actions.appendChild(openLink);
 

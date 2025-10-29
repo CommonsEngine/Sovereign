@@ -684,7 +684,7 @@ export async function updatePost(req, res) {
           logger.info(`Renamed post ${filename} -> ${desiredBase}`);
 
           resultingFilename = desiredBase;
-          const redirectUrl = `/p/${encodeURIComponent(
+          const redirectUrl = `/blog/${encodeURIComponent(
             projectId
           )}/blog/post/${encodeURIComponent(desiredBase)}?edit=true`;
           const relativeDir = (cfg.contentDir || "").trim();
@@ -1201,7 +1201,7 @@ export async function viewProjectConfigure(req, res) {
     // Only blogs have configuration flow. If already configured or not a blog, redirect to project.
     const alreadyConfigured = !!project.blog?.gitConfig;
     if (project.type !== "blog" || alreadyConfigured) {
-      return res.redirect(302, `/p/${project.id}`);
+      return res.redirect(302, `/${project.type}/${project.id}`);
     }
 
     return res.render("blog/configure", {

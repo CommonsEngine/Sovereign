@@ -4,8 +4,8 @@ import logger from "$/services/logger.mjs";
 import { getOrInitGitManager, getGitManager, disposeGitManager } from "$/libs/git/registry.mjs";
 import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
 
-import apiRoutes from "./routes/api.mjs";
-import webRoutes from "./routes/web.mjs";
+import apiRoutes from "./routes/api/index.js";
+import webRoutes from "./routes/web/index.js";
 
 /**
  * Plugin: Route registry

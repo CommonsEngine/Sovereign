@@ -745,7 +745,7 @@
           const data = await resp.json().catch(() => ({}));
           throw new Error(data?.error || `HTTP ${resp.status}`);
         }
-        location.href = `/p/${encodeURIComponent(projectId)}`;
+        location.href = `/blog/${encodeURIComponent(projectId)}`;
       } catch (err) {
         alert(err?.message || "Failed to delete");
       }

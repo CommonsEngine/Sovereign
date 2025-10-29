@@ -1,5 +1,0 @@
-model ExamplePluginHtmlDemo {
-  id String @id @default(cuid())
-
-  @@map("example_plugin_html_demo")
-}

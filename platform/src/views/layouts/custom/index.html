@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+  </head>
+  <body class="sv-page sv-page--shell">
+    <!-- top loading spinner -->
+    <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
+
+    {{> sidebar}}
+    <main>
+      {{> header}}
+      <section id="plugin-root" class="sv-container">{{{body}}}</section>
+    </main>
+    {{#if scripts}} {{#each scripts}}
+    <script src="{{this}}" defer></script>
+    {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
+  </body>
+</html>

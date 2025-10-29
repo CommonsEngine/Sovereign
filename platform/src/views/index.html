@@ -107,7 +107,7 @@
               </div>
 
               <div class="sv-projects__card-actions">
-                <a class="sv-projects__card-link" href="/p/{{this.id}}">Open</a>
+                <a class="sv-projects__card-link" href="/{{this.type}}/{{this.id}}">Open</a>
                 {{#if this.owned}}
                 <button
                   class="sv-projects__card-delete"
@@ -141,6 +141,9 @@
       </div>
     </main>
     <script src="/js/sv_startup.js" defer></script>
-    <script src="/js/sv_pg_index.js" defer></script>
+    <script
+      src="/js/sv_pg_index.js?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}"
+      defer
+    ></script>
   </body>
 </html>

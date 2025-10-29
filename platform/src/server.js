@@ -7,8 +7,7 @@ import cookieParser from "cookie-parser";
 import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
-
-import "$/utils/hbsHelpers.mjs";
+import { pathToFileURL } from "url";
 
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
@@ -18,30 +17,35 @@ import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
 import requireRole from "$/middlewares/requireRole.mjs";
+import ensurePluginLayout from "./middlewares/ensurePluginLayout.js";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
 import * as appHandler from "$/handlers/app.mjs";
-import viewProject from "$/handlers/projects/viewProject.js";
+import * as pluginHandler from "./handlers/plugin.js";
 
 import apiProjects from "$/routes/api/projects.js";
 
 import env from "$/config/env.mjs";
 
+import "$/utils/hbsHelpers.mjs";
+
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
 
-export default async function createServer({ plugins, pluginsPublicAssetsDirs }) {
+export default async function createServer(manifest) {
   const app = express();
+
+  const { plugins, __assets, __views, __partials, __routes, __spaentrypoints } = manifest;
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
 
   // Vite is used for JSX/TSX SSR in dev (middleware mode)
   let createViteServer;
-  if (process.env.NODE_ENV !== "production") {
+  if (!IS_PROD) {
     // Lazy require to avoid hard dependency in production builds
     ({ createServer: createViteServer } = await import("vite"));
   }
@@ -60,7 +64,19 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
   app.set("trust proxy", 1);
 
   // Core middleware
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: IS_PROD
+        ? {
+            useDefaults: true,
+            directives: {
+              "script-src": ["'self'", "'unsafe-inline'"], // replace inline with nonces later
+              "img-src": ["'self'", "data:"],
+            },
+          }
+        : false,
+    })
+  );
   app.use(compression());
   app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
   app.use(express.json({ limit: "1mb" }));
@@ -78,17 +94,26 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
     hbsEngine({
       extname: ".html",
       defaultLayout: false,
-      partialsDir: path.join(__templatedir, "_partials"),
+      layoutsDir: path.join(__templatedir, "layouts"),
+      partialsDir: [
+        path.join(__templatedir, "_partials"),
+        ...__partials.map(({ dir }) => path.resolve(dir)),
+      ],
     })
   );
   app.set("view engine", "html");
-  app.set("views", __templatedir);
+  /** TODO:
+   * - Maybe we can expose a new render method to handle rendering logic in plugins
+   * - Currently, plugins need to keep their views manually scoped, we need a way to improve DX here.
+   * - app.renderScoped()
+   */
+  app.set("views", [__templatedir, ...__views.map(({ dir }) => path.resolve(dir))]);
 
   // Enable template caching in production
   app.set("view cache", NODE_ENV === "production");
 
   // Serve everything under /public at the root
-  // TODO: Consider moving it into a small utility like utils/cacheHeaders.mjs
+  // TODO: Consider moving this into a small utility like utils/cacheHeaders.mjs
   // since we’ll likely reuse it for plugin assets.
   const staticOptions = {
     index: false,
@@ -124,8 +149,9 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
   };
   app.use(express.static(__publicdir, staticOptions));
 
-  for (const { base, dir } of pluginsPublicAssetsDirs) {
-    app.use(base, express.static(dir, staticOptions));
+  for (const { base, dir } of __assets) {
+    const cleaned = `/${String(base).replace(/^\/+|\/+$/g, "")}`;
+    app.use(cleaned, express.static(path.resolve(dir), staticOptions));
   }
 
   app.use(
@@ -206,11 +232,90 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
 
   // Project Routes
   app.use("/api/projects", apiProjects);
-  app.get("/p/:projectId", requireAuth, exposeGlobals, (req, res, next) =>
-    viewProject(req, res, next, { plugins, app })
-  );
 
-  // TODO: Put Plugin Routes here.
+  // SPA Routes
+  if (__spaentrypoints && Array.isArray(__spaentrypoints)) {
+    for (const { ns } of __spaentrypoints) {
+      app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
+        return pluginHandler.renderSPA(req, res, next, { app, plugins });
+      });
+    }
+  }
+
+  /** --- Plugin Routes (entry-point router mode) ---
+   * Each entry in `__routes[namespace]` is expected to look like:
+   * {
+   *  web: { base: "plugins/<ns>", path: "/abs/path/to/routes/web/index.js" },
+   *  api: { base: "plugins/<ns>", path: "/abs/path/to/routes/api/index.js" }
+   * }
+   * The module at `path` must export an Express Router (default, named `router`,
+   * or a factory function returning a router).
+   **/
+  if (__routes && typeof __routes === "object") {
+    const kinds = ["web", "api"];
+
+    for (const ns of Object.keys(__routes)) {
+      const cfgByKind = __routes[ns] || {};
+
+      for (const kind of kinds) {
+        const cfg = cfgByKind[kind];
+
+        if (cfg) {
+          const baseClean = (cfg.base || `plugins/${ns}`).replace(/^\/+|\/+$/g, "");
+          const mountBase = kind === "web" ? `/${baseClean}` : `/api/${baseClean}`;
+          const entryAbs = path.resolve(cfg.path);
+          const entryUrl = pathToFileURL(entryAbs).href;
+
+          try {
+            const mod = await import(entryUrl);
+            const router =
+              mod?.default && typeof mod.default === "function" && mod.default.name === "router"
+                ? mod.default
+                : mod?.default && typeof mod.default === "function" && mod.default.name !== "router"
+                  ? mod.default
+                  : mod?.router
+                    ? mod.router
+                    : typeof mod === "function"
+                      ? mod()
+                      : null;
+
+            // If default export is a function but not an Express Router yet, try invoking it
+            let resolvedRouter = router;
+
+            // If it's a function (factory), call it with context
+            if (typeof router === "function" && !router.stack) {
+              try {
+                // TODO: Finalize plugin context
+                // This should be compile based on plugin.platformCapabilities[]
+                const pluginContext = { env: { nodeEnv: NODE_ENV }, logger };
+                resolvedRouter = router(pluginContext);
+              } catch (err) {
+                logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
+                continue;
+              }
+            }
+
+            if (!resolvedRouter || typeof resolvedRouter !== "function" || !resolvedRouter.stack) {
+              logger.warn(
+                `[plugins] ${ns}/${kind}: entry did not export an Express Router at ${entryAbs}`
+              );
+              continue;
+            }
+
+            const middlewares = [requireAuth, exposeGlobals];
+            if (kind === "web") {
+              middlewares.push(ensurePluginLayout("custom/index"));
+            }
+
+            app.use(mountBase, ...middlewares, resolvedRouter);
+            logger.info(`[plugins] mounted ${kind} routes for "${ns}" at ${mountBase}`);
+          } catch (err) {
+            logger.error(`[plugins] failed to load ${ns}/${kind} from ${entryAbs}:`, err);
+          }
+        }
+      }
+    }
+  }
 
   // 404
   app.use((req, res) => {
@@ -219,7 +324,6 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
       code: 404,
       message: "Page not found",
       description: "The page you’re looking for doesn’t exist.",
-      nodeEnv: process.env.NODE_ENV,
     });
   });
 
@@ -235,7 +339,7 @@ export default async function createServer({ plugins, pluginsPublicAssetsDirs })
       message: "Something went wrong",
       description: "Please try again later.",
       error: err.stack,
-      nodeEnv: process.env.NODE_ENV,
+      nodeEnv: NODE_ENV,
     });
   });
 

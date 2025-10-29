@@ -1,6 +1,6 @@
 import express from "express";
 
-import * as indexHandler from "../handlers/index.mjs";
+import * as indexHandler from "../../handlers/index.mjs";
 
 const router = express.Router();
 

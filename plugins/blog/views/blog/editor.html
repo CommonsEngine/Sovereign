@@ -195,8 +195,6 @@
      <!-- top loading spinner -->
     <div data-startup-spinner class="loading-bar" style="display: none"></div>
 
-    {{> sidebar}} {{> userbar show_user_menu=true}}
-
     <main
       class="page__wrap page__wrap--wide"
       data-project-id="{{projectId}}"
@@ -224,7 +222,7 @@
             <a class="breadcrumb__link" href="/">Projects</a>
           </li>
           <li class="breadcrumb__item">
-            <a class="breadcrumb__link" href="/p/{{projectId}}">Blog</a>
+            <a class="breadcrumb__link" href="/blog/{{projectId}}">Blog</a>
           </li>
           <li class="breadcrumb__item" aria-current="page">
             <span class="breadcrumb__current">{{filename}}</span>
