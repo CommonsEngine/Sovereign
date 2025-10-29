@@ -1,0 +1,9 @@
+{
+  "name": "@kasunben/papertrail",
+  "private": true,
+  "version": "1.0.0-alpha.7",
+  "type": "module",
+  "scripts": {
+    "build": "echo 'No build step for this package'"
+  }
+}

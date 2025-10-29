@@ -18,7 +18,7 @@ const nodeLanguageOptions = {
 };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SRC_PATH = path.resolve(__dirname, "src");
+const PLATFORM_SRC_PATH = path.resolve(__dirname, "platform/src");
 
 export default [
   {
@@ -34,6 +34,7 @@ export default [
       "prisma/reset.sh",
       "eslint.config.mjs",
       "package-lock.json",
+      "plugins/papertrail/*",
     ],
   },
   js.configs.recommended,
@@ -78,7 +79,7 @@ export default [
             alias: [
               {
                 name: "$",
-                alias: SRC_PATH,
+                alias: PLATFORM_SRC_PATH,
                 onlyModule: false,
               },
             ],
@@ -86,6 +87,8 @@ export default [
         },
       ],
       "n/no-process-exit": "off",
+      "import/no-unresolved": "off", // TODO: Make this for some specific files
+      "n/no-extraneous-import": "off", // TODO: Make this for some specific files
     },
   },
 ];

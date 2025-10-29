@@ -20,8 +20,7 @@ function parseArgs(argv) {
     if (a.startsWith("--")) {
       const [k, v] = a.slice(2).split("=");
       if (v !== undefined) out.flags[k] = v;
-      else if (i + 1 < argv.length && !argv[i + 1].startsWith("-"))
-        out.flags[k] = argv[++i];
+      else if (i + 1 < argv.length && !argv[i + 1].startsWith("-")) out.flags[k] = argv[++i];
       else out.flags[k] = true;
     } else if (a.startsWith("-")) {
       // short flags, e.g. -hv

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <link rel="stylesheet" href="/css/sv_pg_auth.css" />
+  </head>
+  <body class="sv-page sv-page__auth-register">
+    <main class="auth__page sv-center">
+      <section class="auth__page-header text-align-center" aria-label="Intro">
+        <h1 class="auth__page-header-title">Sovereign</h1>
+        <p class="auth__page-header-tagline">Reclaim your digital freedom.</p>
+      </section>
+
+      <section class="auth__card-wrapper" aria-label="Register">
+        <h2 class="auth__card-title">Create account</h2>
+        <div class="auth__card">
+          <form class="form" method="post" action="{{#if token}}/register?token={{token}}{{else}}/register{{/if}}">
+            {{#if success}}<div class="alert alert--success">{{success}}</div>{{/if}}
+            {{#if error}}<div class="alert alert--error">{{error}}</div>{{/if}}
+            {{#if token}}<input type="hidden" name="token" value="{{token}}" />{{/if}}
+            <div class="field">
+              <label for="first_name">First Name</label>
+              <input
+                id="first_name"
+                name="first_name"
+                type="text"
+                value="{{values.first_name}}"
+                class="input"
+                placeholder="eg. John"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="last_name">Last Name</label>
+              <input
+                id="last_name"
+                name="last_name"
+                type="text"
+                value="{{values.last_name}}"
+                class="input"
+                placeholder="eg. Doe"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value="{{values.email}}"
+                class="input"
+                placeholder="eg. john@example.com"
+                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="password">Password</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div class="field">
+              <label for="btn-confirm">Confirm Password</label>
+              <input
+                id="btn-confirm"
+                name="confirm_password"
+                type="password"
+                class="input"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div class="actions">
+              <a class="sv-link" href="/login">Already have an account?</a>
+              <button class="button sv-button sv-button--primary" type="submit">
+                Register
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
