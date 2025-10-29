@@ -25,7 +25,7 @@ const __publicdir = preferDist ? path.join(__distDir, "public") : path.join(__sr
 
 const __templatedir = preferDist ? path.join(__distDir, "views") : path.join(__srcDir, "views");
 
-const __datadir = path.resolve(process.env.__datadir || path.join(__rootdir, "data"));
+const __datadir = path.resolve(process.env.DATA_DIR || path.join(__rootdir, "data"));
 
 const splitCsv = (input) =>
   String(input || "")

@@ -3,7 +3,7 @@ import * as simpleGitPkg from "simple-git";
 import { promises as fs } from "fs";
 import path from "path";
 
-import logger from "../../services/logger.mjs";
+import logger from "$/services/logger.mjs";
 
 const sg =
   typeof simpleGitPkg === "function"
@@ -19,7 +19,7 @@ export default class GitManager {
     this.userName = config.userName || "Sovereign";
     this.userEmail = config.userEmail || "noreply@sovereign.local";
     this.authToken = config.authToken || null;
-    this.localPath = config.localPath || path.join(process.cwd(), "data");
+    this.localPath = config.localPath || path.resolve(process.env.DATA_DIR);
     this.git = null;
   }
 

@@ -517,6 +517,6 @@
       </section>
     </main>
     <script src="/js/startup.js" defer></script>
-    <script src="/plugins/blog/js/editor.js" defer></script>
+    <script src="/blog/js/editor.js?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}" defer></script>
   </body>
 </html>
