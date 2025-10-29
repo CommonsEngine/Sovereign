@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 // --- App State ---
 const $ = (sel) => document.querySelector(sel);
 const toolbarEl = $(".toolbar");
@@ -9,9 +10,10 @@ const exportBtn = document.getElementById("export");
 const importBtn = document.getElementById("importBtn");
 const importFile = document.getElementById("importFile");
 const searchInput = document.getElementById("search");
-const API_BASE = window.__globals?.apiBase || "";
-const BOARD_ENDPOINT = API_BASE ? `${API_BASE}/board` : "";
+// const API_BASE = window.__globals?.apiBase || "";
 const PROJECT_ID = window.__globals?.projectId || "";
+const API_BASE = `/api/plugins/papertrail/${PROJECT_ID}`;
+const BOARD_ENDPOINT = API_BASE ? `${API_BASE}/board` : "";
 const boardIdFromGlobals = window.__globals?.boardId || "";
 const isOwner = window.__globals?.canManage === "true";
 const canEdit = window.__globals?.canEdit === "true" || isOwner;
@@ -24,9 +26,11 @@ function initShareModal() {
   const canViewShare = mainEl.dataset.shareCanView === "true";
   if (!projectId || !canViewShare) return;
 
+  // eslint-disable-next-line n/no-missing-import
   import("/js/utils/project-share.mjs")
     .then((module) => {
       const init = module?.initProjectShareModal;
+      // eslint-disable-next-line promise/always-return
       if (typeof init !== "function") return;
       init({
         scope: mainEl,
@@ -588,7 +592,7 @@ async function persistBoard(payload, method = "POST") {
   if (!BOARD_ENDPOINT) {
     throw new Error("Board endpoint unavailable");
   }
-  const resp = await fetch(BOARD_ENDPOINT, {
+  const resp = await window.fetch(BOARD_ENDPOINT, {
     method,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -1103,7 +1107,7 @@ function renderNode(n) {
                <div class="rich" contenteditable="false" data-field="descHtml" data-placeholder="Add a description…" ${wrapDisplay}>${desc}</div>`;
       // kick off preview fetch (once)
       (async () => {
-        const p = await fetchLinkPreview(u);
+        const p = await window.fetchLinkPreview(u);
         if (p) {
           n.data.preview = p;
           markDirty();
@@ -1676,7 +1680,7 @@ function exportBoard() {
 async function fetchLinkPreview(url) {
   if (!url) return null;
   try {
-    const resp = await fetch("/api/papertrail/link-preview", {
+    const resp = await window.fetch("/api/plugins/papertrail/link-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
@@ -1920,7 +1924,7 @@ importFile.addEventListener("change", async (e) => {
       setStatus("Validating bundle…", { sticky: true });
       const validateFd = new FormData();
       validateFd.append("bundle", file, file.name);
-      const validateResp = await fetch(`${API_BASE}/board/import/validate`, {
+      const validateResp = await window.fetch(`${API_BASE}/board/import/validate`, {
         method: "POST",
         body: validateFd,
       });
@@ -1945,9 +1949,10 @@ importFile.addEventListener("change", async (e) => {
       }
 
       setStatus("Importing bundle…", { sticky: true });
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
       const importFd = new FormData();
       importFd.append("bundle", file, file.name);
-      const importResp = await fetch(`${API_BASE}/board/import`, {
+      const importResp = await window.fetch(`${API_BASE}/board/import`, {
         method: "POST",
         body: importFd,
       });
@@ -2148,7 +2153,7 @@ function viewCenter() {
       return;
     }
     try {
-      const resp = await fetch(`${BOARD_ENDPOINT}`, { method: "DELETE" });
+      const resp = await window.fetch(`${BOARD_ENDPOINT}`, { method: "DELETE" });
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}));
         throw new Error(data?.error || "Delete failed");
@@ -2246,7 +2251,7 @@ boardEl.addEventListener("drop", async (e) => {
 async function loadBoard() {
   try {
     if (!BOARD_ENDPOINT) throw new Error("Missing board endpoint");
-    const resp = await fetch(BOARD_ENDPOINT);
+    const resp = await window.fetch(BOARD_ENDPOINT);
     if (!resp.ok) throw new Error(`Failed (${resp.status})`);
     const payload = await resp.json();
     const data = payload.board || payload;
@@ -2325,9 +2330,10 @@ if (uploadBtnEl && fileInputEl) {
       const endpoint = `${API_BASE}/board/${board.id}/attachments/upload`;
       try {
         setStatus("Uploading…", { sticky: true });
+        // eslint-disable-next-line n/no-unsupported-features/node-builtins
         const formData = new FormData();
         formData.append("file", file, file.name);
-        const resp = await fetch(endpoint, {
+        const resp = await window.fetch(endpoint, {
           method: "POST",
           body: formData,
         });
