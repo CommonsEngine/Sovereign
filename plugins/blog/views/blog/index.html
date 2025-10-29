@@ -169,7 +169,7 @@
   }
 </style>
 <main
-  class="page__wrap page__wrap--wide"
+  class="sv-page__wrap sv-page__wrap--center"
   data-project-id="{{project.id}}"
   data-project-status="{{project.status}}"
   data-connected="{{connected}}"
@@ -178,29 +178,31 @@
   data-share-can-manage="{{share.canManage}}"
 >
   {{> modal/modal-runtime}} {{> modal/share-project}}
-  <header class="page__header">
-    <div class="page__heading">
-      <h2 class="page__title">{{project.name}}</h2>
-      {{#if project.desc}}
-      <p class="page__subtitle">{{project.desc}}</p>
-      {{/if}}
+
+  <header class="sv-page__header flex row flex-space-between align-items-center">
+    <div>
+      <h2 class="sv-page__title">{{project.name}}</h2>
+      <p class="sv-page__subtitle">{{project.desc}}</p>
     </div>
     {{#if share.canView}}
-    <div class="page__actions">
-      <button type="button" class="chip button" data-modal-open="share-project" data-share-trigger>
-        {{#if share.canManage}}Share project{{else}}View access{{/if}}
-      </button>
-    </div>
+    <button
+      type="button"
+      class="button sv-button sv-button--primary"
+      data-modal-open="share-project"
+      data-share-trigger
+    >
+      {{#if share.canManage}}Share project{{else}}View access{{/if}}
+    </button>
     {{/if}}
   </header>
 
-  <nav class="breadcrumb" aria-label="Breadcrumb">
-    <ol class="breadcrumb__list">
-      <li class="breadcrumb__item">
-        <a class="breadcrumb__link" href="/">Projects</a>
+  <nav class="sv-breadcrumb" aria-label="Breadcrumb">
+    <ol class="sv-breadcrumb__list">
+      <li class="sv-breadcrumb__item">
+        <a class="sv-breadcrumb__link" href="/">Projects</a>
       </li>
-      <li class="breadcrumb__item" aria-current="page">
-        <span class="breadcrumb__current">Blog</span>
+      <li class="sv-breadcrumb__item" aria-current="page">
+        <span class="sv-breadcrumb__current">Blog</span>
       </li>
     </ol>
   </nav>
@@ -218,12 +220,14 @@
   </div>
   {{/connect_error}}
 
-  <section class="grid">
+  <section class="sv-grid">
     <!-- Posts -->
-    <article class="card flex-2-5">
-      <div class="card__bar">
-        <strong>Posts</strong>
-        <div class="flex row justify-end gap-3xs">
+    <article class="sv-card sv-col-8">
+      <div class="sv-card__header sv-grid">
+        <div class="sv-col-2">
+          <strong>Posts</strong>
+        </div>
+        <div class="sv-col-10 flex flex-end">
           <input
             id="post-search"
             class="search"
@@ -297,8 +301,8 @@
     </article>
 
     <!-- Project Meta -->
-    <aside class="card flex-1">
-      <div class="card__bar">
+    <aside class="sv-card sv-col-4">
+      <div class="sv-card__header">
         <strong>Project Meta</strong>
         <button class="card__bar-icon" type="button" aria-label="Project info" title="Project info">
           <svg
@@ -325,45 +329,45 @@
           </svg>
         </button>
       </div>
-      <div class="card__body">
+      <div class="card__body padding-m">
         <div class="flex col gap-s">
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Name</div>
-            <div id="m-name" class="flex-1">{{project.name}}</div>
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Name</div>
+            <div id="m-name" class="sv-col-6">{{project.name}}</div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Status</div>
-            <div id="m-status" class="flex-1">
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Status</div>
+            <div id="m-status" class="sv-col-6">
               <span class="badge">{{project.status}}</span>
             </div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Posts</div>
-            <div id="m-count" class="flex-1">0</div>
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Posts</div>
+            <div id="m-count" class="sv-col-6">0</div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Repo</div>
-            <div id="m-repo" class="flex-1">
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Repo</div>
+            <div id="m-repo" class="sv-col-6">
               <a href="{{project.repoUrl}}">GitHub</a>
             </div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Branch</div>
-            <div id="m-branch" class="flex-1">{{project.branch}}</div>
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Branch</div>
+            <div id="m-branch" class="sv-col-6">{{project.branch}}</div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="flex-1 subtle">Content Dir</div>
-            <div id="m-dir" class="flex-1">{{project.contentDir}}</div>
+          <div class="flex row sv-grid">
+            <div class="sv-col-6 subtle">Content Dir</div>
+            <div id="m-dir" class="sv-col-6">{{project.contentDir}}</div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="subtle flex-1">Created</div>
-            <div id="m-created" class="flex-1">
+          <div class="flex row sv-grid">
+            <div class="subtle sv-col-6">Created</div>
+            <div id="m-created" class="sv-col-6">
               <time datetime="{{project.createdAtISO}}">{{project.createdAtDisplay}}</time>
             </div>
           </div>
-          <div class="flex row justify-start items-center">
-            <div class="subtle flex-1">Updated</div>
-            <div id="m-updated" class="flex-1">
+          <div class="flex row sv-grid">
+            <div class="subtle sv-col-6">Updated</div>
+            <div id="m-updated" class="sv-col-6">
               <time datetime="{{project.updatedAtISO}}">{{project.updatedAtDisplay}}</time>
             </div>
           </div>
