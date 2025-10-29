@@ -11,6 +11,7 @@ import { pathToFileURL } from "url";
 
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
+import * as git from "$/libs/git/registry.mjs";
 
 import secure from "$/middlewares/secure.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
@@ -287,7 +288,7 @@ export default async function createServer(manifest) {
               try {
                 // TODO: Finalize plugin context
                 // This should be compile based on plugin.platformCapabilities[]
-                const pluginContext = { env: { nodeEnv: NODE_ENV }, logger };
+                const pluginContext = { env: { nodeEnv: NODE_ENV }, logger, prisma, git };
                 resolvedRouter = router(pluginContext);
               } catch (err) {
                 logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);

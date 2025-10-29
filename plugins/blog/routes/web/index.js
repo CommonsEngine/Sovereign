@@ -1,4 +1,6 @@
-// import express from "express";
+import express from "express";
+
+import getBlog from "./handlers/blog/get.js";
 
 // // import { requireAuth } from "$/platform/middlewares/auth.mjs";
 // // import exposeGlobals from "$/platform/middlewares/exposeGlobals.mjs";
@@ -30,15 +32,11 @@
 // //   return router;
 // // };
 
-import express from "express";
-
-export default ({ logger }) => {
+export default (ctx) => {
   const router = express.Router();
 
-  router.get("/:id", async (req, res) => {
-    const posts = [];
-    logger.info(`[blog] fetched ${posts.length} posts`);
-    res.render("blog/index", { posts });
+  router.get("/:id", (req, res, next) => {
+    return getBlog(req, res, next, ctx);
   });
 
   router.get("/:id/editor", async (req, res) => {
