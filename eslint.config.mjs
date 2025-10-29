@@ -34,6 +34,7 @@ export default [
       "prisma/reset.sh",
       "eslint.config.mjs",
       "package-lock.json",
+      "plugins/papertrail/*",
     ],
   },
   js.configs.recommended,

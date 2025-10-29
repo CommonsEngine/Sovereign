@@ -33,6 +33,7 @@ import apiProjects from "$/routes/api/projects.js";
 import env from "$/config/env.mjs";
 
 import "$/utils/hbsHelpers.mjs";
+import { uuid } from "$/utils/id.mjs";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
@@ -289,7 +290,15 @@ export default async function createServer(manifest) {
               try {
                 // TODO: Finalize plugin context
                 // This should be compile based on plugin.platformCapabilities[]
-                const pluginContext = { env: { nodeEnv: NODE_ENV }, logger, prisma, git, fm, path };
+                const pluginContext = {
+                  env: { nodeEnv: NODE_ENV },
+                  logger,
+                  prisma,
+                  git,
+                  fm,
+                  path,
+                  uuid,
+                };
                 resolvedRouter = router(pluginContext);
               } catch (err) {
                 logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);

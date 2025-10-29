@@ -7,10 +7,7 @@ import unzipper from "unzipper";
 import { Readable } from "stream";
 import multer from "multer";
 
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import { ensureProjectAccess } from "$/utils/projectAccess.mjs";
-import { uuid } from "$/utils/id.mjs";
+import { ensureProjectAccess } from "./_utils.js";
 
 const PAPERTRAIL_DATA_ROOT = path.resolve(
   process.env.PAPERTRAIL_DATA_ROOT || path.join(process.cwd(), "data", "pt")
@@ -91,7 +88,8 @@ const PROJECT_META_SELECT = {
   status: true,
 };
 
-async function ensureBoard({ projectId, tx = prisma }) {
+async function ensureBoard({ projectId }, { prisma, uuid}) {
+  const tx = prisma;
   const board = await tx.papertrailBoard.findUnique({
     where: { projectId },
     select: BOARD_WITH_RELATIONS_SELECT,
@@ -586,9 +584,10 @@ async function writeBoardSnapshot({ projectId, boardId, payload }) {
   }
 }
 
-export async function getBoard(req, res) {
+export async function getBoard(req, res, _, ctx) {
+  const {logger} = ctx;
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -601,14 +600,14 @@ export async function getBoard(req, res) {
         ...PROJECT_META_SELECT,
         papertrail: { select: BOARD_WITH_RELATIONS_SELECT },
       },
-    });
+    }, ctx);
 
     const board = access.project.papertrail
       ? access.project.papertrail
       : await ensureBoard({ projectId });
 
     return res.json({
-      board: serializeBoard(board, access.project),
+      board: serializeBoard(board, access.project, ctx),
     });
   } catch (err) {
     logger.error("✗ papertrail.getBoard failed:", err);
@@ -618,7 +617,7 @@ export async function getBoard(req, res) {
 
 export async function saveBoard(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -654,7 +653,7 @@ export async function saveBoard(req, res) {
 
 export async function updateBoard(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -736,7 +735,7 @@ export async function updateBoard(req, res) {
 
 export async function exportBoard(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -805,7 +804,7 @@ function buildValidationResponse(boardJson) {
 
 export async function validateImportBundle(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -861,7 +860,7 @@ export async function validateImportBundle(req, res) {
 
 export async function importBoard(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -949,7 +948,7 @@ export async function importBoard(req, res) {
 
 export async function deleteBoard(req, res) {
   try {
-    const { projectId } = req.params;
+    const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
@@ -1000,7 +999,7 @@ async function ensureBoardAssetDir(boardId) {
 
 const attachmentStorage = multer.diskStorage({
   destination(req, file, cb) {
-    const { boardId } = req.params;
+    const boardId = req.params.boardId;
     if (!boardId) {
       cb(new Error("Missing board id"));
       return;
@@ -1021,7 +1020,8 @@ export const attachmentUpload = multer({
 
 export async function uploadAttachment(req, res) {
   try {
-    const { projectId, boardId } = req.params;
+    const projectId = req.params.id;
+    const boardId = req.params.boardId;
     if (!projectId || !boardId) {
       return res.status(400).json({ error: "Missing project or board id" });
     }

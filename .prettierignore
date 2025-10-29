@@ -8,3 +8,4 @@ prisma/schema.prisma
 platform/src/views/_partials/layout/head.html
 platform/src/views/register.html
 plugins/blog/views/blog/editor.html
+plugins/papertrail/*

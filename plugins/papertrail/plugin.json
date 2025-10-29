@@ -4,13 +4,13 @@
     "engine": "0.7.3",
     "entryPoints": ["launcher"]
   },
-  "id": "@kasunben/papertrail",
-  "name": "PaperTrail",
-  "description": "Sovereign PaperTrail",
+  "id": "@kasunben/papertrail-legacy",
+  "name": "PaperTrail (Legacy)",
+  "description": "Sovereign PaperTrail (Legacy)",
   "version": "1.0.0-alpha.7",
   "type": "custom",
   "devOnly": true,
-  "draft": true,
+  "draft": false,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "platformCapabilities": {
