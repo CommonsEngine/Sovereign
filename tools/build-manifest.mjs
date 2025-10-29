@@ -1,4 +1,5 @@
 /* eslint-disable import/order */
+import Ajv from "ajv";
 import dotenv from "dotenv";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -23,8 +24,11 @@ const __finalManifestPath = path.join(__rootdir, "manifest.json");
 
 dotenv.config({ path: path.join(__dirname, "..", "platform", ".env") });
 
+// TODO: Trim some unnecessary fields.
+
 // Default Manifest Object
 const manifest = {
+  env: process.env.NODE_ENV,
   platform: {
     version: plarfotmPkg.version,
     title: "Sovereign",
@@ -49,6 +53,75 @@ const manifest = {
   __partials: [],
   __routes: {},
   __spaentrypoints: [],
+};
+
+const pluginManifestSchema = {
+  $id: "PluginManifest",
+  type: "object",
+  required: ["id", "name", "version", "type", "sovereign"],
+  additionalProperties: true,
+  properties: {
+    id: { type: "string", minLength: 1 },
+    name: { type: "string", minLength: 1 },
+    description: { type: "string" },
+    version: { type: "string", minLength: 1 },
+    type: { type: "string", enum: ["custom", "spa"] },
+    devOnly: { type: "boolean" },
+    draft: { type: "boolean" },
+    author: { type: "string" },
+    license: { type: "string" },
+    sovereign: {
+      type: "object",
+      required: ["schemaVersion", "engine", "entryPoints"],
+      additionalProperties: true,
+      properties: {
+        schemaVersion: { type: "integer", minimum: 0 },
+        engine: { type: "string", minLength: 1 },
+        entryPoints: {
+          type: "array",
+          minItems: 1,
+          items: { type: "string", minLength: 1 },
+        },
+      },
+    },
+    platformCapabilities: {
+      type: "object",
+      additionalProperties: { type: "boolean" },
+    },
+    userCapabilities: {
+      type: "array",
+      items: {
+        type: "object",
+        required: ["key", "description", "roles"],
+        additionalProperties: true,
+        properties: {
+          key: { type: "string", minLength: 1 },
+          description: { type: "string" },
+          roles: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string", minLength: 1 },
+          },
+        },
+      },
+    },
+  },
+};
+
+const ajv = new Ajv({
+  allErrors: true,
+  strict: false,
+});
+
+const validatePluginManifest = ajv.compile(pluginManifestSchema);
+
+const exists = async (p) => {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 const buildManifest = async () => {
@@ -98,7 +171,7 @@ const buildManifest = async () => {
       pluginManifest = JSON.parse(pluginManifestSource);
     } catch (err) {
       console?.error?.(
-        formatError(`invalid JSON: ${err.message}`, {
+        formatError(`✗ invalid JSON: ${err.message}`, {
           manifestPath: pluginManifestPath,
           pluginDir: plugingRoot,
         })
@@ -106,15 +179,29 @@ const buildManifest = async () => {
       continue;
     }
 
-    // TODO: Validate the schema
-    // TODO: Normalize pluginManifest
-    // TODO: Intergrity Check
+    if (!validatePluginManifest(pluginManifest)) {
+      const schemaErrors =
+        validatePluginManifest.errors
+          ?.map((error) => `${error.instancePath || error.schemaPath}: ${error.message}`)
+          .join("; ") || "unknown validation error";
+      console?.error?.(
+        formatError(`✗ invalid manifest schema: ${schemaErrors}`, {
+          manifestPath: pluginManifestPath,
+          pluginDir: plugingRoot,
+        })
+      );
+      continue;
+    }
 
     const isEnabledPlugin =
-      (process.env.NODE_ENV === "production" || pluginManifest.devOnly) && !pluginManifest.draft;
+      process.env.NODE_ENV !== "production"
+        ? !pluginManifest.draft
+        : !pluginManifest.devOnly && !pluginManifest.draft;
 
     if (isEnabledPlugin) {
-      manifest.allowedPluginTypes.push(pluginManifest?.type);
+      if (!manifest.allowedPluginTypes.includes(pluginManifest.type)) {
+        manifest.allowedPluginTypes.push(pluginManifest.type);
+      }
 
       manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
 
@@ -137,7 +224,7 @@ const buildManifest = async () => {
 
       const publicDir = path.join(plugingRoot, "public");
       const distDir = path.join(plugingRoot, "dist");
-      const assetsDir = path.join(distDir, "assets");
+      // const assetsDir = path.join(distDir, "assets"); // removed as per instructions
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
@@ -145,76 +232,72 @@ const buildManifest = async () => {
         entry = path.join(plugingRoot, "index.js");
       }
 
-      try {
-        await fs.access(publicDir);
+      // publicDir quiet check
+      if (await exists(publicDir)) {
         manifest.__assets.push({ base: "/", dir: publicDir });
-      } catch {
-        console?.warn(`✗ error access: ${publicDir}`);
+      } else if (process.env.DEBUG === "true") {
+        console?.debug?.(`no public dir: ${publicDir}`);
       }
 
       if (pluginManifest.type === "spa") {
-        try {
-          await fs.access(distDir);
+        if (await exists(distDir)) {
           manifest.__assets.push({ base: `/plugins/${namespace}/`, dir: distDir });
-        } catch {
-          console?.warn(`✗ error access: ${distDir}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no dist dir: ${distDir}`);
         }
-        try {
-          await fs.access(assetsDir);
-          manifest.__assets.push({ base: `/`, dir: assetsDir });
-        } catch {
-          console?.warn(`✗ error access: ${assetsDir}`);
-        }
-        try {
-          await fs.access(entry);
+
+        if (await exists(entry)) {
           manifest.__spaentrypoints.push({ ns: namespace, entry });
-        } catch {
-          console?.warn(`✗ error access: ${assetsDir}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no SPA entry: ${entry}`);
         }
       }
 
       if (pluginManifest.type === "custom") {
         //__views
         const viewsDir = path.join(plugingRoot, "views");
-        try {
-          await fs.access(viewsDir);
+        if (await exists(viewsDir)) {
           manifest.__views.push({ base: namespace, dir: viewsDir });
-        } catch {
-          console?.warn(`✗ error access: ${viewsDir}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no views dir: ${viewsDir}`);
         }
 
         // __partials
         const __partialsdir = path.join(plugingRoot, "views", "_partials");
-        try {
-          await fs.access(__partialsdir);
+        if (await exists(__partialsdir)) {
           manifest.__partials.push({ base: namespace, dir: __partialsdir });
-        } catch {
-          console?.warn(`✗ error access: ${__partialsdir}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no partials dir: ${__partialsdir}`);
         }
 
         // __routes
+        const resolveRouteIndex = async (dir) => {
+          const candJs = path.join(dir, "index.js");
+          if (await exists(candJs)) return candJs;
+          const candMjs = path.join(dir, "index.mjs");
+          if (await exists(candMjs)) return candMjs;
+          return null;
+        };
         manifest.__routes[namespace] = {};
 
-        const apiRoutesPath = path.join(plugingRoot, "routes", "api", "index.js");
-        try {
-          await fs.access(apiRoutesPath);
+        const apiRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "api"));
+        if (apiRoutesPath) {
           manifest.__routes[namespace]["api"] = {
             base: `/plugins/${namespace}`,
             path: apiRoutesPath,
           };
-        } catch {
-          console?.warn(`✗ error access: ${apiRoutesPath}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no api routes: ${path.join(plugingRoot, "routes", "api")}`);
         }
 
-        const webRoutesPath = path.join(plugingRoot, "routes", "web", "index.js");
-        try {
-          await fs.access(webRoutesPath);
+        const webRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "web"));
+        if (webRoutesPath) {
           manifest.__routes[namespace]["web"] = {
             base: `/${namespace}`,
             path: webRoutesPath,
           };
-        } catch {
-          console?.warn(`✗ error access: ${webRoutesPath}`);
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`no web routes: ${path.join(plugingRoot, "routes", "web")}`);
         }
       }
 
@@ -235,8 +318,9 @@ const buildManifest = async () => {
     },
   };
 
-  await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2));
-  console?.log?.(`Manifest written: ${__finalManifestPath}`);
+  await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");
+  console?.log?.(`➜ Enabled plugins: ${manifest.enabledPlugins.join(", ") || "(none)"}`);
+  console?.log?.(`✓ Manifest written: ${__finalManifestPath}`);
 };
 
 await buildManifest();
