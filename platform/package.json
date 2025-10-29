@@ -33,11 +33,14 @@
   "nodemonConfig": {
     "watch": [
       "src",
-      "public"
+      "../plugins"
     ],
     "ext": "mjs,cjs,js,jsx,json,html,css",
     "exec": "node --import ./scripts/register-alias.mjs ./index.cjs",
-    "signal": "SIGTERM"
+    "signal": "SIGTERM",
+    "ignore": [
+      "dist/*"
+    ]
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",

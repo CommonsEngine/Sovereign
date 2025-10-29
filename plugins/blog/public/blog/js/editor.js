@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 (function () {
   const SM = window.StartupManager;
   if (!SM) {
@@ -98,6 +99,7 @@
         const trimmed = block.trim();
         if (
           !trimmed ||
+          // eslint-disable-next-line no-control-regex
           /^\u0000CODE\d+\u0000$/.test(trimmed) ||
           /^\s*<(h\d|pre|blockquote|ul|ol)/.test(trimmed)
         ) {
@@ -107,6 +109,7 @@
       })
       .filter(Boolean)
       .join("\n")
+      // eslint-disable-next-line no-control-regex
       .replace(/\u0000CODE(\d+)\u0000/g, (_, index) => {
         const block = codeBlocks[Number(index)] || "";
         return block;
@@ -503,6 +506,7 @@
       if (pubDateEl?.value) {
         try {
           pubISO = new Date(pubDateEl.value).toISOString();
+          // eslint-disable-next-line no-empty
         } catch {}
       }
       return {
@@ -676,8 +680,8 @@
       const projectId = getProjectId();
       const filename = window.__FILENAME__ || "";
       if (!projectId || !filename) throw new Error("Missing identifiers");
-      const resp = await fetch(
-        `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(filename)}`,
+      const resp = await window.fetch(
+        `/api/plugins/blog/${encodeURIComponent(projectId)}/posts/${encodeURIComponent(filename)}`,
         {
           method,
           headers: {
@@ -733,8 +737,8 @@
         return;
       }
       try {
-        const resp = await fetch(
-          `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(filename)}`,
+        const resp = await window.fetch(
+          `/api/plugins/blog/${encodeURIComponent(projectId)}/posts/${encodeURIComponent(filename)}`,
           {
             method: "DELETE",
             headers: { Accept: "application/json" },
@@ -767,7 +771,7 @@
     try {
       await SM.runAll({ parallel: true });
     } catch (err) {
-      console.error("Startup errors", SM.getState());
+      console.error("Startup errors", SM.getState(), err);
     }
   });
 })();

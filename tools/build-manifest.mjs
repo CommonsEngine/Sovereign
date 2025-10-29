@@ -20,6 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const __rootdir = path.resolve(__dirname, "..");
 const __pluginsdir = path.join(__rootdir, "plugins");
+const __datadir = path.join(__rootdir, "data");
 const __finalManifestPath = path.join(__rootdir, "manifest.json");
 
 dotenv.config({ path: path.join(__dirname, "..", "platform", ".env") });
@@ -48,6 +49,7 @@ const manifest = {
   allowedPluginTypes: [],
   __rootdir,
   __pluginsdir,
+  __datadir,
   __assets: [],
   __views: [],
   __partials: [],

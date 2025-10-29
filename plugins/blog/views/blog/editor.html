@@ -1,10 +1,3 @@
-<!doctype html>
-<html lang="{{head.lang.short}}">
-  <head>
-    {{> layout/head}}
-    <link rel="stylesheet" href="/css/components/sidebar.css" />
-    <link rel="stylesheet" href="/css/components/userbar.css" />
-    <link rel="stylesheet" href="/css/components/breadcrumb.css" />
     <style>
       :root {
         --editor-min-viewport-height: 78vh;
@@ -190,50 +183,46 @@
     <script>
       window.__FILENAME__ = "{{filename}}";
     </script>
-  </head>
-  <body class="page page--with-sidebar page--project-blog-editor">
-     <!-- top loading spinner -->
-    <div data-startup-spinner class="loading-bar" style="display: none"></div>
-
     <main
-      class="page__wrap page__wrap--wide"
+      class="sv-page__wrap sv-page__wrap--center"
       data-project-id="{{projectId}}"
       data-project-status="{{project.status}}"
       data-connected="{{connected}}"
     >
-      <header class="page__header">
-        <div class="page__heading">
-          <h2 class="page__title">{{title}}</h2>
-          <p class="page__subtitle margin-left-2xs">{{projectName}}</p>
+      <header class="sv-page__header flex row flex-space-between align-items-center">
+        <div>
+          <h2 class="sv-page__title">{{title}}</h2>
+          <p class="sv-page__subtitle">{{projectName}}</p>
         </div>
         <div>
-          <button id="save-draft-btn" class="button chip" type="button">
+          <button id="save-draft-btn" class="button sv-button" type="button">
             Save Draft
           </button>
-          <button id="publish-btn" class="button button--primary chip chip--primary" type="button">
+          <button id="publish-btn" class="button sv-button sv-button--primary" type="button">
             Publish
           </button>
         </div>
       </header>
 
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <ol class="breadcrumb__list">
-          <li class="breadcrumb__item">
-            <a class="breadcrumb__link" href="/">Projects</a>
-          </li>
-          <li class="breadcrumb__item">
-            <a class="breadcrumb__link" href="/blog/{{projectId}}">Blog</a>
-          </li>
-          <li class="breadcrumb__item" aria-current="page">
-            <span class="breadcrumb__current">{{filename}}</span>
-          </li>
-        </ol>
-      </nav>
+          <nav class="sv-breadcrumb" aria-label="Breadcrumb">
+            <ol class="sv-breadcrumb__list">
+              <li class="sv-breadcrumb__item">
+                <a class="sv-breadcrumb__link" href="/">Projects</a>
+              </li>
+              <li class="sv-breadcrumb__item">
+                <a class="sv-breadcrumb__link" href="/blog/{{projectId}}">Blog</a>
+              </li>
+              <li class="sv-breadcrumb__item" aria-current="page">
+                <span class="sv-breadcrumb__current">{{filename}}</span>
+              </li>
+            </ol>
+          </nav>
+
 
       <section class="layout">
         <div class="content-column">
-          <article class="card">
-            <div class="card__bar">
+          <article class="sv-card">
+            <div class="sv-card__header">
               <strong>Editor</strong>
               <div class="segmented" role="group" aria-label="Editor mode">
                 <button id="mode-md" type="button" aria-pressed="true">
@@ -415,9 +404,9 @@
           </article>
         </div>
 
-        <aside class="card meta-panel">
-          <div class="card__bar"><strong>Post Settings</strong></div>
-          <div class="card__body">
+        <aside class="sv-card meta-panel">
+          <div class="sv-card__header"><strong>Post Settings</strong></div>
+          <div class="sv-card__body">
             <div class="field">
               <label class="label" for="excerpt">Summary</label>
               <textarea
@@ -517,6 +506,6 @@
       </section>
     </main>
     <script src="/js/startup.js" defer></script>
-    <script src="/plugins/blog/js/editor.js" defer></script>
+    <script src="/blog/js/editor.js?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}" defer></script>
   </body>
 </html>

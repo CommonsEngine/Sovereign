@@ -27,6 +27,7 @@ if (!manifest || typeof manifest.__rootdir !== "string" || manifest.__rootdir.le
 
 process.env.ROOT_DIR = manifest.__rootdir;
 process.env.PLUGINS_DIR = manifest.__pluginsdir;
+process.env.DATA_DIR = manifest.__datadir;
 
 // Bootstrap the app
 const bootstrapPath =

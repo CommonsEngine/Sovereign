@@ -1,3 +1,5 @@
+/* eslint-disable promise/catch-or-return */
+/* eslint-disable no-undef */
 // New file — page logic moved from inline script and registered as a startup task
 (function () {
   const SM = window.StartupManager;
@@ -83,8 +85,8 @@
       <td><span class="badge">${escapeHtml(statusLabel)}</span></td>
       <td>${iso ? `<time datetime="${iso}">${escapeHtml(label)}</time>` : "—"}</td>
       <td>
-        <div class="row-actions">
-          <a class="chip" href="${hrefEdit}">
+        <div class="row-actions flex row align-items-center gap-s">
+          <a class="button sv-button" role="button" href="${hrefEdit}">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -102,7 +104,7 @@
               />
             </svg>
           </a>
-          <button class="chip chip--danger" type="button" data-action="delete" data-id="${escapeAttr(post.filename)}">
+          <button class="button sv-button" type="button" data-action="delete" data-id="${escapeAttr(post.filename)}">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -165,7 +167,7 @@
   }
 
   async function fetchPosts(projectId) {
-    const resp = await fetch(`/api/blog/${encodeURIComponent(projectId)}/post/all`, {
+    const resp = await window.fetch(`/api/plugins/blog/${encodeURIComponent(projectId)}/posts`, {
       method: "GET",
       headers: { Accept: "application/json" },
     });
@@ -254,8 +256,8 @@
     setRowBusy(tr, true, btn);
 
     try {
-      const resp = await fetch(
-        `/api/blog/${encodeURIComponent(projectId)}/post/${encodeURIComponent(decodeURIComponent(filename))}`,
+      const resp = await window.fetch(
+        `/api/plugins/blog/${encodeURIComponent(projectId)}/posts/${encodeURIComponent(decodeURIComponent(filename))}`,
         {
           method: "DELETE",
           headers: { Accept: "application/json" },
@@ -268,7 +270,9 @@
         try {
           const data = await resp.json();
           if (data?.error) msg = data.error;
-        } catch {}
+        } catch {
+          /* empty */
+        }
         throw new Error(msg);
       }
 
@@ -297,9 +301,11 @@
     const canView = main.dataset.shareCanView === "true";
     if (!projectId || !canView) return;
 
+    // eslint-disable-next-line n/no-missing-import
     import("/js/utils/project-share.mjs")
       .then((module) => {
         const init = module?.initProjectShareModal;
+        // eslint-disable-next-line promise/always-return
         if (typeof init !== "function") return;
         init({
           scope: main,
@@ -336,12 +342,14 @@
       }
       retryConnectionBtn.disabled = true;
       retryConnectionBtn.textContent = "Retrying…";
-      fetch(`/api/blog/${encodeURIComponent(projectId)}/retry-connection`, {
-        method: "POST",
-        headers: { Accept: "application/json" },
-      })
+      window
+        .fetch(`/api/plugins/blog/${encodeURIComponent(projectId)}/retry-connection`, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+        })
         .then((resp) => {
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          // eslint-disable-next-line promise/no-nesting
           return resp.json().catch(() => ({}));
         })
         .then(() => window.location.reload())
@@ -357,9 +365,9 @@
     // run page startup tasks
     try {
       await SM.runAll({ parallel: true });
-    } catch (e) {
+    } catch (err) {
       // errors already surfaced in UI; keep page interactive
-      console.error("Startup errors", SM.getState());
+      console.error("Startup errors", SM.getState(), err);
     }
   });
 })();

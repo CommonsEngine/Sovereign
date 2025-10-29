@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 (function () {
   const SM = window.StartupManager;
   if (!SM) {
@@ -76,11 +77,14 @@
 
       async function postConfigWithRetry(attempt = 0) {
         try {
-          const resp = await fetch(`/api/blog/${encodeURIComponent(projectId)}/configure`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+          const resp = await window.fetch(
+            `/api/plugins/blog/${encodeURIComponent(projectId)}/configure`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            }
+          );
           const data = await resp.json().catch(() => ({}));
           if (!resp.ok) throw new Error(data?.error || "Save failed");
           window.location.replace(`/blog/${encodeURIComponent(projectId)}`);
@@ -123,8 +127,8 @@
     populateDefaults();
     try {
       await SM.runAll({ parallel: true });
-    } catch (e) {
-      console.error("Startup errors", SM.getState());
+    } catch (err) {
+      console.error("Startup errors", SM.getState(), err);
     }
   });
 })();

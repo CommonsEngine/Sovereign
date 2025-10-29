@@ -18,7 +18,7 @@ export async function getOrInitGitManager(projectId, cfg) {
     userName: cfg.userName || cfg.gitUserName || "Sovereign",
     userEmail: cfg.userEmail || cfg.gitUserEmail || "noreply@sovereign.local",
     authToken: cfg.authToken || cfg.gitAuthToken || null,
-    localPath: path.join(process.cwd(), "data", projectId),
+    localPath: path.join(path.resolve(process.env.DATA_DIR), "blog", projectId),
   });
 
   await gm.initialize();

@@ -47,6 +47,12 @@
 .padding-none {
   padding: 0;
 }
+.padding-s {
+  padding: var(--space-s);
+}
+.padding-m {
+  padding: var(--space-m);
+}
 .padding-l {
   padding: var(--space-l);
 }
