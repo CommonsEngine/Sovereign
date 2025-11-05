@@ -1,31 +1,35 @@
 {
-  "sovereign": {
-    "schemaVersion": 1,
-    "engine": "0.7.3",
-    "entryPoints": ["launcher", "sidebar"],
-    "allowMultipleInstances": true
-  },
+  "type": "spa",
   "id": "@sovereign/example-plugin-spa",
+  "namespace": "example-plugin-spa",
   "name": "Example SPA Plugin",
   "description": "Sovereign Example Plugin - SPA",
   "version": "0.1.0",
-  "type": "spa",
   "devOnly": true,
   "draft": false,
+  "entryPoints": {
+    "web": "routes/dist/index.js"
+  },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
-  "platformCapabilities": {
-    "database": true,
-    "gitManager": false,
-    "fs": false,
-    "logger": false,
-    "mailer": false
-  },
-  "userCapabilities": [
-    {
-      "key": "user:plugin.example_plugin_react.feature",
-      "description": "Enable the plugin.",
-      "roles": ["platform:user"]
-    }
-  ]
+  "sovereign": {
+    "schemaVersion": 1,
+    "placements": ["launcher", "sidebar"],
+    "allowMultipleInstances": true,
+    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "platformCapabilities": {
+      "database": true,
+      "gitManager": false,
+      "fs": false,
+      "logger": false,
+      "mailer": false
+    },
+    "userCapabilities": [
+      {
+        "key": "user:plugin.example_plugin_react.feature",
+        "description": "Enable the plugin.",
+        "roles": ["platform:user"]
+      }
+    ]
+  }
 }
