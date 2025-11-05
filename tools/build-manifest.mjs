@@ -263,7 +263,6 @@ const buildManifest = async () => {
 
       const publicDir = path.join(plugingRoot, "public");
       const distDir = path.join(plugingRoot, "dist");
-      const assetsDir = path.join(distDir, "assets");
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
@@ -271,14 +270,8 @@ const buildManifest = async () => {
         entry = path.join(plugingRoot, "index.js");
       }
 
-      // assetsDir quiet check
-      if (await exists(assetsDir)) {
-        manifest.__assets.push({ base: `/${manifestNamespace}`, dir: assetsDir });
-      } else if (process.env.DEBUG === "true") {
-        console?.debug?.(`no public dir: ${publicDir}`);
-      }
-
       // publicDir quiet check
+      // TODO: Coinsider scoped the assets URLs
       if (await exists(publicDir)) {
         manifest.__assets.push({ base: "/", dir: publicDir });
       } else if (process.env.DEBUG === "true") {

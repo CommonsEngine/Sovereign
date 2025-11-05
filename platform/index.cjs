@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 
 // Make sure 'manifest.json' exists,
-// and set __rootdir, __plugindir to process.env
+// and set __rootdir, __plugindir, __datadir to process.env
 const manifestPath = path.resolve(__dirname, "..", "manifest.json");
 
 if (!fs.existsSync(manifestPath)) {
