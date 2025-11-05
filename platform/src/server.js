@@ -56,7 +56,13 @@ export default async function createServer(manifest) {
   // --- Vite (dev) for JSX/TSX SSR ----
   if (NODE_ENV !== "production") {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        // Allow reverse-proxy Host headers from local dev domains
+        allowedHosts: ["sovereign.test", "localhost", "127.0.0.1"],
+        // Make Vite's HMR client use the same host when proxied via Caddy
+        hmr: { host: "sovereign.test", protocol: "wss" },
+      },
       appType: "custom",
     });
     app.locals.vite = vite;
@@ -64,7 +70,7 @@ export default async function createServer(manifest) {
   }
 
   // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
-  app.set("trust proxy", 1);
+  app.set("trust proxy", true);
 
   // Core middleware
   app.use(

@@ -272,6 +272,58 @@ Use `yarn dev` to launch the development server with automatic file watching. Fo
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
    - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`
 
+#### Local dev domain (macOS): `sovereign.test`
+
+You can map a friendly local domain to your dev server for a production‑like experience.
+
+**Option A — /etc/hosts (simple)**
+
+1. Edit hosts file:
+   ```bash
+   sudo nano /etc/hosts
+   ```
+2. Add the entry:
+   ```
+   127.0.0.1   sovereign.test
+   ```
+3. Flush DNS cache:
+   ```bash
+   sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder
+   ```
+4. Test in your browser: `http://sovereign.test:3000`
+
+**Option B — Reverse proxy (no port, with HTTPS)**
+
+Use a local reverse proxy to avoid typing `:3000` and optionally enable HTTPS.
+
+_Caddy example:_
+
+1. Install Caddy:
+   ```bash
+   brew install caddy
+   ```
+2. Create a `Caddyfile` in your project root:
+   ```
+    sovereign.test {
+      tls internal
+      reverse_proxy 127.0.0.1:3000 {
+        header_up Host {host}
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-Proto https
+      }
+    }
+   ```
+3. Run Caddy (may require sudo for port 80/443):
+   ```bash
+   caddy fmt --overwrite ./Caddyfile
+   sudo caddy run --config ./Caddyfile
+   ```
+4. Open: `http://sovereign.test` (or `https://sovereign.test` if TLS is enabled)
+
+> Tip: Keep this setup dev‑only. For production, use your standard reverse proxy (Caddy/Nginx/Traefik) with real domains and certificates.
+
+#### React / JSX Support (Server-Side Rendering + Client Hydration)
+
 #### React / JSX Support (Server-Side Rendering + Client Hydration)
 
 The Sovereign Express/Handlebars stack also supports for **React / JSX views** (alonegside Handlebars) rendered via **server-side rendering (SSR)** with optional **client-side hydration** using [Vite](https://vite.dev/) middleware.
