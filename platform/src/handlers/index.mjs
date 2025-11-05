@@ -1,6 +1,8 @@
 import env from "$/config/env.mjs";
 
-const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN } = env();
+const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, PROJECTS } = env();
+
+console.log(PROJECTS);
 
 export async function viewIndex(_, res) {
   try {
@@ -8,6 +10,7 @@ export async function viewIndex(_, res) {
 
     return res.render("index", {
       show_user_menu: showUserMenu,
+      projects: PROJECTS,
     });
   } catch (err) {
     return res.status(500).render("error", {

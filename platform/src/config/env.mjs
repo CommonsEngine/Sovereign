@@ -2,10 +2,11 @@ import path from "node:path";
 
 import { prisma } from "$/services/database.mjs";
 import { toBool } from "$/utils/misc.mjs";
+import * as fs from "$/utils/fs.js";
 
-import pkg from "./pkg.mjs";
+const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));
 
-// TODO: Combine with Databse values
+// TODO: Combine with Database values
 
 const preferDist =
   (process.env.NODE_ENV || "development") === "production" ||
@@ -41,10 +42,10 @@ const baseLocales =
 const defaultDbPath = path.join(__rootdir, "data", "sovereign.db");
 
 const baseTemplate = Object.freeze({
-  APP_NAME: pkg.manifest.title,
-  APP_TAGLINE: pkg.manifest.tagline,
-  APP_DESCRIPTION: pkg.manifest.description,
-  APP_VERSION: pkg.version,
+  APP_NAME: manifest.platform.title,
+  APP_TAGLINE: manifest.platform.tagline,
+  APP_DESCRIPTION: manifest.platform.description,
+  APP_VERSION: manifest.platform.version,
   APP_URL: process.env.APP_URL || "http://localhost:3000",
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),
@@ -68,10 +69,12 @@ const baseTemplate = Object.freeze({
   EMAIL_SMTP_USER: process.env.EMAIL_SMTP_USER || "",
   EMAIL_SMTP_PASSWORD: process.env.EMAIL_SMTP_PASSWORD || "",
   EMAIL_SMTP_IGNORE_TLS: toBool(process.env.EMAIL_SMTP_IGNORE_TLS, false),
-  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || "no-reply@localhost",
+  EMAIL_FROM_ADDRESS: process.env.EMAIL_FROM_ADDRESS || "no-reply@sovereign.local",
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || process.env.APP_NAME || "Sovereign",
   EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO || "",
   EMAIL_DELIVERY_BYPASS: toBool(process.env.EMAIL_DELIVERY_BYPASS, true),
+
+  PROJECTS: manifest.projects || [],
 
   // TODO: We may need to fetch these from plugin manifest
   FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),

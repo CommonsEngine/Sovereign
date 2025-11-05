@@ -1,34 +1,37 @@
+import path from "node:path";
+
+import * as fs from "$/utils/fs.js";
+
 // TODO: Utilize config/head.mjs for these
 
-import pkg from "$/config/pkg.mjs";
+const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
-
-const manifest = pkg.manifest;
 
 export default function exposeGlobals(req, res, next) {
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     return next();
   }
 
-  const appVersion = pkg.version;
+  // TODO: Fetch from config/env
+  const appVersion = manifest.platform.version;
   const cacheBuster = IS_PROD ? String(appVersion) : String(Date.now());
 
   // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
-    title: manifest.title,
+    title: manifest.platform.title,
     meta: [
-      { name: "application-name", content: manifest.title },
-      { name: "description", content: manifest.description },
-      { name: "keywords", content: pkg?.keywords?.join(", ") }, // TODO: Pick keywords from manifest
+      { name: "application-name", content: manifest.platform.title },
+      { name: "description", content: manifest.platform.description },
+      { name: "keywords", content: manifest.platform.keywords?.join(", ") }, // TODO: Pick keywords from manifest
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
-      { property: "og:site_name", content: manifest.title },
+      { property: "og:site_name", content: manifest.platform.title },
       { property: "og:type", content: "app" },
-      { property: "og:title", content: manifest.title },
-      { property: "og:description", content: manifest.description },
+      { property: "og:title", content: manifest.platform.title },
+      { property: "og:description", content: manifest.platform.description },
       { property: "og:url", content: "/" },
       { property: "og:image", content: "/assets/og-image.png" },
       { property: "og:image:type", content: "image/png" },

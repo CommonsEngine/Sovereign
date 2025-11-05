@@ -45,6 +45,7 @@ const manifest = {
     version: pkg.cliVersion,
   },
   plugins: {},
+  projects: [],
   enabledPlugins: [], // [@<org>/<ns>]
   allowedPluginTypes: [],
   __rootdir,
@@ -394,13 +395,32 @@ const buildManifest = async () => {
     }
   }
 
+  const finalPlugins = {
+    ...manifest.plugins,
+    ...plugins,
+  };
+
+  // Pick plugins to enbale as projets
+  const projects = Object.keys(finalPlugins)
+    .map((k) => {
+      const { id, name, namespace, sovereign } = finalPlugins[k];
+
+      if (sovereign.allowMultipleInstances) {
+        return {
+          id,
+          label: name,
+          value: namespace,
+        };
+      }
+      return false;
+    })
+    .filter(Boolean);
+
   const outputManifest = {
     ...manifest,
     allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
-    plugins: {
-      ...manifest.plugins,
-      ...plugins,
-    },
+    plugins: finalPlugins,
+    projects,
   };
 
   await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");
