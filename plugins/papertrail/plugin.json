@@ -2,7 +2,8 @@
   "sovereign": {
     "schemaVersion": 1,
     "engine": "0.7.3",
-    "entryPoints": ["launcher"]
+    "entryPoints": ["launcher"],
+    "allowMultipleInstances": true
   },
   "id": "@kasunben/papertrail-legacy",
   "name": "PaperTrail (Legacy)",

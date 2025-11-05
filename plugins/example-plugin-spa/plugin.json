@@ -2,7 +2,8 @@
   "sovereign": {
     "schemaVersion": 1,
     "engine": "0.7.3",
-    "entryPoints": ["launcher", "sidebar"]
+    "entryPoints": ["launcher", "sidebar"],
+    "allowMultipleInstances": true
   },
   "id": "@sovereign/example-plugin-spa",
   "name": "Example SPA Plugin",
