@@ -60,7 +60,7 @@ const manifest = {
 const pluginManifestSchema = {
   $id: "PluginManifest",
   type: "object",
-  required: ["id", "name", "version", "type", "sovereign"],
+  required: ["id", "name", "version", "type", "sovereign", "devOnly", "author", "license"],
   additionalProperties: true,
   properties: {
     id: { type: "string", minLength: 1 },
@@ -74,15 +74,49 @@ const pluginManifestSchema = {
     license: { type: "string" },
     sovereign: {
       type: "object",
-      required: ["schemaVersion", "engine", "entryPoints"],
+      required: ["schemaVersion"],
       additionalProperties: true,
       properties: {
-        schemaVersion: { type: "integer", minimum: 0 },
-        engine: { type: "string", minLength: 1 },
-        entryPoints: {
+        schemaVersion: { type: "integer", minimum: 1 },
+        allowMultipleInstances: { type: "boolean" },
+        compat: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            platform: { type: "string" },
+            node: { type: "string" },
+          },
+        },
+        routes: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            web: { type: "string", minLength: 1 },
+            api: { type: "string", minLength: 1 },
+          },
+        },
+        placements: {
           type: "array",
-          minItems: 1,
-          items: { type: "string", minLength: 1 },
+          items: {
+            anyOf: [
+              {
+                type: "object",
+                required: ["surface"],
+                additionalProperties: true,
+                properties: {
+                  surface: { type: "string" },
+                  label: { type: "string" },
+                  icon: { type: "string" },
+                  href: { type: "string" },
+                  routeName: { type: "string" },
+                  order: { type: "integer" },
+                  permissions: { type: "array", items: { type: "string" } },
+                  projectScoped: { type: "boolean" },
+                },
+              },
+              { type: "string" },
+            ],
+          },
         },
       },
     },
@@ -147,8 +181,8 @@ const buildManifest = async () => {
 
   for (const candidate of pluginCandidates) {
     if (!candidate.isDirectory?.()) continue;
-    const namespace = candidate.name;
-    const plugingRoot = path.join(__pluginsdir, namespace);
+    const plugingDirName = candidate.name;
+    const plugingRoot = path.join(__pluginsdir, plugingDirName);
 
     const pluginManifestPath = path.join(plugingRoot, "plugin.json");
 
@@ -205,8 +239,6 @@ const buildManifest = async () => {
         manifest.allowedPluginTypes.push(pluginManifest.type);
       }
 
-      manifest.enabledPlugins.push(`${namespace}@${pluginManifest.version}`);
-
       if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
         console?.warn?.(
           formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
@@ -224,14 +256,26 @@ const buildManifest = async () => {
         );
       }
 
+      // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
+      const manifestNamespace = pluginManifest.namespace || plugingDirName;
+
+      manifest.enabledPlugins.push(`${manifestNamespace}@${pluginManifest.version}`);
+
       const publicDir = path.join(plugingRoot, "public");
       const distDir = path.join(plugingRoot, "dist");
-      // const assetsDir = path.join(distDir, "assets"); // removed as per instructions
+      const assetsDir = path.join(distDir, "assets");
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
       if (pluginManifest.type === "custom") {
         entry = path.join(plugingRoot, "index.js");
+      }
+
+      // assetsDir quiet check
+      if (await exists(assetsDir)) {
+        manifest.__assets.push({ base: `/${manifestNamespace}`, dir: assetsDir });
+      } else if (process.env.DEBUG === "true") {
+        console?.debug?.(`no public dir: ${publicDir}`);
       }
 
       // publicDir quiet check
@@ -243,13 +287,13 @@ const buildManifest = async () => {
 
       if (pluginManifest.type === "spa") {
         if (await exists(distDir)) {
-          manifest.__assets.push({ base: `/plugins/${namespace}/`, dir: distDir });
+          manifest.__assets.push({ base: `/plugins/${manifestNamespace}/`, dir: distDir });
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no dist dir: ${distDir}`);
         }
 
         if (await exists(entry)) {
-          manifest.__spaentrypoints.push({ ns: namespace, entry });
+          manifest.__spaentrypoints.push({ ns: manifestNamespace, entry });
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no SPA entry: ${entry}`);
         }
@@ -259,7 +303,7 @@ const buildManifest = async () => {
         //__views
         const viewsDir = path.join(plugingRoot, "views");
         if (await exists(viewsDir)) {
-          manifest.__views.push({ base: namespace, dir: viewsDir });
+          manifest.__views.push({ base: manifestNamespace, dir: viewsDir });
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no views dir: ${viewsDir}`);
         }
@@ -267,7 +311,7 @@ const buildManifest = async () => {
         // __partials
         const __partialsdir = path.join(plugingRoot, "views", "_partials");
         if (await exists(__partialsdir)) {
-          manifest.__partials.push({ base: namespace, dir: __partialsdir });
+          manifest.__partials.push({ base: manifestNamespace, dir: __partialsdir });
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no partials dir: ${__partialsdir}`);
         }
@@ -280,32 +324,78 @@ const buildManifest = async () => {
           if (await exists(candMjs)) return candMjs;
           return null;
         };
-        manifest.__routes[namespace] = {};
+        manifest.__routes[manifestNamespace] = {};
 
-        const apiRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "api"));
+        const declaredRoutes = {};
+
+        // API route entry (prefer manifest-declared path)
+        let apiRoutesPath = null;
+        if (declaredRoutes.api) {
+          const absApi = path.join(plugingRoot, declaredRoutes.api);
+          apiRoutesPath = (await exists(absApi)) ? absApi : null;
+          if (!apiRoutesPath && process.env.DEBUG === "true") {
+            console?.debug?.(`declared api route not found: ${absApi}`);
+          }
+        }
+        if (!apiRoutesPath) {
+          apiRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "api"));
+        }
         if (apiRoutesPath) {
-          manifest.__routes[namespace]["api"] = {
-            base: `/plugins/${namespace}`,
+          manifest.__routes[manifestNamespace]["api"] = {
+            base: `/plugins/${manifestNamespace}`,
             path: apiRoutesPath,
           };
         } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no api routes: ${path.join(plugingRoot, "routes", "api")}`);
+          console?.debug?.(`no api routes under ${path.join(plugingRoot, "routes", "api")}`);
         }
 
-        const webRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "web"));
+        // WEB route entry (prefer manifest-declared path)
+        let webRoutesPath = null;
+        if (declaredRoutes.web) {
+          const absWeb = path.join(plugingRoot, declaredRoutes.web);
+          webRoutesPath = (await exists(absWeb)) ? absWeb : null;
+          if (!webRoutesPath && process.env.DEBUG === "true") {
+            console?.debug?.(`declared web route not found: ${absWeb}`);
+          }
+        }
+        if (!webRoutesPath) {
+          webRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "web"));
+        }
         if (webRoutesPath) {
-          manifest.__routes[namespace]["web"] = {
-            base: `/${namespace}`,
+          manifest.__routes[manifestNamespace]["web"] = {
+            base: `/${manifestNamespace}`,
             path: webRoutesPath,
           };
         } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no web routes: ${path.join(plugingRoot, "routes", "web")}`);
+          console?.debug?.(`no web routes under ${path.join(plugingRoot, "routes", "web")}`);
         }
       }
 
-      plugins[namespace] = {
-        namespace,
+      // Normalize optional top-level entryPoints to absolute paths (relative to plugin root)
+      let normalizedEntryPoints = undefined;
+      if (
+        pluginManifest &&
+        pluginManifest.entryPoints &&
+        typeof pluginManifest.entryPoints === "object"
+      ) {
+        normalizedEntryPoints = {};
+        for (const [k, rel] of Object.entries(pluginManifest.entryPoints)) {
+          if (typeof rel !== "string" || !rel) continue;
+          const absPath = path.join(plugingRoot, rel);
+          if (await exists(absPath)) {
+            normalizedEntryPoints[k] = absPath;
+          } else if (process.env.DEBUG === "true") {
+            console?.debug?.(`entryPoints.${k} not found under plugin root: ${absPath}`);
+          }
+        }
+        // If none validated, keep it undefined to avoid misleading consumers
+        if (Object.keys(normalizedEntryPoints).length === 0) normalizedEntryPoints = undefined;
+      }
+
+      plugins[manifestNamespace] = {
+        namespace: manifestNamespace,
         entry,
+        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
         ...pluginManifest,
       };
     }
