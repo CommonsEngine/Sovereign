@@ -75,6 +75,7 @@ const baseTemplate = Object.freeze({
   EMAIL_DELIVERY_BYPASS: toBool(process.env.EMAIL_DELIVERY_BYPASS, true),
 
   PROJECTS: manifest.projects || [],
+  MODULES: manifest.modules || [],
 
   // TODO: We may need to fetch these from plugin manifest
   FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),

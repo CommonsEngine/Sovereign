@@ -2,8 +2,6 @@ import env from "$/config/env.mjs";
 
 const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, PROJECTS } = env();
 
-console.log(PROJECTS);
-
 export async function viewIndex(_, res) {
   try {
     const showUserMenu = !(GUEST_LOGIN_ENABLED && GUEST_LOGIN_ENABLED_BYPASS_LOGIN);

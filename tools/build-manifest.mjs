@@ -46,6 +46,7 @@ const manifest = {
   },
   plugins: {},
   projects: [],
+  modules: [],
   enabledPlugins: [], // [@<org>/<ns>]
   allowedPluginTypes: [],
   __rootdir,
@@ -94,29 +95,6 @@ const pluginManifestSchema = {
           properties: {
             web: { type: "string", minLength: 1 },
             api: { type: "string", minLength: 1 },
-          },
-        },
-        placements: {
-          type: "array",
-          items: {
-            anyOf: [
-              {
-                type: "object",
-                required: ["surface"],
-                additionalProperties: true,
-                properties: {
-                  surface: { type: "string" },
-                  label: { type: "string" },
-                  icon: { type: "string" },
-                  href: { type: "string" },
-                  routeName: { type: "string" },
-                  order: { type: "integer" },
-                  permissions: { type: "array", items: { type: "string" } },
-                  projectScoped: { type: "boolean" },
-                },
-              },
-              { type: "string" },
-            ],
           },
         },
       },
@@ -400,27 +378,29 @@ const buildManifest = async () => {
     ...plugins,
   };
 
-  // Pick plugins to enbale as projets
-  const projects = Object.keys(finalPlugins)
-    .map((k) => {
-      const { id, name, namespace, sovereign } = finalPlugins[k];
+  // Pick projects and mdoules from plugins
+  Object.keys(finalPlugins).forEach((k) => {
+    const { id, name, namespace, sovereign } = finalPlugins[k];
 
-      if (sovereign.allowMultipleInstances) {
-        return {
-          id,
-          label: name,
-          value: namespace,
-        };
-      }
-      return false;
-    })
-    .filter(Boolean);
+    if (sovereign.allowMultipleInstances) {
+      manifest.projects.push({
+        id,
+        label: name,
+        value: namespace,
+      });
+    } else {
+      manifest.modules.push({
+        id,
+        label: name,
+        value: namespace,
+      });
+    }
+  });
 
   const outputManifest = {
     ...manifest,
     allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
     plugins: finalPlugins,
-    projects,
   };
 
   await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");

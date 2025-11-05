@@ -50,9 +50,13 @@ export default function exposeGlobals(req, res, next) {
     version: String(appVersion),
     cacheBuster,
   };
+
   res.locals.user = {
     name: req.user?.name || "guest",
     primaryRole: req.user?.role || null,
   };
+
+  res.locals.modules = manifest.modules || [];
+
   next();
 }

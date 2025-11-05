@@ -15,7 +15,6 @@
   "license": "AGPL-3.0",
   "sovereign": {
     "schemaVersion": 1,
-    "placements": ["launcher"],
     "allowMultipleInstances": true,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
