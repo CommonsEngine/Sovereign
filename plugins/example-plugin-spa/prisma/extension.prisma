@@ -1,5 +1,0 @@
-model ExamplePluginReactDemo {
-  id String @id @default(cuid())
-
-  @@map("example_plugin_react_demo")
-}
