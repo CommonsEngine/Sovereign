@@ -11,6 +11,7 @@
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
   },
+  "sidebarHidden": true,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "sovereign": {

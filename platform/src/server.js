@@ -21,7 +21,6 @@ import requireRole from "$/middlewares/requireRole.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
-import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
 import * as appHandler from "$/handlers/app.mjs";
 
@@ -195,22 +194,6 @@ export default async function createServer(manifest) {
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
   app.post("/register", authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
-
-  // User Routes (Web)
-  app.get(
-    "/users",
-    requireAuth,
-    exposeGlobals,
-    requireRole(["platform:admin", "tenant:admin", "project:admin"]),
-    usersHandler.viewUsers
-  );
-  // User Routes (API)
-  app.delete(
-    "/api/users/:id",
-    requireAuth,
-    requireRole(["platform:admin"]),
-    usersHandler.deleteUser
-  );
 
   // Settings Routes (Web)
   app.get(

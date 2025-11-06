@@ -380,7 +380,7 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign } = finalPlugins[k];
+    const { id, name, namespace, sovereign, sidebarHidden } = finalPlugins[k];
 
     if (sovereign.allowMultipleInstances) {
       manifest.projects.push({
@@ -393,6 +393,7 @@ const buildManifest = async () => {
         id,
         label: name,
         value: namespace,
+        sidebarHidden,
       });
     }
   });

@@ -52,7 +52,7 @@
         />
       </svg>
     </a>
-    {{/if}} {{#each modules}}
+    {{/if}} {{#each modules}} {{#unless this.sidebarHidden}}
     <a
       class="sv-sidebar__btn"
       href="/{{this.value}}"
@@ -77,7 +77,7 @@
         />
       </svg>
     </a>
-    {{/each}}
+    {{/unless}} {{/each}}
   </nav>
 
   <div class="sv-sidebar__spacer"></div>
