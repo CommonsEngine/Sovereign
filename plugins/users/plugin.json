@@ -1,0 +1,31 @@
+{
+  "type": "custom",
+  "id": "@sovereign/users",
+  "namespace": "users",
+  "name": "Users",
+  "description": "Manage access, invitations, and roles across your workspace.",
+  "version": "0.1.0",
+  "devOnly": true,
+  "draft": false,
+  "entryPoints": {
+    "api": "routes/api/index.js",
+    "web": "routes/web/index.js"
+  },
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "sovereign": {
+    "schemaVersion": 1,
+    "allowMultipleInstances": false,
+    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "platformCapabilities": {
+      "database": true
+    },
+    "userCapabilities": [
+      {
+        "key": "user:plugin.users.feature",
+        "description": "Enable Blog plugin.",
+        "roles": ["platform:user"]
+      }
+    ]
+  }
+}
