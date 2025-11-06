@@ -1,3 +1,16 @@
+Sovereign Licensing Notice
+Last updated: 2025-11-06
+
+Sovereign Core (the “Platform”) is made available by CommonsEngine (“Maintainer”) under the GNU Affero General Public License v3.0 (“AGPLv3”), reproduced below. Maintainer may also offer the Platform under a separate commercial or dual license; if you wish to operate the Platform without the AGPLv3 copyleft obligations, contact mailtokasun@gmail.com to request a Sovereign Core Dual License. Unless you have executed such a license, your rights and obligations are governed solely by AGPLv3.
+
+Core scope. All source code in the repository root and the `platform/` directory (the “Core”) is AGPLv3 unless an executed dual-license agreement explicitly states otherwise. Dual-licensees may run unmodified Core privately, but may not maintain private forks; Core changes must be contributed upstream under AGPLv3 via pull request.
+
+Plugins. Each plugin directory must contain its own license notice. Official plugins published by Maintainer default to AGPLv3 unless a different license is stated in that plugin’s `LICENSE` file. Third-party plugin authors may select MIT, AGPLv3, or another OSI-approved (or proprietary) license, provided they comply with the Sovereign Terms of Service and clearly identify their chosen license. A plugin that incorporates or modifies Core code is a derivative work of the Core and must comply with AGPLv3 unless covered by a dual-license agreement.
+
+Terms of Service. Use of the Sovereign Platform and Marketplace is subject to the Sovereign Terms of Service and Acceptable Use Policy. Licensing permissions are conditioned on continued compliance.
+
+No additional restrictions. Nothing in this notice limits the freedoms granted by AGPLv3 for Core code distributed under that license. The complete text of AGPLv3 follows.
+
                     GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
 

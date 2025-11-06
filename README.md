@@ -711,8 +711,10 @@ When registering a new account, any pending email-based project invites are auto
 
 ## Contributing
 
-See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md)
+See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md). Please read and sign [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before contributing.
 
 ## License
 
-The community version licensed under AGPL-3.0.
+Sovereign Core (repository root and `platform/`) is distributed under AGPL-3.0; Commons Engine may also offer commercial dual licenses for organizations that need to operate the Core privately—email mailtokasun@gmail.com for details. Plugins may declare their own licenses (e.g., MIT, AGPL-3.0, proprietary) provided they comply with the Sovereign Terms of Service and clearly ship a `LICENSE` file in the plugin directory.
+
+Contributors must sign the [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before we can merge pull requests.
