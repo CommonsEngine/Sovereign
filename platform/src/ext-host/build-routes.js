@@ -2,6 +2,7 @@ import path from "node:path";
 import { pathToFileURL } from "url";
 
 import { prisma } from "$/services/database.mjs";
+import * as mailer from "$/services/mailer.mjs";
 import logger from "$/services/logger.mjs";
 import * as git from "$/libs/git/registry.mjs";
 import fm from "$/libs/fs.mjs";
@@ -14,7 +15,24 @@ import { refreshEnvCache } from "$/config/env.mjs";
 
 export async function buildPluginRoutes(app, manifest, config) {
   const { plugins } = manifest;
-  const { NODE_ENV } = config;
+  const { NODE_ENV, IS_PROD } = config;
+
+  const getPluginContext = (platformCapabilities) => {
+    const pluginContext = {
+      env: { nodeEnv: NODE_ENV },
+      logger,
+      path,
+    };
+    if (platformCapabilities?.database || !IS_PROD) pluginContext.prisma = prisma;
+    if (platformCapabilities?.git || !IS_PROD) pluginContext.git = git;
+    if (platformCapabilities?.fs || !IS_PROD) pluginContext.fm = fm;
+    if (platformCapabilities?.env || !IS_PROD) pluginContext.refreshEnvCache = refreshEnvCache;
+    if (platformCapabilities?.uuid || !IS_PROD) pluginContext.uuid = uuid;
+    if (platformCapabilities?.mailer || !IS_PROD) pluginContext.mailer = mailer;
+    if (platformCapabilities?.fileUpload || !IS_PROD) pluginContext.fileUpload = {}; // TODO: Attach fileUpload handler
+
+    return pluginContext;
+  };
 
   if (plugins && typeof plugins === "object") {
     for (const ns of Object.keys(plugins)) {
@@ -60,19 +78,7 @@ export async function buildPluginRoutes(app, manifest, config) {
             // If it's a function (factory), call it with context
             if (typeof router === "function" && !router.stack) {
               try {
-                // TODO: Finalize plugin context
-                // This should be compile based on plugin.platformCapabilities[]
-                const pluginContext = {
-                  env: { nodeEnv: NODE_ENV },
-                  logger,
-                  prisma,
-                  git,
-                  fm,
-                  path,
-                  uuid,
-                  refreshEnvCache,
-                };
-                resolvedRouter = router(pluginContext);
+                resolvedRouter = router(getPluginContext(plugin?.sovereign?.platformCapabilities));
               } catch (err) {
                 logger.error(`[plugins] spa:${ns}/web: router factory threw an error`, err);
                 continue;
@@ -125,19 +131,9 @@ export async function buildPluginRoutes(app, manifest, config) {
               // If it's a function (factory), call it with context
               if (typeof router === "function" && !router.stack) {
                 try {
-                  // TODO: Finalize plugin context
-                  // This should be compile based on plugin.platformCapabilities[]
-                  const pluginContext = {
-                    env: { nodeEnv: NODE_ENV },
-                    logger,
-                    prisma,
-                    git,
-                    fm,
-                    path,
-                    uuid,
-                    refreshEnvCache,
-                  };
-                  resolvedRouter = router(pluginContext);
+                  resolvedRouter = router(
+                    getPluginContext(plugin?.sovereign?.platformCapabilities)
+                  );
                 } catch (err) {
                   logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
                   continue;

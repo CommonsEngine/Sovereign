@@ -19,7 +19,8 @@
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true,
-      "fileUpload": true
+      "fileUpload": true,
+      "uuid": true
     },
     "userCapabilities": [
       {
