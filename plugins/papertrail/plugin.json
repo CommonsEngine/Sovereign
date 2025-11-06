@@ -8,7 +8,8 @@
   "devOnly": true,
   "draft": false,
   "entryPoints": {
-    "web": "dist/index.js"
+    "web": "dist/index.js",
+    "api": "routes/api/index.js"
   },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",

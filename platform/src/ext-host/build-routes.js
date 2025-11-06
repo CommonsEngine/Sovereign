@@ -23,15 +23,77 @@ export async function buildPluginRoutes(app, manifest, config) {
       const pluginKind = plugin?.sovereign?.allowMultipleInstances ? "project" : "module";
       const pluginKey = `${pluginType}::${pluginKind}`;
 
-      if (pluginKey === "spa::module") {
-        app.get(`/${ns}`, requireAuth, exposeGlobals, (req, res, next) => {
-          return pluginHandler.renderSPAModule(req, res, next, { app, plugin });
-        });
-      }
-      if (pluginKey === "spa::project") {
-        app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
-          return pluginHandler.renderSPA(req, res, next, { app, plugins });
-        });
+      if (pluginType === "spa") {
+        if (pluginKey === "spa::module") {
+          app.get(`/${ns}`, requireAuth, exposeGlobals, (req, res, next) => {
+            return pluginHandler.renderSPAModule(req, res, next, { app, plugin });
+          });
+        }
+        if (pluginKey === "spa::project") {
+          app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
+            return pluginHandler.renderSPA(req, res, next, { app, plugins });
+          });
+        }
+
+        // SPA API Routes
+        const entryPoint = plugin?.entryPoints?.api;
+        if (entryPoint) {
+          const entryAbs = path.resolve(entryPoint);
+          const entryUrl = pathToFileURL(entryAbs).href;
+
+          try {
+            const mod = await import(entryUrl);
+            const router =
+              mod?.default && typeof mod.default === "function" && mod.default.name === "router"
+                ? mod.default
+                : mod?.default && typeof mod.default === "function" && mod.default.name !== "router"
+                  ? mod.default
+                  : mod?.router
+                    ? mod.router
+                    : typeof mod === "function"
+                      ? mod()
+                      : null;
+
+            // If default export is a function but not an Express Router yet, try invoking it
+            let resolvedRouter = router;
+
+            // If it's a function (factory), call it with context
+            if (typeof router === "function" && !router.stack) {
+              try {
+                // TODO: Finalize plugin context
+                // This should be compile based on plugin.platformCapabilities[]
+                const pluginContext = {
+                  env: { nodeEnv: NODE_ENV },
+                  logger,
+                  prisma,
+                  git,
+                  fm,
+                  path,
+                  uuid,
+                  refreshEnvCache,
+                };
+                resolvedRouter = router(pluginContext);
+              } catch (err) {
+                logger.error(`[plugins] spa:${ns}/web: router factory threw an error`, err);
+                continue;
+              }
+            }
+
+            if (!resolvedRouter || typeof resolvedRouter !== "function" || !resolvedRouter.stack) {
+              logger.warn(
+                `[plugins] spa:${ns}/web: entry did not export an Express Router at ${entryAbs}`
+              );
+              continue;
+            }
+
+            const middlewares = [requireAuth, exposeGlobals];
+
+            const mountBase = `/api/plugins/${ns}`;
+            app.use(mountBase, ...middlewares, resolvedRouter);
+          } catch (err) {
+            logger.error(`[plugins] failed to load spa:${ns}/web from ${entryAbs}:`, err);
+          }
+        }
       }
 
       if (pluginType === "custom") {
