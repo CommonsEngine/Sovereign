@@ -77,11 +77,6 @@ const baseTemplate = Object.freeze({
   PROJECTS: manifest.projects || [],
   MODULES: manifest.modules || [],
 
-  // TODO: We may need to fetch these from plugin manifest
-  FT_PROJECT_TYPE_BLOG: toBool(process.env.FT_PROJECT_TYPE_BLOG, true),
-  FT_PROJECT_TYPE_PAPERTRAIL: toBool(process.env.FT_PROJECT_TYPE_PAPERTRAIL, false),
-  FT_PROJECT_TYPE_WORKSPACE: toBool(process.env.FT_PROJECT_TYPE_WORKSPACE, false),
-
   GUEST_LOGIN_ENABLED: toBool(process.env.GUEST_LOGIN_ENABLED, false),
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN: toBool(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN, false),
 
