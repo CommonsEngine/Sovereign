@@ -8,7 +8,7 @@ import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
 
-import { buildPluginRoutes } from "./ext-host/build-routes.js";
+import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
@@ -47,10 +47,8 @@ export default async function createServer(manifest) {
   if (!IS_PROD) {
     // Lazy require to avoid hard dependency in production builds
     ({ createServer: createViteServer } = await import("vite"));
-  }
 
-  // --- Vite (dev) for JSX/TSX SSR ----
-  if (NODE_ENV !== "production") {
+    // --- Vite (dev) for JSX/TSX SSR ----
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
@@ -64,6 +62,7 @@ export default async function createServer(manifest) {
     app.locals.vite = vite;
     app.use(vite.middlewares);
   }
+  app.use(useJSX);
 
   // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
   app.set("trust proxy", true);
@@ -87,13 +86,8 @@ export default async function createServer(manifest) {
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-
-  // Security headers
   app.use(secure);
 
-  app.use(useJSX);
-
-  // View engine
   app.engine(
     "html",
     hbsEngine({
@@ -115,7 +109,7 @@ export default async function createServer(manifest) {
   app.set("views", [__templatedir, ...__views.map(({ dir }) => path.resolve(dir))]);
 
   // Enable template caching in production
-  app.set("view cache", NODE_ENV === "production");
+  app.set("view cache", IS_PROD);
 
   // Serve everything under /public at the root
   // TODO: Consider moving this into a small utility like utils/cacheHeaders.mjs
@@ -123,7 +117,7 @@ export default async function createServer(manifest) {
   const staticOptions = {
     index: false,
     setHeaders: (res, filePath) => {
-      if (NODE_ENV === "production") {
+      if (IS_PROD) {
         const ext = path.extname(filePath).toLowerCase();
         const longCacheExts = new Set([
           ".js",
