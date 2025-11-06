@@ -1,9 +1,9 @@
 {
   "type": "spa",
-  "id": "@sovereign/flowmapper",
-  "namespace": "flowmapper",
-  "name": "FlowMapper",
-  "description": "Mind Mapping",
+  "id": "@sovereign/papertrail",
+  "namespace": "papertrail",
+  "name": "PaperTrail",
+  "description": "Sovereign PaperTrail",
   "version": "0.1.0",
   "devOnly": true,
   "draft": false,
@@ -25,7 +25,7 @@
     },
     "userCapabilities": [
       {
-        "key": "user:plugin.flowmapper.feature",
+        "key": "user:plugin.papertrail.feature",
         "description": "Enable the plugin.",
         "roles": ["platform:user"]
       }
