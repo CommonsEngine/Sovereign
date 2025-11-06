@@ -1,0 +1,5 @@
+model Splitify {
+  id String @id @default(cuid())
+
+  @@map("splitify")
+}
