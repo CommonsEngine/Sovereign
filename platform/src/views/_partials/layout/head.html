@@ -25,6 +25,18 @@
 {{/if}}
 
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="application-name" content="{{app.name}}" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta name="apple-mobile-web-app-title" content="{{app.name}}" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0B1121" />
+<meta name="msapplication-TileColor" content="#0B1121" />
+<link rel="apple-touch-icon" sizes="192x192" href="/assets/icons/maskable-icon-192.png" />
+<link rel="apple-touch-icon" sizes="512x512" href="/assets/icons/maskable-icon-512.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192.png" />
+<link rel="icon" type="image/png" sizes="512x512" href="/assets/icons/icon-512.png" />
 <link rel="stylesheet" href="/css/sv_base.css?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}" />
 <link rel="stylesheet" href="/css/sv_styled.css?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}" />
 <link rel="stylesheet" href="/css/sv_utility.css?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}" />

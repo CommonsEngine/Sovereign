@@ -26,7 +26,7 @@ export default function exposeGlobals(req, res, next) {
       { name: "description", content: manifest.platform.description },
       { name: "keywords", content: manifest.platform.keywords?.join(", ") }, // TODO: Pick keywords from manifest
       { name: "robots", content: "index,follow" },
-      { name: "theme-color", content: "#ffffff" },
+      { name: "theme-color", content: "#0B1121" },
       // Open Graph
       { property: "og:site_name", content: manifest.platform.title },
       { property: "og:type", content: "app" },
@@ -47,6 +47,9 @@ export default function exposeGlobals(req, res, next) {
 
   // Set app-wide globals
   res.locals.app = {
+    name: manifest.platform.title,
+    tagline: manifest.platform.tagline,
+    description: manifest.platform.description,
     version: String(appVersion),
     cacheBuster,
   };

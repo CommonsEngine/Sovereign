@@ -709,6 +709,16 @@ Projects now support collaborative access with explicit membership records. Each
 
 When registering a new account, any pending email-based project invites are automatically linked to the newly created user.
 
+## Progressive Web App
+
+Sovereign now includes an installable Progressive Web App experience so users can pin the workspace to their home screen or package it for mobile stores.
+
+- The web app manifest (`platform/src/public/manifest.webmanifest`) declares icons, colors, shortcuts, and display mode used by Chrome, Safari, and other browsers.
+- A versioned service worker (`platform/src/public/sw.js`) caches the core shell, serves an offline fallback page, and keeps itself up to date; edit the cache list if you add new critical assets.
+- All views automatically load `/js/pwa.js`, which registers the service worker and exposes `window.SovereignPWA.promptInstall()` so you can surface a custom “Install Sovereign” button inside the UI.
+- Default install icons live under `platform/src/public/assets/icons/`; replace them with your brand-aligned PNGs (192×192 and 512×512, optionally maskable) before distributing builds.
+- To test the PWA locally, run the platform, visit it over HTTPS (or `localhost`), and use your browser’s “Install app/Add to Home screen” action; Lighthouse should now report the app as installable.
+
 ## Contributing
 
 See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md). Please read and sign [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before contributing.
