@@ -242,42 +242,14 @@ export default async function createServer(manifest) {
   // Project Routes
   app.use("/api/projects", apiProjects);
 
-  // Build Plugin Routes
-  for (const ns of Object.keys(plugins)) {
-    const plugin = plugins[ns];
-
-    if (plugin.type === "custom" && plugin?.sovereign?.allowMultipleInstances) {
-      // TODO: Handle custom plugins / allowMultipleInstances = true;
-    }
-
-    if (plugin.type === "custom" && !plugin?.sovereign?.allowMultipleInstances) {
-      // TODO: Handle custom plugins / allowMultipleInstances = false;
-    }
-
-    if (plugin.type === "spa" && plugin?.sovereign?.allowMultipleInstances) {
-      // TODO: Fix this with a plugin type match to this case
-      app.get(`/${ns}`, requireAuth, exposeGlobals, (req, res, next) => {
-        // TODO: Pass pluginContext to SPA
-        return pluginHandler.renderSPA(req, res, next, { app, plugins });
-      });
-    }
-
-    if (plugin.type === "spa" && !plugin?.sovereign?.allowMultipleInstances) {
+  // SPA Routes
+  if (__spaentrypoints && Array.isArray(__spaentrypoints)) {
+    for (const { ns } of __spaentrypoints) {
       app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
-        // TODO: Pass pluginContext to SPA
         return pluginHandler.renderSPA(req, res, next, { app, plugins });
       });
     }
   }
-
-  // SPA Routes
-  // if (__spaentrypoints && Array.isArray(__spaentrypoints)) {
-  //   for (const { ns } of __spaentrypoints) {
-  //     app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
-  //       return pluginHandler.renderSPA(req, res, next, { app, plugins });
-  //     });
-  //   }
-  // }
 
   /** --- Plugin Routes (entry-point router mode) ---
    * Each entry in `__routes[namespace]` is expected to look like:
