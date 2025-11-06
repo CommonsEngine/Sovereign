@@ -7,33 +7,29 @@ import cookieParser from "cookie-parser";
 import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
-import { pathToFileURL } from "url";
+
+import { buildPluginRoutes } from "./ext-host/build-routes.js";
 
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
-import * as git from "$/libs/git/registry.mjs";
-import fm from "$/libs/fs.mjs";
 
 import secure from "$/middlewares/secure.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
 import requireRole from "$/middlewares/requireRole.mjs";
-import ensurePluginLayout from "./middlewares/ensurePluginLayout.js";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
 import * as usersHandler from "$/handlers/users/index.mjs";
 import * as settingsHandler from "$/handlers/settings/index.mjs";
 import * as appHandler from "$/handlers/app.mjs";
-import * as pluginHandler from "./handlers/plugin.js";
 
 import apiProjects from "$/routes/api/projects.js";
 
 import env from "$/config/env.mjs";
 
 import "$/utils/hbsHelpers.mjs";
-import { uuid } from "$/utils/id.mjs";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
@@ -41,7 +37,7 @@ const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERS
 export default async function createServer(manifest) {
   const app = express();
 
-  const { plugins, __assets, __views, __partials, __routes, __spaentrypoints } = manifest;
+  const { __assets, __views, __partials } = manifest;
 
   // Ensure data root exist at startup
   await fs.mkdir(__datadir, { recursive: true });
@@ -242,99 +238,8 @@ export default async function createServer(manifest) {
   // Project Routes
   app.use("/api/projects", apiProjects);
 
-  // SPA Routes
-  if (__spaentrypoints && Array.isArray(__spaentrypoints)) {
-    for (const { ns } of __spaentrypoints) {
-      app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
-        return pluginHandler.renderSPA(req, res, next, { app, plugins });
-      });
-    }
-  }
+  await buildPluginRoutes(app, manifest, config);
 
-  /** --- Plugin Routes (entry-point router mode) ---
-   * Each entry in `__routes[namespace]` is expected to look like:
-   * {
-   *  web: { base: "plugins/<ns>", path: "/abs/path/to/routes/web/index.js" },
-   *  api: { base: "plugins/<ns>", path: "/abs/path/to/routes/api/index.js" }
-   * }
-   * The module at `path` must export an Express Router (default, named `router`,
-   * or a factory function returning a router).
-   **/
-  if (__routes && typeof __routes === "object") {
-    const kinds = ["web", "api"];
-
-    for (const ns of Object.keys(__routes)) {
-      const cfgByKind = __routes[ns] || {};
-
-      for (const kind of kinds) {
-        const cfg = cfgByKind[kind];
-
-        if (cfg) {
-          const baseClean = (cfg.base || `plugins/${ns}`).replace(/^\/+|\/+$/g, "");
-          const mountBase = kind === "web" ? `/${baseClean}` : `/api/${baseClean}`;
-          const entryAbs = path.resolve(cfg.path);
-          const entryUrl = pathToFileURL(entryAbs).href;
-
-          try {
-            const mod = await import(entryUrl);
-            const router =
-              mod?.default && typeof mod.default === "function" && mod.default.name === "router"
-                ? mod.default
-                : mod?.default && typeof mod.default === "function" && mod.default.name !== "router"
-                  ? mod.default
-                  : mod?.router
-                    ? mod.router
-                    : typeof mod === "function"
-                      ? mod()
-                      : null;
-
-            // If default export is a function but not an Express Router yet, try invoking it
-            let resolvedRouter = router;
-
-            // If it's a function (factory), call it with context
-            if (typeof router === "function" && !router.stack) {
-              try {
-                // TODO: Finalize plugin context
-                // This should be compile based on plugin.platformCapabilities[]
-                const pluginContext = {
-                  env: { nodeEnv: NODE_ENV },
-                  logger,
-                  prisma,
-                  git,
-                  fm,
-                  path,
-                  uuid,
-                };
-                resolvedRouter = router(pluginContext);
-              } catch (err) {
-                logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
-                continue;
-              }
-            }
-
-            if (!resolvedRouter || typeof resolvedRouter !== "function" || !resolvedRouter.stack) {
-              logger.warn(
-                `[plugins] ${ns}/${kind}: entry did not export an Express Router at ${entryAbs}`
-              );
-              continue;
-            }
-
-            const middlewares = [requireAuth, exposeGlobals];
-            if (kind === "web") {
-              middlewares.push(ensurePluginLayout("custom/index"));
-            }
-
-            app.use(mountBase, ...middlewares, resolvedRouter);
-            logger.info(`[plugins] mounted ${kind} routes for "${ns}" at ${mountBase}`);
-          } catch (err) {
-            logger.error(`[plugins] failed to load ${ns}/${kind} from ${entryAbs}:`, err);
-          }
-        }
-      }
-    }
-  }
-
-  // 404
   app.use((req, res) => {
     if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
     return res.status(404).render("error", {
