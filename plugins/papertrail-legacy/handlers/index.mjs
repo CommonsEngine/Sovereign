@@ -88,7 +88,7 @@ const PROJECT_META_SELECT = {
   status: true,
 };
 
-async function ensureBoard({ projectId }, { prisma, uuid}) {
+async function ensureBoard({ projectId }, { prisma, uuid }) {
   const tx = prisma;
   const board = await tx.papertrailBoard.findUnique({
     where: { projectId },
@@ -585,22 +585,25 @@ async function writeBoardSnapshot({ projectId, boardId, payload }) {
 }
 
 export async function getBoard(req, res, _, ctx) {
-  const {logger} = ctx;
+  const { logger } = ctx;
   try {
     const projectId = req.params.id;
     if (!projectId) {
       return res.status(400).json({ error: "Missing project id" });
     }
 
-    const access = await ensureProjectAccess({
-      projectId,
-      user: req.user,
-      allowedRoles: ["viewer"],
-      select: {
-        ...PROJECT_META_SELECT,
-        papertrail: { select: BOARD_WITH_RELATIONS_SELECT },
+    const access = await ensureProjectAccess(
+      {
+        projectId,
+        user: req.user,
+        allowedRoles: ["viewer"],
+        select: {
+          ...PROJECT_META_SELECT,
+          papertrail: { select: BOARD_WITH_RELATIONS_SELECT },
+        },
       },
-    }, ctx);
+      ctx
+    );
 
     const board = access.project.papertrail
       ? access.project.papertrail
