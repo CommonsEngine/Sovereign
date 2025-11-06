@@ -367,8 +367,8 @@ const buildManifest = async () => {
       plugins[manifestNamespace] = {
         namespace: manifestNamespace,
         entry,
-        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
         ...pluginManifest,
+        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
     }
   }
