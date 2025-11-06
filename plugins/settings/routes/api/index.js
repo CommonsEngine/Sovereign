@@ -1,6 +1,4 @@
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import { refreshEnvCache } from "$/config/env.mjs";
+import express from "express";
 
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;
@@ -273,7 +271,7 @@ function normalizeSettingValue(key, rawValue) {
   }
 }
 
-export async function getAppSettings(_req, res) {
+async function getAppSettings(req, res, _, { prisma, logger }) {
   try {
     const settings = await prisma.appSetting.findMany({
       where: { scope: DEFAULT_SCOPE },
@@ -300,7 +298,7 @@ export async function getAppSettings(_req, res) {
   }
 }
 
-export async function updateAppSettings(req, res) {
+async function updateAppSettings(req, res, _, { prisma, logger, refreshEnvCache }) {
   const payload = req.body;
 
   const rawUpdates = Array.isArray(payload)
@@ -389,3 +387,17 @@ export async function updateAppSettings(req, res) {
     return res.status(500).json({ error: "Failed to update settings" });
   }
 }
+
+export default (ctx) => {
+  const router = express.Router();
+
+  router.get("/", (req, res, next) => {
+    return getAppSettings(req, res, next, ctx);
+  });
+
+  router.patch("/", (req, res, next) => {
+    return updateAppSettings(req, res, next, ctx);
+  });
+
+  return router;
+};

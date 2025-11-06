@@ -1,9 +1,9 @@
 {
   "type": "custom",
-  "id": "@sovereign/users",
-  "namespace": "users",
-  "name": "Users",
-  "description": "Manage access, invitations, and roles across your workspace.",
+  "id": "@sovereign/settings",
+  "namespace": "settings",
+  "name": "Settings",
+  "description": "Manage preferences, integrations, and policies across your platfrom.",
   "version": "0.1.0",
   "devOnly": true,
   "draft": false,
@@ -23,7 +23,7 @@
     },
     "userCapabilities": [
       {
-        "key": "user:plugin.users.feature",
+        "key": "user:plugin.settings.feature",
         "description": "Enable plugin.",
         "roles": ["platform:admin"]
       }

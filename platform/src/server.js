@@ -17,12 +17,9 @@ import secure from "$/middlewares/secure.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
-import requireRole from "$/middlewares/requireRole.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
-import * as settingsHandler from "$/handlers/settings/index.mjs";
-import * as appHandler from "$/handlers/app.mjs";
 
 import apiProjects from "$/routes/api/projects.js";
 
@@ -194,23 +191,6 @@ export default async function createServer(manifest) {
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
   app.post("/register", authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
-
-  // Settings Routes (Web)
-  app.get(
-    "/settings",
-    requireAuth,
-    exposeGlobals,
-    requireRole(["platform:admin", "tenant:admin", "project:admin"]),
-    settingsHandler.viewSettings
-  );
-  // Settings Routes (API)
-  app.get("/api/settings", requireAuth, requireRole(["platform:admin"]), appHandler.getAppSettings);
-  app.patch(
-    "/api/settings",
-    requireAuth,
-    requireRole(["platform:admin"]),
-    appHandler.updateAppSettings
-  );
 
   // Project Routes
   app.use("/api/projects", apiProjects);
