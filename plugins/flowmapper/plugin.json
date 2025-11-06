@@ -1,0 +1,34 @@
+{
+  "type": "spa",
+  "id": "@sovereign/flowmapper",
+  "namespace": "flowmapper",
+  "name": "FlowMapper",
+  "description": "Mind Mapping",
+  "version": "0.1.0",
+  "devOnly": true,
+  "draft": false,
+  "entryPoints": {
+    "web": "routes/dist/index.js"
+  },
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "sovereign": {
+    "schemaVersion": 1,
+    "allowMultipleInstances": true,
+    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "platformCapabilities": {
+      "database": true,
+      "gitManager": false,
+      "fs": false,
+      "logger": false,
+      "mailer": false
+    },
+    "userCapabilities": [
+      {
+        "key": "user:plugin.flowmapper.feature",
+        "description": "Enable the plugin.",
+        "roles": ["platform:user"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+model FlowMapper {
+  id String @id @default(cuid())
+
+  @@map("flowmapper")
+}
