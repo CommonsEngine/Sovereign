@@ -55,8 +55,6 @@ const manifest = {
   __assets: [],
   __views: [],
   __partials: [],
-  __routes: {},
-  __spaentrypoints: [],
 };
 
 const pluginManifestSchema = {
@@ -263,12 +261,6 @@ const buildManifest = async () => {
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no dist dir: ${distDir}`);
         }
-
-        if (await exists(entry)) {
-          manifest.__spaentrypoints.push({ ns: manifestNamespace, entry });
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no SPA entry: ${entry}`);
-        }
       }
 
       if (pluginManifest.type === "custom") {
@@ -286,60 +278,6 @@ const buildManifest = async () => {
           manifest.__partials.push({ base: manifestNamespace, dir: __partialsdir });
         } else if (process.env.DEBUG === "true") {
           console?.debug?.(`no partials dir: ${__partialsdir}`);
-        }
-
-        // __routes
-        const resolveRouteIndex = async (dir) => {
-          const candJs = path.join(dir, "index.js");
-          if (await exists(candJs)) return candJs;
-          const candMjs = path.join(dir, "index.mjs");
-          if (await exists(candMjs)) return candMjs;
-          return null;
-        };
-        manifest.__routes[manifestNamespace] = {};
-
-        const declaredRoutes = {};
-
-        // API route entry (prefer manifest-declared path)
-        let apiRoutesPath = null;
-        if (declaredRoutes.api) {
-          const absApi = path.join(plugingRoot, declaredRoutes.api);
-          apiRoutesPath = (await exists(absApi)) ? absApi : null;
-          if (!apiRoutesPath && process.env.DEBUG === "true") {
-            console?.debug?.(`declared api route not found: ${absApi}`);
-          }
-        }
-        if (!apiRoutesPath) {
-          apiRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "api"));
-        }
-        if (apiRoutesPath) {
-          manifest.__routes[manifestNamespace]["api"] = {
-            base: `/plugins/${manifestNamespace}`,
-            path: apiRoutesPath,
-          };
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no api routes under ${path.join(plugingRoot, "routes", "api")}`);
-        }
-
-        // WEB route entry (prefer manifest-declared path)
-        let webRoutesPath = null;
-        if (declaredRoutes.web) {
-          const absWeb = path.join(plugingRoot, declaredRoutes.web);
-          webRoutesPath = (await exists(absWeb)) ? absWeb : null;
-          if (!webRoutesPath && process.env.DEBUG === "true") {
-            console?.debug?.(`declared web route not found: ${absWeb}`);
-          }
-        }
-        if (!webRoutesPath) {
-          webRoutesPath = await resolveRouteIndex(path.join(plugingRoot, "routes", "web"));
-        }
-        if (webRoutesPath) {
-          manifest.__routes[manifestNamespace]["web"] = {
-            base: `/${manifestNamespace}`,
-            path: webRoutesPath,
-          };
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no web routes under ${path.join(plugingRoot, "routes", "web")}`);
         }
       }
 
@@ -367,8 +305,8 @@ const buildManifest = async () => {
       plugins[manifestNamespace] = {
         namespace: manifestNamespace,
         entry,
-        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
         ...pluginManifest,
+        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
     }
   }
@@ -380,7 +318,7 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign } = finalPlugins[k];
+    const { id, name, namespace, sovereign, sidebarHidden } = finalPlugins[k];
 
     if (sovereign.allowMultipleInstances) {
       manifest.projects.push({
@@ -393,6 +331,7 @@ const buildManifest = async () => {
         id,
         label: name,
         value: namespace,
+        sidebarHidden,
       });
     }
   });

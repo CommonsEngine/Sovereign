@@ -1,15 +1,15 @@
 {
-  "type": "spa",
-  "id": "@sovereign/papertrail",
-  "namespace": "papertrail",
-  "name": "PaperTrail",
-  "description": "Sovereign PaperTrail",
-  "version": "0.1.0",
+  "type": "custom",
+  "id": "@kasunben/papertrail-legacy",
+  "namespace": "papertrail-legacy",
+  "name": "PaperTrail (Legacy)",
+  "description": "Sovereign PaperTrail (Legacy)",
+  "version": "1.0.0-alpha.7",
   "devOnly": true,
   "draft": false,
   "entryPoints": {
-    "web": "dist/index.js",
-    "api": "routes/api/index.js"
+    "api": "routes/api/index.js",
+    "web": "routes/web/index.js"
   },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
@@ -18,7 +18,9 @@
     "allowMultipleInstances": true,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
-      "database": true
+      "database": true,
+      "fileUpload": true,
+      "uuid": true
     },
     "userCapabilities": [
       {

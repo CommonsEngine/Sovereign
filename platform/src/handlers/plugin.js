@@ -80,6 +80,104 @@ async function pathExists(targetPath) {
   }
 }
 
+export async function renderSPAModule(req, res, _, { plugin }) {
+  const { namespace } = plugin;
+  try {
+    const entryPoint = plugin?.entryPoints?.web;
+
+    const pluginRoot = path.join(process.env.PLUGINS_DIR, namespace);
+
+    // TODO: Override res.locals.head for html document meta
+    const baseStyles = [];
+
+    const shellModel = {
+      layout: false,
+      head: res.locals.head,
+      pluginMarkup: "",
+      pluginHead: "",
+      styles: baseStyles,
+      scripts: [],
+      inlineScripts: "",
+    };
+    const inlineScriptBlocks = [];
+
+    const entryBasename = path.basename(entryPoint);
+    const entryUrl = resolvePluginAsset(namespace, entryBasename);
+    shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
+
+    // Add plugin base stylesheet
+    baseStyles.push(`/${namespace}.css`);
+
+    const resolvedNodeEnv = JSON.stringify(process.env.NODE_ENV || "production");
+    inlineScriptBlocks.push(
+      `<script>(function(){const g=globalThis;g.global ||= g;g.process ||= { env: {} };g.process.env ||= {};if(!g.process.env.NODE_ENV) g.process.env.NODE_ENV = ${resolvedNodeEnv};})();</script>`
+    );
+
+    const distDir = path.join(pluginRoot, "dist");
+    if (await pathExists(distDir)) {
+      try {
+        const assets = await fs.readdir(distDir);
+        const cssAssets = assets.filter((file) => file.endsWith(".css"));
+        if (cssAssets.length) {
+          const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
+          shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
+          inlineScriptBlocks.push(
+            `<script>(function(){const head=document.head;const styles=${JSON.stringify(
+              cssHrefs
+            )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
+          );
+        }
+      } catch (err) {
+        logger.warn(`Unable to read built assets for plugin "${namespace}"`, err);
+      }
+    } else {
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Unsupported Plugin Type or JSX Markup",
+        description: `${plugin?.type} plugin type is not supported yet.`,
+      });
+    }
+
+    // Rendering the plugin ---
+    // Prepare the boot context
+    const bootContext = {
+      plugin: {
+        id: plugin.id,
+        name: plugin.name,
+        namespace,
+        type: plugin.type,
+        version: plugin.version,
+      },
+    };
+
+    inlineScriptBlocks.push(
+      `<script>window.__sv ??= {}; window.__sv.context = ${JSON.stringify(bootContext)};</script>`
+    );
+
+    shellModel.inlineScripts = inlineScriptBlocks.join("\n");
+    shellModel.styles = unique(shellModel.styles);
+    shellModel.scripts = unique(shellModel.scripts);
+
+    logger.debug("- Serving plugin shell", {
+      namespace,
+      pluginScripts: shellModel.scripts,
+      pluginStyles: shellModel.styles,
+      pluginHead: shellModel.pluginHead?.length,
+    });
+
+    return res.render("layouts/spa/index", shellModel);
+  } catch (err) {
+    logger.error("✗ Render SPA Module page failed:", err);
+    return res.status(500).render("error", {
+      code: 500,
+      message: "Oops!",
+      description: "Failed to load SPA Module",
+      error: err?.stack || err?.message || String(err),
+      nodeEnv: process.env.NODE_ENV,
+    });
+  }
+}
+
 export async function renderSPA(req, res, _, { plugins }) {
   try {
     const projectId = req.params?.id;

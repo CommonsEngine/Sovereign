@@ -1,7 +1,11 @@
 import { prisma } from "$/services/database.mjs";
 import logger from "$/services/logger.mjs";
 import { uuid } from "$/utils/id.mjs";
-import { flags } from "$/config/flags.mjs";
+import env from "$/config/env.mjs";
+
+const { PROJECTS } = env();
+
+const allowedTypes = new Set(PROJECTS.map((p) => p.value));
 
 export const MAX_SLUG_ATTEMPTS = 10;
 
@@ -26,13 +30,6 @@ export default async function create(req, res) {
   try {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-    // feature flags (assume flags object available)
-    const allowedTypes = new Set();
-    if (flags?.blog) allowedTypes.add("blog");
-    if (flags?.papertrail) allowedTypes.add("papertrail");
-    if (flags?.papertrail) allowedTypes.add("example-plugin-custom");
-    if (flags?.papertrail) allowedTypes.add("example-plugin-spa");
 
     // add other types conditionally...
     // allowed scopes

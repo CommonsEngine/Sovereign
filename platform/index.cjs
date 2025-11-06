@@ -1,7 +1,7 @@
 require("dotenv").config();
 
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 // Make sure 'manifest.json' exists,
 // and set __rootdir, __plugindir, __datadir to process.env

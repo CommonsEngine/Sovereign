@@ -1,0 +1,34 @@
+{
+  "type": "custom",
+  "id": "@sovereign/settings",
+  "namespace": "settings",
+  "name": "Settings",
+  "description": "Manage preferences, integrations, and policies across your platfrom.",
+  "version": "0.1.0",
+  "devOnly": true,
+  "draft": false,
+  "entryPoints": {
+    "api": "routes/api/index.js",
+    "web": "routes/web/index.js"
+  },
+  "sidebarHidden": true,
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "sovereign": {
+    "schemaVersion": 1,
+    "allowMultipleInstances": false,
+    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "platformCapabilities": {
+      "database": true,
+      "env": true,
+      "fileUpload": true
+    },
+    "userCapabilities": [
+      {
+        "key": "user:plugin.settings.feature",
+        "description": "Enable plugin.",
+        "roles": ["platform:admin"]
+      }
+    ]
+  }
+}
