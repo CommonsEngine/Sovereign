@@ -213,6 +213,7 @@ async function onRemove() {}
   - `database` → Prisma client, `git` → git helpers, `fs` → filesystem adapter, `env` → `refreshEnvCache`, `uuid` → id helpers, `mailer` → transactional email, `fileUpload` → (experimental) upload scaffolding.
   - Requests for unknown capabilities, or prod-disabled ones (e.g., `fileUpload` until hardened), fail during manifest bootstrap.
   - During development, you can set `DEV_ALLOW_ALL_CAPS=true` to temporarily grant all capabilities to every plugin. This is noisy (logged per plugin), should never be enabled in production, and is meant only for rapid prototyping.
+- Plugin-declared user capabilities live under `sovereign.userCapabilities`. Each entry can include `scope`, `category`, and metadata/tags to aid auditing. `yarn build:manifest` and `yarn prepare:db` automatically re-seed these definitions via `tools/database-seed-plugin-capabilities.mjs`, warn when capabilities are removed, and emit a signature that forces active sessions to refresh their permission snapshots on the next request.
 
 #### CLI (v0.1.0) — managing plugins
 

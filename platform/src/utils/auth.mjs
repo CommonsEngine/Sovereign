@@ -6,7 +6,17 @@ import { prisma } from "../services/database.mjs";
 import env from "../config/env.mjs";
 import logger from "../services/logger.mjs";
 
-const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS } = env();
+const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS, PLUGIN_CAPABILITIES_SIGNATURE } =
+  env();
+
+const CAPABILITY_PRECEDENCE = {
+  allow: 6,
+  consent: 5,
+  compliance: 4,
+  scoped: 3,
+  anonymized: 2,
+  deny: 1,
+};
 
 async function resolvePrimaryEmailSnapshot(user) {
   if (!user) return null;
@@ -198,50 +208,73 @@ export async function getOrCreateSingletonGuestUser() {
   }
 }
 
+function buildRoleCapabilitySnapshot(assignments = []) {
+  const roles = [];
+  const capabilities = {};
+  for (const assignment of assignments) {
+    const role = assignment?.role;
+    if (!role) continue;
+    roles.push({
+      id: role.id,
+      key: role.key,
+      label: role.label,
+      level: role.level,
+      scope: role.scope,
+    });
+    for (const rc of role.roleCapabilities || []) {
+      const key = rc.capabilityKey;
+      if (!key) continue;
+      const value = String(rc.value || "deny");
+      if (
+        !capabilities[key] ||
+        CAPABILITY_PRECEDENCE[value] > CAPABILITY_PRECEDENCE[capabilities[key]]
+      ) {
+        capabilities[key] = value;
+      }
+    }
+  }
+  return { roles, capabilities };
+}
+
+async function reloadRoleAssignments(userId) {
+  return prisma.userRoleAssignment.findMany({
+    where: { userId },
+    include: {
+      role: {
+        include: {
+          roleCapabilities: true,
+        },
+      },
+    },
+  });
+}
+
+async function refreshSessionCapabilitySnapshot(session) {
+  const assignments = await reloadRoleAssignments(session.userId);
+  const { roles, capabilities } = buildRoleCapabilitySnapshot(assignments);
+  await prisma.session.update({
+    where: { token: session.token },
+    data: {
+      roles,
+      capabilities,
+      capabilitiesSignature: PLUGIN_CAPABILITIES_SIGNATURE || null,
+    },
+  });
+  return { roles, capabilities };
+}
+
 export async function createSession(req, res, user) {
   const token = randomToken(48);
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
-  // Fetch roles + capabilities snapshot once at session creation time.
-  // We'll not mutate DB schema here; instead store the computed snapshot in the session cookie as a small JSON payload.
-  // Keep payload minimal: role keys and an effective capability map.
   let roles = [];
   let capabilities = {};
   try {
-    const assignments = user.roleAssignments || [];
-    roles = assignments.map((a) => {
-      const r = a.role;
-      return {
-        id: r.id,
-        key: r.key,
-        label: r.label,
-        level: r.level,
-        scope: r.scope,
-      };
-    });
-
-    // Build effective capability map (role precedence not enforced here — later logic can implement precedence)
-    for (const a of assignments) {
-      for (const rc of a.role.roleCapabilities || []) {
-        const key = rc.capabilityKey;
-        const value = String(rc.value || "deny");
-        // simple precedence: allow > consent > compliance > scoped > anonymized > deny
-        const precedence = {
-          allow: 6,
-          consent: 5,
-          compliance: 4,
-          scoped: 3,
-          anonymized: 2,
-          deny: 1,
-        };
-        if (!capabilities[key] || precedence[value] > precedence[capabilities[key]]) {
-          capabilities[key] = value;
-        }
-      }
-    }
+    const snapshot = buildRoleCapabilitySnapshot(user.roleAssignments || []);
+    roles = snapshot.roles;
+    capabilities = snapshot.capabilities;
   } catch (err) {
-    // Don't block session creation on RBAC read errors; log and proceed.
-    logger.warn("Failed to fetch roles/capabilities for session snapshot", err);
+    logger.warn("Failed to build role snapshot for session", err);
   }
 
   const primaryEmail = await resolvePrimaryEmailSnapshot(user);
@@ -257,6 +290,7 @@ export async function createSession(req, res, user) {
       roles,
       capabilities,
       userSnapshot,
+      capabilitiesSignature: PLUGIN_CAPABILITIES_SIGNATURE || null,
     },
   });
   res.cookie(AUTH_SESSION_COOKIE_NAME, token, {
@@ -320,6 +354,22 @@ export async function getSessionWithUser(token) {
     }
   }
 
+  let roles = s.roles || [];
+  let capabilities = s.capabilities || {};
+
+  if (PLUGIN_CAPABILITIES_SIGNATURE && s.capabilitiesSignature !== PLUGIN_CAPABILITIES_SIGNATURE) {
+    try {
+      const refreshed = await refreshSessionCapabilitySnapshot(s);
+      roles = refreshed.roles;
+      capabilities = refreshed.capabilities;
+      s.roles = roles;
+      s.capabilities = capabilities;
+      s.capabilitiesSignature = PLUGIN_CAPABILITIES_SIGNATURE;
+    } catch (err) {
+      logger.warn("Failed to refresh session capability snapshot", err);
+    }
+  }
+
   return {
     id: s.id,
     userId: s.userId,
@@ -330,8 +380,8 @@ export async function getSessionWithUser(token) {
     expiresAt: s.expiresAt,
     user: {
       ...snapshot,
-      roles: s.roles || [],
-      capabilities: s.capabilities || {},
+      roles,
+      capabilities,
     },
   };
 }

@@ -7,6 +7,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "module";
 
+import { collectPluginCapabilities } from "./lib/plugin-capabilities.mjs";
+
 /**
  * @typedef {import("@sovereign/types").PluginManifest} PluginManifest
  */
@@ -392,6 +394,19 @@ const buildManifest = async () => {
     ...plugins,
   };
 
+  const {
+    capabilities: capabilityCatalog,
+    signature: capabilitySignature,
+    diagnostics,
+  } = await collectPluginCapabilities({ cwd: __rootdir });
+  diagnostics.forEach((diag) => {
+    if (diag.level === "error") {
+      console.error(`✗ ${diag.message}`);
+    } else {
+      console.warn(`⚠️  ${diag.message}`);
+    }
+  });
+
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
     const { id, name, namespace, sovereign, sidebarHidden } = finalPlugins[k];
@@ -416,6 +431,18 @@ const buildManifest = async () => {
     ...manifest,
     allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
     plugins: finalPlugins,
+    pluginCapabilities: {
+      signature: capabilitySignature,
+      definitions: capabilityCatalog.map((cap) => ({
+        key: cap.key,
+        description: cap.description,
+        source: cap.source,
+        namespace: cap.namespace,
+        scope: cap.scope,
+        category: cap.category,
+        assignments: cap.assignments,
+      })),
+    },
   };
 
   await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");

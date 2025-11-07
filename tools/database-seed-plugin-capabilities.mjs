@@ -1,100 +1,32 @@
 /* eslint-disable import/order */
-import { PrismaClient } from "@prisma/client";
-import fg from "fast-glob";
-import { promises as fs } from "node:fs";
+import { PrismaClient, Prisma } from "@prisma/client";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
-const CAPABILITY_DEFAULT_VALUE = "allow";
+import {
+  collectPluginCapabilities,
+  repoRoot,
+  summarizeCapabilityDiff,
+  readPreviousCapabilityState,
+  writeCapabilityState,
+} from "./lib/plugin-capabilities.mjs";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, "..");
-
-function parseRoleAssignment(entry) {
-  if (!entry) return null;
-  if (typeof entry === "string") {
-    return { role: entry.trim(), value: CAPABILITY_DEFAULT_VALUE };
-  }
-  if (typeof entry === "object") {
-    const role = String(entry.role || entry.key || "").trim();
-    if (!role) return null;
-    const value =
-      typeof entry.value === "string" && entry.value ? entry.value : CAPABILITY_DEFAULT_VALUE;
-    return { role, value };
-  }
-  return null;
-}
-
-function resolveUserCapabilityList(manifest, manifestPath) {
-  const nested = manifest?.sovereign?.userCapabilities;
-  if (Array.isArray(nested) && nested.length > 0) {
-    return nested;
-  }
-
-  const legacy = manifest?.userCapabilities;
-  if (Array.isArray(legacy) && legacy.length > 0) {
-    console.warn(
-      `⚠️  ${manifestPath}: top-level userCapabilities is deprecated; move it to sovereign.userCapabilities.`
-    );
-    return legacy;
-  }
-
-  return [];
-}
-
-async function collectPluginCapabilities() {
-  const matches = await fg("plugins/*/plugin.json", { cwd: root, absolute: true });
-  const capabilities = [];
-
-  for (const manifestPath of matches) {
-    let manifest;
-    try {
-      const raw = await fs.readFile(manifestPath, "utf8");
-      manifest = JSON.parse(raw);
-    } catch (err) {
-      console.warn(`⚠️  Failed to read ${manifestPath}: ${err?.message || err}`);
-      continue;
-    }
-
-    const pluginId = manifest?.id || path.basename(path.dirname(manifestPath));
-    const capabilityList = resolveUserCapabilityList(manifest, manifestPath);
-
-    if (!Array.isArray(capabilityList) || capabilityList.length === 0) continue;
-
-    for (const cap of capabilityList) {
-      if (!cap || typeof cap !== "object") continue;
-      const key = typeof cap.key === "string" ? cap.key.trim() : "";
-      if (!key) continue;
-
-      const description =
-        typeof cap.description === "string" && cap.description.trim().length
-          ? cap.description.trim()
-          : `Capability declared by plugin ${pluginId}`;
-
-      const assignments = Array.isArray(cap.roles)
-        ? cap.roles
-            .map((role) => parseRoleAssignment(role))
-            .filter((assignment) => assignment && assignment.role)
-        : [];
-
-      capabilities.push({
-        key,
-        description,
-        assignments,
-        source: pluginId,
-      });
-    }
-  }
-
-  return capabilities;
-}
+const statePath = path.join(repoRoot, "data", "plugin-capabilities.lock.json");
 
 export async function seedPluginCapabilities({ prisma, logger = console } = {}) {
   const client = prisma || new PrismaClient();
   const shouldDisconnect = !prisma;
 
   try {
-    const capabilities = await collectPluginCapabilities();
+    const { capabilities, diagnostics, signature } = await collectPluginCapabilities();
+    diagnostics.forEach((diag) => {
+      if (diag.level === "error") {
+        logger.error(`✗ ${diag.message}`);
+      } else {
+        logger.warn(`⚠️  ${diag.message}`);
+      }
+    });
+
     if (!capabilities.length) {
       logger.log("ℹ️  No plugin capabilities to seed.");
       return;
@@ -102,15 +34,28 @@ export async function seedPluginCapabilities({ prisma, logger = console } = {}) 
 
     const roles = await client.userRole.findMany({ select: { id: true, key: true } });
     const roleMap = new Map(roles.map((role) => [role.key, role]));
-
     let seeded = 0;
     for (const capability of capabilities) {
       await client.userCapability.upsert({
         where: { key: capability.key },
-        update: { description: capability.description },
+        update: {
+          description: capability.description,
+          source: capability.source,
+          scope: capability.scope,
+          category: capability.category,
+          metadata: capability.metadata || Prisma.JsonNull,
+          tags: capability.tags || Prisma.JsonNull,
+          namespace: capability.namespace,
+        },
         create: {
           key: capability.key,
           description: capability.description,
+          source: capability.source,
+          scope: capability.scope,
+          category: capability.category,
+          metadata: capability.metadata || Prisma.JsonNull,
+          tags: capability.tags || Prisma.JsonNull,
+          namespace: capability.namespace,
         },
       });
 
@@ -147,6 +92,24 @@ export async function seedPluginCapabilities({ prisma, logger = console } = {}) 
       }
       seeded += 1;
     }
+
+    const previousState = await readPreviousCapabilityState(statePath);
+    if (previousState) {
+      const diff = summarizeCapabilityDiff(previousState.capabilities || [], capabilities);
+      if (diff.removed.length) {
+        diff.removed.forEach((cap) =>
+          logger.warn(
+            `⚠️  Capability "${cap.key}" (${cap.source || "unknown source"}) no longer declared; consider auditing assigned roles.`
+          )
+        );
+      }
+    }
+
+    await writeCapabilityState(statePath, {
+      signature,
+      generatedAt: new Date().toISOString(),
+      capabilities: capabilities.map((cap) => ({ key: cap.key, source: cap.source })),
+    });
 
     logger.log(`✓ Seeded ${seeded} plugin capability definition(s).`);
   } finally {
