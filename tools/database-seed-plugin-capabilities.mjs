@@ -11,14 +11,19 @@ import {
   writeCapabilityState,
 } from "./lib/plugin-capabilities.mjs";
 
-const statePath = path.join(repoRoot, "data", "plugin-capabilities.lock.json");
+const defaultStatePath = path.join(repoRoot, "data", "plugin-capabilities.lock.json");
 
-export async function seedPluginCapabilities({ prisma, logger = console } = {}) {
+export async function seedPluginCapabilities({
+  prisma,
+  logger = console,
+  cwd = repoRoot,
+  statePath = defaultStatePath,
+} = {}) {
   const client = prisma || new PrismaClient();
   const shouldDisconnect = !prisma;
 
   try {
-    const { capabilities, diagnostics, signature } = await collectPluginCapabilities();
+    const { capabilities, diagnostics, signature } = await collectPluginCapabilities({ cwd });
     diagnostics.forEach((diag) => {
       if (diag.level === "error") {
         logger.error(`✗ ${diag.message}`);
@@ -112,6 +117,14 @@ export async function seedPluginCapabilities({ prisma, logger = console } = {}) 
     });
 
     logger.log(`✓ Seeded ${seeded} plugin capability definition(s).`);
+  } catch (err) {
+    if (err?.code === "P2021") {
+      logger.warn(
+        "⚠️  Skipping plugin capability seeding – required RBAC tables are missing. Run `yarn prepare:db` (or `prisma db push`) first."
+      );
+      return;
+    }
+    throw err;
   } finally {
     if (shouldDisconnect) {
       await client.$disconnect();

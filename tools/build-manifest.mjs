@@ -380,10 +380,30 @@ const buildManifest = async () => {
         if (Object.keys(normalizedEntryPoints).length === 0) normalizedEntryPoints = undefined;
       }
 
+      const resolvedPlatformCaps = Object.entries(
+        pluginManifest?.sovereign?.platformCapabilities || {}
+      )
+        .filter(([, enabled]) => !!enabled)
+        .map(([key]) => key)
+        .sort();
+
+      const resolvedUserCaps = Array.isArray(pluginManifest?.sovereign?.userCapabilities)
+        ? pluginManifest.sovereign.userCapabilities
+            .map((cap) => (cap && typeof cap.key === "string" ? cap.key.trim() : ""))
+            .filter(Boolean)
+        : [];
+
+      const normalizedSovereign = {
+        ...(pluginManifest?.sovereign || {}),
+        platformCapabilitiesResolved: resolvedPlatformCaps,
+        userCapabilitiesResolved: resolvedUserCaps,
+      };
+
       plugins[manifestNamespace] = {
         namespace: manifestNamespace,
         entry,
         ...pluginManifest,
+        sovereign: normalizedSovereign,
         ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
     }

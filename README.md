@@ -215,6 +215,7 @@ async function onRemove() {}
   - During development, you can set `DEV_ALLOW_ALL_CAPS=true` to temporarily grant all capabilities to every plugin. This is noisy (logged per plugin), should never be enabled in production, and is meant only for rapid prototyping.
 - Plugin-declared user capabilities live under `sovereign.userCapabilities`. Each entry can include `scope`, `category`, and metadata/tags to aid auditing. `yarn build:manifest` and `yarn prepare:db` automatically re-seed these definitions via `tools/database-seed-plugin-capabilities.mjs`, warn when capabilities are removed, and emit a signature that forces active sessions to refresh their permission snapshots on the next request.
 - Plugins executed via Express route factories receive a `ctx` object that now exposes `ctx.assertPlatformCapability("database")`, `ctx.assertUserCapability(req, capabilityKey)`, and `ctx.pluginAuth.require({ roles, capabilities })` so plugin developers can reuse the platform’s RBAC checks instead of duplicating guards in each route.
+- See `docs/plugins/capabilities.md` for a deeper guide covering host access requests, RBAC seeding, and how to add new capability types.
 
 #### CLI (v0.1.0) — managing plugins
 

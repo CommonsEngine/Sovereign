@@ -17,7 +17,7 @@
     "postinstall": "husky",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init && yarn build:manifest",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db && yarn seed:plugin-capabilities",
-    "prepare:all": "yarn prepare:init && yarn prepare:db && yarn prisma:seed",
+    "prepare:all": "yarn prepare:init && yarn prepare:db && yarn prisma:seed && yarn seed:plugin-capabilities",
     "build": "yarn workspaces run build",
     "postbuild": "yarn build:manifest",
     "build:manifest": "node tools/build-manifest.mjs && yarn seed:plugin-capabilities",

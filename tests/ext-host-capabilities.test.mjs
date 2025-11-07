@@ -60,3 +60,22 @@ test("DEV_ALLOW_ALL_CAPS grants all capabilities in dev", async () => {
   assert.deepEqual(granted.sort(), registryKeys.sort());
   assert.ok(context.prisma, "should attach prisma when allow-all");
 });
+
+test("resolvePluginCapabilities injects declared host services", async () => {
+  resetDevFlag("false");
+  const { resolvePluginCapabilities } = await freshModule();
+  const plugin = {
+    namespace: "blog",
+    sovereign: {
+      platformCapabilities: {
+        uuid: true,
+      },
+    },
+  };
+  const { context, granted } = resolvePluginCapabilities(plugin, {
+    config: { IS_PROD: false },
+    logger: console,
+  });
+  assert.ok(context.uuid, "uuid helper injected");
+  assert.deepEqual(granted, ["uuid"]);
+});
