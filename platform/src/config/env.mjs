@@ -42,6 +42,10 @@ const baseLocales =
 
 const defaultDbPath = path.join(__rootdir, "data", "sovereign.db");
 
+const rawGuestTtl = Number(process.env.GUEST_BOARD_TTL_HOURS ?? 24);
+const DEFAULT_GUEST_TTL_HOURS = Number.isFinite(rawGuestTtl) && rawGuestTtl > 0 ? rawGuestTtl : 24;
+const DEFAULT_GUEST_TTL_MS = DEFAULT_GUEST_TTL_HOURS * 60 * 60 * 1000;
+
 const baseTemplate = Object.freeze({
   APP_NAME: manifest.platform.title,
   APP_TAGLINE: manifest.platform.tagline,
@@ -82,6 +86,8 @@ const baseTemplate = Object.freeze({
 
   GUEST_LOGIN_ENABLED: toBool(process.env.GUEST_LOGIN_ENABLED, false),
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN: toBool(process.env.GUEST_LOGIN_ENABLED_BYPASS_LOGIN, false),
+  GUEST_DATA_TTL_HOURS: DEFAULT_GUEST_TTL_HOURS,
+  GUEST_DATA_TTL_MS: DEFAULT_GUEST_TTL_MS,
 
   LOCALE_DEFAULT: process.env.DEFAULT_LOCALE || "en-US",
   LOCALES_SUPPORTED: baseLocales,
@@ -220,6 +226,13 @@ const SETTING_OVERRIDES = {
       value,
       config.GUEST_LOGIN_ENABLED_BYPASS_LOGIN ?? false
     );
+  },
+  "feature.guest.ttl_hours": (config, value) => {
+    const num = toPositiveInt(value);
+    if (num && num > 0) {
+      config.GUEST_DATA_TTL_HOURS = num;
+      config.GUEST_DATA_TTL_MS = num * 60 * 60 * 1000;
+    }
   },
   "feature.email.delivery.bypass": (config, value) => {
     config.EMAIL_DELIVERY_BYPASS = toBool(value, config.EMAIL_DELIVERY_BYPASS ?? true);

@@ -25,10 +25,13 @@ import apiProjects from "$/routes/api/projects.js";
 
 import env from "$/config/env.mjs";
 
+import { cleanupExpiredGuestUsers, GUEST_RETENTION_MS } from "$/utils/guestCleanup.mjs";
+
 import "$/utils/hbsHelpers.mjs";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
+const GUEST_CLEANUP_INTERVAL_MS = GUEST_RETENTION_MS;
 
 export default async function createServer(manifest) {
   const app = express();
@@ -224,6 +227,34 @@ export default async function createServer(manifest) {
 
   // Start/Stop controls for bootstrap
   let httpServer = null;
+  let guestCleanupTimer = null;
+  let guestCleanupRunning = false;
+
+  const runGuestCleanup = async (reason = "scheduled") => {
+    if (guestCleanupRunning) return;
+    guestCleanupRunning = true;
+    try {
+      const { cleaned } = await cleanupExpiredGuestUsers({
+        logger,
+        olderThanMs: GUEST_RETENTION_MS,
+      });
+      if (cleaned > 0) {
+        logger.info(`✓ Guest cleanup (${reason}) removed ${cleaned} account(s)`);
+      }
+    } catch (err) {
+      logger.error("✗ Guest cleanup run failed", err);
+    } finally {
+      guestCleanupRunning = false;
+    }
+  };
+
+  const scheduleGuestCleanup = () => {
+    if (guestCleanupTimer) clearInterval(guestCleanupTimer);
+    guestCleanupTimer = setInterval(() => {
+      runGuestCleanup("interval");
+    }, GUEST_CLEANUP_INTERVAL_MS);
+    guestCleanupTimer.unref?.();
+  };
 
   async function start() {
     await new Promise((resolve) => {
@@ -232,11 +263,18 @@ export default async function createServer(manifest) {
         resolve();
       });
     });
+    scheduleGuestCleanup();
+    runGuestCleanup("startup");
     return httpServer;
   }
 
   async function stop() {
     if (!httpServer) return;
+    if (guestCleanupTimer) {
+      clearInterval(guestCleanupTimer);
+      guestCleanupTimer = null;
+    }
+    guestCleanupRunning = false;
     await new Promise((resolve) => httpServer.close(resolve));
   }
 
