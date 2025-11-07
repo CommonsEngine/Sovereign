@@ -737,6 +737,23 @@ Environment variables come from your shell or an external manager (e.g., `/etc/p
 - `RATE_LIMIT_WINDOW_MS` controls the rolling window (default 60s) so you can tighten/loosen enforcement without code changes.
 - When a client exceeds the limit, the server responds with HTTP `429 Too Many Requests`, a descriptive JSON payload, and a `Retry-After` header so callers can back off gracefully.
 
+## CSS Layering & Plugin Styles
+
+- Core styles now declare a global cascade order via `/css/sv_layers.css` (`@layer reset, base, components, utilities, plugin, platform;`). All Sovereign-provided sheets register inside the `platform.*` namespace so they always win over plugin layers regardless of load order.
+- Plugins should load their CSS after the platform head includes and wrap any overrides in the `plugin` layer:
+
+  ```css
+  /* plugins/example/public/style.css */
+  @layer plugin.widgets {
+    .widget-card {
+      border-color: color-mix(in srgb, var(--color-accent), white 60%);
+    }
+  }
+  ```
+
+- If a plugin needs to ship utilities/components without overriding Sovereign defaults, prefer `@layer plugin.utilities` or `@layer plugin.components`. The platform utility classes remain available at `platform.utilities.*`.
+- The dedicated `/css/sv_layers.css` should be loaded before custom sheets (already handled by the default layout partial); if you build custom HTML shells, ensure that file is included so layer order stays deterministic.
+
 ## Features
 
 ### Project sharing

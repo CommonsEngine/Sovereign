@@ -1,4 +1,4 @@
-@layer pg.index {
+@layer platform.components.index {
   .sv-project__grid {
     --project-card-w: 360px; /* fixed card width for 3-up layout on wide screens */
     justify-content: flex-start;

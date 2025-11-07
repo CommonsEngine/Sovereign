@@ -1,4 +1,4 @@
-@layer styled.misc {
+@layer platform.misc {
   .sv-loading-bar {
     background-color: red;
     height: 3px;
@@ -20,7 +20,7 @@
   }
 }
 
-@layer styled.layout {
+@layer platform.layout {
   .sv-page {
     display: flex;
     margin: 0;
@@ -76,7 +76,7 @@
   }
 }
 
-@layer styled.typography {
+@layer platform.typography {
   /* Base style for all headings */
   [class^="sv-h-"],
   [class*=" sv-h-"] {
@@ -123,7 +123,7 @@
   }
 }
 
-@layer styled.sv-sidebar {
+@layer platform.sidebar {
   .sv-sidebar {
     display: flex;
     flex-direction: column;
@@ -236,7 +236,7 @@
   }
 }
 
-@layer styled.header {
+@layer platform.header {
   .sv-header {
     border-bottom: 1px solid var(--color-border-primary);
     height: 69px;
@@ -311,7 +311,7 @@
   }
 }
 
-@layer components.breadcrumb {
+@layer platform.components.breadcrumb {
   .sv-breadcrumb {
     margin: var(--space-xs) 0;
     font-size: var(--font-size-s);
@@ -362,7 +362,7 @@
   }
 }
 
-@layer components.card {
+@layer platform.components.card {
   .sv-card {
     background: var(--color-bg-primary);
     border: 1px solid var(--color-border-primary);
@@ -431,7 +431,7 @@
   }
 }
 
-@layer components.table {
+@layer platform.components.table {
   .sv-table__wrap {
     overflow: auto;
   }
@@ -527,7 +527,7 @@
   }
 }
 
-@layer components.modal {
+@layer platform.components.modal {
   .sv-modal-open {
     overflow: hidden;
   }
@@ -688,7 +688,7 @@
   }
 }
 
-@layer components.form {
+@layer platform.components.form {
   .sv-form {
     --no-op: 0;
   }
@@ -709,7 +709,7 @@
   }
 }
 
-@layer components.button {
+@layer platform.components.button {
   .sv-button {
     --no-op: 0;
   }
