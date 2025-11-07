@@ -121,6 +121,7 @@ export async function ensureProjectAccess(
   { projectId, user, allowedRoles = ["viewer"], select, emailOverride } = {},
   ctx
 ) {
+  ctx?.assertPlatformCapability?.("database");
   const tx = ctx.prisma;
 
   if (!projectId) {

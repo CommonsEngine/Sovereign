@@ -8,6 +8,7 @@ import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import * as pluginHandler from "$/handlers/plugin.js";
 
 import { resolvePluginCapabilities } from "./capabilities.mjs";
+import { createPluginCapabilityAPI } from "./plugin-auth.mjs";
 
 export async function buildPluginRoutes(app, manifest, config) {
   const { plugins } = manifest;
@@ -32,10 +33,24 @@ export async function buildPluginRoutes(app, manifest, config) {
       logger,
     });
 
+    const capabilityAPI = createPluginCapabilityAPI({
+      namespace,
+      granted,
+      logger,
+    });
+
     const pluginContext = {
       ...baseContext,
       platformCapabilities: Object.freeze([...granted]),
       ...capabilityContext,
+      assertPlatformCapability: capabilityAPI.assertPlatformCapability,
+      assertUserCapability: capabilityAPI.assertUserCapability,
+      pluginAuth: capabilityAPI.requireAuthz,
+      auth: {
+        assertUserCapability: capabilityAPI.assertUserCapability,
+        assertPlatformCapability: capabilityAPI.assertPlatformCapability,
+        require: capabilityAPI.requireAuthz,
+      },
     };
 
     if (plugin) {
