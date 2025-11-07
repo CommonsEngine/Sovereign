@@ -6,6 +6,49 @@ import env from "$/config/env.mjs";
 const { PROJECTS } = env();
 
 const allowedTypes = new Set(PROJECTS.map((p) => p.value));
+const prismaModels = prisma._runtimeDataModel?.models ?? {};
+
+const toModelName = (type) =>
+  String(type || "")
+    .split(/[^a-zA-Z0-9]/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join("");
+
+const buildSubtypeData = ({ type, projectId, name }) => {
+  const data = { projectId };
+  const model = prismaModels[toModelName(type)];
+  if (!model) return data;
+
+  for (const field of model.fields || []) {
+    if (
+      field.kind !== "scalar" ||
+      field.hasDefaultValue ||
+      !field.isRequired ||
+      field.name === "projectId" ||
+      field.name === "id"
+    ) {
+      continue;
+    }
+
+    if ((field.name === "title" || field.name === "name") && typeof name === "string") {
+      data[field.name] = name;
+    }
+  }
+
+  return data;
+};
+
+const createSubtypeRecord = async ({ type, projectId, name }) => {
+  const delegate = prisma?.[type];
+  if (!delegate?.create) {
+    logger.warn?.(`No Prisma delegate found for project type "${type}", skipping subtype record.`);
+    return;
+  }
+
+  const data = buildSubtypeData({ type, projectId, name });
+  await delegate.create({ data });
+};
 
 export const MAX_SLUG_ATTEMPTS = 10;
 
@@ -92,28 +135,6 @@ export default async function create(req, res) {
             },
           });
 
-          if (type === "blog") {
-            await tx.blog.create({
-              data: {
-                id: uuid(),
-                projectId: projectRecord.id,
-                title: name,
-              },
-            });
-          }
-
-          if (type === "papertrail") {
-            await tx.papertrailBoard.create({
-              data: {
-                id: uuid("b_"),
-                projectId: projectRecord.id,
-                title: name,
-                schemaVersion: 1, // TODO: remove this line after updating the database schema
-                meta: {},
-              },
-            });
-          }
-
           return {
             project: projectRecord,
             slug: candidateSlug,
@@ -140,7 +161,23 @@ export default async function create(req, res) {
       return res.status(409).json({ error: "Unable to generate unique project slug" });
     }
 
-    const url = `/${createdProject.project.type}/${createdProject.project.id}`;
+    try {
+      await createSubtypeRecord({
+        type,
+        projectId: createdProject.project.id,
+        name,
+      });
+    } catch (err) {
+      logger.error("✗ Failed to create subtype record, rolling back project:", err);
+      await prisma.project
+        .delete({ where: { id: createdProject.project.id } })
+        .catch((cleanupErr) => {
+          logger.error("✗ Failed to clean up project after subtype creation error:", cleanupErr);
+        });
+      throw err;
+    }
+
+    const url = `/${type}/${createdProject.project.id}`;
 
     return res.status(201).json({
       ok: true,

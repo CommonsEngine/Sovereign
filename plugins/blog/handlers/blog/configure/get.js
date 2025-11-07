@@ -22,7 +22,7 @@ export default async function viewProjectConfigure(req, res, _, { prisma, logger
             id: true,
             name: true,
             type: true,
-            blog: {
+            Blog: {
               select: {
                 id: true,
                 projectId: true,
