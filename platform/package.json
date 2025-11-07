@@ -36,8 +36,6 @@
     "start:src": "node --import ./scripts/register-alias.mjs ./index.cjs",
     "dev": "nodemon",
     "build": "node ./scripts/build.mjs",
-    "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
-    "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
     "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format --schema prisma/schema.prisma",
     "check": "yarn format:check && yarn lint:check && yarn prisma validate",
     "reset": "./scripts/reset.sh"

@@ -1,35 +1,57 @@
 import path from "node:path";
 import { pathToFileURL } from "url";
 
-import { prisma } from "$/services/database.mjs";
-import * as mailer from "$/services/mailer.mjs";
 import logger from "$/services/logger.mjs";
-import * as git from "$/libs/git/registry.mjs";
-import fm from "$/libs/fs.mjs";
-import { uuid } from "$/utils/id.mjs";
 import ensurePluginLayout from "$/middlewares/ensurePluginLayout.js";
 import { requireAuth } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import * as pluginHandler from "$/handlers/plugin.js";
-import { refreshEnvCache } from "$/config/env.mjs";
+
+import { resolvePluginCapabilities } from "./capabilities.mjs";
 
 export async function buildPluginRoutes(app, manifest, config) {
   const { plugins } = manifest;
-  const { NODE_ENV, IS_PROD } = config;
+  const { NODE_ENV } = config;
 
-  const getPluginContext = (platformCapabilities) => {
-    const pluginContext = {
+  const pluginContextCache = new Map();
+
+  const ensurePluginContext = (plugin, namespace) => {
+    const cacheKey = namespace || plugin?.namespace || plugin?.id;
+    if (cacheKey && pluginContextCache.has(cacheKey)) {
+      return pluginContextCache.get(cacheKey);
+    }
+
+    const baseContext = {
       env: { nodeEnv: NODE_ENV },
       logger,
       path,
     };
-    if (platformCapabilities?.database || !IS_PROD) pluginContext.prisma = prisma;
-    if (platformCapabilities?.git || !IS_PROD) pluginContext.git = git;
-    if (platformCapabilities?.fs || !IS_PROD) pluginContext.fm = fm;
-    if (platformCapabilities?.env || !IS_PROD) pluginContext.refreshEnvCache = refreshEnvCache;
-    if (platformCapabilities?.uuid || !IS_PROD) pluginContext.uuid = uuid;
-    if (platformCapabilities?.mailer || !IS_PROD) pluginContext.mailer = mailer;
-    if (platformCapabilities?.fileUpload || !IS_PROD) pluginContext.fileUpload = {}; // TODO: Attach fileUpload handler
+
+    const { context: capabilityContext, granted } = resolvePluginCapabilities(plugin, {
+      config,
+      logger,
+    });
+
+    const pluginContext = {
+      ...baseContext,
+      platformCapabilities: Object.freeze([...granted]),
+      ...capabilityContext,
+    };
+
+    if (plugin) {
+      plugin.__grantedPlatformCapabilities = granted;
+    }
+
+    const logNamespace = namespace || plugin?.namespace || plugin?.id || "<unknown>";
+    logger.info(
+      `[plugins] ${logNamespace}: granted platform capabilities → ${
+        granted.length ? granted.join(", ") : "(none)"
+      }`
+    );
+
+    if (cacheKey) {
+      pluginContextCache.set(cacheKey, pluginContext);
+    }
 
     return pluginContext;
   };
@@ -40,6 +62,14 @@ export async function buildPluginRoutes(app, manifest, config) {
       const pluginType = plugin.type; // spa | custom
       const pluginKind = plugin?.sovereign?.allowMultipleInstances ? "project" : "module";
       const pluginKey = `${pluginType}::${pluginKind}`;
+
+      let pluginContext;
+      try {
+        pluginContext = ensurePluginContext(plugin, ns);
+      } catch (err) {
+        logger.error(`[plugins] ${ns}: capability resolution failed`, err);
+        continue;
+      }
 
       if (pluginType === "spa") {
         if (pluginKey === "spa::module") {
@@ -78,7 +108,7 @@ export async function buildPluginRoutes(app, manifest, config) {
             // If it's a function (factory), call it with context
             if (typeof router === "function" && !router.stack) {
               try {
-                resolvedRouter = router(getPluginContext(plugin?.sovereign?.platformCapabilities));
+                resolvedRouter = router(pluginContext);
               } catch (err) {
                 logger.error(`[plugins] spa:${ns}/web: router factory threw an error`, err);
                 continue;
@@ -131,9 +161,7 @@ export async function buildPluginRoutes(app, manifest, config) {
               // If it's a function (factory), call it with context
               if (typeof router === "function" && !router.stack) {
                 try {
-                  resolvedRouter = router(
-                    getPluginContext(plugin?.sovereign?.platformCapabilities)
-                  );
+                  resolvedRouter = router(pluginContext);
                 } catch (err) {
                   logger.error(`[plugins] ${ns}/${kind}: router factory threw an error`, err);
                   continue;

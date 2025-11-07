@@ -209,6 +209,10 @@ async function onRemove() {}
 - Plugins **declare** capabilities in `plugin.json`; these are merged into the global RBAC graph at boot. (TBA)
 - At request time, middleware exposes `req.can('user:plugin.blog.post.create')` / `res.locals.capabilities` for templates.
 - For idempotent imports or repeated enabling, capabilities are upserted.
+- Platform access is mediated via `sovereign.platformCapabilities`. Each key must be part of the host allow-list:
+  - `database` → Prisma client, `git` → git helpers, `fs` → filesystem adapter, `env` → `refreshEnvCache`, `uuid` → id helpers, `mailer` → transactional email, `fileUpload` → (experimental) upload scaffolding.
+  - Requests for unknown capabilities, or prod-disabled ones (e.g., `fileUpload` until hardened), fail during manifest bootstrap.
+  - During development, you can set `DEV_ALLOW_ALL_CAPS=true` to temporarily grant all capabilities to every plugin. This is noisy (logged per plugin), should never be enabled in production, and is meant only for rapid prototyping.
 
 #### CLI (v0.1.0) — managing plugins
 

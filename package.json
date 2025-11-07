@@ -37,7 +37,9 @@
     "prisma:deploy": "yarn workspace @sovereign/platform prisma:deploy",
     "prisma:studio": "yarn workspace @sovereign/platform prisma:studio",
     "prisma:seed": "node tools/database-seed-all.mjs",
-    "reset:all": "yarn workspace @sovereign/platform reset"
+    "reset:all": "yarn workspace @sovereign/platform reset",
+    "test": "node --import ./platform/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test:watch": "node --import ./platform/scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
