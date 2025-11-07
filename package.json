@@ -10,7 +10,8 @@
   },
   "workspaces": [
     "platform",
-    "plugins/*"
+    "plugins/*",
+    "packages/*"
   ],
   "scripts": {
     "postinstall": "husky",

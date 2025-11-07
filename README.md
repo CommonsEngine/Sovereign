@@ -124,6 +124,38 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
     "schemaVersion": 1, // manifest schema version (platform-side decoder)
     "engine": "0.7.3", // minimum/target core engine version compatibility
     "entryPoints": ["launcher"], // named entry points if the plugin exposes launchers. i.e: launcher | sidebar
+    "platformCapabilities": {
+      "database": true, // requires DB access (Prisma)
+      "gitManager": false, // requires Git manager integration
+      "fs": false, // requires filesystem access to plugin scope
+      "logger": false,
+      "mailer": false,
+    },
+    "userCapabilities": [
+      // RBAC: capabilities added by this plugin
+      {
+        "key": "user:plugin.blog.feature",
+        "description": "Enable Blog plugin.",
+        "roles": ["platform:user"],
+      },
+      {
+        "key": "user:plugin.blog.create",
+        "description": "Create blog project, and configure.",
+        "roles": ["platform:user"],
+      },
+      {
+        "key": "user:plugin.blog.read",
+        "description": "View own blog project.",
+        "roles": [
+          "project:admin",
+          "project:editor",
+          "project:contributor",
+          "project:viewer",
+          "project:guest",
+        ],
+      },
+      // …additional granular post.* capabilities elided for brevity…
+    ],
   },
   "id": "@sovereign/blog", // unique identifier for the plugin. Format can be describe as `<org>/<namespace>`
   "name": "Blog",
@@ -134,40 +166,7 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
   "draft": false, // whether allow/disallow mounting
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0", // plugins can be license independently
-  "platformCapabilities": {
-    "database": true, // requires DB access (Prisma)
-    "gitManager": false, // requires Git manager integration
-    "fs": false, // requires filesystem access to plugin scope
-    "logger": false,
-    "mailer": false,
-  },
-  "userCapabilities": [
-    // RBAC: capabilities added by this plugin
-    {
-      "key": "user:plugin.blog.feature",
-      "description": "Enable Blog plugin.",
-      "roles": ["platform:user"],
-    },
-    {
-      "key": "user:plugin.blog.create",
-      "description": "Create blog project, and configure.",
-      "roles": ["platform:user"],
-    },
-    {
-      "key": "user:plugin.blog.read",
-      "description": "View own blog project.",
-      "roles": [
-        "project:admin",
-        "project:editor",
-        "project:contributor",
-        "project:viewer",
-        "project:guest",
-      ],
-    },
-    // …additional granular post.* capabilities elided for brevity…
-  ],
   "events": {}, // (reserved) event contracts the plugin can emit/consume
-  "prisma": {}, // (reserved) plugin-owned Prisma schema modules
 }
 ```
 

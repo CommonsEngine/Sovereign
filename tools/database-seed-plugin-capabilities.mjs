@@ -25,6 +25,23 @@ function parseRoleAssignment(entry) {
   return null;
 }
 
+function resolveUserCapabilityList(manifest, manifestPath) {
+  const nested = manifest?.sovereign?.userCapabilities;
+  if (Array.isArray(nested) && nested.length > 0) {
+    return nested;
+  }
+
+  const legacy = manifest?.userCapabilities;
+  if (Array.isArray(legacy) && legacy.length > 0) {
+    console.warn(
+      `⚠️  ${manifestPath}: top-level userCapabilities is deprecated; move it to sovereign.userCapabilities.`
+    );
+    return legacy;
+  }
+
+  return [];
+}
+
 async function collectPluginCapabilities() {
   const matches = await fg("plugins/*/plugin.json", { cwd: root, absolute: true });
   const capabilities = [];
@@ -40,8 +57,7 @@ async function collectPluginCapabilities() {
     }
 
     const pluginId = manifest?.id || path.basename(path.dirname(manifestPath));
-    const capabilityList =
-      manifest?.sovereign?.userCapabilities || manifest?.userCapabilities || [];
+    const capabilityList = resolveUserCapabilityList(manifest, manifestPath);
 
     if (!Array.isArray(capabilityList) || capabilityList.length === 0) continue;
 

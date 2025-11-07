@@ -7,6 +7,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "module";
 
+/**
+ * @typedef {import("@sovereign/types").PluginManifest} PluginManifest
+ */
+
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 const plarfotmPkg = require("../platform/package.json");
@@ -112,25 +116,25 @@ const pluginManifestSchema = {
             api: { type: "string", minLength: 1 },
           },
         },
-      },
-    },
-    platformCapabilities: {
-      type: "object",
-      additionalProperties: { type: "boolean" },
-    },
-    userCapabilities: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["key", "description", "roles"],
-        additionalProperties: true,
-        properties: {
-          key: { type: "string", minLength: 1 },
-          description: { type: "string" },
-          roles: {
-            type: "array",
-            minItems: 1,
-            items: { type: "string", minLength: 1 },
+        platformCapabilities: {
+          type: "object",
+          additionalProperties: { type: "boolean" },
+        },
+        userCapabilities: {
+          type: "array",
+          items: {
+            type: "object",
+            required: ["key", "description", "roles"],
+            additionalProperties: true,
+            properties: {
+              key: { type: "string", minLength: 1 },
+              description: { type: "string" },
+              roles: {
+                type: "array",
+                minItems: 1,
+                items: { type: "string", minLength: 1 },
+              },
+            },
           },
         },
       },
@@ -144,6 +148,39 @@ const ajv = new Ajv({
 });
 
 const validatePluginManifest = ajv.compile(pluginManifestSchema);
+
+function normalizeManifestCapabilities(manifest, context = {}) {
+  const normalized = {
+    ...manifest,
+    sovereign: { ...(manifest?.sovereign || {}) },
+  };
+
+  const moved = [];
+
+  if (normalized.platformCapabilities && !normalized.sovereign.platformCapabilities) {
+    normalized.sovereign.platformCapabilities = normalized.platformCapabilities;
+    moved.push("platformCapabilities");
+  }
+
+  if (normalized.userCapabilities && !normalized.sovereign.userCapabilities) {
+    normalized.sovereign.userCapabilities = normalized.userCapabilities;
+    moved.push("userCapabilities");
+  }
+
+  if (normalized.platformCapabilities) delete normalized.platformCapabilities;
+  if (normalized.userCapabilities) delete normalized.userCapabilities;
+
+  if (moved.length) {
+    console?.warn?.(
+      formatError(
+        `deprecated top-level field(s) moved under sovereign.*: ${moved.join(", ")}`,
+        context
+      )
+    );
+  }
+
+  return normalized;
+}
 
 const exists = async (p) => {
   try {
@@ -225,6 +262,11 @@ const buildManifest = async () => {
       );
       continue;
     }
+
+    pluginManifest = normalizeManifestCapabilities(pluginManifest, {
+      manifestPath: pluginManifestPath,
+      pluginDir: plugingRoot,
+    });
 
     if (!validatePluginManifest(pluginManifest)) {
       const schemaErrors =
