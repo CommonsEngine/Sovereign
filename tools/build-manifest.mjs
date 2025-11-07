@@ -1,6 +1,7 @@
 /* eslint-disable import/order */
 import Ajv from "ajv";
 import dotenv from "dotenv";
+import { randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,6 +10,18 @@ import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 const plarfotmPkg = require("../platform/package.json");
+
+const INSTANCE_ID_LENGTH = 5;
+const INSTANCE_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+const generateInstanceId = () => {
+  const bytes = randomBytes(INSTANCE_ID_LENGTH);
+  let id = "";
+  for (let i = 0; i < INSTANCE_ID_LENGTH; i += 1) {
+    id += INSTANCE_ID_CHARS[bytes[i] % INSTANCE_ID_CHARS.length];
+  }
+  return id;
+};
 
 function formatError(message, options = {}) {
   const { pluginDir, manifestPath } = options;
@@ -29,6 +42,8 @@ dotenv.config({ path: path.join(__dirname, "..", "platform", ".env") });
 
 // Default Manifest Object
 const manifest = {
+  instanceId: generateInstanceId(),
+  defaultTenantId: "tenant-0",
   env: process.env.NODE_ENV,
   platform: {
     version: plarfotmPkg.version,
@@ -55,6 +70,8 @@ const manifest = {
   __assets: [],
   __views: [],
   __partials: [],
+  createdAt: null,
+  updatedAt: null,
 };
 
 const pluginManifestSchema = {
@@ -139,6 +156,23 @@ const exists = async (p) => {
 
 const buildManifest = async () => {
   const plugins = {};
+
+  // Preserve createdAt/instanceId and always update updatedAt
+  let existingCreatedAt = null;
+  let existingInstanceId = null;
+  try {
+    const existingManifestRaw = await fs.readFile(__finalManifestPath, "utf8");
+    const existingManifest = JSON.parse(existingManifestRaw);
+    existingCreatedAt = existingManifest.createdAt || null;
+    existingInstanceId = existingManifest.instanceId || null;
+  } catch {
+    /* ignore */
+  }
+  manifest.createdAt = existingCreatedAt || new Date().toISOString();
+  manifest.updatedAt = new Date().toISOString();
+  if (existingInstanceId) {
+    manifest.instanceId = existingInstanceId;
+  }
 
   // Read plugins directory to identify pluginCandidates
   let pluginCandidates;
