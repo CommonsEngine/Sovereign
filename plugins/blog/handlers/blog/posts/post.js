@@ -29,7 +29,7 @@ export default async function publishPost(req, res, _, ctx) {
 
     // Load config to init manager if needed
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.blog.id },
+      where: { projectId },
       select: {
         repoUrl: true,
         branch: true,

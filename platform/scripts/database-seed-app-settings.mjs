@@ -3,7 +3,7 @@ import "dotenv/config";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
-const pkg = require("../../../package.json");
+const pkg = require("../../manifest.json");
 
 function parseBoolLike(v) {
   const s = String(v ?? "")
@@ -217,9 +217,9 @@ export default async function seedAppSettings(prisma) {
           },
         });
       }
-      console.log("App config seeded:", c.key, "=", c.value);
+      console.log("✓ App config seeded:", c.key, "=", c.value);
     } catch (err) {
-      console.warn("Failed to upsert app config", c.key, err);
+      console.warn("✗ Failed to upsert app config", c.key, err);
     }
   }
 
@@ -237,8 +237,8 @@ export default async function seedAppSettings(prisma) {
         v: 1,
       },
     });
-    console.log("VersionRegistry entry:", vrKey, "version ->", vr.v);
+    console.log("✓ VersionRegistry entry:", vrKey, "version ->", vr.v);
   } catch (err) {
-    console.warn("Failed to update VersionRegistry", err);
+    console.warn("✗ Failed to update VersionRegistry", err);
   }
 }

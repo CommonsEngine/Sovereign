@@ -264,23 +264,22 @@ model Project {
   slug String? @unique @map("slug")
   desc String? @map("desc")
 
-  type String @map("type") // 'blog' | 'papertrail'
-
-  // relationship (1:1)
-  blog       Blog? // only set if type = 'blog'
-  papertrail PapertrailBoard? //only set if type = 'papertrail'
+  type String @map("type") // plugin namespace
 
   // lifecycle / meta
   scope  ProjectScope?  @map("scope")
   status ProjectStatus? @default(draft) @map("status")
 
   // optional multi-tenant support
-  tenantId String? @map("tenant_id")
+  tenantId String? @default("tenant-0") @map("tenant_id")
 
   contributors ProjectContributor[]
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  GitConfig       GitConfig?
+  PapertrailBoard PapertrailBoard?
+  Blog            Blog?
 
   @@map("projects")
 }
@@ -309,30 +308,6 @@ model ProjectContributor {
   @@map("project_contributors")
 }
 
-// [3.1] Blog model (for projects of type 'blog')
-enum BlogProvider {
-  astro
-}
-
-model Blog {
-  id        String  @id @default(cuid()) @map("id")
-  projectId String  @unique @map("project_id")
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  title     String       @map("title")
-  subtitle  String?      @map("subtitle")
-  type      String       @default("blog:git") @map("type") // e.g., 'blog:git'
-  provider  BlogProvider @default(astro) @map("provider") // e.g., 'astro', 'jekyll'
-  gitConfig GitConfig?
-  domain    String?      @unique @map("domain") // custom domain
-  meta      Json?        @map("meta") // e.g., { "theme": "minimal", "postsPerPage": 10 }
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("blogs")
-}
-
 // [3.1.1] Git configuration for blogs
 enum GitProvider {
   github
@@ -349,9 +324,9 @@ enum AuthType {
 }
 
 model GitConfig {
-  id     String  @id @default(cuid()) @map("id")
-  blogId String? @unique @map("blog_id")
-  blog   Blog?   @relation(fields: [blogId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid()) @map("id")
+  projectId String?  @unique @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   provider   GitProvider @map("provider")
   repoUrl    String      @map("repo_url")
@@ -366,8 +341,36 @@ model GitConfig {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  Blog      Blog[]
 
   @@map("git_configs")
+}
+
+// # END OF BASE SCHEMA
+
+// [3.1] Blog model (for projects of type 'blog')
+enum BlogProvider {
+  astro
+}
+
+model Blog {
+  id        String   @id @default(cuid()) @map("id")
+  projectId String   @unique @map("project_id")
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  title     String       @map("title")
+  subtitle  String?      @map("subtitle")
+  type      String       @default("blog:git") @map("type") // e.g., 'blog:git'
+  provider  BlogProvider @default(astro) @map("provider") // e.g., 'astro', 'jekyll'
+  gitConfig GitConfig?   @relation(fields: [gitConfigId], references: [id])
+  domain    String?      @unique @map("domain") // custom domain
+  meta      Json?        @map("meta") // e.g., { "theme": "minimal", "postsPerPage": 10 }
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  gitConfigId String?
+
+  @@map("blogs")
 }
 
 // [3.2] Papertrail model (for projects of type 'papertrail')

@@ -1,0 +1,5 @@
+model PaperTrail {
+  id String @id @default(cuid())
+
+  @@map("papertrail")
+}

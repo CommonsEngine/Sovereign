@@ -4,15 +4,15 @@ import fs from "fs";
 import path from "path";
 
 const isDev = process.env.NODE_ENV === "development";
-const usersPath = path.resolve(process.cwd(), "prisma/seed/data/users.json");
+const usersPath = path.resolve(process.cwd(), "scripts/data/users.json");
 
 export default async function seedTestUsers(prisma) {
   if (!prisma) {
-    throw new Error("seedTestUsers requires a Prisma client instance");
+    throw new Error("✗ seedTestUsers requires a Prisma client instance");
   }
 
   if (!fs.existsSync(usersPath)) {
-    console.warn("seedTestUsers: users.json not found, skipping");
+    console.warn("✗ seedTestUsers: users.json not found, skipping");
     return;
   }
 
@@ -20,13 +20,13 @@ export default async function seedTestUsers(prisma) {
   try {
     usersPayload = JSON.parse(fs.readFileSync(usersPath, "utf8"));
   } catch (err) {
-    console.error("seedTestUsers: failed to parse users.json", err);
+    console.error("✗ seedTestUsers: failed to parse users.json", err);
     return;
   }
 
   const entries = Array.isArray(usersPayload.users) ? usersPayload.users : [];
   if (entries.length === 0) {
-    console.warn("seedTestUsers: users.json contains no users");
+    console.warn("✗ seedTestUsers: users.json contains no users");
     return;
   }
 
@@ -67,12 +67,12 @@ export default async function seedTestUsers(prisma) {
     } = entry;
 
     if (devOnly && !isDev) {
-      console.log(`seedTestUsers: skipping devOnly user ${name} in non-development env`);
+      console.log(`✗ seedTestUsers: skipping devOnly user ${name} in non-development env`);
       continue;
     }
 
     if (!name || !email || !password) {
-      console.warn("seedTestUsers: skipping invalid entry", entry);
+      console.warn("✗ seedTestUsers: skipping invalid entry", entry);
       continue;
     }
 
@@ -130,7 +130,7 @@ export default async function seedTestUsers(prisma) {
     const desiredRoles = [];
     for (const roleKey of normalizedRoleKeys) {
       if (!roleMap.has(roleKey)) {
-        console.warn(`seedTestUsers: missing role ${roleKey}, skipping`);
+        console.warn(`✗ seedTestUsers: missing role ${roleKey}, skipping`);
         continue;
       }
 
@@ -192,6 +192,6 @@ export default async function seedTestUsers(prisma) {
       },
     });
 
-    console.log(`seedTestUsers: seeded ${user.name} (${email})`);
+    console.log(`✓ seedTestUsers: seeded ${user.name} (${email})`);
   }
 }

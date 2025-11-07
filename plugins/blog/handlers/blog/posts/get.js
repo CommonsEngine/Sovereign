@@ -135,7 +135,7 @@ export default async function getAllPosts(req, res, _, ctx) {
 
     // 2) Fetch blog config by project id
     const cfg = await prisma.gitConfig.findUnique({
-      where: { blogId: project.blog.id },
+      where: { projectId },
       select: {
         repoUrl: true,
         branch: true,

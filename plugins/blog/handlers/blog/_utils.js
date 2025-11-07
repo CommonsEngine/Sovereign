@@ -29,6 +29,36 @@ const CONTRIBUTOR_STATUS = {
   revoked: "revoked",
 };
 
+const renameBlogKey = (value) => (value === "blog" ? "Blog" : value);
+
+function normalizeSelectionShape(node) {
+  if (!node || typeof node !== "object") return node;
+  if (Array.isArray(node)) {
+    return node.map((item) => normalizeSelectionShape(item));
+  }
+  const normalized = {};
+  for (const [key, val] of Object.entries(node)) {
+    const normalizedKey = renameBlogKey(key);
+    if (val && typeof val === "object") {
+      normalized[normalizedKey] = normalizeSelectionShape(val);
+    } else {
+      normalized[normalizedKey] = val;
+    }
+  }
+  return normalized;
+}
+
+function normalizeProjectResult(project) {
+  if (!project || typeof project !== "object") return project;
+  if (!Object.prototype.hasOwnProperty.call(project, "Blog")) return project;
+  const normalized = { ...project };
+  if (normalized.Blog !== undefined && normalized.blog === undefined) {
+    normalized.blog = normalized.Blog;
+  }
+  delete normalized.Blog;
+  return normalized;
+}
+
 export class ProjectAccessError extends Error {
   constructor(message, status = 403, meta = {}) {
     super(message);
@@ -99,11 +129,12 @@ export async function ensureProjectAccess(
 
   const project = await tx.project.findUnique({
     where: { id: projectId },
-    select: select ?? { id: true, type: true },
+    select: select ? normalizeSelectionShape(select) : { id: true, type: true },
   });
   if (!project) {
     throw new ProjectAccessError("Project not found", 404);
   }
+  const normalizedProject = normalizeProjectResult(project);
 
   let contribution = await findActiveContribution(
     projectId,
@@ -125,7 +156,7 @@ export async function ensureProjectAccess(
   }
 
   return {
-    project,
+    project: normalizedProject,
     contribution,
     membership: contribution, // temporary alias for backward compatibility
     role: effectiveRole,
@@ -143,7 +174,7 @@ export async function getProjectContext(req, projectId, options = {}, ctx = {}) 
       status: true,
       createdAt: true,
       updatedAt: true,
-      blog: {
+      Blog: {
         select: {
           id: true,
           projectId: true,

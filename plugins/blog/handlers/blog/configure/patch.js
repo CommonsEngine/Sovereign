@@ -82,10 +82,19 @@ export default async function configureProject(req, res, _, ctx) {
       userEmail: gitUserEmail, // model field is userEmail
     };
 
-    await prisma.gitConfig.upsert({
-      where: { blogId: blog.id },
-      create: { blogId: blog.id, ...gitConfigPayload },
+    const gitConfig = await prisma.gitConfig.upsert({
+      where: { projectId },
+      create: { projectId, ...gitConfigPayload },
       update: gitConfigPayload,
+    });
+
+    await prisma.blog.update({
+      where: { id: blog.id },
+      data: {
+        gitConfig: {
+          connect: { id: gitConfig.id },
+        },
+      },
     });
 
     return res.json({ configured: true, gitConfigPayload });

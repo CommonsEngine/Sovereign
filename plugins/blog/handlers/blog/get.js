@@ -44,6 +44,8 @@ export default async function viewIndex(req, res, _, { prisma, logger, git }) {
         return res.redirect(302, `/${project.type}/${project.id}/configure`);
       }
 
+      const gitConfig = project.blog?.gitConfig || null;
+
       // Try to use cached connection; if missing or broken, try to (re)connect once.
       let connected = false;
       try {
@@ -52,23 +54,13 @@ export default async function viewIndex(req, res, _, { prisma, logger, git }) {
           await cached.pullLatest(); // quick connectivity check
           connected = true;
         } else {
-          const cfg = await prisma.gitConfig.findUnique({
-            where: { blogId: project.blog.id },
-            select: {
-              repoUrl: true,
-              branch: true,
-              userName: true,
-              userEmail: true,
-              authSecret: true,
-            },
-          });
-          if (cfg) {
+          if (gitConfig) {
             await git.getOrInitGitManager(project.id, {
-              repoUrl: cfg.repoUrl,
-              branch: cfg.branch,
-              userName: cfg.userName,
-              userEmail: cfg.userEmail,
-              authToken: cfg.authSecret || null,
+              repoUrl: gitConfig.repoUrl,
+              branch: gitConfig.branch,
+              userName: gitConfig.userName,
+              userEmail: gitConfig.userEmail,
+              authToken: gitConfig.authSecret || null,
             });
             connected = true;
           }
@@ -81,16 +73,16 @@ export default async function viewIndex(req, res, _, { prisma, logger, git }) {
       if (!connected) {
         try {
           git.disposeGitManager(project.id);
-          await prisma.gitConfig.delete({
-            where: { blogId: project.blog.id },
-          });
+          if (gitConfig?.id) {
+            await prisma.gitConfig.delete({
+              where: { id: gitConfig.id },
+            });
+          }
         } catch {
           // ignore if already deleted
         }
         // return res.redirect(302, `/${project.type}/${project.id}/configure`);
       }
-
-      const gitConfig = project.blog?.gitConfig || null;
 
       const created = formatDate(project.createdAt);
       const updated = formatDate(project.updatedAt);

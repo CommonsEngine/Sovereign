@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-const rbacPath = path.resolve(process.cwd(), "prisma/seed/data/rbac.json");
+const rbacPath = path.resolve(process.cwd(), "scripts/data/rbac.json");
 const rbac = JSON.parse(fs.readFileSync(rbacPath, "utf8"));
 
 const FALLBACK_CAPABILITY_DESCRIPTION = "[auto] capability description missing in rbac.json";
@@ -51,7 +51,7 @@ export default async function seedRBAC(prisma) {
     const roleId = Number(role.id);
     if (!Number.isFinite(roleId)) {
       throw new Error(
-        `seedRBAC: role '${role.key}' has invalid id '${role.id}' – expected numeric`
+        `✗ seedRBAC: role '${role.key}' has invalid id '${role.id}' – expected numeric`
       );
     }
 
