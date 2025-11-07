@@ -5,6 +5,7 @@ import { toBool } from "$/utils/misc.mjs";
 import * as fs from "$/utils/fs.js";
 
 const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));
+const pluginCapabilities = manifest.pluginCapabilities || {};
 
 // TODO: Combine with Database values
 
@@ -46,6 +47,8 @@ const baseTemplate = Object.freeze({
   APP_TAGLINE: manifest.platform.tagline,
   APP_DESCRIPTION: manifest.platform.description,
   APP_VERSION: manifest.platform.version,
+  PLUGIN_CAPABILITIES_SIGNATURE: pluginCapabilities.signature || null,
+  PLUGIN_CAPABILITIES: pluginCapabilities.definitions || [],
   APP_URL: process.env.APP_URL || "http://localhost:3000",
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),

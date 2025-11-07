@@ -10,16 +10,18 @@
   },
   "workspaces": [
     "platform",
-    "plugins/*"
+    "plugins/*",
+    "packages/*"
   ],
   "scripts": {
     "postinstall": "husky",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init && yarn build:manifest",
-    "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
-    "prepare:all": "yarn prepare:init && yarn prepare:db",
+    "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db && yarn seed:plugin-capabilities",
+    "prepare:all": "yarn prepare:init && yarn prepare:db && yarn prisma:seed && yarn seed:plugin-capabilities",
     "build": "yarn workspaces run build",
     "postbuild": "yarn build:manifest",
-    "build:manifest": "node tools/build-manifest.mjs",
+    "build:manifest": "node tools/build-manifest.mjs && yarn seed:plugin-capabilities",
+    "seed:plugin-capabilities": "node tools/database-seed-plugin-capabilities.mjs",
     "dev": "yarn workspace @sovereign/platform dev",
     "start": "yarn workspace @sovereign/platform start",
     "format:check": "prettier --check .",
@@ -35,7 +37,10 @@
     "prisma:apply": "yarn workspace @sovereign/platform prisma:migrate",
     "prisma:deploy": "yarn workspace @sovereign/platform prisma:deploy",
     "prisma:studio": "yarn workspace @sovereign/platform prisma:studio",
-    "prisma:seed": "node tools/database-seed-all.mjs"
+    "prisma:seed": "node tools/database-seed-all.mjs",
+    "reset:all": "yarn workspace @sovereign/platform reset",
+    "test": "node --import ./platform/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test:watch": "node --import ./platform/scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

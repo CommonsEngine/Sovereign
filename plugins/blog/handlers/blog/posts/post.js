@@ -2,6 +2,7 @@ import { getBlogProjectAccess } from "./get.js";
 
 export default async function publishPost(req, res, _, ctx) {
   const { prisma, git, logger } = ctx;
+  ctx?.assertUserCapability?.(req, "user:plugin.blog.post.publish");
   // We need to simply commit and push any changes that are currently in the working directory
   try {
     const userId = req.user?.id;

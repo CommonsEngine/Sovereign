@@ -113,8 +113,16 @@ model UserRole {
 }
 
 model UserCapability {
-  key         String @id
+  key         String   @id
   description String
+  source      String?  @map("source")
+  namespace   String?  @map("namespace")
+  scope       String?  @map("scope")
+  category    String?  @map("category")
+  tags        Json?    @map("tags")
+  metadata    Json?    @map("metadata")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   roleCapabilities UserRoleCapability[]
@@ -170,9 +178,11 @@ model Session {
   roles        Json?   @map("roles")
   capabilities Json?   @map("capabilities")
   userSnapshot Json?   @map("user_snapshot")
+  capabilitiesSignature String?  @map("capabilities_signature")
 
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([token])

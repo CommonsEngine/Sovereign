@@ -7,6 +7,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "module";
 
+import { collectPluginCapabilities } from "./lib/plugin-capabilities.mjs";
+
+/**
+ * @typedef {import("@sovereign/types").PluginManifest} PluginManifest
+ */
+
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 const plarfotmPkg = require("../platform/package.json");
@@ -112,25 +118,25 @@ const pluginManifestSchema = {
             api: { type: "string", minLength: 1 },
           },
         },
-      },
-    },
-    platformCapabilities: {
-      type: "object",
-      additionalProperties: { type: "boolean" },
-    },
-    userCapabilities: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["key", "description", "roles"],
-        additionalProperties: true,
-        properties: {
-          key: { type: "string", minLength: 1 },
-          description: { type: "string" },
-          roles: {
-            type: "array",
-            minItems: 1,
-            items: { type: "string", minLength: 1 },
+        platformCapabilities: {
+          type: "object",
+          additionalProperties: { type: "boolean" },
+        },
+        userCapabilities: {
+          type: "array",
+          items: {
+            type: "object",
+            required: ["key", "description", "roles"],
+            additionalProperties: true,
+            properties: {
+              key: { type: "string", minLength: 1 },
+              description: { type: "string" },
+              roles: {
+                type: "array",
+                minItems: 1,
+                items: { type: "string", minLength: 1 },
+              },
+            },
           },
         },
       },
@@ -144,6 +150,39 @@ const ajv = new Ajv({
 });
 
 const validatePluginManifest = ajv.compile(pluginManifestSchema);
+
+function normalizeManifestCapabilities(manifest, context = {}) {
+  const normalized = {
+    ...manifest,
+    sovereign: { ...(manifest?.sovereign || {}) },
+  };
+
+  const moved = [];
+
+  if (normalized.platformCapabilities && !normalized.sovereign.platformCapabilities) {
+    normalized.sovereign.platformCapabilities = normalized.platformCapabilities;
+    moved.push("platformCapabilities");
+  }
+
+  if (normalized.userCapabilities && !normalized.sovereign.userCapabilities) {
+    normalized.sovereign.userCapabilities = normalized.userCapabilities;
+    moved.push("userCapabilities");
+  }
+
+  if (normalized.platformCapabilities) delete normalized.platformCapabilities;
+  if (normalized.userCapabilities) delete normalized.userCapabilities;
+
+  if (moved.length) {
+    console?.warn?.(
+      formatError(
+        `deprecated top-level field(s) moved under sovereign.*: ${moved.join(", ")}`,
+        context
+      )
+    );
+  }
+
+  return normalized;
+}
 
 const exists = async (p) => {
   try {
@@ -225,6 +264,11 @@ const buildManifest = async () => {
       );
       continue;
     }
+
+    pluginManifest = normalizeManifestCapabilities(pluginManifest, {
+      manifestPath: pluginManifestPath,
+      pluginDir: plugingRoot,
+    });
 
     if (!validatePluginManifest(pluginManifest)) {
       const schemaErrors =
@@ -336,10 +380,30 @@ const buildManifest = async () => {
         if (Object.keys(normalizedEntryPoints).length === 0) normalizedEntryPoints = undefined;
       }
 
+      const resolvedPlatformCaps = Object.entries(
+        pluginManifest?.sovereign?.platformCapabilities || {}
+      )
+        .filter(([, enabled]) => !!enabled)
+        .map(([key]) => key)
+        .sort();
+
+      const resolvedUserCaps = Array.isArray(pluginManifest?.sovereign?.userCapabilities)
+        ? pluginManifest.sovereign.userCapabilities
+            .map((cap) => (cap && typeof cap.key === "string" ? cap.key.trim() : ""))
+            .filter(Boolean)
+        : [];
+
+      const normalizedSovereign = {
+        ...(pluginManifest?.sovereign || {}),
+        platformCapabilitiesResolved: resolvedPlatformCaps,
+        userCapabilitiesResolved: resolvedUserCaps,
+      };
+
       plugins[manifestNamespace] = {
         namespace: manifestNamespace,
         entry,
         ...pluginManifest,
+        sovereign: normalizedSovereign,
         ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
     }
@@ -349,6 +413,19 @@ const buildManifest = async () => {
     ...manifest.plugins,
     ...plugins,
   };
+
+  const {
+    capabilities: capabilityCatalog,
+    signature: capabilitySignature,
+    diagnostics,
+  } = await collectPluginCapabilities({ cwd: __rootdir });
+  diagnostics.forEach((diag) => {
+    if (diag.level === "error") {
+      console.error(`✗ ${diag.message}`);
+    } else {
+      console.warn(`⚠️  ${diag.message}`);
+    }
+  });
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
@@ -374,6 +451,18 @@ const buildManifest = async () => {
     ...manifest,
     allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
     plugins: finalPlugins,
+    pluginCapabilities: {
+      signature: capabilitySignature,
+      definitions: capabilityCatalog.map((cap) => ({
+        key: cap.key,
+        description: cap.description,
+        source: cap.source,
+        namespace: cap.namespace,
+        scope: cap.scope,
+        category: cap.category,
+        assignments: cap.assignments,
+      })),
+    },
   };
 
   await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");

@@ -135,118 +135,6 @@
     {
       "key": "user:project.collaborate",
       "description": "In-App collaboration enabled."
-    },
-    {
-      "key": "user:project.blog.feature",
-      "description": "Blog Project Type is enabled"
-    },
-    {
-      "key": "user:project.blog.create",
-      "description": "Create blogs, and configure."
-    },
-    {
-      "key": "user:project.blog.read",
-      "description": "View blogs."
-    },
-    {
-      "key": "user:project.blog.update",
-      "description": "Update blogs."
-    },
-    {
-      "key": "user:project.blog.delete",
-      "description": "Delete blogs."
-    },
-    {
-      "key": "user:project.blog.post.create",
-      "description": "Create blog posts."
-    },
-    {
-      "key": "user:project.blog.post.read",
-      "description": "View blog posts."
-    },
-    {
-      "key": "user:project.blog.post.update",
-      "description": "Update blog posts."
-    },
-    {
-      "key": "user:project.blog.post.delete",
-      "description": "Delete blog posts."
-    },
-    {
-      "key": "user:project.blog.post.publish",
-      "description": "Publish blog posts."
-    },
-    {
-      "key": "user:project.papertrail.feature",
-      "description": "Papertrail Project Type is enabled"
-    },
-    {
-      "key": "user:project.papertrail.graph.create",
-      "description": "Create PaperTrail board."
-    },
-    {
-      "key": "user:project.papertrail.graph.read",
-      "description": "View PaperTrail board"
-    },
-    {
-      "key": "user:project.papertrail.graph.update",
-      "description": "Update PaperTrail board."
-    },
-    {
-      "key": "user:project.papertrail.graph.delete",
-      "description": "Delete PaperTrail board."
-    },
-    {
-      "key": "user:project.papertrail.node.create",
-      "description": "Create PaperTrail node."
-    },
-    {
-      "key": "user:project.papertrail.node.update",
-      "description": "Update PaperTrail node."
-    },
-    {
-      "key": "user:project.papertrail.node.delete",
-      "description": "Delete PaperTrail node."
-    },
-    {
-      "key": "user:project.papertrail.edge.create",
-      "description": "Create PaperTrail edge."
-    },
-    {
-      "key": "user:project.papertrail.edge.update",
-      "description": "Update PaperTrail edge."
-    },
-    {
-      "key": "user:project.papertrail.edge.delete",
-      "description": "Delete PaperTrail edge."
-    },
-    {
-      "key": "user:project.papertrail.comment.create",
-      "description": "Create PaperTrail comment."
-    },
-    {
-      "key": "user:project.papertrail.comment.read",
-      "description": "View PaperTrail comment"
-    },
-    {
-      "key": "user:project.papertrail.comment.update",
-      "description": "Update PaperTrail comment."
-    },
-    {
-      "key": "user:project.papertrail.comment.delete",
-      "description": "Delete PaperTrail comment."
-    },
-    {
-      "key": "user:project.papertrail.attachment.create",
-      "description": "Create PaperTrail attachment."
-    },
-    {
-      "key": "user:project.papertrail.attachment.read",
-      "description": "View PaperTrail attachment"
-    },
-    {
-      "key": "user:project.papertrail.attachment.delete",
-      "description": "Delete PaperTrail attachment."
     }
   ],
   "roles": [
@@ -288,35 +176,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "deny",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "deny",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "deny",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "deny",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "deny",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "deny",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     },
     {
@@ -357,35 +217,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "deny",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "deny",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "deny",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "deny",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "deny",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "deny",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     },
     {
@@ -426,35 +258,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "deny",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "deny",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "deny",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "deny",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "deny",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "deny",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     },
     {
@@ -494,35 +298,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "deny",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "deny",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "deny",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "deny",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "deny",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     },
     {
@@ -562,35 +338,7 @@
         "user:project.invite": "allow",
         "user:project.export": "allow",
         "user:project.import": "allow",
-        "user:project.collaborate": "allow",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "allow",
-        "user:project.blog.read": "allow",
-        "user:project.blog.update": "allow",
-        "user:project.blog.delete": "allow",
-        "user:project.blog.post.create": "allow",
-        "user:project.blog.post.read": "allow",
-        "user:project.blog.post.update": "allow",
-        "user:project.blog.post.delete": "allow",
-        "user:project.blog.post.publish": "allow",
-        "user:project.papertrail.feature": "allow",
-        "user:project.papertrail.graph.create": "allow",
-        "user:project.papertrail.graph.read": "allow",
-        "user:project.papertrail.graph.update": "allow",
-        "user:project.papertrail.graph.delete": "allow",
-        "user:project.papertrail.node.create": "allow",
-        "user:project.papertrail.node.update": "allow",
-        "user:project.papertrail.node.delete": "allow",
-        "user:project.papertrail.edge.create": "allow",
-        "user:project.papertrail.edge.update": "allow",
-        "user:project.papertrail.edge.delete": "allow",
-        "user:project.papertrail.comment.create": "allow",
-        "user:project.papertrail.comment.read": "allow",
-        "user:project.papertrail.comment.update": "allow",
-        "user:project.papertrail.comment.delete": "allow",
-        "user:project.papertrail.attachment.create": "allow",
-        "user:project.papertrail.attachment.read": "allow",
-        "user:project.papertrail.attachment.delete": "allow"
+        "user:project.collaborate": "allow"
       }
     },
     {
@@ -631,35 +379,7 @@
         "user:project.invite": "allow",
         "user:project.export": "allow",
         "user:project.import": "allow",
-        "user:project.collaborate": "allow",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "allow",
-        "user:project.blog.read": "allow",
-        "user:project.blog.update": "allow",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "allow",
-        "user:project.blog.post.read": "allow",
-        "user:project.blog.post.update": "allow",
-        "user:project.blog.post.delete": "allow",
-        "user:project.blog.post.publish": "allow",
-        "user:project.papertrail.feature": "allow",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "allow",
-        "user:project.papertrail.graph.update": "allow",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "allow",
-        "user:project.papertrail.node.update": "allow",
-        "user:project.papertrail.node.delete": "allow",
-        "user:project.papertrail.edge.create": "allow",
-        "user:project.papertrail.edge.update": "allow",
-        "user:project.papertrail.edge.delete": "allow",
-        "user:project.papertrail.comment.create": "allow",
-        "user:project.papertrail.comment.read": "allow",
-        "user:project.papertrail.comment.update": "allow",
-        "user:project.papertrail.comment.delete": "allow",
-        "user:project.papertrail.attachment.create": "allow",
-        "user:project.papertrail.attachment.read": "allow",
-        "user:project.papertrail.attachment.delete": "allow"
+        "user:project.collaborate": "allow"
       }
     },
     {
@@ -700,35 +420,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "allow",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "allow",
-        "user:project.blog.update": "allow",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "allow",
-        "user:project.blog.post.read": "allow",
-        "user:project.blog.post.update": "allow",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "allow",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "allow",
-        "user:project.papertrail.graph.update": "allow",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "allow",
-        "user:project.papertrail.node.update": "allow",
-        "user:project.papertrail.node.delete": "allow",
-        "user:project.papertrail.edge.create": "allow",
-        "user:project.papertrail.edge.update": "allow",
-        "user:project.papertrail.edge.delete": "allow",
-        "user:project.papertrail.comment.create": "allow",
-        "user:project.papertrail.comment.read": "allow",
-        "user:project.papertrail.comment.update": "allow",
-        "user:project.papertrail.comment.delete": "allow",
-        "user:project.papertrail.attachment.create": "allow",
-        "user:project.papertrail.attachment.read": "allow",
-        "user:project.papertrail.attachment.delete": "allow"
+        "user:project.collaborate": "allow"
       }
     },
     {
@@ -769,35 +461,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "allow",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "allow",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "allow",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "allow",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "allow",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "allow",
-        "user:project.papertrail.comment.read": "allow",
-        "user:project.papertrail.comment.update": "allow",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "allow"
       }
     },
     {
@@ -838,35 +502,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "allow",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "allow",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "allow",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "allow",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "allow",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "allow",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     },
     {
@@ -907,35 +543,7 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny",
-        "user:project.blog.feature": "deny",
-        "user:project.blog.create": "deny",
-        "user:project.blog.read": "deny",
-        "user:project.blog.update": "deny",
-        "user:project.blog.delete": "deny",
-        "user:project.blog.post.create": "deny",
-        "user:project.blog.post.read": "deny",
-        "user:project.blog.post.update": "deny",
-        "user:project.blog.post.delete": "deny",
-        "user:project.blog.post.publish": "deny",
-        "user:project.papertrail.feature": "deny",
-        "user:project.papertrail.graph.create": "deny",
-        "user:project.papertrail.graph.read": "deny",
-        "user:project.papertrail.graph.update": "deny",
-        "user:project.papertrail.graph.delete": "deny",
-        "user:project.papertrail.node.create": "deny",
-        "user:project.papertrail.node.update": "deny",
-        "user:project.papertrail.node.delete": "deny",
-        "user:project.papertrail.edge.create": "deny",
-        "user:project.papertrail.edge.update": "deny",
-        "user:project.papertrail.edge.delete": "deny",
-        "user:project.papertrail.comment.create": "deny",
-        "user:project.papertrail.comment.read": "deny",
-        "user:project.papertrail.comment.update": "deny",
-        "user:project.papertrail.comment.delete": "deny",
-        "user:project.papertrail.attachment.create": "deny",
-        "user:project.papertrail.attachment.read": "deny",
-        "user:project.papertrail.attachment.delete": "deny"
+        "user:project.collaborate": "deny"
       }
     }
   ]

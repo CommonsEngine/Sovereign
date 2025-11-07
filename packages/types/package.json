@@ -1,0 +1,17 @@
+{
+  "name": "@sovereign/types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./*.d.ts",
+    ".": "./index.d.ts"
+  },
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "echo 'No build step for this package'"
+  },
+  "files": [
+    "*.d.ts"
+  ]
+}

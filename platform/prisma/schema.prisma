@@ -1,5 +1,5 @@
 /// GENERATED FILE — DO NOT EDIT
-/// Combined on 2025-11-07T12:49:31.847Z
+/// Combined on 2025-11-07T21:20:21.874Z
 
 datasource db {
   provider = "sqlite"
@@ -116,8 +116,16 @@ model UserRole {
 }
 
 model UserCapability {
-  key         String @id
+  key         String   @id
   description String
+  source      String?  @map("source")
+  namespace   String?  @map("namespace")
+  scope       String?  @map("scope")
+  category    String?  @map("category")
+  tags        Json?    @map("tags")
+  metadata    Json?    @map("metadata")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
 
   // Relations
   roleCapabilities UserRoleCapability[]
@@ -164,18 +172,20 @@ model UserRoleAssignment {
 
 // [1.4] Session model
 model Session {
-  id           String  @id @default(cuid()) @map("id")
-  userId       String  @map("user_id")
-  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String  @unique @map("token")
-  ipHash       String? @map("ip_hash")
-  userAgent    String? @map("user_agent")
-  roles        Json?   @map("roles")
-  capabilities Json?   @map("capabilities")
-  userSnapshot Json?   @map("user_snapshot")
+  id                    String  @id @default(cuid()) @map("id")
+  userId                String  @map("user_id")
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token                 String  @unique @map("token")
+  ipHash                String? @map("ip_hash")
+  userAgent             String? @map("user_agent")
+  roles                 Json?   @map("roles")
+  capabilities          Json?   @map("capabilities")
+  userSnapshot          Json?   @map("user_snapshot")
+  capabilitiesSignature String? @map("capabilities_signature")
 
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([token])

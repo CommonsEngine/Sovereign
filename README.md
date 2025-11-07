@@ -124,6 +124,38 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
     "schemaVersion": 1, // manifest schema version (platform-side decoder)
     "engine": "0.7.3", // minimum/target core engine version compatibility
     "entryPoints": ["launcher"], // named entry points if the plugin exposes launchers. i.e: launcher | sidebar
+    "platformCapabilities": {
+      "database": true, // requires DB access (Prisma)
+      "gitManager": false, // requires Git manager integration
+      "fs": false, // requires filesystem access to plugin scope
+      "logger": false,
+      "mailer": false,
+    },
+    "userCapabilities": [
+      // RBAC: capabilities added by this plugin
+      {
+        "key": "user:plugin.blog.feature",
+        "description": "Enable Blog plugin.",
+        "roles": ["platform:user"],
+      },
+      {
+        "key": "user:plugin.blog.create",
+        "description": "Create blog project, and configure.",
+        "roles": ["platform:user"],
+      },
+      {
+        "key": "user:plugin.blog.read",
+        "description": "View own blog project.",
+        "roles": [
+          "project:admin",
+          "project:editor",
+          "project:contributor",
+          "project:viewer",
+          "project:guest",
+        ],
+      },
+      // …additional granular post.* capabilities elided for brevity…
+    ],
   },
   "id": "@sovereign/blog", // unique identifier for the plugin. Format can be describe as `<org>/<namespace>`
   "name": "Blog",
@@ -134,40 +166,7 @@ Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; fie
   "draft": false, // whether allow/disallow mounting
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0", // plugins can be license independently
-  "platformCapabilities": {
-    "database": true, // requires DB access (Prisma)
-    "gitManager": false, // requires Git manager integration
-    "fs": false, // requires filesystem access to plugin scope
-    "logger": false,
-    "mailer": false,
-  },
-  "userCapabilities": [
-    // RBAC: capabilities added by this plugin
-    {
-      "key": "user:plugin.blog.feature",
-      "description": "Enable Blog plugin.",
-      "roles": ["platform:user"],
-    },
-    {
-      "key": "user:plugin.blog.create",
-      "description": "Create blog project, and configure.",
-      "roles": ["platform:user"],
-    },
-    {
-      "key": "user:plugin.blog.read",
-      "description": "View own blog project.",
-      "roles": [
-        "project:admin",
-        "project:editor",
-        "project:contributor",
-        "project:viewer",
-        "project:guest",
-      ],
-    },
-    // …additional granular post.* capabilities elided for brevity…
-  ],
   "events": {}, // (reserved) event contracts the plugin can emit/consume
-  "prisma": {}, // (reserved) plugin-owned Prisma schema modules
 }
 ```
 
@@ -210,6 +209,13 @@ async function onRemove() {}
 - Plugins **declare** capabilities in `plugin.json`; these are merged into the global RBAC graph at boot. (TBA)
 - At request time, middleware exposes `req.can('user:plugin.blog.post.create')` / `res.locals.capabilities` for templates.
 - For idempotent imports or repeated enabling, capabilities are upserted.
+- Platform access is mediated via `sovereign.platformCapabilities`. Each key must be part of the host allow-list:
+  - `database` → Prisma client, `git` → git helpers, `fs` → filesystem adapter, `env` → `refreshEnvCache`, `uuid` → id helpers, `mailer` → transactional email, `fileUpload` → (experimental) upload scaffolding.
+  - Requests for unknown capabilities, or prod-disabled ones (e.g., `fileUpload` until hardened), fail during manifest bootstrap.
+  - During development, you can set `DEV_ALLOW_ALL_CAPS=true` to temporarily grant all capabilities to every plugin. This is noisy (logged per plugin), should never be enabled in production, and is meant only for rapid prototyping.
+- Plugin-declared user capabilities live under `sovereign.userCapabilities`. Each entry can include `scope`, `category`, and metadata/tags to aid auditing. `yarn build:manifest` and `yarn prepare:db` automatically re-seed these definitions via `tools/database-seed-plugin-capabilities.mjs`, warn when capabilities are removed, and emit a signature that forces active sessions to refresh their permission snapshots on the next request.
+- Plugins executed via Express route factories receive a `ctx` object that now exposes `ctx.assertPlatformCapability("database")`, `ctx.assertUserCapability(req, capabilityKey)`, and `ctx.pluginAuth.require({ roles, capabilities })` so plugin developers can reuse the platform’s RBAC checks instead of duplicating guards in each route.
+- See `docs/plugins/capabilities.md` for a deeper guide covering host access requests, RBAC seeding, and how to add new capability types.
 
 #### CLI (v0.1.0) — managing plugins
 
