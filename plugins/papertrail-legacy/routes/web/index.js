@@ -12,6 +12,46 @@ const CONTRIBUTOR_STATUS = {
   revoked: "revoked",
 };
 
+const RELATION_SELECT_MAP = {
+  blog: "Blog",
+  papertrail: "PapertrailBoard",
+};
+
+const RELATION_RESULT_MAP = {
+  Blog: "blog",
+  PapertrailBoard: "papertrail",
+};
+
+const renameSelectKey = (key) => RELATION_SELECT_MAP[key] || key;
+
+function normalizeSelectionShape(node) {
+  if (!node || typeof node !== "object") return node;
+  if (Array.isArray(node)) {
+    return node.map((item) => normalizeSelectionShape(item));
+  }
+  const normalized = {};
+  for (const [key, val] of Object.entries(node)) {
+    const nextKey = renameSelectKey(key);
+    normalized[nextKey] =
+      typeof val === "object" && val !== null ? normalizeSelectionShape(val) : val;
+  }
+  return normalized;
+}
+
+function normalizeProjectResult(project) {
+  if (!project || typeof project !== "object") return project;
+  const normalized = { ...project };
+  for (const [dbKey, alias] of Object.entries(RELATION_RESULT_MAP)) {
+    if (Object.prototype.hasOwnProperty.call(normalized, dbKey)) {
+      if (!Object.prototype.hasOwnProperty.call(normalized, alias)) {
+        normalized[alias] = normalized[dbKey];
+      }
+      delete normalized[dbKey];
+    }
+  }
+  return normalized;
+}
+
 function normalizeRoles(roles) {
   if (!roles) return [];
   if (Array.isArray(roles)) return roles.filter(Boolean);
@@ -82,11 +122,12 @@ export async function ensureProjectAccess(
 
   const project = await tx.project.findUnique({
     where: { id: projectId },
-    select: select ?? { id: true, type: true },
+    select: select ? normalizeSelectionShape(select) : { id: true, type: true },
   });
   if (!project) {
     throw new ProjectAccessError("Project not found", 404);
   }
+  const normalizedProject = normalizeProjectResult(project);
 
   let contribution = await findActiveContribution(
     projectId,
@@ -108,7 +149,7 @@ export async function ensureProjectAccess(
   }
 
   return {
-    project,
+    project: normalizedProject,
     contribution,
     membership: contribution, // temporary alias for backward compatibility
     role: effectiveRole,
@@ -159,20 +200,8 @@ export async function getProjectContext(req, projectId, options = {}, ctx = {}) 
       status: true,
       createdAt: true,
       updatedAt: true,
-      blog: {
-        select: {
-          id: true,
-          projectId: true,
-          gitConfig: {
-            select: {
-              repoUrl: true,
-              branch: true,
-              contentDir: true,
-              userName: true,
-              userEmail: true,
-            },
-          },
-        },
+      papertrail: {
+        select: PAPERTRAIL_BOARD_SELECT,
       },
     },
     roles = ["viewer"],
