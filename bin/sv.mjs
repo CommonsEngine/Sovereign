@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
@@ -10,7 +11,34 @@ const pkg = require("../package.json");
 // robust side-effect import relative to this file
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-await import(resolve(__dirname, "../scripts/register-alias.mjs"));
+
+const registerAliasCandidates = [
+  resolve(__dirname, "../scripts/register-alias.mjs"),
+  resolve(__dirname, "../platform/scripts/register-alias.mjs"),
+];
+
+let aliasLoaded = false;
+for (const candidate of registerAliasCandidates) {
+  try {
+    await import(candidate);
+    aliasLoaded = true;
+    break;
+  } catch (err) {
+    if (err?.code === "ERR_MODULE_NOT_FOUND" || /Cannot find module/i.test(err?.message || "")) {
+      continue;
+    }
+    throw err;
+  }
+}
+
+if (!aliasLoaded) {
+  console.warn(
+    "⚠️  Could not load register-alias.mjs (checked root and platform). CLI paths may not resolve."
+  );
+}
+
+const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
+const MANIFEST_PATH = resolve(__dirname, "../manifest.json");
 
 // tiny args parser
 function parseArgs(argv) {
@@ -52,6 +80,10 @@ function printUsage() {
         status [--plugin <id>] [--json]
         generate [--plugin <id>]
 
+      manifest
+        generate                      Build manifest.json
+        show [--json]                 Print manifest summary or raw JSON
+
     Global options:
       -h, --help       Show help (also: sv <ns> --help)
       -v, --version    Show version
@@ -78,12 +110,60 @@ function printNamespaceHelp(ns) {
   }
 }
 
+async function runManifestBuild() {
+  await import(BUILD_MANIFEST_SCRIPT);
+}
+
+async function readManifestFile() {
+  let raw;
+  try {
+    raw = await fs.readFile(MANIFEST_PATH, "utf8");
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      console.error(`Manifest not found at ${MANIFEST_PATH}. Run "sv manifest generate" first.`);
+    } else {
+      console.error(`Failed to read manifest: ${err?.message || err}`);
+    }
+    process.exit(1);
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`Manifest is invalid JSON: ${err?.message || err}`);
+    process.exit(1);
+  }
+}
+
+function printManifestSummary(manifest) {
+  const enabledPlugins = manifest.enabledPlugins || [];
+  const modules = manifest.modules || [];
+  const projects = manifest.projects || [];
+  console.log(`Manifest path: ${MANIFEST_PATH}`);
+  console.log(`Instance ID: ${manifest.instanceId || "(unknown)"}`);
+  console.log(`Environment: ${manifest.env || "(unset)"}`);
+  console.log(`Platform version: ${manifest.platform?.version || "(unknown)"}`);
+  console.log(`CLI version: ${manifest.cli?.version || "(unknown)"}`);
+  console.log(`Default tenant: ${manifest.defaultTenantId || "(unset)"}`);
+  console.log(`Enabled plugins (${enabledPlugins.length}):`);
+  if (enabledPlugins.length) {
+    enabledPlugins.forEach((id) => console.log(`  - ${id}`));
+  } else {
+    console.log("  (none)");
+  }
+  console.log(
+    `Modules (${modules.length}) / Projects (${projects.length}) | Allowed types: ${
+      (manifest.allowedPluginTypes || []).join(", ") || "(none)"
+    }`
+  );
+  console.log(`Last updated: ${manifest.updatedAt || "(unknown)"}`);
+}
+
 // Command Tree
 const commands = {
   // Global meta (no run; handled separately)
   meta: {
     name: "sv",
-    version: pkg.manifest.cli.version,
+    version: pkg.cliVersion || pkg.version || "0.0.0",
     globals: [
       "--help",
       "--version",
@@ -262,6 +342,36 @@ const commands = {
       },
     },
   },
+
+  manifest: {
+    __help__: `
+      Usage:
+        sv manifest generate
+        sv manifest show [--json]
+
+      Notes:
+        --json prints the raw manifest file.
+    `,
+
+    generate: {
+      desc: "Build manifest.json via tools/build-manifest.mjs",
+      async run() {
+        await runManifestBuild();
+      },
+    },
+
+    show: {
+      desc: "Display the current manifest (JSON or summary)",
+      async run(args) {
+        const manifest = await readManifestFile();
+        if (args.flags.json) {
+          console.log(JSON.stringify(manifest, null, 2));
+          return;
+        }
+        printManifestSummary(manifest);
+      },
+    },
+  },
 };
 
 async function main() {
@@ -274,7 +384,7 @@ async function main() {
   }
   if (args.flags.version || args.flags.v) {
     // optionally read from package.json
-    console.log(`sv ${pkg.manifest.cli.version}`);
+    console.log(`sv ${pkg.cliVersion || pkg.version || "0.0.0"}`);
     return;
   }
 
