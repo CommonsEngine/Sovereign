@@ -9,9 +9,9 @@ const pluginCapabilities = manifest.pluginCapabilities || {};
 
 // TODO: Combine with Database values
 
-const preferDist =
-  (process.env.NODE_ENV || "development") === "production" ||
-  process.env.PREFER_DIST_BUILD === "true";
+const isProd = (process.env.NODE_ENV || "development") === "production";
+
+const preferDist = isProd || process.env.PREFER_DIST_BUILD === "true";
 
 const __rootdir = path.resolve(process.env.ROOT_DIR);
 const __pluginsDir = path.resolve(process.env.PLUGIN_DIR || path.join(__rootdir, "plugins"));
@@ -101,7 +101,9 @@ const baseTemplate = Object.freeze({
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT) || 3000,
 
-  IS_PROD: (process.env.NODE_ENV || "development") === "production",
+  IS_PROD: isProd,
+
+  CAPABILITY_FILE_UPLOAD_ENABLED: toBool(process.env.CAPABILITY_FILE_UPLOAD_ENABLED, !isProd),
 
   __rootdir,
   __platformDir,

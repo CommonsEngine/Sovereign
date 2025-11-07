@@ -56,6 +56,7 @@ const capabilityRegistry = {
     description: "Temporary file upload helpers (disabled in prod until hardened)",
     risk: "medium",
     disabledInProd: true,
+    enabledFlag: "CAPABILITY_FILE_UPLOAD_ENABLED",
     resolve: () => ({}), // TODO: wire real upload service
   },
 };
@@ -82,7 +83,14 @@ export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } =
     if (!capability) {
       throw new Error(`Unknown platform capability "${key}" requested by plugin ${namespace}`);
     }
-    if (config.IS_PROD && capability.disabledInProd) {
+    const enabledFlagName = capability.enabledFlag;
+    const overrideEnabled =
+      typeof enabledFlagName === "string" &&
+      Object.prototype.hasOwnProperty.call(config, enabledFlagName)
+        ? Boolean(config[enabledFlagName])
+        : false;
+
+    if (config.IS_PROD && capability.disabledInProd && !overrideEnabled) {
       throw new Error(
         `Capability "${key}" requested by plugin ${namespace} is disabled in production`
       );
@@ -92,6 +100,11 @@ export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } =
     if (!(targetProp in injected)) {
       injected[targetProp] = capability.resolve({ plugin, config });
       granted.push(key);
+    }
+    if (config.IS_PROD && capability.disabledInProd && overrideEnabled) {
+      logger?.warn?.(
+        `[plugins] ${namespace}: capability "${key}" enabled via ${enabledFlagName}. Proceed with caution.`
+      );
     }
   }
 

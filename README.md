@@ -737,6 +737,10 @@ Environment variables come from your shell or an external manager (e.g., `/etc/p
 - `RATE_LIMIT_WINDOW_MS` controls the rolling window (default 60s) so you can tighten/loosen enforcement without code changes.
 - When a client exceeds the limit, the server responds with HTTP `429 Too Many Requests`, a descriptive JSON payload, and a `Retry-After` header so callers can back off gracefully.
 
+## Plugin Capabilities
+
+- High-risk capabilities (such as `fileUpload`) stay disabled when `NODE_ENV=production`. If you have hardened uploads and need those plugins active in prod, set `CAPABILITY_FILE_UPLOAD_ENABLED=true` to opt in. When the flag is enabled, Sovereign logs a warning so you can track who is receiving access.
+
 ## CSS Layering & Plugin Styles
 
 - Core styles now declare a global cascade order via `/css/sv_layers.css` (`@layer reset, base, components, utilities, plugin, platform;`). All Sovereign-provided sheets register inside the `platform.*` namespace so they always win over plugin layers regardless of load order.
