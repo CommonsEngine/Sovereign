@@ -2,9 +2,9 @@ import "dotenv/config";
 
 import { PrismaClient } from "@prisma/client";
 
-import seedRBACData from "./scripts/seed-rbac-data.mjs";
-import seedTestUsers from "./scripts/seed-test-users.mjs";
-import seedAppSettings from "./scripts/seed-app-settings.mjs";
+import seedRBACData from "./database-seed-rbac-data.mjs";
+import seedTestUsers from "./database-seed-test-users.mjs";
+import seedAppSettings from "./database-seed-app-settings.mjs";
 
 const prisma = new PrismaClient();
 
@@ -35,7 +35,7 @@ async function main() {
   try {
     await main();
   } catch (e) {
-    console.error("Seed failed:", e);
+    console.error("✗ Seed failed:", e);
     process.exit(1);
   } finally {
     await prisma.$disconnect();
