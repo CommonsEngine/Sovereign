@@ -90,13 +90,13 @@ const PROJECT_META_SELECT = {
 
 async function ensureBoard({ projectId }, { prisma, uuid }) {
   const tx = prisma;
-  const board = await tx.papertrailBoard.findUnique({
+  const board = await tx.paperTrail.findUnique({
     where: { projectId },
     select: BOARD_WITH_RELATIONS_SELECT,
   });
   if (board) return board;
 
-  return tx.papertrailBoard.create({
+  return tx.paperTrail.create({
     data: {
       id: uuid("ptb_"),
       projectId,
@@ -496,7 +496,7 @@ async function writeBoardSnapshot({ projectId, boardId, payload }) {
         meta: payload.meta ?? {},
       };
 
-      await tx.papertrailBoard.update({
+      await tx.paperTrail.update({
         where: { id: boardId },
         data: boardUpdate,
       });
@@ -567,7 +567,7 @@ async function writeBoardSnapshot({ projectId, boardId, payload }) {
       }
 
       const [boardRecord, projectRecord] = await Promise.all([
-        tx.papertrailBoard.findUnique({
+        tx.paperTrail.findUnique({
           where: { id: boardId },
           select: BOARD_WITH_RELATIONS_SELECT,
         }),
@@ -702,7 +702,7 @@ export async function updateBoard(req, res) {
 
     const { board, project } = await prisma.$transaction(async (tx) => {
       if (Object.keys(boardUpdates).length) {
-        await tx.papertrailBoard.update({
+        await tx.paperTrail.update({
           where: { id: boardRecord.id },
           data: boardUpdates,
         });
@@ -716,7 +716,7 @@ export async function updateBoard(req, res) {
       }
 
       const [updatedBoard, updatedProject] = await Promise.all([
-        tx.papertrailBoard.findUnique({
+        tx.paperTrail.findUnique({
           where: { id: boardRecord.id },
           select: BOARD_WITH_RELATIONS_SELECT,
         }),
@@ -981,7 +981,7 @@ export async function deleteBoard(req, res) {
         where: { boardId: boardRecord.id },
       });
       await tx.papertrailAttachment.deleteMany({ where: { projectId } });
-      await tx.papertrailBoard.delete({ where: { id: boardRecord.id } });
+      await tx.paperTrail.delete({ where: { id: boardRecord.id } });
     });
 
     const uploadsDir = path.join(PAPERTRAIL_DATA_ROOT, boardRecord.id);

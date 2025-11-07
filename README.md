@@ -11,6 +11,25 @@ We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with
 
 Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
 
+### Database & Prisma workflow
+
+The canonical schema now lives in three layers:
+
+1. `platform/prisma/base.prisma` – datasource + generator + shared core models.
+2. `plugins/<name>/prisma/extension.prisma` – ONLY plugin-owned enums/models (no datasource/generator blocks, no duplicates of core tables).
+3. `platform/prisma/schema.prisma` – generated file that concatenates the base schema with every plugin extension.
+
+Run `yarn prisma:compose` (or `yarn workspace @sovereign/platform prisma:compose`) any time you change a schema file; all Prisma scripts in the platform workspace trigger this automatically. Use `yarn prisma:compose:check` (root) or `yarn workspace @sovereign/platform prisma:compose:check` in CI to ensure the generated schema is up-to-date.
+
+To add plugin data models:
+
+- Create/append `plugins/<plugin>/prisma/extension.prisma`.
+- Define plugin-specific enums/models that reference base models via relations as needed.
+- Keep the file scoped—no datasource/generator blocks or edits to shared tables.
+- Run `yarn prisma:compose` followed by your usual Prisma command (`db:generate`, `db:migrate`, etc.). The composed schema will be re-formatted automatically.
+
+> ⚠️ Never edit `platform/prisma/schema.prisma` by hand; it will be overwritten by the compose step.
+
 ### Modular Architecture (Core + Plugins)
 
 Sovereign is built as a **modular platform**. The core runtime provides Express, Handlebars/JSX SSR, RBAC, settings, storage, CLI, and build tooling. Feature domains live in **plugins** that remain fully isolated packages which can be added, enabled/disabled, versioned, and shipped independently from the core.

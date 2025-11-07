@@ -1,41 +1,104 @@
 /* eslint-disable import/order */
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import fg from "fast-glob";
 import { execa } from "execa";
 
-const root = process.cwd();
+const args = process.argv.slice(2);
+const isCheck = args.includes("--check");
+const shouldFormat = !args.includes("--no-format") && !isCheck;
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, "..");
 const base = path.join(root, "platform/prisma/base.prisma");
 const out = path.join(root, "platform/prisma/schema.prisma");
+const platformRoot = path.join(root, "platform");
+const workspaceSchemaPath = path.relative(platformRoot, out).split(path.sep).join(path.posix.sep);
 
-// 1) Read base
-const baseSDL = await fs.readFile(base, "utf8");
-
-// 2) Collect plugin extensions
-const extFiles = await fg("plugins/*/prisma/extension.prisma", { cwd: root, absolute: true });
-const parts = await Promise.all(extFiles.map((f) => fs.readFile(f, "utf8")));
+const forbiddenBlock = /^\s*(datasource|generator)\s+\w*\s*\{/im;
 
 const banner = `/// GENERATED FILE — DO NOT EDIT
 /// Combined on ${new Date().toISOString()}
 `;
 
-const combined = [banner, baseSDL, ...parts].join("\n\n");
+const extFiles = (
+  await fg("plugins/*/prisma/extension.prisma", { cwd: root, absolute: true })
+).sort((a, b) => {
+  const aName = pluginName(a);
+  const bName = pluginName(b);
+  return aName.localeCompare(bName) || a.localeCompare(b);
+});
 
-// 3) Write combined schema
-await fs.writeFile(out, combined, "utf8");
+function pluginName(file) {
+  const rel = path.relative(root, file);
+  const segments = rel.split(path.sep);
+  const idx = segments.indexOf("plugins");
+  if (idx !== -1 && idx + 1 < segments.length) {
+    return segments[idx + 1];
+  }
+  return path.basename(path.dirname(file));
+}
 
-// 4) Format (optional but nice)
-await execa(
-  "yarn",
-  [
-    "workspace",
-    "@sovereign/platform",
-    "prisma",
-    "format",
-    "--schema",
-    "platform/prisma/schema.prisma",
-  ],
-  { stdio: "inherit" }
+function ensureValidExtension(sdl, relPath) {
+  const match = sdl.match(forbiddenBlock);
+  if (match) {
+    const blockName = match[1];
+    throw new Error(
+      `[prisma:compose] "${relPath}" attempts to declare a ${blockName} block. Plugin extensions may only contain models, enums, or type aliases.`
+    );
+  }
+}
+
+const baseSDL = await fs.readFile(base, "utf8");
+
+const pluginParts = await Promise.all(
+  extFiles.map(async (file) => {
+    const rel = path.relative(root, file);
+    const sdl = await fs.readFile(file, "utf8");
+    ensureValidExtension(sdl, rel);
+    const body = sdl.trim();
+    const name = pluginName(file);
+    const header = [`/// --- Plugin: ${name} ---`, `/// Source: ${rel}`].join("\n");
+    const section = body ? `${header}\n\n${body}` : header;
+    return { name, rel, section };
+  })
 );
 
-console.log(`✓ Wrote composed schema with ${parts.length} plugin extension(s): ${out}`);
+const pieces = [
+  banner.trimEnd(),
+  baseSDL.trimEnd(),
+  ...pluginParts.map((part) => part.section.trimEnd()),
+].filter(Boolean);
+const combined = `${pieces.join("\n\n")}\n`;
+
+if (isCheck) {
+  let existing = "";
+  try {
+    existing = await fs.readFile(out, "utf8");
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err;
+  }
+  if (existing.trimEnd() !== combined.trimEnd()) {
+    console.error(
+      `[prisma:compose] ${path.relative(root, out)} is out of date. Re-run "yarn prisma:compose" and commit the result.`
+    );
+    process.exit(1);
+  }
+  console.log(`✓ Prisma schema is up-to-date (${pluginParts.length} plugin extension(s))`);
+  process.exit(0);
+}
+
+await fs.writeFile(out, combined, "utf8");
+
+if (shouldFormat) {
+  await execa(
+    "yarn",
+    ["workspace", "@sovereign/platform", "prisma", "format", "--schema", workspaceSchemaPath],
+    { stdio: "inherit", cwd: root }
+  );
+}
+
+console.log(
+  `✓ Wrote composed schema with ${pluginParts.length} plugin extension(s): ${path.relative(root, out)}`
+);

@@ -15,7 +15,8 @@
   "scripts": {
     "postinstall": "husky",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init && yarn build:manifest",
-    "prepare:db": "yarn workspace @sovereign/platform prepare:db",
+    "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
+    "prepare:all": "yarn prepare:init && yarn prepare:db",
     "build": "yarn workspaces run build",
     "postbuild": "yarn build:manifest",
     "build:manifest": "node tools/build-manifest.mjs",
@@ -28,12 +29,13 @@
     "format:all": "format:all",
     "prisma:reset": "yarn workspace @sovereign/platform prisma:reset",
     "prisma:compose": "node tools/database-prisma-compose.mjs",
-    "db:generate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma generate --schema platform/prisma/schema.prisma",
-    "db:migrate": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --create-only --schema platform/prisma/schema.prisma",
-    "db:apply": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate dev --schema platform/prisma/schema.prisma",
-    "db:deploy": "yarn prisma:compose && yarn workspace @sovereign/platform prisma migrate deploy --schema platform/prisma/schema.prisma",
-    "db:studio": "yarn workspace @sovereign/platform prisma studio --schema platform/prisma/schema.prisma",
-    "db:seed": "node tools/database-seed-all.mjs"
+    "prisma:compose:check": "node tools/database-prisma-compose.mjs --check",
+    "prisma:generate": "yarn workspace @sovereign/platform prisma:generate",
+    "prisma:migrate": "yarn workspace @sovereign/platform prisma:migrate:create",
+    "prisma:apply": "yarn workspace @sovereign/platform prisma:migrate",
+    "prisma:deploy": "yarn workspace @sovereign/platform prisma:deploy",
+    "prisma:studio": "yarn workspace @sovereign/platform prisma:studio",
+    "prisma:seed": "node tools/database-seed-all.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",

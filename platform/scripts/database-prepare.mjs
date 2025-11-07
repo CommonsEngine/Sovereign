@@ -1,7 +1,13 @@
 import { execSync } from "node:child_process";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const isProd = process.env.NODE_ENV === "production";
 const schemaArg = "--schema prisma/schema.prisma";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const composeScript = path.resolve(__dirname, "../../tools/database-prisma-compose.mjs");
+const composeCmd = `node ${JSON.stringify(composeScript)}`;
 
 function run(cmd) {
   console.log(`[prepare:db] ${cmd}`);
@@ -9,6 +15,9 @@ function run(cmd) {
 }
 
 try {
+  // 0) Ensure the composed schema is up-to-date
+  run(composeCmd);
+
   // 1) Always generate client
   run(`prisma generate ${schemaArg}`);
 
