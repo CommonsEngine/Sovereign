@@ -1,7 +1,7 @@
 import path from "node:path";
 
-import { prisma } from "$/services/database.mjs";
-import { toBool } from "$/utils/misc.mjs";
+import { prisma } from "$/services/database.js";
+import { toBool } from "$/utils/misc.js";
 import * as fs from "$/utils/fs.js";
 
 const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));

@@ -302,7 +302,7 @@
     if (!projectId || !canView) return;
 
     // eslint-disable-next-line n/no-missing-import
-    import("/js/utils/project-share.mjs")
+    import("/js/utils/project-share.js")
       .then((module) => {
         const init = module?.initProjectShareModal;
         // eslint-disable-next-line promise/always-return

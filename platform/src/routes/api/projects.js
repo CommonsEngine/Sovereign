@@ -1,9 +1,9 @@
 import express from "express";
 
-import { requireAuth } from "$/middlewares/auth.mjs";
-import rateLimiters from "$/middlewares/rateLimit.mjs";
-import * as projectsHandler from "$/handlers/projects/index.mjs";
-import * as projectSharesHandler from "$/handlers/projects/shares.mjs";
+import { requireAuth } from "$/middlewares/auth.js";
+import rateLimiters from "$/middlewares/rateLimit.js";
+import * as projectsHandler from "$/handlers/projects/index.js";
+import * as projectSharesHandler from "$/handlers/projects/shares.js";
 
 const router = express.Router();
 

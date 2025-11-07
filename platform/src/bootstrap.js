@@ -1,8 +1,8 @@
 import path from "node:path";
 
-import { connectPrismaWithRetry, gracefulShutdown } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import createExtHost from "$/ext-host/index.mjs";
+import { connectPrismaWithRetry, gracefulShutdown } from "$/services/database.js";
+import logger from "$/services/logger.js";
+import createExtHost from "$/ext-host/index.js";
 
 import createServer from "./server.js";
 

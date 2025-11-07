@@ -1,7 +1,7 @@
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import { uuid } from "$/utils/id.mjs";
-import env from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
+import { uuid } from "$/utils/id.js";
+import env from "$/config/env.js";
 
 const { PROJECTS } = env();
 

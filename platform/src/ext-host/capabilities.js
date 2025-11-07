@@ -1,9 +1,9 @@
-import { prisma } from "$/services/database.mjs";
-import * as git from "$/libs/git/registry.mjs";
-import fm from "$/libs/fs.mjs";
-import * as mailer from "$/services/mailer.mjs";
-import { uuid } from "$/utils/id.mjs";
-import { refreshEnvCache } from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import * as git from "$/libs/git/registry.js";
+import fm from "$/libs/fs.js";
+import * as mailer from "$/services/mailer.js";
+import { uuid } from "$/utils/id.js";
+import { refreshEnvCache } from "$/config/env.js";
 
 export const DEV_ALLOW_ALL_CAPS = process.env.DEV_ALLOW_ALL_CAPS === "true";
 

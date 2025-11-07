@@ -8,7 +8,7 @@ process.env.PLUGIN_DIR ||= path.join(repoRoot, "plugins");
 process.env.DATA_DIR ||= path.join(repoRoot, "data");
 process.env.NODE_ENV ||= "test";
 
-const MODULE_URL = new URL("../platform/src/ext-host/capabilities.mjs", import.meta.url);
+const MODULE_URL = new URL("../platform/src/ext-host/capabilities.js", import.meta.url);
 
 function resetDevFlag(value) {
   if (value === undefined) {

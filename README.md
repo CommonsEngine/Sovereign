@@ -727,7 +727,7 @@ Environment variables come from your shell or an external manager (e.g., `/etc/p
 - Guest workspaces act as disposable sandboxes. When a guest signs out, every project they solely own—plus associated boards, uploads, and attachments under `data/upload` and `data/pt`—is deleted immediately.
 - A background janitor re-checks for stale guest accounts every 24 hours by default and removes anything older than the configured TTL (projects, sessions, emails, PaperTrail assets, etc.), ensuring guest artifacts never linger beyond the retention window.
 - Set `GUEST_BOARD_TTL_HOURS` (default: `24`) to raise or lower the automated cleanup window to meet your governance requirements; the scheduler respects this value and logs each purge with project/user context.
-- Cleanup metrics (`guestCleanupMetrics` in `platform/src/utils/guestCleanup.mjs`) expose total runs, user purges, and project deletions so you can surface them in dashboards or probes.
+- Cleanup metrics (`guestCleanupMetrics` in `platform/src/utils/guestCleanup.js`) expose total runs, user purges, and project deletions so you can surface them in dashboards or probes.
 - Retention behavior is part of our privacy posture: guest content is never persisted indefinitely, aligning with GDPR data-minimization expectations.
 
 ## API Rate Limiting

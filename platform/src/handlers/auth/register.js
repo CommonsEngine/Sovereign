@@ -1,9 +1,9 @@
-import { prisma } from "$/services/database.mjs";
-import { sendMail } from "$/services/mailer.mjs";
-import logger from "$/services/logger.mjs";
-import { hashPassword, randomToken } from "$/utils/auth.mjs";
-import { syncProjectPrimaryOwner } from "$/utils/projectAccess.mjs";
-import env from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import { sendMail } from "$/services/mailer.js";
+import logger from "$/services/logger.js";
+import { hashPassword, randomToken } from "$/utils/auth.js";
+import { syncProjectPrimaryOwner } from "$/utils/projectAccess.js";
+import env from "$/config/env.js";
 
 const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();
 

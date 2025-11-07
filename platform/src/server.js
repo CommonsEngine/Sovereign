@@ -10,25 +10,25 @@ import path from "path";
 
 import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
 
-import secure from "$/middlewares/secure.mjs";
-import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
-import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
-import useJSX from "$/middlewares/useJSX.mjs";
-import rateLimiters from "$/middlewares/rateLimit.mjs";
+import secure from "$/middlewares/secure.js";
+import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.js";
+import exposeGlobals from "$/middlewares/exposeGlobals.js";
+import useJSX from "$/middlewares/useJSX.js";
+import rateLimiters from "$/middlewares/rateLimit.js";
 
-import * as indexHandler from "$/handlers/index.mjs";
-import * as authHandler from "$/handlers/auth/index.mjs";
+import * as indexHandler from "$/handlers/index.js";
+import * as authHandler from "$/handlers/auth/index.js";
 
 import apiProjects from "$/routes/api/projects.js";
 
-import env from "$/config/env.mjs";
+import env from "$/config/env.js";
 
-import { cleanupExpiredGuestUsers, GUEST_RETENTION_MS } from "$/utils/guestCleanup.mjs";
+import { cleanupExpiredGuestUsers, GUEST_RETENTION_MS } from "$/utils/guestCleanup.js";
 
-import "$/utils/hbsHelpers.mjs";
+import "$/utils/hbsHelpers.js";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
@@ -112,7 +112,7 @@ export default async function createServer(manifest) {
   app.set("view cache", IS_PROD);
 
   // Serve everything under /public at the root
-  // TODO: Consider moving this into a small utility like utils/cacheHeaders.mjs
+  // TODO: Consider moving this into a small utility like utils/cacheHeaders.js
   // since we’ll likely reuse it for plugin assets.
   const staticOptions = {
     index: false,

@@ -59,7 +59,7 @@ The manifest builder normalizes these into `manifest.pluginCapabilities.definiti
 
 ### Adding a New Capability Type
 
-1. Update `platform/src/ext-host/capabilities.mjs` with the new capability key, its risk tier, and the resolver that should be injected into plugin contexts.
+1. Update `platform/src/ext-host/capabilities.js` with the new capability key, its risk tier, and the resolver that should be injected into plugin contexts.
 2. Document the capability in this file and in `README.md` so plugin authors know how to request it.
 3. Ensure any required infrastructure (e.g., new services) exists in the platform runtime.
 4. Add tests covering the new capability (extend `tests/ext-host-capabilities.test.mjs`).

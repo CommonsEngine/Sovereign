@@ -1,5 +1,5 @@
-import env from "$/config/env.mjs";
-import logger from "$/services/logger.mjs";
+import env from "$/config/env.js";
+import logger from "$/services/logger.js";
 
 const config = env();
 

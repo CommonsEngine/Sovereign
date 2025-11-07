@@ -1,9 +1,9 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 
-import env from "$/config/env.mjs";
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
+import env from "$/config/env.js";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
 
 const config = env();
 const GUEST_EMAIL_SUFFIX = "@guest.local";

@@ -1,11 +1,11 @@
 import crypto from "crypto";
 
-import { prisma } from "$/services/database.mjs";
-import { sendMail } from "$/services/mailer.mjs";
-import logger from "$/services/logger.mjs";
-import { hashPassword, randomToken } from "$/utils/auth.mjs";
-import { isGuestUser, purgeGuestUserById } from "$/utils/guestCleanup.mjs";
-import env from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import { sendMail } from "$/services/mailer.js";
+import logger from "$/services/logger.js";
+import { hashPassword, randomToken } from "$/utils/auth.js";
+import { isGuestUser, purgeGuestUserById } from "$/utils/guestCleanup.js";
+import env from "$/config/env.js";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
 
@@ -17,8 +17,8 @@ const toAbsoluteUrl = (relativePath = "") => {
   return `${base}${normalized}`;
 };
 
-export { default as register, viewRegister } from "./register.mjs";
-export { default as login, guestLogin, viewLogin } from "./login.mjs";
+export { default as register, viewRegister } from "./register.js";
+export { default as login, guestLogin, viewLogin } from "./login.js";
 
 export async function inviteUser(req, res) {
   try {

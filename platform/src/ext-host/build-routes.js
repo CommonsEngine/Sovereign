@@ -1,14 +1,14 @@
 import path from "node:path";
 import { pathToFileURL } from "url";
 
-import logger from "$/services/logger.mjs";
+import logger from "$/services/logger.js";
 import ensurePluginLayout from "$/middlewares/ensurePluginLayout.js";
-import { requireAuth } from "$/middlewares/auth.mjs";
-import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
+import { requireAuth } from "$/middlewares/auth.js";
+import exposeGlobals from "$/middlewares/exposeGlobals.js";
 import * as pluginHandler from "$/handlers/plugin.js";
 
-import { resolvePluginCapabilities } from "./capabilities.mjs";
-import { createPluginCapabilityAPI } from "./plugin-auth.mjs";
+import { resolvePluginCapabilities } from "./capabilities.js";
+import { createPluginCapabilityAPI } from "./plugin-auth.js";
 
 export async function buildPluginRoutes(app, manifest, config) {
   const { plugins } = manifest;

@@ -1,6 +1,6 @@
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
-import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.mjs";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
+import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.js";
 
 export default async function remove(req, res) {
   try {
