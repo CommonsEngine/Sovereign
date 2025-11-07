@@ -12,7 +12,7 @@ const importFile = document.getElementById("importFile");
 const searchInput = document.getElementById("search");
 // const API_BASE = window.__globals?.apiBase || "";
 const PROJECT_ID = window.__globals?.projectId || "";
-const API_BASE = `/api/plugins/papertrail/${PROJECT_ID}`;
+const API_BASE = `/api/plugins/papertrail-legacy/${PROJECT_ID}`;
 const BOARD_ENDPOINT = API_BASE ? `${API_BASE}/board` : "";
 const boardIdFromGlobals = window.__globals?.boardId || "";
 const isOwner = window.__globals?.canManage === "true";
@@ -1107,7 +1107,7 @@ function renderNode(n) {
                <div class="rich" contenteditable="false" data-field="descHtml" data-placeholder="Add a description…" ${wrapDisplay}>${desc}</div>`;
       // kick off preview fetch (once)
       (async () => {
-        const p = await window.fetchLinkPreview(u);
+        const p = await fetchLinkPreview(u);
         if (p) {
           n.data.preview = p;
           markDirty();
@@ -1680,7 +1680,7 @@ function exportBoard() {
 async function fetchLinkPreview(url) {
   if (!url) return null;
   try {
-    const resp = await window.fetch("/api/plugins/papertrail/link-preview", {
+    const resp = await window.fetch("/api/plugins/papertrail-legacy/link-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),

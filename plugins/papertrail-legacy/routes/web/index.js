@@ -14,12 +14,12 @@ const CONTRIBUTOR_STATUS = {
 
 const RELATION_SELECT_MAP = {
   blog: "Blog",
-  papertrail: "PapertrailBoard",
+  papertrail: "PaperTrail",
 };
 
 const RELATION_RESULT_MAP = {
   Blog: "blog",
-  PapertrailBoard: "papertrail",
+  PaperTrail: "papertrail",
 };
 
 const renameSelectKey = (key) => RELATION_SELECT_MAP[key] || key;
@@ -264,7 +264,7 @@ export default (ctx) => {
 
       if (!board) {
         try {
-          board = await prisma.papertrailBoard.upsert({
+          board = await prisma.paperTrail.upsert({
             where: { projectId: project.id },
             create: {
               id: uuid("ptb_"),
