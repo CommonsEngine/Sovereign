@@ -730,6 +730,13 @@ Environment variables come from your shell or an external manager (e.g., `/etc/p
 - Cleanup metrics (`guestCleanupMetrics` in `platform/src/utils/guestCleanup.mjs`) expose total runs, user purges, and project deletions so you can surface them in dashboards or probes.
 - Retention behavior is part of our privacy posture: guest content is never persisted indefinitely, aligning with GDPR data-minimization expectations.
 
+## API Rate Limiting
+
+- All sensitive auth routes (login, registration, password flows, guest login) share a public limiter keyed by client IP to deter brute-force attempts. The defaults allow 60 requests per minute (`RATE_LIMIT_PUBLIC_MAX`) and can be tuned via env vars.
+- Authenticated API calls (currently `/api/projects/**`) are rate-limited per user ID (fallback to IP) with a higher ceiling (default 300 requests/minute via `RATE_LIMIT_AUTHED_MAX`).
+- `RATE_LIMIT_WINDOW_MS` controls the rolling window (default 60s) so you can tighten/loosen enforcement without code changes.
+- When a client exceeds the limit, the server responds with HTTP `429 Too Many Requests`, a descriptive JSON payload, and a `Retry-After` header so callers can back off gracefully.
+
 ## Features
 
 ### Project sharing

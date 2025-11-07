@@ -17,6 +17,7 @@ import secure from "$/middlewares/secure.mjs";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
 import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
 import useJSX from "$/middlewares/useJSX.mjs";
+import rateLimiters from "$/middlewares/rateLimit.mjs";
 
 import * as indexHandler from "$/handlers/index.mjs";
 import * as authHandler from "$/handlers/auth/index.mjs";
@@ -180,19 +181,19 @@ export default async function createServer(manifest) {
   }
 
   // Auth Routes
-  app.post("/auth/invite", requireAuth, authHandler.inviteUser);
-  app.get("/auth/guest", authHandler.guestLogin);
+  app.post("/auth/invite", requireAuth, rateLimiters.authedApi, authHandler.inviteUser);
+  app.get("/auth/guest", rateLimiters.public, authHandler.guestLogin);
   app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
   app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
-  app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
-  app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
+  app.post("/auth/password/forgot", rateLimiters.public, authHandler.forgotPassword); // Request Body { email }
+  app.post("/auth/password/reset", rateLimiters.public, authHandler.resetPassword); // Request Body { token, password }
 
   // Web Routes
   app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
   app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
-  app.post("/login", authHandler.login);
+  app.post("/login", rateLimiters.public, authHandler.login);
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
-  app.post("/register", authHandler.register);
+  app.post("/register", rateLimiters.public, authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
 
   // Project Routes
