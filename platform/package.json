@@ -17,8 +17,6 @@
     "prepare:db": "node ./scripts/database-prepare.mjs",
     "prisma:compose": "node ../tools/database-prisma-compose.mjs",
     "prisma:compose:check": "node ../tools/database-prisma-compose.mjs --check",
-    "preprisma:reset": "yarn run prisma:compose",
-    "prisma:reset": "./scripts/database-reset.sh",
     "preprisma:generate": "yarn run prisma:compose",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "preprisma:deploy": "yarn run prisma:compose",
@@ -41,7 +39,8 @@
     "test": "node --import ./scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
     "test:watch": "node --import ./scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
     "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format --schema prisma/schema.prisma",
-    "check": "yarn format:check && yarn lint:check && yarn prisma validate"
+    "check": "yarn format:check && yarn lint:check && yarn prisma validate",
+    "reset": "./scripts/reset.sh"
   },
   "nodemonConfig": {
     "watch": [

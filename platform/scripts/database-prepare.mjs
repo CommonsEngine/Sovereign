@@ -32,7 +32,7 @@ try {
   }
 
   // 3) Seed (make your seed idempotent so reruns are safe)
-  run(`node scripts/database-seed.mjs`);
+  // run(`node scripts/database-seed.mjs`);
 
   console.log(`[prepare:db] ✓ Done (${isProd ? "production" : "development"} path)`);
 } catch (err) {

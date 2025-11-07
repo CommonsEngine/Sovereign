@@ -16,7 +16,7 @@
     "postinstall": "husky",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init && yarn build:manifest",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
-    "prepare:all": "yarn prepare:init && yarn prepare:db",
+    "prepare:all": "yarn prepare:init && yarn prepare:db && yarn prisma:seed",
     "build": "yarn workspaces run build",
     "postbuild": "yarn build:manifest",
     "build:manifest": "node tools/build-manifest.mjs",
@@ -35,7 +35,8 @@
     "prisma:apply": "yarn workspace @sovereign/platform prisma:migrate",
     "prisma:deploy": "yarn workspace @sovereign/platform prisma:deploy",
     "prisma:studio": "yarn workspace @sovereign/platform prisma:studio",
-    "prisma:seed": "node tools/database-seed-all.mjs"
+    "prisma:seed": "node tools/database-seed-all.mjs",
+    "reset:all": "yarn workspace @sovereign/platform reset"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
