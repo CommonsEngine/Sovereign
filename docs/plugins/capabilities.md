@@ -18,15 +18,15 @@ Each plugin manifest defines host access under `sovereign.platformCapabilities`.
 
 The manifest builder resolves these flags into `plugins.<namespace>.sovereign.platformCapabilitiesResolved` inside `manifest.json`, so ops and UI surfaces can display the exact set (e.g., `["database","git"]`). Only the following allow‑listed capabilities are currently accepted:
 
-| Capability   | Injected Service             | Notes                           |
-| ------------ | ---------------------------- | ------------------------------- |
-| `database`   | Prisma client (`ctx.prisma`) | Full DB access                  |
-| `git`        | Git manager helpers          | Used by blog/papertrail         |
-| `fs`         | File-system adapter          | Scoped to plugin storage        |
-| `env`        | `refreshEnvCache`            | Refreshes env config            |
-| `uuid`       | `uuid()` helper              | Deterministic IDs               |
-| `mailer`     | Transactional mailer         | Sends email                     |
-| `fileUpload` | Upload helper (experimental) | Disabled in prod until hardened |
+| Capability   | Injected Service             | Notes                                                                                 |
+| ------------ | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `database`   | Prisma client (`ctx.prisma`) | Shared DB by default; `exclusive-sqlite` plugins receive their isolated Prisma client |
+| `git`        | Git manager helpers          | Used by blog/papertrail                                                               |
+| `fs`         | File-system adapter          | Scoped to plugin storage                                                              |
+| `env`        | `refreshEnvCache`            | Refreshes env config                                                                  |
+| `uuid`       | `uuid()` helper              | Deterministic IDs                                                                     |
+| `mailer`     | Transactional mailer         | Sends email                                                                           |
+| `fileUpload` | Upload helper (experimental) | Disabled in prod until hardened                                                       |
 
 Requests for unknown caps, or caps disabled in production, cause bootstrap errors. During development you may temporarily bypass declarations by exporting `DEV_ALLOW_ALL_CAPS=true`, but this is noisy and should never reach production.
 

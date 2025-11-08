@@ -27,11 +27,13 @@ test("throws when plugin requests unknown capability", async () => {
   resetDevFlag("false");
   const { resolvePluginCapabilities } = await freshModule();
 
-  assert.throws(() =>
-    resolvePluginCapabilities(
-      { namespace: "blog", sovereign: { platformCapabilities: { imaginary: true } } },
-      { config: { IS_PROD: false }, logger: console }
-    )
+  await assert.rejects(
+    () =>
+      resolvePluginCapabilities(
+        { namespace: "blog", sovereign: { platformCapabilities: { imaginary: true } } },
+        { config: { IS_PROD: false }, logger: console }
+      ),
+    /Unknown platform capability/
   );
 });
 
@@ -39,11 +41,13 @@ test("denies prod-disabled capability", async () => {
   resetDevFlag("false");
   const { resolvePluginCapabilities } = await freshModule();
 
-  assert.throws(() =>
-    resolvePluginCapabilities(
-      { namespace: "blog", sovereign: { platformCapabilities: { fileUpload: true } } },
-      { config: { IS_PROD: true }, logger: console }
-    )
+  await assert.rejects(
+    () =>
+      resolvePluginCapabilities(
+        { namespace: "blog", sovereign: { platformCapabilities: { fileUpload: true } } },
+        { config: { IS_PROD: true }, logger: console }
+      ),
+    /disabled in production/
   );
 });
 
@@ -51,7 +55,7 @@ test("DEV_ALLOW_ALL_CAPS grants all capabilities in dev", async () => {
   resetDevFlag("true");
   const { resolvePluginCapabilities, getCapabilityRegistry } = await freshModule();
 
-  const { context, granted } = resolvePluginCapabilities(
+  const { context, granted } = await resolvePluginCapabilities(
     { namespace: "blog", sovereign: { platformCapabilities: {} } },
     { config: { IS_PROD: false }, logger: { warn() {}, info() {} } }
   );
@@ -72,10 +76,55 @@ test("resolvePluginCapabilities injects declared host services", async () => {
       },
     },
   };
-  const { context, granted } = resolvePluginCapabilities(plugin, {
+  const { context, granted } = await resolvePluginCapabilities(plugin, {
     config: { IS_PROD: false },
     logger: console,
   });
   assert.ok(context.uuid, "uuid helper injected");
   assert.deepEqual(granted, ["uuid"]);
+});
+
+test("database capability uses plugin database manager for exclusive sqlite mode", async () => {
+  resetDevFlag("false");
+  const { resolvePluginCapabilities } = await freshModule();
+  const fakeClient = { marker: "plugin-prisma" };
+  const pluginDatabaseManager = {
+    acquirePrismaClient: async () => fakeClient,
+  };
+  const plugin = {
+    namespace: "papertrail",
+    sovereign: {
+      platformCapabilities: { database: true },
+      database: { mode: "exclusive-sqlite" },
+    },
+  };
+
+  const { context } = await resolvePluginCapabilities(plugin, {
+    config: { IS_PROD: false },
+    logger: console,
+    services: { pluginDatabaseManager },
+  });
+
+  assert.equal(context.prisma, fakeClient);
+});
+
+test("throws if exclusive database requested without manager", async () => {
+  resetDevFlag("false");
+  const { resolvePluginCapabilities } = await freshModule();
+  const plugin = {
+    namespace: "papertrail",
+    sovereign: {
+      platformCapabilities: { database: true },
+      database: { mode: "exclusive-sqlite" },
+    },
+  };
+
+  await assert.rejects(
+    () =>
+      resolvePluginCapabilities(plugin, {
+        config: { IS_PROD: false },
+        logger: console,
+      }),
+    /Plugin database manager is required/
+  );
 });

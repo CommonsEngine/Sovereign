@@ -10,3 +10,5 @@ platform/src/views/register.html
 plugins/blog/views/blog/editor.html
 plugins/papertrail/*
 tools/plugin-templates/spa/vite.config.js
+tools/plugin-templates/spa/plugin.json
+tools/plugin-templates/custom/plugin.json

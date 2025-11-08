@@ -199,7 +199,9 @@ export default async function createServer(manifest) {
   // Project Routes
   app.use("/api/projects", apiProjects);
 
-  await buildPluginRoutes(app, manifest, config);
+  await buildPluginRoutes(app, manifest, config, {
+    pluginDatabaseManager: manifest.__pluginDatabaseManager,
+  });
 
   app.use((req, res) => {
     if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });

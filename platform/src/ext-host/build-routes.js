@@ -10,13 +10,14 @@ import * as pluginHandler from "$/handlers/plugin.js";
 import { resolvePluginCapabilities } from "./capabilities.js";
 import { createPluginCapabilityAPI } from "./plugin-auth.js";
 
-export async function buildPluginRoutes(app, manifest, config) {
+export async function buildPluginRoutes(app, manifest, config, services = {}) {
   const { plugins } = manifest;
   const { NODE_ENV } = config;
+  const { pluginDatabaseManager } = services;
 
   const pluginContextCache = new Map();
 
-  const ensurePluginContext = (plugin, namespace) => {
+  const ensurePluginContext = async (plugin, namespace) => {
     const cacheKey = namespace || plugin?.namespace || plugin?.id;
     if (cacheKey && pluginContextCache.has(cacheKey)) {
       return pluginContextCache.get(cacheKey);
@@ -28,9 +29,10 @@ export async function buildPluginRoutes(app, manifest, config) {
       path,
     };
 
-    const { context: capabilityContext, granted } = resolvePluginCapabilities(plugin, {
+    const { context: capabilityContext, granted } = await resolvePluginCapabilities(plugin, {
       config,
       logger,
+      services: { pluginDatabaseManager },
     });
 
     const capabilityAPI = createPluginCapabilityAPI({
@@ -80,7 +82,7 @@ export async function buildPluginRoutes(app, manifest, config) {
 
       let pluginContext;
       try {
-        pluginContext = ensurePluginContext(plugin, ns);
+        pluginContext = await ensurePluginContext(plugin, ns);
       } catch (err) {
         logger.error(`[plugins] ${ns}: capability resolution failed`, err);
         continue;

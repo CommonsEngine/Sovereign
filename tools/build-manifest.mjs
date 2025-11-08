@@ -110,6 +110,39 @@ const pluginManifestSchema = {
             node: { type: "string" },
           },
         },
+        database: {
+          type: "object",
+          required: ["mode"],
+          additionalProperties: false,
+          properties: {
+            mode: {
+              type: "string",
+              enum: ["shared", "exclusive-sqlite", "exclusive-postgres"],
+            },
+            provider: {
+              type: "string",
+              enum: ["sqlite", "postgresql", "mysql"],
+            },
+            schema: { type: "string", minLength: 1 },
+            dataDir: { type: "string", minLength: 1 },
+            limits: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                storageMb: { type: "number", minimum: 1 },
+                connections: { type: "number", minimum: 1 },
+              },
+            },
+            migrations: {
+              type: "object",
+              additionalProperties: false,
+              properties: {
+                directory: { type: "string", minLength: 1 },
+                entryPoint: { type: "string", minLength: 1 },
+              },
+            },
+          },
+        },
         routes: {
           type: "object",
           additionalProperties: false,
