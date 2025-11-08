@@ -35,6 +35,7 @@ export default [
       "eslint.config.mjs",
       "package-lock.json",
       "plugins/papertrail/*",
+      "tools/plugin-templates/*",
     ],
   },
   js.configs.recommended,

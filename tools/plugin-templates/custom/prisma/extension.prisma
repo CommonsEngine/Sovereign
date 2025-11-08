@@ -1,0 +1,7 @@
+// Add plugin-specific Prisma models/enums here.
+// Example:
+// model {{ModelName}} {
+//   id      String   @id @default(cuid())
+//   ownerId String
+//   owner   Tenant   @relation(fields: [ownerId], references: [id])
+// }

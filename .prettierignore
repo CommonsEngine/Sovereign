@@ -9,3 +9,4 @@ platform/src/views/_partials/layout/head.html
 platform/src/views/register.html
 plugins/blog/views/blog/editor.html
 plugins/papertrail/*
+tools/plugin-templates/spa/vite.config.js

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve, basename, join, relative } from "node:path";
+import { dirname, resolve, basename, join, relative, extname } from "node:path";
 import process from "node:process";
 import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
@@ -51,6 +51,25 @@ const CHECKSUM_SKIP_DIRS = new Set(COPY_SKIP_DIRS);
 const CHECKSUM_SKIP_FILES = new Set(COPY_SKIP_FILES);
 const CORE_MIGRATIONS_DIR = resolve(__dirname, "../platform/prisma/migrations");
 const MIGRATION_STATE_PATH = resolve(__dirname, "../data/.sv-migrations-state.json");
+const PLUGIN_TEMPLATES_DIR = resolve(__dirname, "../tools/plugin-templates");
+const PLUGIN_TEMPLATE_MAP = {
+  custom: resolve(PLUGIN_TEMPLATES_DIR, "custom"),
+  spa: resolve(PLUGIN_TEMPLATES_DIR, "spa"),
+};
+const TEMPLATE_TEXT_EXTENSIONS = new Set([
+  ".json",
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".jsx",
+  ".ts",
+  ".tsx",
+  ".md",
+  ".txt",
+  ".html",
+  ".css",
+  ".prisma",
+]);
 
 // tiny args parser
 function parseArgs(argv) {
@@ -403,6 +422,98 @@ async function hashDirectory(rootDir) {
   return hash.digest("hex");
 }
 
+async function resolvePluginTemplateDir(type) {
+  const normalized = String(type || "").toLowerCase();
+  const templatePath = PLUGIN_TEMPLATE_MAP[normalized];
+  if (!templatePath) {
+    throw new Error(
+      `Unknown plugin template type "${type}". Expected one of ${Object.keys(PLUGIN_TEMPLATE_MAP).join(", ")}.`
+    );
+  }
+  const exists = await pathExists(templatePath);
+  if (!exists) {
+    throw new Error(`Template directory missing at ${templatePath}.`);
+  }
+  return templatePath;
+}
+
+function toTitleCase(input) {
+  if (!input) return "";
+  return input
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function deriveDefaultPluginId(namespace) {
+  if (!namespace) return "";
+  if (namespace.startsWith("@")) {
+    return namespace;
+  }
+  return `@sovereign/${namespace}`;
+}
+
+function formatLibraryGlobal(displayName, namespace) {
+  const source = displayName || namespace || "Plugin";
+  const cleaned = source
+    .replace(/[^A-Za-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join("");
+  return cleaned || "SovereignPlugin";
+}
+
+async function copyPluginTemplate(type, targetDir, replacements) {
+  const templateDir = await resolvePluginTemplateDir(type);
+  await copyPluginSource(templateDir, targetDir);
+  await replaceTemplatePlaceholders(targetDir, replacements);
+  return templateDir;
+}
+
+async function replaceTemplatePlaceholders(rootDir, replacements) {
+  async function walk(dir) {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = resolve(dir, entry.name);
+      if (entry.isDirectory?.()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (!entry.isFile?.()) continue;
+      if (!shouldProcessTemplateFile(fullPath)) continue;
+      let content;
+      try {
+        content = await fs.readFile(fullPath, "utf8");
+      } catch {
+        continue;
+      }
+      let updated = content;
+      for (const [key, value] of Object.entries(replacements)) {
+        const token = `{{${key}}}`;
+        if (updated.includes(token)) {
+          updated = updated.split(token).join(String(value));
+        }
+      }
+      if (updated !== content) {
+        await fs.writeFile(fullPath, updated);
+      }
+    }
+  }
+
+  await walk(rootDir);
+}
+
+function shouldProcessTemplateFile(filePath) {
+  const ext = extname(filePath).toLowerCase();
+  return TEMPLATE_TEXT_EXTENSIONS.has(ext);
+}
+
 function createMigrationStateTemplate() {
   return { core: [], plugins: {} };
 }
@@ -528,6 +639,7 @@ const commands = {
   plugins: {
     __help__: `
       Usage:
+        sv plugins create <namespace> [--type custom|spa] [options]
         sv plugins add <spec>
         sv plugins list [--json] [--enabled|--disabled]
         sv plugins enable <namespace>
@@ -541,6 +653,107 @@ const commands = {
         sv plugins enable @sovereign/blog
         sv plugins list --json
     `,
+
+    create: {
+      desc: "Scaffold a new plugin from the built-in templates",
+      async run(args) {
+        const namespace = args._[2];
+        if (!namespace) {
+          exitUsage(`Missing plugin namespace. Usage: sv plugins create <namespace> [options]`);
+        }
+        assertValidNamespace(namespace);
+
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const skipManifest = Boolean(args.flags["skip-manifest"]);
+        const outputJson = Boolean(args.flags.json);
+        const type = String(args.flags.type || "custom").toLowerCase();
+        const version = args.flags.version || "0.1.0";
+        const displayName =
+          args.flags.name || args.flags["display-name"] || toTitleCase(namespace) || namespace;
+        const description =
+          args.flags.description || `Kickstart the ${displayName} ${type} plugin for Sovereign.`;
+        const author =
+          args.flags.author || pkg?.contributors?.[0]?.name || "Sovereign Plugin Author";
+        const license = args.flags.license || "AGPL-3.0";
+        const pluginId =
+          args.flags.id || args.flags["plugin-id"] || deriveDefaultPluginId(namespace);
+        const devPortFlag = args.flags["dev-port"] || args.flags.port || null;
+        const fallbackPort = 4100 + Math.floor(Math.random() * 200);
+        const devPort = Number.parseInt(devPortFlag, 10);
+        const resolvedDevPort = Number.isFinite(devPort) ? devPort : fallbackPort;
+        const previewPort = resolvedDevPort + 4000;
+        const devOrigin = `http://localhost:${resolvedDevPort}`;
+        const libraryGlobal = formatLibraryGlobal(displayName, namespace);
+        const targetDir = resolve(PLUGINS_DIR, namespace);
+
+        const installed = await indexInstalledPlugins();
+        if (installed.byNamespace.has(namespace)) {
+          throw new Error(
+            `Plugin namespace "${namespace}" already exists at ${installed.byNamespace.get(namespace).dir}.`
+          );
+        }
+        if (pluginId && installed.byId.has(pluginId)) {
+          throw new Error(
+            `Plugin id "${pluginId}" already exists at ${installed.byId.get(pluginId).dir}.`
+          );
+        }
+        if (!dryRun && (await pathExists(targetDir))) {
+          throw new Error(`Target directory ${targetDir} already exists.`);
+        }
+
+        const replacements = {
+          PLUGIN_ID: pluginId,
+          NAMESPACE: namespace,
+          DISPLAY_NAME: displayName,
+          DESCRIPTION: description,
+          VERSION: version,
+          AUTHOR: author,
+          LICENSE: license,
+          DEV_PORT: String(resolvedDevPort),
+          DEV_ORIGIN: devOrigin,
+          PREVIEW_PORT: String(previewPort),
+          LIB_GLOBAL: libraryGlobal,
+        };
+
+        let templateDir;
+        if (dryRun) {
+          templateDir = await resolvePluginTemplateDir(type);
+        } else {
+          await fs.mkdir(PLUGINS_DIR, { recursive: true });
+          templateDir = await copyPluginTemplate(type, targetDir, replacements);
+          if (!skipManifest) {
+            await runManifestBuild();
+          }
+        }
+
+        const result = {
+          action: dryRun ? "plan" : "create",
+          namespace,
+          id: pluginId,
+          type,
+          targetDir,
+          templateDir,
+          dryRun,
+        };
+
+        if (outputJson) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (dryRun) {
+          console.log(
+            `Would scaffold ${type} plugin "${pluginId}" at ${targetDir} from template ${templateDir}.`
+          );
+        } else {
+          console.log(
+            `Created ${type} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
+          );
+          if (!skipManifest) {
+            console.log(`Manifest updated via tools/build-manifest.mjs.`);
+          } else {
+            console.log(`--skip-manifest set; run "sv manifest generate" when ready.`);
+          }
+        }
+      },
+    },
 
     add: {
       desc: "Register/install a plugin from path/git/npm",

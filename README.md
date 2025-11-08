@@ -67,6 +67,17 @@ A plugin is defined by a `plugin.json` manifest with the `index.mjs` entry. The 
 | `spa`    | SPA frontends (React, Vue, Svelte, Angular)       | Pure client-side rendering     |
 | `custom` | Dynamic HTML/JS hybrid plugin with Express routes | Server-driven, dynamic content |
 
+#### Scaffolding Plugins
+
+Use `sv plugins create <namespace> [--type custom|spa]` to generate a ready-to-run plugin under `plugins/<namespace>`. The CLI copies the matching template from `tools/plugin-templates`, fills in the manifest/package metadata (id, name, description, dev server port), and optionally rebuilds `manifest.json`. For example:
+
+```
+sv plugins create newsroom --type custom --name "Newsroom"
+sv plugins create billing --type spa --dev-port 4500 --skip-manifest
+```
+
+Each scaffold includes routes, lifecycle stubs, Prisma placeholders, and SPA boilerplate (for the `spa` template) so you can jump directly into feature work.
+
 #### Directory Layout
 
 Each plugin sits under `plugins/<namespace>` with a predictable layout:

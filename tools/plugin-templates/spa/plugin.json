@@ -1,0 +1,110 @@
+{
+  "type": "spa",
+  "id": "{{PLUGIN_ID}}",
+  "namespace": "{{NAMESPACE}}",
+  "name": "{{DISPLAY_NAME}}",
+  "description": "{{DESCRIPTION}}",
+  "version": "{{VERSION}}",
+  "devOnly": true,
+  "draft": false,
+  "entryPoints": {
+    "web": "dist/index.js",
+    "api": "routes/api/index.js"
+  },
+  "author": "{{AUTHOR}}",
+  "license": "{{LICENSE}}",
+  "sovereign": {
+    "schemaVersion": 1,
+    "allowMultipleInstances": true,
+    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "platformCapabilities": {
+      "database": true
+    },
+    "devServer": {
+      "web": {
+        "origin": "{{DEV_ORIGIN}}",
+        "entry": "/src/main.jsx",
+        "client": "/@vite/client"
+      }
+    },
+    "userCapabilities": [
+      {
+        "key": "user:plugin.{{NAMESPACE}}.feature",
+        "description": "Enable the {{DISPLAY_NAME}} plugin.",
+        "roles": ["platform:user"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.create",
+        "description": "Create {{DISPLAY_NAME}} projects and configure settings.",
+        "roles": ["platform:user"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.read",
+        "description": "View {{DISPLAY_NAME}} projects.",
+        "roles": [
+          "project:admin",
+          "project:editor",
+          "project:contributor",
+          "project:viewer",
+          "project:guest"
+        ]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.update",
+        "description": "Update {{DISPLAY_NAME}} projects.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.update.shared",
+        "description": "Update shared {{DISPLAY_NAME}} projects.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.delete",
+        "description": "Delete {{DISPLAY_NAME}} projects.",
+        "roles": ["project:admin"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.create",
+        "description": "Create {{DISPLAY_NAME}} posts or records.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.read",
+        "description": "View {{DISPLAY_NAME}} posts or records.",
+        "roles": [
+          "project:admin",
+          "project:editor",
+          "project:contributor",
+          "project:viewer",
+          "project:guest"
+        ]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.update",
+        "description": "Update {{DISPLAY_NAME}} posts or records.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.update.shared",
+        "description": "Update shared {{DISPLAY_NAME}} posts or records.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.delete",
+        "description": "Delete {{DISPLAY_NAME}} posts or records.",
+        "roles": ["project:admin", "project:editor", "project:contributor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.delete.shared",
+        "description": "Delete shared {{DISPLAY_NAME}} posts or records.",
+        "roles": ["project:admin", "project:editor"]
+      },
+      {
+        "key": "user:plugin.{{NAMESPACE}}.post.publish",
+        "description": "Publish {{DISPLAY_NAME}} posts or records.",
+        "roles": ["platform:user", "project:admin", "project:editor"]
+      }
+    ]
+  }
+}
