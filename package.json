@@ -3,7 +3,7 @@
   "description": "Reclaim your digital freedom.",
   "private": true,
   "version": "3",
-  "cliVersion": "0.1.0",
+  "cliVersion": "1.0.0-alpha.1",
   "license": "AGPL-3.0",
   "bin": {
     "sv": "./bin/sv.mjs"
