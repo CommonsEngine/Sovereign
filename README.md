@@ -114,6 +114,30 @@ plugins/
 
 > During build, core code is emitted to `platform/dist`, while plugins manage their own `dist/` outputs (e.g., via Vite/Rollup) that the platform serves directly. This preserves the structure expected by the runtime and avoids `*.json.json` / `*.html.html` or `.mjs -> .js` skew.
 
+#### SPA dev servers (Vite HMR)
+
+SPA plugins like PaperTrail or Splitify can opt into hot reload by declaring a dev server in their manifest. When the Sovereign platform runs with `NODE_ENV !== "production"`, it pings the configured server—if the server responds, the SPA shell injects the Vite HMR client plus your dev entry instead of the static `dist/` bundle. Stop the dev server and the platform automatically falls back to the last build output.
+
+```jsonc
+"sovereign": {
+  "devServer": {
+    "web": {
+      "origin": "http://localhost:4002", // Vite dev host:port (unique per plugin)
+      "entry": "/src/main.jsx",          // module loaded during dev
+      "client": "/@vite/client"          // optional; defaults to /@vite/client
+    }
+  }
+}
+```
+
+Usage:
+
+1. Start Sovereign in dev mode (`yarn dev`).
+2. Inside the plugin directory run `yarn dev` (or `vite`) so the dev server is listening.
+3. Visit `/plugins/<namespace>` (or the project route). You should see immediate React/Vite HMR updates.
+
+If the plugin dev server stops responding, the runtime logs a warning and falls back to the compiled `plugins/<ns>/dist` assets without requiring a restart.
+
 #### `plugin.json` (reference)
 
 Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; field comments explain how the core interprets them.

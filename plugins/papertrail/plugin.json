@@ -20,6 +20,13 @@
     "platformCapabilities": {
       "database": true
     },
+    "devServer": {
+      "web": {
+        "origin": "http://localhost:4002",
+        "entry": "/src/main.jsx",
+        "client": "/@vite/client"
+      }
+    },
     "userCapabilities": [
       {
         "key": "user:plugin.papertrail.feature",

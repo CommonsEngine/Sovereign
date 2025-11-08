@@ -3,6 +3,7 @@ import fs from "fs/promises";
 
 import logger from "$/services/logger.js";
 import { prisma } from "$/services/database.js";
+import { resolveSpaDevServer } from "$/utils/pluginDevServer.js";
 
 const EXTERNAL_URL_PATTERN = /^(?:[a-z]+:)?\/\//i;
 
@@ -16,11 +17,68 @@ function isExternalUrl(candidate) {
 function resolvePluginAsset(namespace, assetPath) {
   if (!assetPath) return assetPath;
   if (isExternalUrl(assetPath)) return assetPath;
-  return `/plugins/${namespace}/${assetPath.replace(/^\.\//, "")}`;
+  const cleaned = assetPath.replace(/^\.\//, "").replace(/\\/g, "/");
+  return `/plugins/${namespace}/${cleaned}`;
 }
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
+}
+
+function setDevServerCsp(res, origin) {
+  if (!origin) return;
+  let wsOrigin = null;
+  try {
+    const url = new URL(origin);
+    wsOrigin = `${url.protocol === "https:" ? "wss" : "ws"}://${url.host}`;
+  } catch {
+    wsOrigin = null;
+  }
+  const connectSources = [`'self'`, origin];
+  if (wsOrigin) connectSources.push(wsOrigin);
+  const directives = [
+    `default-src 'self' ${origin}`,
+    `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${origin}`,
+    `style-src 'self' 'unsafe-inline' ${origin}`,
+    `img-src 'self' ${origin} data:`,
+    `font-src 'self' ${origin} data:`,
+    `connect-src ${connectSources.join(" ")}`,
+  ];
+  res.set("Content-Security-Policy", directives.join("; "));
+}
+
+function buildReactRefreshPreamble(origin) {
+  if (!origin) return "";
+  const refreshUrl = new URL("/@react-refresh", origin).toString();
+  return `<script type="module">
+import RefreshRuntime from "${refreshUrl}";
+RefreshRuntime.injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;
+</script>`;
+}
+
+async function collectCssAssets(distDir) {
+  const results = [];
+  async function walk(currentDir, relPrefix = "") {
+    let entries;
+    try {
+      entries = await fs.readdir(currentDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        await walk(path.join(currentDir, entry.name), relPath);
+      } else if (entry.isFile() && entry.name.endsWith(".css")) {
+        results.push(relPath);
+      }
+    }
+  }
+  await walk(distDir);
+  return results;
 }
 
 // TODO: Keep this commented.
@@ -101,10 +159,6 @@ export async function renderSPAModule(req, res, _, { plugin }) {
     };
     const inlineScriptBlocks = [];
 
-    const entryBasename = path.basename(entryPoint);
-    const entryUrl = resolvePluginAsset(namespace, entryBasename);
-    shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
-
     // Add plugin base stylesheet
     baseStyles.push(`/${namespace}.css`);
 
@@ -113,29 +167,57 @@ export async function renderSPAModule(req, res, _, { plugin }) {
       `<script>(function(){const g=globalThis;g.global ||= g;g.process ||= { env: {} };g.process.env ||= {};if(!g.process.env.NODE_ENV) g.process.env.NODE_ENV = ${resolvedNodeEnv};})();</script>`
     );
 
-    const distDir = path.join(pluginRoot, "dist");
-    if (await pathExists(distDir)) {
-      try {
-        const assets = await fs.readdir(distDir);
-        const cssAssets = assets.filter((file) => file.endsWith(".css"));
-        if (cssAssets.length) {
-          const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
-          shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
-          inlineScriptBlocks.push(
-            `<script>(function(){const head=document.head;const styles=${JSON.stringify(
-              cssHrefs
-            )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
-          );
-        }
-      } catch (err) {
-        logger.warn(`Unable to read built assets for plugin "${namespace}"`, err);
+    const devServer = await resolveSpaDevServer(plugin, namespace);
+    const devScriptTags = [];
+
+    if (devServer) {
+      setDevServerCsp(res, devServer.origin);
+      const clientUrl = new URL(devServer.client, devServer.origin).toString();
+      const entryUrl = new URL(devServer.entry, devServer.origin).toString();
+      devScriptTags.push(
+        `<script type="module" src="${clientUrl}" data-plugin-dev-client="${namespace}"></script>`
+      );
+      const preamble = buildReactRefreshPreamble(devServer.origin);
+      if (preamble) {
+        devScriptTags.push(preamble);
       }
+      devScriptTags.push(`<script type="module">import("${entryUrl}");</script>`);
     } else {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Unsupported Plugin Type or JSX Markup",
-        description: `${plugin?.type} plugin type is not supported yet.`,
-      });
+      if (!entryPoint) {
+        return res.status(500).render("error", {
+          code: 500,
+          message: "Plugin Misconfigured",
+          description: `Plugin "${namespace}" is missing a web entry point.`,
+        });
+      }
+
+      const entryBasename = path.basename(entryPoint);
+      const entryUrl = resolvePluginAsset(namespace, entryBasename);
+      shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
+
+      const distDir = path.join(pluginRoot, "dist");
+      if (await pathExists(distDir)) {
+        try {
+          const cssAssets = await collectCssAssets(distDir);
+          if (cssAssets.length) {
+            const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
+            shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
+            inlineScriptBlocks.push(
+              `<script>(function(){const head=document.head;const styles=${JSON.stringify(
+                cssHrefs
+              )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
+            );
+          }
+        } catch (err) {
+          logger.warn(`Unable to read built assets for plugin "${namespace}"`, err);
+        }
+      } else {
+        return res.status(404).render("error", {
+          code: 404,
+          message: "Unsupported Plugin Type or JSX Markup",
+          description: `${plugin?.type} plugin type is not supported yet.`,
+        });
+      }
     }
 
     // Rendering the plugin ---
@@ -153,6 +235,9 @@ export async function renderSPAModule(req, res, _, { plugin }) {
     inlineScriptBlocks.push(
       `<script>window.__sv ??= {}; window.__sv.context = ${JSON.stringify(bootContext)};</script>`
     );
+    if (devScriptTags.length) {
+      inlineScriptBlocks.push(...devScriptTags);
+    }
 
     shellModel.inlineScripts = inlineScriptBlocks.join("\n");
     shellModel.styles = unique(shellModel.styles);
@@ -272,41 +357,54 @@ export async function renderSPA(req, res, _, { plugins }) {
     };
     const inlineScriptBlocks = [];
 
-    const entryBasename = path.basename(plugin.entry);
-    const entryUrl = resolvePluginAsset(namespace, entryBasename);
-    shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
-
-    // Add plugin base stylesheet
-    baseStyles.push(`/${namespace}.css`);
+    const devServer = await resolveSpaDevServer(plugin, namespace);
+    const devScriptTags = [];
 
     const resolvedNodeEnv = JSON.stringify(process.env.NODE_ENV || "production");
     inlineScriptBlocks.push(
       `<script>(function(){const g=globalThis;g.global ||= g;g.process ||= { env: {} };g.process.env ||= {};if(!g.process.env.NODE_ENV) g.process.env.NODE_ENV = ${resolvedNodeEnv};})();</script>`
     );
 
-    const distDir = path.join(pluginRoot, "dist");
-    if (await pathExists(distDir)) {
-      try {
-        const assets = await fs.readdir(distDir);
-        const cssAssets = assets.filter((file) => file.endsWith(".css"));
-        if (cssAssets.length) {
-          const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
-          shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
-          inlineScriptBlocks.push(
-            `<script>(function(){const head=document.head;const styles=${JSON.stringify(
-              cssHrefs
-            )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
-          );
-        }
-      } catch (err) {
-        logger.warn(`Unable to read built assets for plugin "${namespace}"`, err);
+    if (devServer) {
+      setDevServerCsp(res, devServer.origin);
+      const clientUrl = new URL(devServer.client, devServer.origin).toString();
+      const entryUrl = new URL(devServer.entry, devServer.origin).toString();
+      devScriptTags.push(
+        `<script type="module" src="${clientUrl}" data-plugin-dev-client="${namespace}"></script>`
+      );
+      const preamble = buildReactRefreshPreamble(devServer.origin);
+      if (preamble) {
+        devScriptTags.push(preamble);
       }
+      devScriptTags.push(`<script type="module">import("${entryUrl}");</script>`);
     } else {
-      return res.status(404).render("error", {
-        code: 404,
-        message: "Unsupported Plugin Type or JSX Markup",
-        description: `${plugin?.type} plugin type is not supported yet.`,
-      });
+      const entryBasename = path.basename(plugin.entry);
+      const entryUrl = resolvePluginAsset(namespace, entryBasename);
+      shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
+
+      const distDir = path.join(pluginRoot, "dist");
+      if (await pathExists(distDir)) {
+        try {
+          const cssAssets = await collectCssAssets(distDir);
+          if (cssAssets.length) {
+            const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
+            shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
+            inlineScriptBlocks.push(
+              `<script>(function(){const head=document.head;const styles=${JSON.stringify(
+                cssHrefs
+              )};styles.forEach((href)=>{if(!head.querySelector('link[data-plugin-style="${namespace}"][href="' + href + '"]')){const link=document.createElement('link');link.rel='stylesheet';link.href=href;link.dataset.pluginStyle='${namespace}';head.appendChild(link);}});})();</script>`
+            );
+          }
+        } catch (err) {
+          logger.warn(`Unable to read built assets for plugin "${namespace}"`, err);
+        }
+      } else {
+        return res.status(404).render("error", {
+          code: 404,
+          message: "Unsupported Plugin Type or JSX Markup",
+          description: `${plugin?.type} plugin type is not supported yet.`,
+        });
+      }
     }
 
     // Rendering the plugin ---
@@ -330,6 +428,9 @@ export async function renderSPA(req, res, _, { plugins }) {
     inlineScriptBlocks.push(
       `<script>window.__sv ??= {}; window.__sv.context = ${JSON.stringify(bootContext)};</script>`
     );
+    if (devScriptTags.length) {
+      inlineScriptBlocks.push(...devScriptTags);
+    }
 
     shellModel.inlineScripts = inlineScriptBlocks.join("\n");
     shellModel.styles = unique(shellModel.styles);
