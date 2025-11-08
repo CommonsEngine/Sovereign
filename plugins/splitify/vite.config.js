@@ -46,9 +46,9 @@ export default defineConfig({
     copyPublicDir: false, //  prevent Vite from copying the public/ folder to dist/ root
   },
   server: {
-    port: 4002,
+    port: 4003,
   },
   preview: {
-    port: 8002,
+    port: 8003,
   },
 });
