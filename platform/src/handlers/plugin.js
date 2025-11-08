@@ -17,7 +17,8 @@ function isExternalUrl(candidate) {
 function resolvePluginAsset(namespace, assetPath) {
   if (!assetPath) return assetPath;
   if (isExternalUrl(assetPath)) return assetPath;
-  return `/plugins/${namespace}/${assetPath.replace(/^\.\//, "")}`;
+  const cleaned = assetPath.replace(/^\.\//, "").replace(/\\/g, "/");
+  return `/plugins/${namespace}/${cleaned}`;
 }
 
 function unique(items) {
@@ -56,6 +57,28 @@ window.$RefreshReg$ = () => {};
 window.$RefreshSig$ = () => (type) => type;
 window.__vite_plugin_react_preamble_installed__ = true;
 </script>`;
+}
+
+async function collectCssAssets(distDir) {
+  const results = [];
+  async function walk(currentDir, relPrefix = "") {
+    let entries;
+    try {
+      entries = await fs.readdir(currentDir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      const relPath = relPrefix ? `${relPrefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        await walk(path.join(currentDir, entry.name), relPath);
+      } else if (entry.isFile() && entry.name.endsWith(".css")) {
+        results.push(relPath);
+      }
+    }
+  }
+  await walk(distDir);
+  return results;
 }
 
 // TODO: Keep this commented.
@@ -175,8 +198,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
       const distDir = path.join(pluginRoot, "dist");
       if (await pathExists(distDir)) {
         try {
-          const assets = await fs.readdir(distDir);
-          const cssAssets = assets.filter((file) => file.endsWith(".css"));
+          const cssAssets = await collectCssAssets(distDir);
           if (cssAssets.length) {
             const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
             shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
@@ -363,8 +385,7 @@ export async function renderSPA(req, res, _, { plugins }) {
       const distDir = path.join(pluginRoot, "dist");
       if (await pathExists(distDir)) {
         try {
-          const assets = await fs.readdir(distDir);
-          const cssAssets = assets.filter((file) => file.endsWith(".css"));
+          const cssAssets = await collectCssAssets(distDir);
           if (cssAssets.length) {
             const cssHrefs = cssAssets.map((file) => resolvePluginAsset(namespace, file));
             shellModel.styles = unique([...shellModel.styles, ...cssHrefs]);
