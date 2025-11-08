@@ -37,6 +37,7 @@ export async function resolveSpaDevServer(plugin, namespace) {
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins
     const res = await fetch(pingUrl, { method: "GET", signal: controller.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 

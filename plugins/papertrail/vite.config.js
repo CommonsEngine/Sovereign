@@ -47,6 +47,7 @@ export default defineConfig({
   },
   server: {
     port: 4002,
+    origin: "http://localhost:4002",
   },
   preview: {
     port: 8002,

@@ -39,8 +39,8 @@ function setDevServerCsp(res, origin) {
     `default-src 'self' ${origin}`,
     `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${origin}`,
     `style-src 'self' 'unsafe-inline' ${origin}`,
-    `img-src 'self' data:`,
-    `font-src 'self' data:`,
+    `img-src 'self' ${origin} data:`,
+    `font-src 'self' ${origin} data:`,
     `connect-src ${connectSources.join(" ")}`,
   ];
   res.set("Content-Security-Policy", directives.join("; "));
