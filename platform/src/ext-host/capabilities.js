@@ -1,9 +1,9 @@
-import { prisma } from "$/services/database.mjs";
-import * as git from "$/libs/git/registry.mjs";
-import fm from "$/libs/fs.mjs";
-import * as mailer from "$/services/mailer.mjs";
-import { uuid } from "$/utils/id.mjs";
-import { refreshEnvCache } from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import * as git from "$/libs/git/registry.js";
+import fm from "$/libs/fs.js";
+import * as mailer from "$/services/mailer.js";
+import { uuid } from "$/utils/id.js";
+import { refreshEnvCache } from "$/config/env.js";
 
 export const DEV_ALLOW_ALL_CAPS = process.env.DEV_ALLOW_ALL_CAPS === "true";
 
@@ -56,6 +56,7 @@ const capabilityRegistry = {
     description: "Temporary file upload helpers (disabled in prod until hardened)",
     risk: "medium",
     disabledInProd: true,
+    enabledFlag: "CAPABILITY_FILE_UPLOAD_ENABLED",
     resolve: () => ({}), // TODO: wire real upload service
   },
 };
@@ -82,7 +83,14 @@ export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } =
     if (!capability) {
       throw new Error(`Unknown platform capability "${key}" requested by plugin ${namespace}`);
     }
-    if (config.IS_PROD && capability.disabledInProd) {
+    const enabledFlagName = capability.enabledFlag;
+    const overrideEnabled =
+      typeof enabledFlagName === "string" &&
+      Object.prototype.hasOwnProperty.call(config, enabledFlagName)
+        ? Boolean(config[enabledFlagName])
+        : false;
+
+    if (config.IS_PROD && capability.disabledInProd && !overrideEnabled) {
       throw new Error(
         `Capability "${key}" requested by plugin ${namespace} is disabled in production`
       );
@@ -92,6 +100,11 @@ export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } =
     if (!(targetProp in injected)) {
       injected[targetProp] = capability.resolve({ plugin, config });
       granted.push(key);
+    }
+    if (config.IS_PROD && capability.disabledInProd && overrideEnabled) {
+      logger?.warn?.(
+        `[plugins] ${namespace}: capability "${key}" enabled via ${enabledFlagName}. Proceed with caution.`
+      );
     }
   }
 

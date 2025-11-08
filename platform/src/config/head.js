@@ -1,4 +1,4 @@
-import env from "../config/env.mjs";
+import env from "../config/env.js";
 
 const { APP_URL } = env();
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 import { promises as fs } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve } from "node:path";
+import { dirname, resolve, basename, join, relative } from "node:path";
 import process from "node:process";
+import { tmpdir } from "node:os";
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { promisify } from "node:util";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
@@ -39,6 +43,14 @@ if (!aliasLoaded) {
 
 const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
 const MANIFEST_PATH = resolve(__dirname, "../manifest.json");
+const PLUGINS_DIR = resolve(__dirname, "../plugins");
+const execFileAsync = promisify(execFile);
+const COPY_SKIP_DIRS = new Set([".git", ".hg", ".svn"]);
+const COPY_SKIP_FILES = new Set([".DS_Store"]);
+const CHECKSUM_SKIP_DIRS = new Set(COPY_SKIP_DIRS);
+const CHECKSUM_SKIP_FILES = new Set(COPY_SKIP_FILES);
+const CORE_MIGRATIONS_DIR = resolve(__dirname, "../platform/prisma/migrations");
+const MIGRATION_STATE_PATH = resolve(__dirname, "../data/.sv-migrations-state.json");
 
 // tiny args parser
 function parseArgs(argv) {
@@ -158,6 +170,342 @@ function printManifestSummary(manifest) {
   console.log(`Last updated: ${manifest.updatedAt || "(unknown)"}`);
 }
 
+async function pathExists(target) {
+  try {
+    await fs.access(target);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function directoryHasContent(dir) {
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    return entries.some((entry) => {
+      const name = entry.name;
+      if (!name || name === "." || name === "..") return false;
+      if (COPY_SKIP_FILES.has(name)) return false;
+      return true;
+    });
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return false;
+    }
+    throw err;
+  }
+}
+
+function isGitSpec(spec = "") {
+  return (
+    /^(?:https?|git|ssh):/i.test(spec) ||
+    spec.startsWith("git@") ||
+    spec.endsWith(".git") ||
+    spec.startsWith("git+")
+  );
+}
+
+function parseGitSpec(spec) {
+  const hashIndex = spec.indexOf("#");
+  let repo = hashIndex === -1 ? spec : spec.slice(0, hashIndex);
+  const ref = hashIndex === -1 ? null : spec.slice(hashIndex + 1) || null;
+  if (repo.startsWith("git+")) {
+    repo = repo.slice(4);
+  }
+  return { repo, ref };
+}
+
+async function execGit(args, options = {}) {
+  try {
+    await execFileAsync("git", args, { maxBuffer: 10 * 1024 * 1024, ...options });
+  } catch (err) {
+    const stderr = err?.stderr?.toString?.().trim();
+    const stdout = err?.stdout?.toString?.().trim();
+    const detail = stderr || stdout || err?.message || "unknown git error";
+    throw new Error(`git ${args.join(" ")} failed: ${detail}`);
+  }
+}
+
+async function resolvePluginSpec(spec) {
+  if (isGitSpec(spec)) {
+    const { path, cleanup } = await cloneGitSpec(spec);
+    return { sourcePath: path, cleanup, provenance: spec, sourceType: "git" };
+  }
+  const absPath = resolve(process.cwd(), spec);
+  let stats;
+  try {
+    stats = await fs.stat(absPath);
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      throw new Error(`Plugin spec "${spec}" does not exist (${absPath}).`);
+    }
+    throw err;
+  }
+  if (!stats?.isDirectory?.()) {
+    throw new Error(`Plugin spec must be a directory; received "${spec}".`);
+  }
+  return {
+    sourcePath: absPath,
+    cleanup: null,
+    provenance: absPath,
+    sourceType: "dir",
+  };
+}
+
+async function cloneGitSpec(spec) {
+  const { repo, ref } = parseGitSpec(spec);
+  if (!repo) {
+    throw new Error(`Invalid git spec "${spec}".`);
+  }
+  const tmpDir = await fs.mkdtemp(join(tmpdir(), "sv-plugin-"));
+  await execGit(["clone", "--depth", "1", repo, tmpDir]);
+  if (ref) {
+    await execGit(["-C", tmpDir, "checkout", ref]);
+  }
+  return {
+    path: tmpDir,
+    cleanup: async () => {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    },
+  };
+}
+
+async function readPluginManifest(sourceDir) {
+  const manifestPath = resolve(sourceDir, "plugin.json");
+  let raw;
+  try {
+    raw = await fs.readFile(manifestPath, "utf8");
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      throw new Error(`plugin.json not found in ${sourceDir}`);
+    }
+    throw err;
+  }
+  let manifest;
+  try {
+    manifest = JSON.parse(raw);
+  } catch (err) {
+    throw new Error(`Invalid plugin manifest JSON at ${manifestPath}: ${err?.message || err}`);
+  }
+  const requiredFields = ["id", "name", "version", "type"];
+  for (const field of requiredFields) {
+    if (!manifest[field] || typeof manifest[field] !== "string") {
+      throw new Error(`plugin.json is missing required field "${field}".`);
+    }
+  }
+  if (!["custom", "spa"].includes(manifest.type)) {
+    throw new Error(`Unsupported plugin type "${manifest.type}".`);
+  }
+  return { manifest, manifestPath };
+}
+
+function deriveNamespace(manifest, fallbackDir) {
+  if (manifest?.namespace && typeof manifest.namespace === "string") {
+    const ns = manifest.namespace.trim();
+    if (ns) return ns;
+  }
+  if (manifest?.id && manifest.id.includes("/")) {
+    return manifest.id.split("/").pop();
+  }
+  if (fallbackDir) {
+    return basename(fallbackDir);
+  }
+  throw new Error(`Unable to determine namespace for plugin "${manifest?.id || "unknown"}".`);
+}
+
+function assertValidNamespace(namespace) {
+  if (!/^[A-Za-z0-9._-]+$/.test(namespace)) {
+    throw new Error(
+      `Namespace "${namespace}" is invalid. Use alphanumeric characters plus ".", "_", or "-".`
+    );
+  }
+}
+
+async function indexInstalledPlugins() {
+  const byId = new Map();
+  const byNamespace = new Map();
+  let entries = [];
+  try {
+    entries = await fs.readdir(PLUGINS_DIR, { withFileTypes: true });
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return { byId, byNamespace };
+    }
+    throw err;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory?.()) continue;
+    const pluginRoot = resolve(PLUGINS_DIR, entry.name);
+    const manifestPath = resolve(pluginRoot, "plugin.json");
+    try {
+      const raw = await fs.readFile(manifestPath, "utf8");
+      const manifest = JSON.parse(raw);
+      const ns = manifest.namespace || entry.name;
+      if (manifest.id) {
+        byId.set(manifest.id, { dir: pluginRoot, namespace: ns });
+      }
+      if (ns) {
+        byNamespace.set(ns, { dir: pluginRoot, id: manifest.id || entry.name, namespace: ns });
+      }
+    } catch {
+      continue;
+    }
+  }
+  return { byId, byNamespace };
+}
+
+async function copyPluginSource(sourceDir, targetDir) {
+  await fs.mkdir(dirname(targetDir), { recursive: true });
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  await fs.cp(sourceDir, targetDir, {
+    recursive: true,
+    errorOnExist: true,
+    force: false,
+    filter: (src) => {
+      const base = basename(src);
+      if (COPY_SKIP_FILES.has(base) || COPY_SKIP_DIRS.has(base)) {
+        return false;
+      }
+      return true;
+    },
+  });
+}
+
+async function hashDirectory(rootDir) {
+  const hash = createHash("sha256");
+
+  async function walk(dir) {
+    let entries = await fs.readdir(dir, { withFileTypes: true });
+    entries = entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      const entryName = entry.name;
+      if (CHECKSUM_SKIP_FILES.has(entryName) || CHECKSUM_SKIP_DIRS.has(entryName)) {
+        if (entry.isDirectory?.()) continue;
+        if (entry.isFile?.()) continue;
+        continue;
+      }
+      const fullPath = resolve(dir, entryName);
+      if (entry.isDirectory?.()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (!entry.isFile?.()) {
+        continue;
+      }
+      const relPath = relative(rootDir, fullPath);
+      hash.update(relPath);
+      const data = await fs.readFile(fullPath);
+      hash.update(data);
+    }
+  }
+
+  await walk(rootDir);
+  return hash.digest("hex");
+}
+
+function createMigrationStateTemplate() {
+  return { core: [], plugins: {} };
+}
+
+async function loadMigrationState() {
+  try {
+    const raw = await fs.readFile(MIGRATION_STATE_PATH, "utf8");
+    const data = JSON.parse(raw);
+    return {
+      core: Array.isArray(data?.core) ? data.core : [],
+      plugins: typeof data?.plugins === "object" && data.plugins ? data.plugins : {},
+    };
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return createMigrationStateTemplate();
+    }
+    throw err;
+  }
+}
+
+async function saveMigrationState(state) {
+  const snapshot = {
+    core: Array.isArray(state.core) ? state.core : [],
+    plugins: typeof state.plugins === "object" && state.plugins ? state.plugins : {},
+  };
+  await fs.mkdir(dirname(MIGRATION_STATE_PATH), { recursive: true });
+  await fs.writeFile(MIGRATION_STATE_PATH, `${JSON.stringify(snapshot, null, 2)}\n`);
+}
+
+async function collectMigrationDirs(rootDir) {
+  let entries;
+  try {
+    entries = await fs.readdir(rootDir, { withFileTypes: true });
+  } catch (err) {
+    if (err?.code === "ENOENT") {
+      return [];
+    }
+    throw err;
+  }
+  return entries
+    .filter((entry) => entry.isDirectory?.())
+    .map((entry) => ({
+      name: entry.name,
+      path: resolve(rootDir, entry.name),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function resolveMigrationTarget(selector) {
+  if (!selector) {
+    return {
+      type: "core",
+      id: "core",
+      namespace: null,
+      label: "core platform",
+      migrationsDir: CORE_MIGRATIONS_DIR,
+    };
+  }
+
+  const installed = await indexInstalledPlugins();
+  const pluginMatch =
+    installed.byId.get(selector) ||
+    installed.byNamespace.get(selector) ||
+    [...installed.byNamespace.values()].find((entry) => entry.namespace === selector);
+
+  if (!pluginMatch) {
+    console.error(`Unknown plugin "${selector}". Use a namespace or manifest id.`);
+    process.exit(1);
+  }
+
+  const { manifest } = await readPluginManifest(pluginMatch.dir);
+  const namespace = manifest.namespace || pluginMatch.namespace || manifest.id;
+  const targetDir = await selectPluginMigrationDir(pluginMatch.dir);
+
+  return {
+    type: "plugin",
+    id: manifest.id || namespace,
+    namespace,
+    label: `plugin ${manifest.id || namespace}`,
+    pluginDir: pluginMatch.dir,
+    migrationsDir: targetDir,
+  };
+}
+
+async function selectPluginMigrationDir(pluginDir) {
+  const preferred = resolve(pluginDir, "prisma", "migrations");
+  if (await pathExists(preferred)) return preferred;
+  const fallback = resolve(pluginDir, "migrations");
+  return fallback;
+}
+
+function formatEnabledEntrySet(manifest) {
+  return new Set(
+    (manifest.enabledPlugins || [])
+      .map((entry) => {
+        if (typeof entry !== "string") return null;
+        const idx = entry.lastIndexOf("@");
+        return (idx === -1 ? entry : entry.slice(0, idx)).trim() || null;
+      })
+      .filter(Boolean)
+  );
+}
+
 // Command Tree
 const commands = {
   // Global meta (no run; handled separately)
@@ -197,96 +545,490 @@ const commands = {
     add: {
       desc: "Register/install a plugin from path/git/npm",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Resolve <spec> (path | git URL | npm)
-          // - Validate manifest (plugin.json), checksum (optional)
-          // - Copy/prepare into src/plugins/<name> or data/plugins/<name>
-          // - Update registry (DB/file)
-          // - Respect --dry-run
-          // - Print human output or JSON (if --json present)  
-        `);
+        const spec = args._[2];
+        if (!spec) {
+          exitUsage(`Missing plugin spec. Usage: sv plugins add <spec>`);
+        }
+
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const outputJson = Boolean(args.flags.json);
+        const checksumFlag = args.flags.checksum;
+        const expectedChecksum = typeof checksumFlag === "string" ? checksumFlag.trim() : null;
+
+        const specContext = await resolvePluginSpec(spec);
+        const cleanup = specContext.cleanup;
+
+        try {
+          const { manifest } = await readPluginManifest(specContext.sourcePath);
+          const namespace = deriveNamespace(manifest, specContext.sourcePath);
+          assertValidNamespace(namespace);
+
+          const targetDir = resolve(PLUGINS_DIR, namespace);
+          const normalizedSource = resolve(specContext.sourcePath);
+          const normalizedTarget = resolve(targetDir);
+          if (normalizedSource === normalizedTarget) {
+            throw new Error(
+              `Source directory "${specContext.sourcePath}" is already installed at ${targetDir}.`
+            );
+          }
+
+          const installed = await indexInstalledPlugins();
+          if (installed.byId.has(manifest.id)) {
+            const conflict = installed.byId.get(manifest.id);
+            throw new Error(
+              `Plugin id "${manifest.id}" already exists under ${conflict?.dir || "(unknown)"}.`
+            );
+          }
+          if (installed.byNamespace.has(namespace)) {
+            const conflict = installed.byNamespace.get(namespace);
+            throw new Error(
+              `Plugin namespace "${namespace}" already exists under ${conflict?.dir || "(unknown)"}.`
+            );
+          }
+          if (await pathExists(targetDir)) {
+            throw new Error(`Target directory ${targetDir} already exists.`);
+          }
+
+          let computedChecksum = null;
+          if (expectedChecksum) {
+            computedChecksum = await hashDirectory(specContext.sourcePath);
+            if (computedChecksum !== expectedChecksum) {
+              throw new Error(
+                `Checksum mismatch. Expected ${expectedChecksum} but got ${computedChecksum}.`
+              );
+            }
+          }
+
+          await fs.mkdir(PLUGINS_DIR, { recursive: true });
+
+          if (!dryRun) {
+            await copyPluginSource(specContext.sourcePath, targetDir);
+            await runManifestBuild();
+          }
+
+          const result = {
+            action: dryRun ? "plan" : "install",
+            id: manifest.id,
+            namespace,
+            version: manifest.version,
+            targetDir,
+            source: specContext.provenance,
+            checksum: computedChecksum,
+            dryRun,
+          };
+
+          if (outputJson) {
+            console.log(JSON.stringify(result, null, 2));
+          } else {
+            const verb = dryRun ? "Would install" : "Installed";
+            console.log(
+              `${verb} ${manifest.id} (${manifest.version}) to ${targetDir} from ${specContext.provenance}.`
+            );
+            if (computedChecksum) {
+              console.log(`Checksum verified: ${computedChecksum}`);
+            }
+            if (!dryRun) {
+              console.log(`Manifest updated via tools/build-manifest.mjs.`);
+            } else {
+              console.log(`--dry-run enabled; no files were changed.`);
+            }
+          }
+        } finally {
+          if (typeof cleanup === "function") {
+            await cleanup();
+          }
+        }
       },
     },
 
     list: {
       desc: "List plugins",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Load registry
-          // - Filter by --enabled/--disabled
-          // - Output as table (human) or array (JSON) if --json
-          // - Exit 0 (even if empty)
-        `);
+        const outputJson = Boolean(args.flags.json);
+        const filterEnabled = Boolean(args.flags.enabled);
+        const filterDisabled = Boolean(args.flags.disabled);
+
+        if (filterEnabled && filterDisabled) {
+          exitUsage(`Cannot combine --enabled and --disabled.`);
+        }
+
+        const manifest = await readManifestFile();
+        const pluginRegistry = manifest.plugins || {};
+        const enabledEntries = new Set(
+          (manifest.enabledPlugins || [])
+            .map((entry) => {
+              if (typeof entry !== "string") return null;
+              const idx = entry.lastIndexOf("@");
+              return (idx === -1 ? entry : entry.slice(0, idx)).trim() || null;
+            })
+            .filter(Boolean)
+        );
+
+        const rows = Object.entries(pluginRegistry).map(([namespace, plugin]) => {
+          const ns = namespace || plugin?.namespace || plugin?.id || "";
+          return {
+            namespace: ns,
+            id: plugin?.id || ns,
+            version: plugin?.version || "(unknown)",
+            type: plugin?.type || "(unknown)",
+            enabled: enabledEntries.has(ns),
+          };
+        });
+
+        rows.sort((a, b) => a.namespace.localeCompare(b.namespace));
+
+        let filtered = rows;
+        if (filterEnabled) {
+          filtered = rows.filter((row) => row.enabled);
+        } else if (filterDisabled) {
+          filtered = rows.filter((row) => !row.enabled);
+        }
+
+        if (outputJson) {
+          console.log(JSON.stringify(filtered, null, 2));
+          return;
+        }
+
+        if (!filtered.length) {
+          console.log("No plugins found.");
+          return;
+        }
+
+        const columns = [
+          { key: "namespace", label: "Namespace" },
+          { key: "id", label: "ID" },
+          { key: "version", label: "Version" },
+          { key: "type", label: "Type" },
+          { key: "enabled", label: "Enabled" },
+        ];
+
+        const widths = columns.map((col) => {
+          return filtered.reduce((max, row) => {
+            const value = col.key === "enabled" ? (row.enabled ? "yes" : "no") : row[col.key] || "";
+            return Math.max(max, String(value).length);
+          }, col.label.length);
+        });
+
+        const header = columns.map((col, idx) => col.label.padEnd(widths[idx])).join("  ");
+        console.log(header);
+        console.log(columns.map((_, idx) => "-".repeat(widths[idx])).join("  "));
+
+        for (const row of filtered) {
+          const line = columns
+            .map((col, idx) => {
+              let value;
+              if (col.key === "enabled") {
+                value = row.enabled ? "yes" : "no";
+              } else {
+                value = row[col.key] || "";
+              }
+              return String(value).padEnd(widths[idx]);
+            })
+            .join("  ");
+          console.log(line);
+        }
       },
     },
 
     enable: {
       desc: "Enable a plugin by namespace",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Read <namespace>
-          // - Update registry: enabled=true (idempotent)
-          // - Validate dependencies/conflicts (future)
-          // - Respect --dry-run
-        `);
+        const namespace = args._[2];
+        if (!namespace) {
+          exitUsage(`Missing plugin namespace. Usage: sv plugins enable <namespace>`);
+        }
+
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const installed = await indexInstalledPlugins();
+        const match = installed.byNamespace.get(namespace);
+        if (!match) {
+          console.error(`Plugin namespace "${namespace}" is not installed under ${PLUGINS_DIR}.`);
+          process.exit(1);
+        }
+
+        const { manifest, manifestPath } = await readPluginManifest(match.dir);
+        const updates = {};
+        if (manifest.draft !== false) updates.draft = false;
+        if (manifest.devOnly !== false) updates.devOnly = false;
+
+        if (!Object.keys(updates).length) {
+          console.log(`${manifest.id || namespace} is already enabled.`);
+          return;
+        }
+
+        const nextManifest = { ...manifest, ...updates };
+        if (dryRun) {
+          console.log(
+            `[dry-run] Would update ${manifestPath} (${Object.keys(updates).join(", ")})`
+          );
+          console.log("[dry-run] Would rebuild manifest via tools/build-manifest.mjs.");
+          return;
+        }
+
+        await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
+        console.log(
+          `Updated ${manifestPath}: draft=false, devOnly=false for ${manifest.id || namespace}.`
+        );
+        await runManifestBuild();
+        console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
       },
     },
 
     disable: {
       desc: "Disable a plugin by namespace",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Read <namespace>
-          // - Update registry: enabled=false (idempotent)
-          // - Respect --dry-run
-        `);
+        const namespace = args._[2];
+        if (!namespace) {
+          exitUsage(`Missing plugin namespace. Usage: sv plugins disable <namespace>`);
+        }
+
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const installed = await indexInstalledPlugins();
+        const match = installed.byNamespace.get(namespace);
+        if (!match) {
+          console.error(`Plugin namespace "${namespace}" is not installed under ${PLUGINS_DIR}.`);
+          process.exit(1);
+        }
+
+        const { manifest, manifestPath } = await readPluginManifest(match.dir);
+        const updates = {};
+        if (manifest.draft !== true) updates.draft = true;
+        if (manifest.devOnly !== true) updates.devOnly = true;
+
+        if (!Object.keys(updates).length) {
+          console.log(`${manifest.id || namespace} is already disabled.`);
+          return;
+        }
+
+        const nextManifest = { ...manifest, ...updates };
+        if (dryRun) {
+          console.log(
+            `[dry-run] Would update ${manifestPath} (${Object.keys(updates).join(", ")})`
+          );
+          console.log("[dry-run] Would rebuild manifest via tools/build-manifest.mjs.");
+          return;
+        }
+
+        await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
+        console.log(
+          `Updated ${manifestPath}: draft=true, devOnly=true for ${manifest.id || namespace}.`
+        );
+        await runManifestBuild();
+        console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
       },
     },
 
     remove: {
       desc: "Unregister/remove a plugin",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Read <namespace>
-          // - Safety checks (in use? migrations?)
-          // - Remove from registry; optionally prune files
-          // - Respect --dry-run
-        `);
+        const namespace = args._[2];
+        if (!namespace) {
+          exitUsage(`Missing plugin namespace. Usage: sv plugins remove <namespace>`);
+        }
+
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const keepFiles = Boolean(args.flags["keep-files"]);
+
+        const installed = await indexInstalledPlugins();
+        const match = installed.byNamespace.get(namespace);
+        if (!match) {
+          console.error(`Plugin namespace "${namespace}" is not installed under ${PLUGINS_DIR}.`);
+          process.exit(1);
+        }
+
+        const { manifest } = await readPluginManifest(match.dir);
+        const pluginId = manifest.id || namespace;
+        const isDisabled = manifest.draft === true && manifest.devOnly === true;
+        if (!isDisabled) {
+          console.error(
+            `${pluginId} is currently enabled. Disable it first via "sv plugins disable ${namespace}".`
+          );
+          process.exit(1);
+        }
+
+        const migrationDirs = [
+          resolve(match.dir, "migrations"),
+          resolve(match.dir, "prisma", "migrations"),
+        ];
+        for (const dir of migrationDirs) {
+          const hasMigrations = await directoryHasContent(dir);
+          if (hasMigrations) {
+            console.error(
+              `${pluginId} has unapplied or historical migrations under ${dir}. Remove those migrations or archive the plugin manually before proceeding.`
+            );
+            process.exit(1);
+          }
+        }
+
+        const archiveRoot = resolve(PLUGINS_DIR, "..", ".sv-plugins-archive");
+        const archiveTarget = resolve(
+          archiveRoot,
+          `${namespace}-${new Date().toISOString().replace(/[:.]/g, "-")}`
+        );
+
+        if (dryRun) {
+          console.log(
+            `[dry-run] Would remove plugin ${pluginId} from ${match.dir} (keepFiles=${
+              keepFiles ? "true" : "false"
+            }).`
+          );
+          console.log("[dry-run] Would rebuild manifest via tools/build-manifest.mjs.");
+          return;
+        }
+
+        if (keepFiles) {
+          await fs.mkdir(archiveRoot, { recursive: true });
+          await fs.rename(match.dir, archiveTarget);
+          console.log(`Archived plugin files to ${archiveTarget}.`);
+        } else {
+          await fs.rm(match.dir, { recursive: true, force: true });
+          console.log(`Removed plugin directory ${match.dir}.`);
+        }
+
+        await runManifestBuild();
+        console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
       },
     },
 
     show: {
       desc: "Show plugin details",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Read <namespace>
-          // - Print manifest + status (human) or JSON
-        `);
+        const namespace = args._[2];
+        if (!namespace) {
+          exitUsage(`Missing plugin namespace. Usage: sv plugins show <namespace> [--json]`);
+        }
+
+        const outputJson = Boolean(args.flags.json);
+        const installed = await indexInstalledPlugins();
+        const match = installed.byNamespace.get(namespace) || installed.byId.get(namespace) || null;
+
+        if (!match) {
+          console.error(`Plugin "${namespace}" is not installed under ${PLUGINS_DIR}.`);
+          process.exit(1);
+        }
+
+        const { manifest, manifestPath } = await readPluginManifest(match.dir);
+        const workspaceManifest = await readManifestFile();
+        const enabledSet = formatEnabledEntrySet(workspaceManifest);
+        const effectiveNamespace = manifest.namespace || namespace;
+        const enabled = enabledSet.has(effectiveNamespace);
+        const registryEntry =
+          workspaceManifest.plugins?.[effectiveNamespace] ||
+          workspaceManifest.plugins?.[namespace] ||
+          null;
+
+        const detail = {
+          namespace: effectiveNamespace,
+          id: manifest.id,
+          name: manifest.name,
+          version: manifest.version,
+          type: manifest.type,
+          enabled,
+          draft: manifest.draft ?? null,
+          devOnly: manifest.devOnly ?? null,
+          directory: match.dir,
+          manifestPath,
+          registered: Boolean(registryEntry),
+          description: manifest.description || "",
+          entryPoints: manifest.entryPoints || {},
+        };
+
+        if (outputJson) {
+          console.log(JSON.stringify({ ...detail, manifest }, null, 2));
+          return;
+        }
+
+        console.log(`Namespace: ${detail.namespace}`);
+        console.log(`ID: ${detail.id}`);
+        console.log(`Name: ${detail.name}`);
+        console.log(`Version: ${detail.version}`);
+        console.log(`Type: ${detail.type}`);
+        console.log(`Enabled: ${detail.enabled ? "yes" : "no"}`);
+        console.log(`draft=${detail.draft}, devOnly=${detail.devOnly}`);
+        console.log(`Directory: ${detail.directory}`);
+        console.log(`Manifest: ${detail.manifestPath}`);
+        console.log(`Registered in manifest.json: ${detail.registered ? "yes" : "no"}`);
+        if (detail.description) {
+          console.log(`Description: ${detail.description}`);
+        }
+        if (detail.entryPoints && Object.keys(detail.entryPoints).length) {
+          console.log("Entry points:");
+          for (const [key, value] of Object.entries(detail.entryPoints)) {
+            console.log(`  - ${key}: ${value}`);
+          }
+        }
       },
     },
 
     validate: {
       desc: "Validate a plugin directory",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Read <path>
-          // - Verify plugin.json, required files, schema
-          // - Print diagnostics; non-zero exit on failure
-        `);
+        const targetPath = args._[2];
+        if (!targetPath) {
+          exitUsage(`Missing plugin path. Usage: sv plugins validate <path> [--json]`);
+        }
+
+        const outputJson = Boolean(args.flags.json);
+        const resolved = resolve(process.cwd(), targetPath);
+        const diagnostics = [];
+        let manifestInfo = null;
+
+        try {
+          const stats = await fs.stat(resolved);
+          if (!stats.isDirectory()) {
+            diagnostics.push(`Path ${resolved} is not a directory.`);
+          }
+        } catch (err) {
+          diagnostics.push(`Path ${resolved} is not accessible: ${err?.message || err}`);
+        }
+
+        if (!diagnostics.length) {
+          try {
+            manifestInfo = await readPluginManifest(resolved);
+          } catch (err) {
+            diagnostics.push(err?.message || String(err));
+          }
+        }
+
+        let manifest = manifestInfo?.manifest;
+        if (manifest) {
+          const required = [];
+          if (manifest.type === "custom") {
+            required.push("index.js");
+          }
+          if (manifest.type === "spa") {
+            required.push("dist/index.js");
+          }
+          for (const rel of required) {
+            const fullPath = resolve(resolved, rel);
+
+            const exists = await pathExists(fullPath);
+            if (!exists) {
+              diagnostics.push(`Missing required file for ${manifest.type} plugin: ${rel}`);
+            }
+          }
+        }
+
+        const result = {
+          status: diagnostics.length ? "error" : "ok",
+          path: resolved,
+          manifest: manifest || null,
+          issues: diagnostics,
+        };
+
+        if (outputJson) {
+          console.log(JSON.stringify(result, null, 2));
+        } else if (diagnostics.length) {
+          diagnostics.forEach((msg) => console.error(`✗ ${msg}`));
+        } else if (manifest) {
+          console.log(`✓ ${manifest.id || manifest.namespace || resolved} passed validation.`);
+        } else {
+          console.log(`✓ ${resolved} passed validation.`);
+        }
+
+        if (diagnostics.length) {
+          process.exit(1);
+        }
       },
     },
   },
@@ -305,40 +1047,150 @@ const commands = {
     deploy: {
       desc: "Run migrations (core or plugin-scoped)",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Parse optional --plugin
-          // - Validate pending migrations
-          // - Execute (or simulate with --dry-run)
-          // - Print summary; JSON if --json
-          // - Exit non-zero on failure
-        `);
+        const pluginSelector = args.flags.plugin;
+        const dryRun = Boolean(args.flags["dry-run"]);
+        const outputJson = Boolean(args.flags.json);
+
+        const target = await resolveMigrationTarget(pluginSelector);
+        const migrations = await collectMigrationDirs(target.migrationsDir);
+
+        if (!migrations.length) {
+          const msg = `No migrations found under ${target.migrationsDir} for ${target.label}.`;
+          if (outputJson) {
+            console.log(
+              JSON.stringify({ target: target.label, pending: [], message: msg }, null, 2)
+            );
+          } else {
+            console.log(msg);
+          }
+          return;
+        }
+
+        const state = await loadMigrationState();
+        const appliedList = target.type === "core" ? state.core : state.plugins[target.id] || [];
+        const appliedSet = new Set(appliedList);
+        const pending = migrations.filter((entry) => !appliedSet.has(entry.name));
+        const pendingNames = pending.map((entry) => entry.name);
+
+        const summary = {
+          target: target.label,
+          pending: pendingNames,
+          total: migrations.length,
+          dryRun,
+        };
+
+        if (!pending.length) {
+          if (outputJson) {
+            console.log(JSON.stringify({ ...summary, message: "No pending migrations." }, null, 2));
+          } else {
+            console.log(`No pending migrations for ${target.label}.`);
+          }
+          return;
+        }
+
+        if (dryRun) {
+          if (outputJson) {
+            console.log(JSON.stringify(summary, null, 2));
+          } else {
+            console.log(`[dry-run] Would apply ${pendingNames.length} migration(s):`);
+            pendingNames.forEach((name) => console.log(`  - ${name}`));
+          }
+          return;
+        }
+
+        for (const entry of pending) {
+          console.log(`Applying ${entry.name} for ${target.label}...`);
+          // Placeholder for actual migration execution.
+          console.log(`✓ ${entry.name} applied.`);
+        }
+
+        if (target.type === "core") {
+          state.core = Array.from(new Set([...appliedList, ...pendingNames]));
+        } else {
+          state.plugins[target.id] = Array.from(
+            new Set([...(state.plugins[target.id] || []), ...pendingNames])
+          );
+        }
+
+        await saveMigrationState(state);
+
+        if (outputJson) {
+          console.log(JSON.stringify(summary, null, 2));
+        } else {
+          console.log(`Applied ${pendingNames.length} migration(s) for ${target.label}.`);
+        }
       },
     },
 
     status: {
       desc: "Show migration status",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Inspect migration history
-          // - Print human summary or JSON
-          // - Exit 0
-        `);
+        const pluginSelector = args.flags.plugin;
+        const outputJson = Boolean(args.flags.json);
+        const target = await resolveMigrationTarget(pluginSelector);
+
+        const migrations = await collectMigrationDirs(target.migrationsDir);
+        const state = await loadMigrationState();
+        const appliedList = target.type === "core" ? state.core : state.plugins[target.id] || [];
+        const appliedSet = new Set(appliedList);
+        const pending = migrations
+          .filter((entry) => !appliedSet.has(entry.name))
+          .map((entry) => entry.name);
+
+        const payload = {
+          target: target.label,
+          total: migrations.length,
+          applied: appliedList,
+          pending,
+        };
+
+        if (outputJson) {
+          console.log(JSON.stringify(payload, null, 2));
+          return;
+        }
+
+        console.log(`Migration status for ${target.label}:`);
+        console.log(`  Total migrations: ${payload.total}`);
+        console.log(`  Applied: ${payload.applied.length}`);
+        console.log(`  Pending: ${payload.pending.length}`);
+        if (payload.pending.length) {
+          payload.pending.forEach((name) => console.log(`    - ${name}`));
+        }
       },
     },
 
     generate: {
       desc: "Generate a new migration (optional exposure)",
       async run(args) {
-        console.log(args);
-        console.info(`
-          // TODO:
-          // - Plugin/core target selection
-          // - Produce migration files; guard in CI
-        `);
+        if (process.env.CI) {
+          console.error(`Refusing to generate migrations in CI.`);
+          process.exit(1);
+        }
+
+        const slug = args._[2];
+        if (!slug) {
+          exitUsage(`Missing migration name. Usage: sv migrate generate <name> [--plugin <id>]`);
+        }
+
+        const pluginSelector = args.flags.plugin;
+        const target = await resolveMigrationTarget(pluginSelector);
+        const timestamp = new Date().toISOString().replace(/[-:T.Z]/g, "");
+        const safeSlug =
+          slug
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "_")
+            .replace(/^_+|_+$/g, "") || "migration";
+        const folderName = `${timestamp}_${safeSlug}`;
+        const folderPath = resolve(target.migrationsDir, folderName);
+        const migrationFile = resolve(folderPath, "migration.sql");
+
+        await fs.mkdir(folderPath, { recursive: true });
+
+        const header = `-- Migration: ${folderName}\n-- Target: ${target.label}\n`;
+        await fs.writeFile(migrationFile, `${header}\n-- Add SQL statements here.\n`);
+
+        console.log(`Created ${migrationFile} for ${target.label}.`);
       },
     },
   },

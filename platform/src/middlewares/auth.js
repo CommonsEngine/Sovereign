@@ -1,5 +1,5 @@
-import { getSessionWithUser, getOrCreateSingletonGuestUser, createSession } from "$/utils/auth.mjs";
-import env from "$/config/env.mjs";
+import { getSessionWithUser, getOrCreateSingletonGuestUser, createSession } from "$/utils/auth.js";
+import env from "$/config/env.js";
 
 const {
   AUTH_SESSION_COOKIE_NAME,

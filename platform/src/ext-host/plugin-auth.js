@@ -1,4 +1,4 @@
-import requireRole from "$/middlewares/requireRole.mjs";
+import requireRole from "$/middlewares/requireRole.js";
 
 const CAPABILITY_PRECEDENCE = {
   allow: 5,

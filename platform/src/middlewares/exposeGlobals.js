@@ -2,7 +2,7 @@ import path from "node:path";
 
 import * as fs from "$/utils/fs.js";
 
-// TODO: Utilize config/head.mjs for these
+// TODO: Utilize config/head.js for these
 
 const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));
 

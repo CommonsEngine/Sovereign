@@ -5,7 +5,7 @@ import {
   createPluginAuthHelpers,
   PluginCapabilityError,
   createPlatformCapabilityAsserter,
-} from "$/ext-host/plugin-auth.mjs";
+} from "$/ext-host/plugin-auth.js";
 
 function buildReq(user) {
   return { path: "/api/plugins/blog", user };

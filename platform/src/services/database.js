@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-import logger from "./logger.mjs";
+import logger from "./logger.js";
 
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],

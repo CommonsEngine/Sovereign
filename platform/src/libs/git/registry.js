@@ -1,6 +1,6 @@
 import path from "path";
 
-import GitManager from "./git.mjs";
+import GitManager from "./git.js";
 
 const managers = new Map();
 

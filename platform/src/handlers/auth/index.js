@@ -1,10 +1,11 @@
 import crypto from "crypto";
 
-import { prisma } from "$/services/database.mjs";
-import { sendMail } from "$/services/mailer.mjs";
-import logger from "$/services/logger.mjs";
-import { hashPassword, randomToken } from "$/utils/auth.mjs";
-import env from "$/config/env.mjs";
+import { prisma } from "$/services/database.js";
+import { sendMail } from "$/services/mailer.js";
+import logger from "$/services/logger.js";
+import { hashPassword, randomToken } from "$/utils/auth.js";
+import { isGuestUser, purgeGuestUserById } from "$/utils/guestCleanup.js";
+import env from "$/config/env.js";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
 
@@ -16,8 +17,8 @@ const toAbsoluteUrl = (relativePath = "") => {
   return `${base}${normalized}`;
 };
 
-export { default as register, viewRegister } from "./register.mjs";
-export { default as login, guestLogin, viewLogin } from "./login.mjs";
+export { default as register, viewRegister } from "./register.js";
+export { default as login, guestLogin, viewLogin } from "./login.js";
 
 export async function inviteUser(req, res) {
   try {
@@ -492,13 +493,43 @@ export async function getCurrentUser(req, res) {
 export async function logout(req, res) {
   try {
     const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
+    let sessionUser = null;
+
     if (token) {
+      try {
+        const session = await prisma.session.findUnique({
+          where: { token },
+          select: {
+            userId: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                primaryEmail: { select: { email: true } },
+                emails: { select: { email: true } },
+              },
+            },
+          },
+        });
+        sessionUser = session?.user ?? null;
+      } catch (error) {
+        logger.warn("Failed to load session during logout", error);
+      }
+
       try {
         await prisma.session.delete({ where: { token } });
       } catch (error) {
         logger.warn("Failed to delete session during logout", error);
       }
       res.clearCookie(AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS);
+    }
+
+    if (sessionUser && isGuestUser(sessionUser)) {
+      try {
+        await purgeGuestUserById(sessionUser.id, { logger });
+      } catch (error) {
+        logger.warn("Guest cleanup failed during logout", { userId: sessionUser.id, error });
+      }
     }
   } catch (err) {
     logger.error("✗ Logout handler failed", err);

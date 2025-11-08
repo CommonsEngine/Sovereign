@@ -1,0 +1,23 @@
+/* Sovereign global cascade order
+ *
+ * Plugins can safely load their own CSS using:
+ *   @layer plugin { ... }
+ *
+ * Anything assigned to the `platform` layer will always win over `plugin`,
+ * regardless of the physical load order of stylesheets.
+ */
+@layer reset, base, components, utilities, plugin, platform;
+
+/* Predeclare empty layers so they always exist */
+@layer reset {
+}
+@layer base {
+}
+@layer components {
+}
+@layer utilities {
+}
+@layer plugin {
+}
+@layer platform {
+}

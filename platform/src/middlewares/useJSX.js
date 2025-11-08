@@ -4,7 +4,7 @@ import path from "path";
 import React from "react";
 import { renderToString } from "react-dom/server";
 
-import env from "$/config/env.mjs";
+import env from "$/config/env.js";
 
 const { NODE_ENV } = env();
 
@@ -147,6 +147,7 @@ async function renderHead(res) {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>${title}</title>
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="stylesheet" href="/css/sv_layers.css?v=${version}" />
 <link rel="stylesheet" href="/css/sv_base.css?v=${version}" />
 <link rel="stylesheet" href="/css/sv_styled.css?v=${version}" />
 <link rel="stylesheet" href="/css/sv_utility.css?v=${version}" />`;

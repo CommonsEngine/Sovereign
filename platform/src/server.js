@@ -10,25 +10,29 @@ import path from "path";
 
 import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 
-import { prisma } from "$/services/database.mjs";
-import logger from "$/services/logger.mjs";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
 
-import secure from "$/middlewares/secure.mjs";
-import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.mjs";
-import exposeGlobals from "$/middlewares/exposeGlobals.mjs";
-import useJSX from "$/middlewares/useJSX.mjs";
+import secure from "$/middlewares/secure.js";
+import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.js";
+import exposeGlobals from "$/middlewares/exposeGlobals.js";
+import useJSX from "$/middlewares/useJSX.js";
+import rateLimiters from "$/middlewares/rateLimit.js";
 
-import * as indexHandler from "$/handlers/index.mjs";
-import * as authHandler from "$/handlers/auth/index.mjs";
+import * as indexHandler from "$/handlers/index.js";
+import * as authHandler from "$/handlers/auth/index.js";
 
 import apiProjects from "$/routes/api/projects.js";
 
-import env from "$/config/env.mjs";
+import env from "$/config/env.js";
 
-import "$/utils/hbsHelpers.mjs";
+import { cleanupExpiredGuestUsers, GUEST_RETENTION_MS } from "$/utils/guestCleanup.js";
+
+import "$/utils/hbsHelpers.js";
 
 const config = env();
 const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
+const GUEST_CLEANUP_INTERVAL_MS = GUEST_RETENTION_MS;
 
 export default async function createServer(manifest) {
   const app = express();
@@ -108,7 +112,7 @@ export default async function createServer(manifest) {
   app.set("view cache", IS_PROD);
 
   // Serve everything under /public at the root
-  // TODO: Consider moving this into a small utility like utils/cacheHeaders.mjs
+  // TODO: Consider moving this into a small utility like utils/cacheHeaders.js
   // since we’ll likely reuse it for plugin assets.
   const staticOptions = {
     index: false,
@@ -177,19 +181,19 @@ export default async function createServer(manifest) {
   }
 
   // Auth Routes
-  app.post("/auth/invite", requireAuth, authHandler.inviteUser);
-  app.get("/auth/guest", authHandler.guestLogin);
+  app.post("/auth/invite", requireAuth, rateLimiters.authedApi, authHandler.inviteUser);
+  app.get("/auth/guest", rateLimiters.public, authHandler.guestLogin);
   app.get("/auth/me", requireAuth, authHandler.getCurrentUser);
   app.get("/auth/verify", authHandler.verifyToken); // Request /?token=...
-  app.post("/auth/password/forgot", authHandler.forgotPassword); // Request Body { email }
-  app.post("/auth/password/reset", authHandler.resetPassword); // Request Body { token, password }
+  app.post("/auth/password/forgot", rateLimiters.public, authHandler.forgotPassword); // Request Body { email }
+  app.post("/auth/password/reset", rateLimiters.public, authHandler.resetPassword); // Request Body { token, password }
 
   // Web Routes
   app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
   app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
-  app.post("/login", authHandler.login);
+  app.post("/login", rateLimiters.public, authHandler.login);
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
-  app.post("/register", authHandler.register);
+  app.post("/register", rateLimiters.public, authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
 
   // Project Routes
@@ -224,6 +228,34 @@ export default async function createServer(manifest) {
 
   // Start/Stop controls for bootstrap
   let httpServer = null;
+  let guestCleanupTimer = null;
+  let guestCleanupRunning = false;
+
+  const runGuestCleanup = async (reason = "scheduled") => {
+    if (guestCleanupRunning) return;
+    guestCleanupRunning = true;
+    try {
+      const { cleaned } = await cleanupExpiredGuestUsers({
+        logger,
+        olderThanMs: GUEST_RETENTION_MS,
+      });
+      if (cleaned > 0) {
+        logger.info(`✓ Guest cleanup (${reason}) removed ${cleaned} account(s)`);
+      }
+    } catch (err) {
+      logger.error("✗ Guest cleanup run failed", err);
+    } finally {
+      guestCleanupRunning = false;
+    }
+  };
+
+  const scheduleGuestCleanup = () => {
+    if (guestCleanupTimer) clearInterval(guestCleanupTimer);
+    guestCleanupTimer = setInterval(() => {
+      runGuestCleanup("interval");
+    }, GUEST_CLEANUP_INTERVAL_MS);
+    guestCleanupTimer.unref?.();
+  };
 
   async function start() {
     await new Promise((resolve) => {
@@ -232,11 +264,18 @@ export default async function createServer(manifest) {
         resolve();
       });
     });
+    scheduleGuestCleanup();
+    runGuestCleanup("startup");
     return httpServer;
   }
 
   async function stop() {
     if (!httpServer) return;
+    if (guestCleanupTimer) {
+      clearInterval(guestCleanupTimer);
+      guestCleanupTimer = null;
+    }
+    guestCleanupRunning = false;
     await new Promise((resolve) => httpServer.close(resolve));
   }
 
