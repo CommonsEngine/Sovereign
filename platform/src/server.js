@@ -12,6 +12,7 @@ import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
+import createRealtimeHub from "$/ws/server.js";
 
 import secure from "$/middlewares/secure.js";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.js";
@@ -230,6 +231,7 @@ export default async function createServer(manifest) {
   let httpServer = null;
   let guestCleanupTimer = null;
   let guestCleanupRunning = false;
+  let realtimeHub = null;
 
   const runGuestCleanup = async (reason = "scheduled") => {
     if (guestCleanupRunning) return;
@@ -264,6 +266,15 @@ export default async function createServer(manifest) {
         resolve();
       });
     });
+    if (config.REALTIME_ENABLED !== false) {
+      realtimeHub = createRealtimeHub(httpServer, {
+        logger,
+        path: config.REALTIME_WS_PATH,
+      });
+      if (realtimeHub) {
+        logger.info(`  ➜  Realtime hub listening on ${realtimeHub.path}`);
+      }
+    }
     scheduleGuestCleanup();
     runGuestCleanup("startup");
     return httpServer;
@@ -276,6 +287,10 @@ export default async function createServer(manifest) {
       guestCleanupTimer = null;
     }
     guestCleanupRunning = false;
+    if (realtimeHub) {
+      await realtimeHub.close();
+      realtimeHub = null;
+    }
     await new Promise((resolve) => httpServer.close(resolve));
   }
 
@@ -284,6 +299,9 @@ export default async function createServer(manifest) {
     logger,
     config,
     database: { prisma },
+    get realtime() {
+      return realtimeHub;
+    },
   };
 
   return {

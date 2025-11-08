@@ -74,7 +74,8 @@
     "react-router-dom": "^7.9.4",
     "sharp": "^0.34.3",
     "simple-git": "^3.28.0",
-    "unzipper": "^0.12.3"
+    "unzipper": "^0.12.3",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",

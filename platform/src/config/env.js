@@ -104,6 +104,8 @@ const baseTemplate = Object.freeze({
   IS_PROD: isProd,
 
   CAPABILITY_FILE_UPLOAD_ENABLED: toBool(process.env.CAPABILITY_FILE_UPLOAD_ENABLED, !isProd),
+  REALTIME_ENABLED: toBool(process.env.REALTIME_ENABLED, true),
+  REALTIME_WS_PATH: process.env.REALTIME_WS_PATH || "/ws",
 
   __rootdir,
   __platformDir,
