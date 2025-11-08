@@ -21,7 +21,7 @@ sv [global options] <namespace> <command> [args]
 
 | Command                                            | Purpose                                                                                                   |
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates.                                                        |
+| `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates (with optional per-plugin DB config).                   |
 | `sv plugins add <spec>`                            | Install a plugin from a directory or git URL.                                                             |
 | `sv plugins list [--json] [--enabled\|--disabled]` | Inspect installed plugins plus their enablement state.                                                    |
 | `sv plugins enable <namespace>`                    | Turn on a plugin by clearing `draft`/`devOnly` in its manifest and rebuilding the workspace manifest.     |
@@ -29,6 +29,7 @@ sv [global options] <namespace> <command> [args]
 | `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files.                         |
 | `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                   |
 | `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                      |
+| `sv plugins db <info\|ensure> <namespace>`         | Inspect or provision a plugin’s dedicated SQLite database.                                                |
 
 ### `sv plugins create <namespace> [--type custom|spa]`
 
@@ -36,19 +37,20 @@ Bootstraps a plugin directory under `plugins/<namespace>` using the curated temp
 
 **Flags**
 
-| Flag                       | Effect                                                                                             |
-| -------------------------- | -------------------------------------------------------------------------------------------------- |
-| `--type <custom\|spa>`     | Choose which scaffold to use (`custom` by default).                                                |
-| `--name "<display name>"`  | Human-facing plugin name; defaults to the namespace in Title Case.                                 |
-| `--description "<text>"`   | Short description embedded into the manifest.                                                      |
-| `--id <@scope/name>`       | Override the generated `plugin.json#id` (`@sovereign/<namespace>` by default).                     |
-| `--version <semver>`       | Initial version string (`0.1.0` by default).                                                       |
-| `--author "<name>"`        | Author metadata stored in the manifest.                                                            |
-| `--license "<identifier>"` | License string stored in the manifest.                                                             |
-| `--dev-port <port>`        | Override the dev server port embedded in SPA manifests (random port between 4100–4299 by default). |
-| `--skip-manifest`          | Skip running `sv manifest generate` after scaffolding.                                             |
-| `--dry-run`                | Print what would happen without writing files.                                                     |
-| `--json`                   | Emit a JSON summary instead of human-readable text.                                                |
+| Flag                       | Effect                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------- |
+| `--type <custom\|spa>`     | Choose which scaffold to use (`custom` by default).                                                 |
+| `--name "<display name>"`  | Human-facing plugin name; defaults to the namespace in Title Case.                                  |
+| `--description "<text>"`   | Short description embedded into the manifest.                                                       |
+| `--id <@scope/name>`       | Override the generated `plugin.json#id` (`@sovereign/<namespace>` by default).                      |
+| `--version <semver>`       | Initial version string (`0.1.0` by default).                                                        |
+| `--author "<name>"`        | Author metadata stored in the manifest.                                                             |
+| `--license "<identifier>"` | License string stored in the manifest.                                                              |
+| `--dev-port <port>`        | Override the dev server port embedded in SPA manifests (random port between 4100–4299 by default).  |
+| `--db <shared\|exclusive>` | Embed the desired `sovereign.database.mode` block (`shared` by default, `exclusive` → SQLite file). |
+| `--skip-manifest`          | Skip running `sv manifest generate` after scaffolding.                                              |
+| `--dry-run`                | Print what would happen without writing files.                                                      |
+| `--json`                   | Emit a JSON summary instead of human-readable text.                                                 |
 
 **Example**
 
@@ -58,6 +60,9 @@ sv plugins create acme-support --name "Acme Support Desk"
 
 # Create an SPA plugin using a specific id + dev port
 sv plugins create companion --type spa --id @acme/companion --dev-port 4500
+
+# Create an exclusive-database plugin (provisions via SQLite)
+sv plugins create papertrail --db exclusive
 ```
 
 ### `sv plugins add <spec>`
@@ -199,6 +204,17 @@ sv plugins show @sovereign/blog --json
 
 Runs a fast lint over a plugin directory. Validation ensures the directory exists, `plugin.json` passes the same basic schema checks used during `sv plugins add`, and that type-specific files exist (`index.js` for `custom`, `dist/index.js` for `spa`). Failures are printed and the command exits with status `1`. Passing validations print a short success line.
 
+### `sv plugins db <info|ensure> <namespace>`
+
+Utility commands for the per-plugin database manager. They only support SQLite-backed exclusives right now.
+
+| Subcommand           | Effect                                                                                                         |
+| -------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `info <namespace>`   | Prints the current datasource descriptor (mode, provider, DSN/path). Shared-mode plugins emit a friendly note. |
+| `ensure <namespace>` | Creates or reuses the plugin’s dedicated SQLite file under `data/plugins/<id>.db` and prints the path.         |
+
+Both subcommands accept `--json` for script-friendly output. If the plugin manifest still declares `sovereign.database.mode = "shared"`, the commands exit early with guidance on switching to `exclusive-sqlite`.
+
 **Flags**
 
 | Flag     | Effect                               |
@@ -208,8 +224,11 @@ Runs a fast lint over a plugin directory. Validation ensures the directory exist
 **Example**
 
 ```
-sv plugins validate ./plugins/blog
-sv plugins validate ../my-plugin --json
+# Inspect the datasource descriptor
+sv plugins db info papertrail
+
+# Provision the SQLite file and print JSON diagnostics
+sv plugins db ensure papertrail --json
 ```
 
 ## Manifest Commands

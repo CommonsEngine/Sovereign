@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 import { createRequire } from "module";
 
+import createPluginDatabaseManager from "../platform/src/services/plugin-database-manager.js";
+
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 
@@ -44,6 +46,7 @@ if (!aliasLoaded) {
 const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
 const MANIFEST_PATH = resolve(__dirname, "../manifest.json");
 const PLUGINS_DIR = resolve(__dirname, "../plugins");
+const DATA_DIR = resolve(__dirname, "../data");
 const execFileAsync = promisify(execFile);
 const COPY_SKIP_DIRS = new Set([".git", ".hg", ".svn"]);
 const COPY_SKIP_FILES = new Set([".DS_Store"]);
@@ -105,6 +108,7 @@ function printUsage() {
         remove <namespace>
         show <namespace> [--json]
         validate <path>
+        db <info|ensure> <namespace>
 
       migrate
         deploy [--plugin <id>] [--dry-run]
@@ -518,6 +522,46 @@ function createMigrationStateTemplate() {
   return { core: [], plugins: {} };
 }
 
+function normalizePluginDatabaseMode(input) {
+  if (!input) return "shared";
+  const normalized = String(input).toLowerCase();
+  if (normalized === "exclusive") return "exclusive-sqlite";
+  if (normalized === "shared") return "shared";
+  if (normalized === "exclusive-sqlite") return "exclusive-sqlite";
+  throw new Error(`Unknown plugin database mode "${input}". Use "shared" or "exclusive".`);
+}
+
+function formatDatabaseBlockForTemplate(mode) {
+  if (mode === "exclusive-sqlite") {
+    return '{\n      "mode": "exclusive-sqlite",\n      "provider": "sqlite"\n    }';
+  }
+  return '{\n      "mode": "shared"\n    }';
+}
+
+function createCliPluginDatabaseManager() {
+  const sqliteDir = resolve(DATA_DIR, "plugins");
+  return createPluginDatabaseManager({
+    sqlite: { baseDir: sqliteDir },
+    sharedDatasourceUrl: process.env.PLUGIN_DATABASE_URL || process.env.DATABASE_URL || null,
+  });
+}
+
+async function resolveInstalledPlugin(selector) {
+  const installed = await indexInstalledPlugins();
+  const match =
+    installed.byNamespace.get(selector) ||
+    installed.byId.get(selector) ||
+    [...installed.byNamespace.values()].find((entry) => entry.id === selector);
+  if (!match) {
+    throw new Error(
+      `Unknown plugin "${selector}". Use a namespace or manifest id (e.g., @org/plugin).`
+    );
+  }
+  const { manifest } = await readPluginManifest(match.dir);
+  const namespace = manifest.namespace || match.namespace || selector;
+  return { manifest, namespace, dir: match.dir };
+}
+
 async function loadMigrationState() {
   try {
     const raw = await fs.readFile(MIGRATION_STATE_PATH, "utf8");
@@ -651,6 +695,7 @@ const commands = {
       Examples:
         sv plugins add ./src/plugins/blog
         sv plugins enable @sovereign/blog
+        sv plugins db ensure blog
         sv plugins list --json
     `,
 
@@ -668,6 +713,8 @@ const commands = {
         const outputJson = Boolean(args.flags.json);
         const type = String(args.flags.type || "custom").toLowerCase();
         const version = args.flags.version || "0.1.0";
+        const databaseModeFlag = args.flags.db || args.flags.database || "shared";
+        const databaseMode = normalizePluginDatabaseMode(databaseModeFlag);
         const displayName =
           args.flags.name || args.flags["display-name"] || toTitleCase(namespace) || namespace;
         const description =
@@ -713,6 +760,7 @@ const commands = {
           DEV_ORIGIN: devOrigin,
           PREVIEW_PORT: String(previewPort),
           LIB_GLOBAL: libraryGlobal,
+          PLUGIN_DATABASE_BLOCK: formatDatabaseBlockForTemplate(databaseMode),
         };
 
         let templateDir;
@@ -731,6 +779,7 @@ const commands = {
           namespace,
           id: pluginId,
           type,
+          databaseMode,
           targetDir,
           templateDir,
           dryRun,
@@ -746,11 +795,99 @@ const commands = {
           console.log(
             `Created ${type} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
           );
+          console.log(`Database mode: ${databaseMode}`);
           if (!skipManifest) {
             console.log(`Manifest updated via tools/build-manifest.mjs.`);
           } else {
             console.log(`--skip-manifest set; run "sv manifest generate" when ready.`);
           }
+          if (databaseMode === "exclusive-sqlite") {
+            console.log(
+              `Run "sv plugins db ensure ${namespace}" to provision the dedicated SQLite database.`
+            );
+          }
+        }
+      },
+    },
+
+    db: {
+      __help__: `
+        Usage:
+          sv plugins db info <namespace> [--json]
+          sv plugins db ensure <namespace> [--json]
+      `,
+      desc: "Inspect or provision a plugin's dedicated database (SQLite-only for now)",
+      async run(args) {
+        const action = args._[2];
+        if (!action || !["info", "ensure"].includes(action)) {
+          exitUsage(`Usage: sv plugins db <info|ensure> <namespace> [--json]`);
+        }
+        const selector = args._[3];
+        if (!selector) {
+          exitUsage(
+            `Missing plugin namespace. Usage: sv plugins db ${action} <namespace> [--json]`
+          );
+        }
+
+        const { manifest, namespace } = await resolveInstalledPlugin(selector);
+        const dbConfig = manifest?.sovereign?.database || {};
+        const mode = dbConfig.mode || "shared";
+        const manager = createCliPluginDatabaseManager();
+
+        if (mode === "shared") {
+          const note = `Plugin ${namespace} is configured for shared database mode. Declare sovereign.database.mode="exclusive-sqlite" to enable a dedicated file.`;
+          const payload = {
+            namespace,
+            pluginId: manifest.id,
+            mode,
+            provider: manager.sharedProvider,
+            url: manager.sharedDatasourceUrl,
+            path: null,
+            message: note,
+          };
+          if (args.flags.json) {
+            console.log(JSON.stringify(payload, null, 2));
+          } else {
+            console.log(note);
+          }
+          return;
+        }
+
+        if (mode !== "exclusive-sqlite") {
+          throw new Error(
+            `Plugin ${namespace} requests unsupported database mode "${mode}". Only "exclusive-sqlite" is available right now.`
+          );
+        }
+
+        const descriptor = await manager.resolveDatasource(manifest, {
+          namespace,
+          pluginId: manifest.id,
+        });
+
+        const payload = {
+          namespace,
+          pluginId: manifest.id,
+          mode: descriptor.mode,
+          provider: descriptor.provider,
+          url: descriptor.url,
+          path: descriptor.path || null,
+        };
+
+        if (args.flags.json) {
+          console.log(JSON.stringify(payload, null, 2));
+          return;
+        }
+
+        if (action === "ensure") {
+          console.log(
+            `[plugins] ${namespace}: ensured SQLite database at ${payload.path || descriptor.url}.`
+          );
+        } else {
+          console.log(`Plugin: ${namespace}`);
+          console.log(`Mode: ${payload.mode}`);
+          console.log(`Provider: ${payload.provider}`);
+          console.log(`URL: ${payload.url}`);
+          console.log(`Path: ${payload.path || "(n/a)"}`);
         }
       },
     },

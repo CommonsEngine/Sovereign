@@ -13,7 +13,27 @@ const capabilityRegistry = {
     provides: "prisma",
     description: "Read/write access to the primary database via Prisma client",
     risk: "critical",
-    resolve: () => prisma,
+    resolve: async ({ plugin, services = {} }) => {
+      const mode = plugin?.sovereign?.database?.mode || "shared";
+      if (mode === "shared") {
+        return prisma;
+      }
+
+      if (mode !== "exclusive-sqlite") {
+        throw new Error(
+          `Plugin database mode "${mode}" is not supported. Only "exclusive-sqlite" is currently available.`
+        );
+      }
+
+      const manager = services.pluginDatabaseManager;
+      if (!manager) {
+        throw new Error(
+          "Plugin database manager is required to resolve exclusive plugin databases, but none was provided."
+        );
+      }
+
+      return manager.acquirePrismaClient(plugin, { namespace: plugin?.namespace || plugin?.id });
+    },
   },
   git: {
     key: "git",
@@ -65,7 +85,10 @@ export function getCapabilityRegistry() {
   return capabilityRegistry;
 }
 
-export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } = {}) {
+export async function resolvePluginCapabilities(
+  plugin = {},
+  { config = {}, logger, services = {} } = {}
+) {
   const namespace = plugin.namespace || plugin.id || "<unknown>";
   const requested = plugin?.sovereign?.platformCapabilities || plugin?.platformCapabilities || {};
   const allowAll = !config.IS_PROD && DEV_ALLOW_ALL_CAPS;
@@ -98,7 +121,7 @@ export function resolvePluginCapabilities(plugin = {}, { config = {}, logger } =
 
     const targetProp = capability.provides || key;
     if (!(targetProp in injected)) {
-      injected[targetProp] = capability.resolve({ plugin, config });
+      injected[targetProp] = await capability.resolve({ plugin, config, services });
       granted.push(key);
     }
     if (config.IS_PROD && capability.disabledInProd && overrideEnabled) {

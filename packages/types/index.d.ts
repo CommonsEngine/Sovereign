@@ -6,6 +6,29 @@ export type PluginCapabilityValue =
   | "scoped"
   | "anonymized";
 
+export type PluginDatabaseMode = "shared" | "exclusive-sqlite" | "exclusive-postgres";
+
+export type PluginDatabaseProvider = "sqlite" | "postgresql" | "mysql";
+
+export interface PluginDatabaseLimits {
+  storageMb?: number;
+  connections?: number;
+}
+
+export interface PluginDatabaseMigrations {
+  directory?: string;
+  entryPoint?: string;
+}
+
+export interface PluginDatabaseConfig {
+  mode: PluginDatabaseMode;
+  provider?: PluginDatabaseProvider;
+  schema?: string;
+  dataDir?: string;
+  limits?: PluginDatabaseLimits;
+  migrations?: PluginDatabaseMigrations;
+}
+
 export type PluginRoleAssignment =
   | string
   | {
@@ -26,6 +49,7 @@ export interface PluginSovereignMetadata {
     platform?: string;
     node?: string;
   };
+  database?: PluginDatabaseConfig;
   routes?: {
     web?: string;
     api?: string;

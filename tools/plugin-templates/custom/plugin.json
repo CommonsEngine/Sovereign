@@ -17,6 +17,7 @@
     "schemaVersion": 1,
     "allowMultipleInstances": true,
     "compat": { "platform": "^0.8.0", "node": ">=20" },
+    "database": {{PLUGIN_DATABASE_BLOCK}},
     "platformCapabilities": {
       "database": false,
       "git": false,
