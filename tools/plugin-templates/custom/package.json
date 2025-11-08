@@ -1,0 +1,11 @@
+{
+  "name": "{{PLUGIN_ID}}",
+  "private": true,
+  "version": "{{VERSION}}",
+  "type": "module",
+  "scripts": {
+    "build": "echo \"Nothing to build yet\"",
+    "lint": "eslint . || true",
+    "test": "node --test || true"
+  }
+}

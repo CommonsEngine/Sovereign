@@ -21,6 +21,7 @@ sv [global options] <namespace> <command> [args]
 
 | Command                                            | Purpose                                                                                                   |
 | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates.                                                        |
 | `sv plugins add <spec>`                            | Install a plugin from a directory or git URL.                                                             |
 | `sv plugins list [--json] [--enabled\|--disabled]` | Inspect installed plugins plus their enablement state.                                                    |
 | `sv plugins enable <namespace>`                    | Turn on a plugin by clearing `draft`/`devOnly` in its manifest and rebuilding the workspace manifest.     |
@@ -28,6 +29,36 @@ sv [global options] <namespace> <command> [args]
 | `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files.                         |
 | `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                   |
 | `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                      |
+
+### `sv plugins create <namespace> [--type custom|spa]`
+
+Bootstraps a plugin directory under `plugins/<namespace>` using the curated templates stored in `tools/plugin-templates`. The command rejects duplicate namespaces or manifest ids, copies either the `custom` or `spa` scaffold, replaces placeholders (name, description, ids, dev server port, etc.), and optionally rebuilds `manifest.json`.
+
+**Flags**
+
+| Flag                       | Effect                                                                                             |
+| -------------------------- | -------------------------------------------------------------------------------------------------- |
+| `--type <custom\|spa>`     | Choose which scaffold to use (`custom` by default).                                                |
+| `--name "<display name>"`  | Human-facing plugin name; defaults to the namespace in Title Case.                                 |
+| `--description "<text>"`   | Short description embedded into the manifest.                                                      |
+| `--id <@scope/name>`       | Override the generated `plugin.json#id` (`@sovereign/<namespace>` by default).                     |
+| `--version <semver>`       | Initial version string (`0.1.0` by default).                                                       |
+| `--author "<name>"`        | Author metadata stored in the manifest.                                                            |
+| `--license "<identifier>"` | License string stored in the manifest.                                                             |
+| `--dev-port <port>`        | Override the dev server port embedded in SPA manifests (random port between 4100–4299 by default). |
+| `--skip-manifest`          | Skip running `sv manifest generate` after scaffolding.                                             |
+| `--dry-run`                | Print what would happen without writing files.                                                     |
+| `--json`                   | Emit a JSON summary instead of human-readable text.                                                |
+
+**Example**
+
+```
+# Create a custom plugin
+sv plugins create acme-support --name "Acme Support Desk"
+
+# Create an SPA plugin using a specific id + dev port
+sv plugins create companion --type spa --id @acme/companion --dev-port 4500
+```
 
 ### `sv plugins add <spec>`
 
