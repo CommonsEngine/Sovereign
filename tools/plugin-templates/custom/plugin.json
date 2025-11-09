@@ -13,6 +13,17 @@
   },
   "author": "{{AUTHOR}}",
   "license": "{{LICENSE}}",
+  "ui": {
+    "icon": { "name": "default", "sidebarHidden": false },
+    "palette": {
+      "primary": "violet-500",
+      "accent": "rose-500"
+    },
+    "layout": {
+      "sidebar": true,
+      "header": true
+    }
+  },
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": true,

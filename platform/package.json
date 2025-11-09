@@ -53,6 +53,7 @@
     ]
   },
   "dependencies": {
+    "@sovereign/ui-assets": "0.0.0",
     "@prisma/client": "^6.16.3",
     "ajv": "^8.17.1",
     "archiver": "^7.0.1",

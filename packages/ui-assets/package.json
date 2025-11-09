@@ -1,0 +1,19 @@
+{
+  "name": "@sovereign/ui-assets",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0",
+  "exports": {
+    ".": "./index.js",
+    "./icons": "./icons.js",
+    "./palettes": "./palettes.js"
+  },
+  "files": [
+    "*.js",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "echo \"No build step for ui-assets\""
+  }
+}

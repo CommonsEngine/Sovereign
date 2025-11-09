@@ -37,6 +37,37 @@ export interface PluginSovereignMetadata {
   [key: string]: unknown;
 }
 
+export interface PluginUiIcon {
+  name: string;
+  variant?: string;
+  viewBox?: string;
+  body?: string;
+  sidebarHidden?: boolean;
+}
+
+export interface PluginUiLayout {
+  sidebar?: boolean;
+  header?: boolean;
+}
+
+export type PluginUiPaletteValue =
+  | string
+  | {
+      token: string;
+      value: string;
+    };
+
+export interface PluginUiPalette {
+  [slot: string]: PluginUiPaletteValue;
+}
+
+export interface PluginUiConfig {
+  icon?: PluginUiIcon;
+  palette?: PluginUiPalette;
+  layout?: PluginUiLayout;
+  [key: string]: unknown;
+}
+
 export interface PluginManifest {
   id: string;
   namespace?: string;
@@ -49,7 +80,7 @@ export interface PluginManifest {
   author: string;
   license: string;
   entryPoints?: Record<string, string>;
-  sidebarHidden?: boolean;
+  ui?: PluginUiConfig;
   sovereign: PluginSovereignMetadata;
   /** @deprecated Use sovereign.platformCapabilities instead. */
   platformCapabilities?: Record<string, boolean>;

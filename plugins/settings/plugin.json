@@ -11,9 +11,19 @@
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
   },
-  "sidebarHidden": true,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
+  "ui": {
+    "icon": { "name": "cog", "sidebarHidden": true },
+    "palette": {
+      "primary": "slate-600",
+      "accent": "slate-400"
+    },
+    "layout": {
+      "sidebar": false,
+      "header": true
+    }
+  },
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": false,

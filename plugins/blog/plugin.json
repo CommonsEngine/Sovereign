@@ -13,6 +13,17 @@
   },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
+  "ui": {
+    "icon": { "name": "book-open" },
+    "palette": {
+      "primary": "violet-500",
+      "accent": "amber-400"
+    },
+    "layout": {
+      "sidebar": true,
+      "header": true
+    }
+  },
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": true,

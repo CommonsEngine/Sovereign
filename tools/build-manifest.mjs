@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "module";
 
 import { collectPluginCapabilities } from "./lib/plugin-capabilities.mjs";
+import { getIcon, getPaletteColor, hasIcon, hasPaletteToken } from "@sovereign/ui-assets";
 
 /**
  * @typedef {import("@sovereign/types").PluginManifest} PluginManifest
@@ -33,6 +34,76 @@ function formatError(message, options = {}) {
   const { pluginDir, manifestPath } = options;
   const context = [pluginDir, manifestPath].filter(Boolean).join(" ");
   return context ? `${context}: ${message}` : message;
+}
+
+const DEFAULT_ICON_NAME = "default";
+const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
+
+function normalizeUiConfig(rawUi, context = {}) {
+  const uiConfig = rawUi && typeof rawUi === "object" ? rawUi : {};
+
+  const rawIconName = typeof uiConfig?.icon?.name === "string" ? uiConfig.icon.name.trim() : "";
+  const iconName = rawIconName || DEFAULT_ICON_NAME;
+
+  if (!hasIcon(iconName)) {
+    throw new Error(formatError(`unknown icon "${iconName}" in ui.icon`, context));
+  }
+
+  const iconDefinition = getIcon(iconName);
+  const iconSidebarHidden =
+    typeof uiConfig?.icon?.sidebarHidden === "boolean" ? uiConfig.icon.sidebarHidden : false;
+
+  const hasSidebarFlag = typeof uiConfig?.layout?.sidebar === "boolean";
+  const hasHeaderFlag = typeof uiConfig?.layout?.header === "boolean";
+
+  let normalizedPalette;
+  if (uiConfig?.palette && typeof uiConfig.palette === "object") {
+    normalizedPalette = {};
+    for (const [slot, rawValue] of Object.entries(uiConfig.palette)) {
+      if (!rawValue) continue;
+      let tokenName = "";
+      if (typeof rawValue === "string") {
+        tokenName = rawValue.trim();
+      } else if (typeof rawValue === "object" && rawValue !== null) {
+        tokenName = typeof rawValue.token === "string" ? rawValue.token.trim() : "";
+      }
+      if (!tokenName || !hasPaletteToken(tokenName)) {
+        const badValue =
+          typeof rawValue === "string" ? rawValue : JSON.stringify(rawValue, null, 0);
+        throw new Error(
+          formatError(`unknown palette token "${badValue}" for ui.palette.${slot}`, context)
+        );
+      }
+
+      const resolved = getPaletteColor(tokenName);
+      if (!resolved) {
+        throw new Error(
+          formatError(`palette token "${tokenName}" has no registered value`, context)
+        );
+      }
+      normalizedPalette[slot] = {
+        token: tokenName,
+        value: resolved,
+      };
+    }
+    if (Object.keys(normalizedPalette).length === 0) {
+      normalizedPalette = undefined;
+    }
+  }
+
+  return {
+    icon: {
+      name: iconName,
+      viewBox: iconDefinition.viewBox || DEFAULT_ICON_VIEWBOX,
+      body: iconDefinition.body,
+      sidebarHidden: iconSidebarHidden,
+    },
+    ...(normalizedPalette ? { palette: normalizedPalette } : {}),
+    layout: {
+      sidebar: hasSidebarFlag ? uiConfig.layout.sidebar !== false : true,
+      header: hasHeaderFlag ? uiConfig.layout.header !== false : true,
+    },
+  };
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -95,6 +166,49 @@ const pluginManifestSchema = {
     draft: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
+    ui: {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        icon: {
+          type: "object",
+          additionalProperties: true,
+          properties: {
+            name: { type: "string", minLength: 1 },
+            variant: { type: "string" },
+            viewBox: { type: "string" },
+            body: { type: "string" },
+            sidebarHidden: { type: "boolean" },
+          },
+          required: [],
+        },
+        palette: {
+          type: "object",
+          additionalProperties: {
+            anyOf: [
+              { type: "string", minLength: 1 },
+              {
+                type: "object",
+                required: ["token", "value"],
+                additionalProperties: false,
+                properties: {
+                  token: { type: "string", minLength: 1 },
+                  value: { type: "string", minLength: 1 },
+                },
+              },
+            ],
+          },
+        },
+        layout: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            sidebar: { type: "boolean" },
+            header: { type: "boolean" },
+          },
+        },
+      },
+    },
     sovereign: {
       type: "object",
       required: ["schemaVersion"],
@@ -399,10 +513,22 @@ const buildManifest = async () => {
         userCapabilitiesResolved: resolvedUserCaps,
       };
 
+      let normalizedUi;
+      try {
+        normalizedUi = normalizeUiConfig(pluginManifest?.ui, {
+          pluginDir: plugingRoot,
+          manifestPath: pluginManifestPath,
+        });
+      } catch (err) {
+        console?.error?.(err?.message || err);
+        continue;
+      }
+
       plugins[manifestNamespace] = {
         namespace: manifestNamespace,
         entry,
         ...pluginManifest,
+        ui: normalizedUi,
         sovereign: normalizedSovereign,
         ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
@@ -429,20 +555,24 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, sidebarHidden } = finalPlugins[k];
+    const { id, name, namespace, sovereign, ui } = finalPlugins[k];
+    const resolvedUi = ui || normalizeUiConfig(undefined);
+    const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
 
     if (sovereign.allowMultipleInstances) {
       manifest.projects.push({
         id,
         label: name,
         value: namespace,
+        ui: resolvedUi,
       });
     } else {
       manifest.modules.push({
         id,
         label: name,
         value: namespace,
-        sidebarHidden,
+        ui: resolvedUi,
+        sidebarHidden: iconHidden,
       });
     }
   });
