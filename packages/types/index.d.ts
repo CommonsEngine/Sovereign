@@ -42,6 +42,7 @@ export interface PluginUiIcon {
   variant?: string;
   viewBox?: string;
   body?: string;
+  sidebarHidden?: boolean;
 }
 
 export interface PluginUiLayout {
@@ -79,7 +80,6 @@ export interface PluginManifest {
   author: string;
   license: string;
   entryPoints?: Record<string, string>;
-  sidebarHidden?: boolean;
   ui?: PluginUiConfig;
   sovereign: PluginSovereignMetadata;
   /** @deprecated Use sovereign.platformCapabilities instead. */

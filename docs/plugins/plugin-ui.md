@@ -2,11 +2,11 @@
 
 ## Plugin UI metadata
 
-Every `plugin.json` can describe how it should appear inside the platform shell via a `ui` block. Plugins pick an icon and color tokens from the shared `@sovereign/ui-assets` package and specify whether the sidebar or header should render when the module is active.
+Plugins describe their visual footprint through the `ui` block inside `plugin.json`. Icons and colors are referenced by name from `packages/ui-assets`, and layout flags control whether the shared sidebar/header render when the plugin is active.
 
 ```json
 "ui": {
-  "icon": { "name": "book-open" },
+  "icon": { "name": "book-open", "sidebarHidden": false },
   "palette": {
     "primary": "violet-500",
     "accent": "amber-400"
@@ -18,9 +18,9 @@ Every `plugin.json` can describe how it should appear inside the platform shell 
 }
 ```
 
-- `icon.name` must match a key in `packages/ui-assets/icons.js`. If omitted, the default glyph is used.
-- Palette slots point to `packages/ui-assets/palettes.js` tokens. During manifest generation each token is validated and resolved to its hex color.
-- `layout.sidebar` / `layout.header` default to `true`. Set them to `false` to hide the entire sidebar or header when the plugin is active (full-bleed experiences).
-- Use the top-level `sidebarHidden` flag when you simply want to keep that module’s icon out of the navigation while the rest of the shell stays intact.
+- `ui.icon.name` must match an entry in `packages/ui-assets/icons.js`. Add new glyphs there first.
+- Palette slots reference tokens defined in `packages/ui-assets/palettes.js`; the manifest builder validates and resolves them to hex values.
+- `ui.layout.sidebar` / `ui.layout.header` default to `true`. Set them to `false` for full-bleed experiences that hide the entire shell chrome.
+- Flip `ui.icon.sidebarHidden` to `true` to keep the plugin out of the sidebar navigation while leaving the rest of the shell visible.
 
-To contribute a new visual, add it to `packages/ui-assets` first, then reference it by name from the plugin manifest.
+See `docs/plugins/plugin-ui.md` for the full contract and contribution workflow.

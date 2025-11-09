@@ -50,6 +50,8 @@ function normalizeUiConfig(rawUi, context = {}) {
   }
 
   const iconDefinition = getIcon(iconName);
+  const iconSidebarHidden =
+    typeof uiConfig?.icon?.sidebarHidden === "boolean" ? uiConfig.icon.sidebarHidden : false;
 
   const hasSidebarFlag = typeof uiConfig?.layout?.sidebar === "boolean";
   const hasHeaderFlag = typeof uiConfig?.layout?.header === "boolean";
@@ -94,6 +96,7 @@ function normalizeUiConfig(rawUi, context = {}) {
       name: iconName,
       viewBox: iconDefinition.viewBox || DEFAULT_ICON_VIEWBOX,
       body: iconDefinition.body,
+      sidebarHidden: iconSidebarHidden,
     },
     ...(normalizedPalette ? { palette: normalizedPalette } : {}),
     layout: {
@@ -163,7 +166,6 @@ const pluginManifestSchema = {
     draft: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
-    sidebarHidden: { type: "boolean" },
     ui: {
       type: "object",
       additionalProperties: true,
@@ -176,6 +178,7 @@ const pluginManifestSchema = {
             variant: { type: "string" },
             viewBox: { type: "string" },
             body: { type: "string" },
+            sidebarHidden: { type: "boolean" },
           },
           required: [],
         },
@@ -552,8 +555,9 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, ui, sidebarHidden } = finalPlugins[k];
+    const { id, name, namespace, sovereign, ui } = finalPlugins[k];
     const resolvedUi = ui || normalizeUiConfig(undefined);
+    const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
 
     if (sovereign.allowMultipleInstances) {
       manifest.projects.push({
@@ -568,7 +572,7 @@ const buildManifest = async () => {
         label: name,
         value: namespace,
         ui: resolvedUi,
-        sidebarHidden: !!sidebarHidden,
+        sidebarHidden: iconHidden,
       });
     }
   });

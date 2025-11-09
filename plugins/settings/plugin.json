@@ -11,11 +11,10 @@
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
   },
-  "sidebarHidden": true,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "ui": {
-    "icon": { "name": "cog" },
+    "icon": { "name": "cog", "sidebarHidden": true },
     "palette": {
       "primary": "slate-600",
       "accent": "slate-400"

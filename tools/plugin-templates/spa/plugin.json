@@ -11,11 +11,10 @@
     "web": "dist/index.js",
     "api": "routes/api/index.js"
   },
-  "sidebarHidden": false,
   "author": "{{AUTHOR}}",
   "license": "{{LICENSE}}",
   "ui": {
-    "icon": { "name": "default" },
+    "icon": { "name": "default", "sidebarHidden": false },
     "palette": {
       "primary": "violet-500",
       "accent": "rose-500"

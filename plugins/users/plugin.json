@@ -11,11 +11,10 @@
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
   },
-  "sidebarHidden": true,
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "ui": {
-    "icon": { "name": "users" },
+    "icon": { "name": "users", "sidebarHidden": true },
     "palette": {
       "primary": "sky-600",
       "accent": "sky-300"
