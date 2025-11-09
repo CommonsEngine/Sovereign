@@ -17,8 +17,6 @@ Sovereign is a privacy-first, open-source collaboration and productivity suite t
 
 We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with the [Handlebars](https://handlebarsjs.com/) template engine as the core stack for this application, with optional [React](https://react.dev/) SSR/JSX support. SQLite serves as the primary database during the MVP stage, with straightforward extensibility to PostgreSQL (or any other SQL database) through [Prisma](https://www.prisma.io/) as an intermediate abstraction layer between the app code and the database.
 
-Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
-
 For a system-level overview, read [`docs/architecture.md`](docs/architecture.md).
 
 ### Database & Prisma workflow
