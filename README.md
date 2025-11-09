@@ -5,11 +5,21 @@ Sovereign is a privacy-first, open-source collaboration and productivity suite t
 > The platform is still in its early stages of development.  
 > While the plan has been mapped out, the documentation remains incomplete and is actively being developed.
 
+## Quick Links
+
+- [Architecture overview](docs/architecture.md)
+- [Plugin capabilities](docs/plugins/capabilities.md) & [Plugin UI contract](docs/plugins/plugin-ui.md)
+- [CLI reference](docs/CLI.md)
+- [Sovereign Wiki (WIP)](https://github.com/CommonsEngine/Sovereign/wiki)
+- [Manifesto](MANIFESTO.md)
+
 ## Getting Started
 
 We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with the [Handlebars](https://handlebarsjs.com/) template engine as the core stack for this application, with optional [React](https://react.dev/) SSR/JSX support. SQLite serves as the primary database during the MVP stage, with straightforward extensibility to PostgreSQL (or any other SQL database) through [Prisma](https://www.prisma.io/) as an intermediate abstraction layer between the app code and the database.
 
 Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
+
+For a system-level overview, read `docs/architecture.md`.
 
 ### Database & Prisma workflow
 
@@ -30,229 +40,18 @@ To add plugin data models:
 
 > ⚠️ Never edit `platform/prisma/schema.prisma` by hand; it will be overwritten by the compose step.
 
-### Modular Architecture (Core + Plugins)
+## Architecture & Plugins
 
-Sovereign is built as a **modular platform**. The core runtime provides Express, Handlebars/JSX SSR, RBAC, settings, storage, CLI, and build tooling. Feature domains live in **plugins** that remain fully isolated packages which can be added, enabled/disabled, versioned, and shipped independently from the core.
+Sovereign ships as a **lean core runtime** plus **isolated plugins**. The core provides Express, SSR (Handlebars/JSX), RBAC, storage, CLI tooling, and shared services; plugins own actual product surfaces (blog, papertrail, settings, etc.). High-level highlights:
 
-**Goals**
+- Core discovers plugins from `plugins/*`, validates each `plugin.json`, resolves requested platform capabilities, and mounts the plugin’s web/API routers.
+- Plugins can be SPA or custom server-driven modules. Each has its own assets, Prisma extensions, and lifecycle hooks.
+- Platform services (Prisma, Git, FS, mailer, env refresh) are only injected into plugins that declare the corresponding capability.
+- A shared CSS token system (`platform/src/public/css/sv_base.css`) keeps styling consistent across plugins, with optional dark mode.
 
-- Minimize core surface area; keep features in plugins
-- Enable safe iteration: plugin versioning + engine compatibility
-- Support both server-rendered Handlebars and React SSR views
-- Keep deploys simple: one app artifact with opt‑in plugins
+For a deep dive—including diagrams, routing internals, CSS layering, and capability tables—read `docs/architecture.md`, `docs/plugins/capabilities.md`, and `docs/plugins/plugin-ui.md`.
 
-**High‑level runtime**
-
-1. **Bootstrap**: core loads config, DB, logger, view engines, and scans `plugins/*` for registered plugins.
-2. **Manifest phase**: each plugin’s `plugin.json` is validated (namespace, version, engine compatibility, entry points, declared routes/capabilities).
-3. **Wiring**: core mounts plugin **routes** (web/api) via `getRoutes()`, registers optional `render()`/`configure()` handlers, exposes **public assets**, and loads any bundled views. [Not fully supported yet.]
-4. **RBAC merge**: plugin‑declared capabilities are merged into the global graph (no runtime DB migration required for read‑time checks). (TBA)
-5. **Lifecycle hooks** (optional): install/enable/disable/upgrade hooks can prepare data, run migrations, or seed settings. (TBA)
-
-#### Build & Load Rules
-
-- **Assets** (`.html`, `.json`, `.css`, images, etc.) are copied byte‑for‑byte.
-- **Code** files (`.ts`, `.tsx`, `.jsx`, `.js`, `.mjs`, `.cjs`) are transpiled but **keep their original extensions**.
-- Core resolves `$` imports to `platform/src/`.
-- On startup, the server only mounts **un-drafted** (`draft: false`) plugins and wires their exposed hooks / server build artifcts.
-
-### Plugin Architecture
-
-A plugin is defined by a `plugin.json` manifest with the `index.mjs` entry. The manifest declares compatibility, capabilities, and high-level behavior; the entry file exposes hooks the platform calls when the plugin is enabled. Lifecycle hooks (`onInstall`, `onBuild`, `onEnable`, `onDisable`, `onRemove`) will arrive soon to support automated provisioning, but the runtime already expects `render()`, `configure()`, and `getRoutes()` where applicable.
-
-#### Plugin Types
-
-| **Type** | **Description**                                   | **Notes**                      |
-| -------- | ------------------------------------------------- | ------------------------------ |
-| `spa`    | SPA frontends (React, Vue, Svelte, Angular)       | Pure client-side rendering     |
-| `custom` | Dynamic HTML/JS hybrid plugin with Express routes | Server-driven, dynamic content |
-
-#### Scaffolding Plugins
-
-Use `sv plugins create <namespace> [--type custom|spa]` to generate a ready-to-run plugin under `plugins/<namespace>`. The CLI copies the matching template from `tools/plugin-templates`, fills in the manifest/package metadata (id, name, description, dev server port), and optionally rebuilds `manifest.json`. For example:
-
-```
-sv plugins create newsroom --type custom --name "Newsroom"
-sv plugins create billing --type spa --dev-port 4500 --skip-manifest
-```
-
-Each scaffold includes routes, lifecycle stubs, Prisma placeholders, and SPA boilerplate (for the `spa` template) so you can jump directly into feature work.
-
-#### Directory Layout
-
-Each plugin sits under `plugins/<namespace>` with a predictable layout:
-
-_Example `spa` plugin:_
-
-```
-plugins/
-  example-plugin-spa/
-    dist/            # build artifacts
-      /assets/
-      index.js
-    prisma/          # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
-      extension.prisma
-      seeds.js
-    public/          # static assets served under /plugins/<ns>/...
-    src/             # Surce files (React, Vue, Svelte, Angular)
-    index.js         # plugin entry (exports hooks used by the platform)
-    package.json
-    plugin.json      # manifest (see below)
-    package.json     # (optional) NPM Package entry
-```
-
-_Example `custom` plugin:_
-
-```
-plugins/
-  example-plugin-custom/
-    prisma/           # (optional) plugin-specific schemas to be added to the platfrom database at `plugin.onInstall` phase
-      extension.prisma
-      seeds.js
-    handlers/        # business logic (service layer)
-    public/          # static assets served under /plugins/<ns>/...
-    routes/          # Express route modules (web + api) when needed
-      web
-        index.js
-      api
-        index.js
-    views/           # Handlebars or JSX views (if applicable)
-    index.js         # exports hooks used by the platform
-    index.html
-    plugin.json      # manifest (see below)
-    package.json     # NPM Package entry (Optional)
-```
-
-> During build, core code is emitted to `platform/dist`, while plugins manage their own `dist/` outputs (e.g., via Vite/Rollup) that the platform serves directly. This preserves the structure expected by the runtime and avoids `*.json.json` / `*.html.html` or `.mjs -> .js` skew.
-
-#### SPA dev servers (Vite HMR)
-
-SPA plugins like PaperTrail or Splitify can opt into hot reload by declaring a dev server in their manifest. When the Sovereign platform runs with `NODE_ENV !== "production"`, it pings the configured server—if the server responds, the SPA shell injects the Vite HMR client plus your dev entry instead of the static `dist/` bundle. Stop the dev server and the platform automatically falls back to the last build output.
-
-```jsonc
-"sovereign": {
-  "devServer": {
-    "web": {
-      "origin": "http://localhost:4002", // Vite dev host:port (unique per plugin)
-      "entry": "/src/main.jsx",          // module loaded during dev
-      "client": "/@vite/client"          // optional; defaults to /@vite/client
-    }
-  }
-}
-```
-
-Usage:
-
-1. Start Sovereign in dev mode (`yarn dev`).
-2. Inside the plugin directory run `yarn dev` (or `vite`) so the dev server is listening.
-3. Visit `/plugins/<namespace>` (or the project route). You should see immediate React/Vite HMR updates.
-
-If the plugin dev server stops responding, the runtime logs a warning and falls back to the compiled `plugins/<ns>/dist` assets without requiring a restart.
-
-#### `plugin.json` (reference)
-
-Below is the sample manifest used for the **Blog** (`type: dynamic`) plugin; field comments explain how the core interprets them.
-
-```jsonc
-{
-  "sovereign": {
-    "schemaVersion": 1, // manifest schema version (platform-side decoder)
-    "engine": "0.7.3", // minimum/target core engine version compatibility
-    "entryPoints": ["launcher"], // named entry points if the plugin exposes launchers. i.e: launcher | sidebar
-    "platformCapabilities": {
-      "database": true, // requires DB access (Prisma)
-      "gitManager": false, // requires Git manager integration
-      "fs": false, // requires filesystem access to plugin scope
-      "logger": false,
-      "mailer": false,
-    },
-    "userCapabilities": [
-      // RBAC: capabilities added by this plugin
-      {
-        "key": "user:plugin.blog.feature",
-        "description": "Enable Blog plugin.",
-        "roles": ["platform:user"],
-      },
-      {
-        "key": "user:plugin.blog.create",
-        "description": "Create blog project, and configure.",
-        "roles": ["platform:user"],
-      },
-      {
-        "key": "user:plugin.blog.read",
-        "description": "View own blog project.",
-        "roles": [
-          "project:admin",
-          "project:editor",
-          "project:contributor",
-          "project:viewer",
-          "project:guest",
-        ],
-      },
-      // …additional granular post.* capabilities elided for brevity…
-    ],
-  },
-  "id": "@sovereign/blog", // unique identifier for the plugin. Format can be describe as `<org>/<namespace>`
-  "name": "Blog",
-  "description": "Sovereign Blog",
-  "version": "1.0.0-alpha.7", // semver of the plugin itself
-  "type": "custom",
-  "devOnly": true, // whether the plugin is production ready or not.
-  "draft": false, // whether allow/disallow mounting
-  "author": "Sovereign Core Team",
-  "license": "AGPL-3.0", // plugins can be license independently
-  "events": {}, // (reserved) event contracts the plugin can emit/consume
-}
-```
-
-_Source: sample `plugin.json` shipped with the repo._
-
-#### Versioning & Compatibility
-
-- Core checks `plugin.sovereign.engine` against the running engine version. Incompatible plugins are skipped with a warning.
-- Use semver for plugin `version`; core can surface upgrade prompts when a newer compatible version is present.
-
-#### Entry file (`index.mjs`)
-
-> Not fully finalized or supported.
-
-A conventional entry exposes lightweight helpers the core invokes to mount the plugin. Minimal example:
-
-```js
-// plugins/*/index.js
-
-async function onInstall() {}
-
-async function onBuild() {}
-
-async function onEnable() {}
-
-async function onDisable() {}
-
-async function onRemove() {}
-```
-
-#### Routing conventions
-
-> Only applicable for `custom` plugins
-
-- Web routes mount under `/plugins/<namespace>` from by default; APIs under `/api/plugins/<namespace>`.
-- A plugin can customize its base mount path from the entry file. (TBA later)
-
-#### RBAC & Capabilities
-
-- Plugins **declare** capabilities in `plugin.json`; these are merged into the global RBAC graph at boot. (TBA)
-- At request time, middleware exposes `req.can('user:plugin.blog.post.create')` / `res.locals.capabilities` for templates.
-- For idempotent imports or repeated enabling, capabilities are upserted.
-- Platform access is mediated via `sovereign.platformCapabilities`. Each key must be part of the host allow-list:
-  - `database` → Prisma client, `git` → git helpers, `fs` → filesystem adapter, `env` → `refreshEnvCache`, `uuid` → id helpers, `mailer` → transactional email, `fileUpload` → (experimental) upload scaffolding.
-  - Requests for unknown capabilities, or prod-disabled ones (e.g., `fileUpload` until hardened), fail during manifest bootstrap.
-  - During development, you can set `DEV_ALLOW_ALL_CAPS=true` to temporarily grant all capabilities to every plugin. This is noisy (logged per plugin), should never be enabled in production, and is meant only for rapid prototyping.
-- Plugin-declared user capabilities live under `sovereign.userCapabilities`. Each entry can include `scope`, `category`, and metadata/tags to aid auditing. `yarn build:manifest` and `yarn prepare:db` automatically re-seed these definitions via `tools/database-seed-plugin-capabilities.mjs`, warn when capabilities are removed, and emit a signature that forces active sessions to refresh their permission snapshots on the next request.
-- Plugins executed via Express route factories receive a `ctx` object that now exposes `ctx.assertPlatformCapability("database")`, `ctx.assertUserCapability(req, capabilityKey)`, and `ctx.pluginAuth.require({ roles, capabilities })` so plugin developers can reuse the platform’s RBAC checks instead of duplicating guards in each route.
-- See `docs/plugins/capabilities.md` for a deeper guide covering host access requests, RBAC seeding, and how to add new capability types.
-
-#### CLI (v0.1.0) — managing plugins
+## CLI — managing plugins
 
 ```
 sv plugins add <spec>                     # path | git URL | npm name
@@ -264,7 +63,7 @@ sv plugins show <namespace> [--json]
 sv plugins validate <path>
 ```
 
-> CLI tool is under development and not operational at the moment.
+See [docs/CLI.md](docs/CLI.md) for detailed command usage, global flags, and scaffolding flows.
 
 #### Notes for Contributors
 
@@ -328,9 +127,9 @@ sv plugins validate <path>
 Use `yarn dev` to launch the development server with automatic file watching. For the production build, use `yarn start`.
 
 7. Updating Prisma schema and apply migrations
-   - Update `prisma/schema.prisma` first
-   - Run `yarn prisma validate` and `yarn prisma format` to ensure the validity and format the schema changes
-   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`
+   - Update `platform/prisma/base.prisma` (or `plugins/<ns>/prisma/extension.prisma` for plugin-owned tables) and re-run `yarn prisma:compose`.
+   - Run `yarn prisma validate` and `yarn prisma format` to ensure the schema is valid and formatted.
+   - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`.
 
 #### Local dev domain (macOS): `sovereign.test`
 
@@ -381,8 +180,6 @@ _Caddy example:_
 4. Open: `http://sovereign.test` (or `https://sovereign.test` if TLS is enabled)
 
 > Tip: Keep this setup dev‑only. For production, use your standard reverse proxy (Caddy/Nginx/Traefik) with real domains and certificates.
-
-#### React / JSX Support (Server-Side Rendering + Client Hydration)
 
 #### React / JSX Support (Server-Side Rendering + Client Hydration)
 

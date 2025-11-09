@@ -16,17 +16,17 @@ Each plugin manifest defines host access under `sovereign.platformCapabilities`.
 }
 ```
 
-The manifest builder resolves these flags into `plugins.<namespace>.sovereign.platformCapabilitiesResolved` inside `manifest.json`, so ops and UI surfaces can display the exact set (e.g., `["database","git"]`). Only the following allow‑listed capabilities are currently accepted:
+The manifest builder resolves these flags into `plugins.<namespace>.sovereign.platformCapabilitiesResolved` inside `manifest.json`, so ops and UI surfaces can display the exact set (e.g., `["database","git"]`). Only the following allow-listed capabilities are currently accepted (mirrors `docs/architecture.md#capability-model`):
 
-| Capability   | Injected Service             | Notes                           |
-| ------------ | ---------------------------- | ------------------------------- |
-| `database`   | Prisma client (`ctx.prisma`) | Full DB access                  |
-| `git`        | Git manager helpers          | Used by blog/papertrail         |
-| `fs`         | File-system adapter          | Scoped to plugin storage        |
-| `env`        | `refreshEnvCache`            | Refreshes env config            |
-| `uuid`       | `uuid()` helper              | Deterministic IDs               |
-| `mailer`     | Transactional mailer         | Sends email                     |
-| `fileUpload` | Upload helper (experimental) | Disabled in prod until hardened |
+| Capability   | Injected Service             | Risk     | Production notes                                                  |
+| ------------ | ---------------------------- | -------- | ----------------------------------------------------------------- |
+| `database`   | Prisma client (`ctx.prisma`) | critical | Full read/write DB access—declare only when absolutely necessary. |
+| `git`        | Git manager helpers          | high     | Touches repo-backed content (blog, PaperTrail).                   |
+| `fs`         | File-system adapter          | high     | Scoped to plugin storage; avoid persisting secrets.               |
+| `env`        | `refreshEnvCache`            | medium   | Allows forcing env refresh; audit usage in production.            |
+| `uuid`       | `uuid()` helper              | low      | Pure utility; deterministic IDs.                                  |
+| `mailer`     | Transactional mailer         | high     | Sends email; ensure compliance opt-ins.                           |
+| `fileUpload` | Upload helper (experimental) | medium   | Disabled in prod unless `CAPABILITY_FILE_UPLOAD_ENABLED=true`.    |
 
 Requests for unknown caps, or caps disabled in production, cause bootstrap errors. During development you may temporarily bypass declarations by exporting `DEV_ALLOW_ALL_CAPS=true`, but this is noisy and should never reach production.
 
@@ -67,18 +67,41 @@ The manifest builder normalizes these into `manifest.pluginCapabilities.definiti
 
 ## Plugin Route Helpers
 
-Within plugin routes, prefer the built-in helpers exposed on the context:
+Within plugin routes, prefer the built-in helpers exposed on the context. The pattern below gates the handler with both user and platform capability checks, so violations fail early with standard 401/403 responses:
 
 ```js
 router.post(
   "/:id/posts",
-  ctx.pluginAuth.require({ capabilities: ["user:plugin.blog.post.create"] }),
+  ctx.pluginAuth.require({
+    capabilities: ["user:plugin.blog.post.create"],
+  }),
   async (req, res) => {
-    ctx.assertPlatformCapability("database");
+    ctx.assertPlatformCapability("database"); // plugin declared database access
     ctx.assertUserCapability(req, "user:plugin.blog.post.create");
-    // ... business logic ...
+    const post = await ctx.prisma.blogPost.create({
+      /* ... */
+    });
+    res.json(post);
   }
 );
 ```
 
-This keeps role + capability checks consistent across plugins and ensures violations surface with a standard 403 response.
+For composite flows you can stack guards—e.g., require a role plus a consent-level capability, then assert a second capability deeper in the handler:
+
+```js
+router.delete(
+  "/:id/posts/:postId",
+  ctx.pluginAuth.require({
+    roles: ["project:admin"],
+    capabilities: ["user:plugin.blog.post.delete"],
+  }),
+  async (req, res) => {
+    ctx.assertPlatformCapability("database");
+    ctx.assertUserCapability(req, "user:plugin.blog.post.delete", { minValue: "compliance" });
+    await ctx.prisma.blogPost.delete({ where: { id: req.params.postId } });
+    res.sendStatus(204);
+  }
+);
+```
+
+This keeps role + capability checks consistent across plugins, makes logs usable (`PluginCapabilityError` contains metadata), and ensures every route explicitly documents the permissions it depends on.

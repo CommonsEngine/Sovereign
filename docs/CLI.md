@@ -1,6 +1,6 @@
 # Sovereign CLI
 
-The `sv` command-line interface manages plugins, database migrations, and manifest generation for a Sovereign workspace. It is meant to run from the repository root (or via `yarn sv`, `pnpm sv`, etc.).
+The `sv` command-line interface manages plugins, database migrations, and manifest generation for a Sovereign workspace. It is meant to run from the repository root (or via `yarn sv`, `pnpm sv`, etc.). For a platform-wide architectural overview (routing, styling, capability model), read `docs/architecture.md`.
 
 ```
 sv [global options] <namespace> <command> [args]
