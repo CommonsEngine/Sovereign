@@ -4,6 +4,7 @@ import { pathToFileURL } from "url";
 import logger from "$/services/logger.js";
 import ensurePluginLayout from "$/middlewares/ensurePluginLayout.js";
 import { requireAuth } from "$/middlewares/auth.js";
+import requireRole from "$/middlewares/requireRole.js";
 import exposeGlobals from "$/middlewares/exposeGlobals.js";
 import * as pluginHandler from "$/handlers/plugin.js";
 
@@ -15,6 +16,12 @@ export async function buildPluginRoutes(app, manifest, config) {
   const { NODE_ENV } = config;
 
   const pluginContextCache = new Map();
+
+  const createPluginAccessGuard = (plugin) => {
+    const roles = Array.isArray(plugin?.featureAccess?.roles) ? plugin.featureAccess.roles : [];
+    if (!roles.length) return null;
+    return requireRole(roles);
+  };
 
   const ensurePluginContext = (plugin, namespace) => {
     const cacheKey = namespace || plugin?.namespace || plugin?.id;
@@ -77,6 +84,13 @@ export async function buildPluginRoutes(app, manifest, config) {
       const pluginType = plugin.type; // spa | custom
       const pluginKind = plugin?.sovereign?.allowMultipleInstances ? "project" : "module";
       const pluginKey = `${pluginType}::${pluginKind}`;
+      const pluginAccessGuard = createPluginAccessGuard(plugin);
+      const viewMiddlewares = [requireAuth];
+      if (pluginAccessGuard) viewMiddlewares.push(pluginAccessGuard);
+      viewMiddlewares.push(exposeGlobals);
+      const apiMiddlewares = [requireAuth];
+      if (pluginAccessGuard) apiMiddlewares.push(pluginAccessGuard);
+      apiMiddlewares.push(exposeGlobals);
 
       let pluginContext;
       try {
@@ -88,12 +102,12 @@ export async function buildPluginRoutes(app, manifest, config) {
 
       if (pluginType === "spa") {
         if (pluginKey === "spa::module") {
-          app.get(`/${ns}`, requireAuth, exposeGlobals, (req, res, next) => {
+          app.get(`/${ns}`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPAModule(req, res, next, { app, plugin });
           });
         }
         if (pluginKey === "spa::project") {
-          app.get(`/${ns}/:id`, requireAuth, exposeGlobals, (req, res, next) => {
+          app.get(`/${ns}/:id`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPA(req, res, next, { app, plugins });
           });
         }
@@ -137,10 +151,8 @@ export async function buildPluginRoutes(app, manifest, config) {
               continue;
             }
 
-            const middlewares = [requireAuth, exposeGlobals];
-
             const mountBase = `/api/plugins/${ns}`;
-            app.use(mountBase, ...middlewares, resolvedRouter);
+            app.use(mountBase, ...apiMiddlewares, resolvedRouter);
           } catch (err) {
             logger.error(`[plugins] failed to load spa:${ns}/web from ${entryAbs}:`, err);
           }
@@ -194,7 +206,7 @@ export async function buildPluginRoutes(app, manifest, config) {
                 continue;
               }
 
-              const middlewares = [requireAuth, exposeGlobals];
+              const middlewares = kind === "web" ? [...viewMiddlewares] : [...apiMiddlewares];
               if (kind === "web") {
                 middlewares.push(ensurePluginLayout("custom/index"));
               }

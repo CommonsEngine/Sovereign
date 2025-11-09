@@ -39,6 +39,34 @@ function formatError(message, options = {}) {
 const DEFAULT_ICON_NAME = "default";
 const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
 
+function normalizeRoleValue(role) {
+  if (!role) return null;
+  if (typeof role === "string") return role.trim().toLowerCase();
+  if (typeof role === "number") return String(role);
+  if (typeof role === "object") {
+    if (typeof role.role === "string" && role.role.trim()) return role.role.trim().toLowerCase();
+    if (typeof role.role === "number") return String(role.role);
+    if (typeof role.id === "string" && role.id.trim()) return role.id.trim().toLowerCase();
+    if (typeof role.id === "number") return String(role.id);
+    if (typeof role.key === "string" && role.key.trim()) return role.key.trim().toLowerCase();
+    if (typeof role.label === "string" && role.label.trim()) return role.label.trim().toLowerCase();
+  }
+  return null;
+}
+
+function resolvePluginFeatureAccess(manifestNamespace, pluginManifest) {
+  const userCaps = pluginManifest?.sovereign?.userCapabilities;
+  if (!Array.isArray(userCaps)) return null;
+  const expectedKey = `user:plugin.${manifestNamespace}.feature`;
+  const entry = userCaps.find((cap) => cap && cap.key === expectedKey);
+  if (!entry) return null;
+  const normalizedRoles = Array.isArray(entry.roles)
+    ? entry.roles.map((role) => normalizeRoleValue(role)).filter(Boolean)
+    : [];
+  if (!normalizedRoles.length) return null;
+  return { roles: Array.from(new Set(normalizedRoles)) };
+}
+
 function normalizeUiConfig(rawUi, context = {}) {
   const uiConfig = rawUi && typeof rawUi === "object" ? rawUi : {};
 
@@ -255,6 +283,7 @@ const pluginManifestSchema = {
         },
       },
     },
+    corePlugin: { type: "boolean" },
   },
 };
 
@@ -513,6 +542,8 @@ const buildManifest = async () => {
         userCapabilitiesResolved: resolvedUserCaps,
       };
 
+      const featureAccess = resolvePluginFeatureAccess(manifestNamespace, pluginManifest);
+
       let normalizedUi;
       try {
         normalizedUi = normalizeUiConfig(pluginManifest?.ui, {
@@ -529,6 +560,7 @@ const buildManifest = async () => {
         entry,
         ...pluginManifest,
         ui: normalizedUi,
+        featureAccess,
         sovereign: normalizedSovereign,
         ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
       };
@@ -555,7 +587,7 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, ui } = finalPlugins[k];
+    const { id, name, namespace, sovereign, ui, featureAccess, corePlugin } = finalPlugins[k];
     const resolvedUi = ui || normalizeUiConfig(undefined);
     const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
 
@@ -565,6 +597,8 @@ const buildManifest = async () => {
         label: name,
         value: namespace,
         ui: resolvedUi,
+        access: featureAccess || null,
+        corePlugin: !!corePlugin,
       });
     } else {
       manifest.modules.push({
@@ -573,6 +607,8 @@ const buildManifest = async () => {
         value: namespace,
         ui: resolvedUi,
         sidebarHidden: iconHidden,
+        access: featureAccess || null,
+        corePlugin: !!corePlugin,
       });
     }
   });

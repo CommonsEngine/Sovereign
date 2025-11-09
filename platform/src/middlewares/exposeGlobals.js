@@ -8,6 +8,47 @@ const manifest = fs.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json")
 
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 
+const normalizeRoleKey = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") return value.trim().toLowerCase();
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    if (typeof value.key === "string" && value.key.trim()) return value.key.trim().toLowerCase();
+    if (typeof value.id === "string" && value.id.trim()) return value.id.trim().toLowerCase();
+    if (typeof value.id === "number") return String(value.id);
+    if (typeof value.label === "string" && value.label.trim())
+      return value.label.trim().toLowerCase();
+  }
+  return null;
+};
+
+const collectUserRoles = (user) => {
+  const roles = new Set();
+  if (!user) return roles;
+  if (Array.isArray(user.roles)) {
+    user.roles.forEach((role) => {
+      const key = normalizeRoleKey(role);
+      if (key) roles.add(key);
+    });
+  }
+  if (user.role) {
+    const key = normalizeRoleKey(user.role);
+    if (key) roles.add(key);
+  }
+  if (user.primaryRole) {
+    const key = normalizeRoleKey(user.primaryRole);
+    if (key) roles.add(key);
+  }
+  return roles;
+};
+
+const moduleAccessible = (module, userRoles) => {
+  const required = Array.isArray(module?.access?.roles) ? module.access.roles : [];
+  if (!required.length) return true;
+  if (!userRoles || userRoles.size === 0) return false;
+  return required.some((role) => userRoles.has(role));
+};
+
 export default function exposeGlobals(req, res, next) {
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     return next();
@@ -54,19 +95,22 @@ export default function exposeGlobals(req, res, next) {
   res.locals.user = {
     name: req.user?.name || "guest",
     primaryRole: req.user?.role || null,
+    roles: Array.isArray(req.user?.roles) ? req.user.roles : [],
   };
 
   const manifestModules = Array.isArray(manifest.modules) ? manifest.modules : [];
   const pathname = req.path || "/";
+  const roleSet = collectUserRoles(req.user);
+  const availableModules = manifestModules.filter((mod) => moduleAccessible(mod, roleSet));
   const activeModule =
-    manifestModules.find((mod) => {
+    availableModules.find((mod) => {
       const slug = typeof mod?.value === "string" ? mod.value.trim() : "";
       if (!slug) return false;
       const base = `/${slug}`;
       return pathname === base || pathname.startsWith(`${base}/`);
     }) || null;
 
-  res.locals.modules = manifestModules.map((mod) => ({
+  res.locals.modules = availableModules.map((mod) => ({
     ...mod,
     isActive: activeModule ? activeModule.value === mod.value : false,
   }));

@@ -81,6 +81,7 @@ export interface PluginManifest {
   license: string;
   entryPoints?: Record<string, string>;
   ui?: PluginUiConfig;
+  corePlugin?: boolean;
   sovereign: PluginSovereignMetadata;
   /** @deprecated Use sovereign.platformCapabilities instead. */
   platformCapabilities?: Record<string, boolean>;
