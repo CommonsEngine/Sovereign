@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "module";
 
 import { collectPluginCapabilities } from "./lib/plugin-capabilities.mjs";
-import { getIcon, getPaletteColor, hasIcon, hasPaletteToken } from "../packages/ui-assets/index.js";
+import { getIcon, getPaletteColor, hasIcon, hasPaletteToken } from "@sovereign/ui-assets";
 
 /**
  * @typedef {import("@sovereign/types").PluginManifest} PluginManifest
