@@ -33,6 +33,9 @@
     width: 100%;
     min-height: 100vh;
   }
+  .gap-xs {
+    gap: var(--space-xs);
+  }
   .gap-s {
     gap: var(--space-s);
   }

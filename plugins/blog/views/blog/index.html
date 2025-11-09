@@ -1,171 +1,172 @@
 <style>
-  /* @layer components.alerts. move later */
-  .alert__notice {
-    margin-bottom: 20px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border-primary, #e5e7eb);
-    background: var(--color-bg-muted, #f3f4f6);
-    color: var(--color-text-secondary, #374151);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 5px;
-  }
-  .alert__notice--error {
-    border-color: color-mix(in oklab, var(--color-danger), white 20%);
-    background: color-mix(in oklab, var(--color-danger), white 85%);
-    color: color-mix(in oklab, var(--color-danger), black 25%);
-  }
-  .alert__notice-link {
-    color: inherit;
-    text-decoration: underline;
-    font-weight: 600;
-  }
-  /* search input */
-  .search {
-    width: 600px;
-    max-width: 40%;
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border-primary, #e5e7eb);
-    background: var(--color-bg-primary, #fff);
-    color: var(--color-text-primary, #111827);
-  }
-  @media (max-width: 720px) {
-    .search {
-      width: 100%;
-      max-width: none;
+  @layer plugin.blog.index {
+    .alert__notice {
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary, #e5e7eb);
+      background: var(--color-bg-muted, #f3f4f6);
+      color: var(--color-text-secondary, #374151);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
     }
-  }
-  /* buttons inside the card bar */
-  .card__bar-icon {
-    appearance: none;
-    padding: 6px 8px;
-    font-size: 12px;
-    cursor: pointer;
-    border: none;
-    background-color: transparent;
-    box-shadow: var(--shadow-none);
-    color: var(--color-text-secondary);
-    border-radius: var(--radius-s, 8px);
-    transition:
-      background-color var(--transition-fast, 120ms) var(--transition-easing-standard, ease),
-      color var(--transition-fast, 120ms) var(--transition-easing-standard, ease);
-  }
-  .card__bar-icon:hover {
-    background: color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 92%);
-    color: var(--color-danger);
-  }
-  .card__bar-icon svg {
-    width: 24px;
-    height: 24px;
-    display: block;
-    stroke: currentColor;
-  }
-  .page__header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-m, 16px);
-  }
-  .page__actions {
-    display: flex;
-    gap: var(--space-xs, 10px);
-    align-items: center;
-  }
-  .share-modal__form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: flex-end;
-    margin-bottom: 16px;
-  }
-  .share-modal__form fieldset {
-    border: 0;
-    padding: 0;
-    margin: 0;
-    min-width: 220px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .share-modal__form label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--color-text-secondary);
-  }
-  .share-modal__form input,
-  .share-modal__form select {
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--color-border-primary, #d1d5db);
-    font: inherit;
-    min-height: 36px;
-  }
-  .share-modal__error {
-    display: none;
-    padding: 10px 12px;
-    border-radius: 8px;
-    border: 1px solid color-mix(in oklab, var(--color-danger), white 35%);
-    background: color-mix(in oklab, var(--color-danger), white 90%);
-    color: color-mix(in oklab, var(--color-danger), black 30%);
-    font-size: 0.9rem;
-    margin-bottom: 12px;
-  }
-  .share-modal__table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 4px;
-  }
-  .share-modal__table thead {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--color-text-secondary);
-  }
-  .share-modal__table th,
-  .share-modal__table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
-    vertical-align: middle;
-    text-align: left;
-  }
-  .share-modal__status {
-    font-size: 0.8rem;
-    color: var(--color-text-secondary);
-  }
-  .share-modal__status--pending {
-    color: color-mix(in oklab, var(--color-warning), black 15%);
-  }
-  .share-modal__empty {
-    padding: 16px;
-    text-align: center;
-    color: var(--color-text-secondary);
-    font-size: 0.95rem;
-  }
-  .share-modal__loading {
-    padding: 16px;
-    text-align: center;
-  }
-  .share-modal__actions {
-    display: flex;
-    gap: 6px;
-  }
-  .share-modal__role {
-    min-width: 140px;
-  }
-  .share-modal__tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    padding: 0.2rem 0.55rem;
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--color-bg-secondary), white 40%);
-    border: 1px solid var(--color-border-primary);
-    color: var(--color-text-secondary);
+    .alert__notice--error {
+      border-color: color-mix(in oklab, var(--color-danger), white 20%);
+      background: color-mix(in oklab, var(--color-danger), white 85%);
+      color: color-mix(in oklab, var(--color-danger), black 25%);
+    }
+    .alert__notice-link {
+      color: inherit;
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    /* search input */
+    .search {
+      width: 600px;
+      max-width: 40%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary, #e5e7eb);
+      background: var(--color-bg-primary, #fff);
+      color: var(--color-text-primary, #111827);
+    }
+    @media (max-width: 720px) {
+      .search {
+        width: 100%;
+        max-width: none;
+      }
+    }
+    /* buttons inside the card bar */
+    .card__bar-icon {
+      appearance: none;
+      padding: 6px 8px;
+      font-size: 12px;
+      cursor: pointer;
+      border: none;
+      background-color: transparent;
+      box-shadow: var(--shadow-none);
+      color: var(--color-text-secondary);
+      border-radius: var(--radius-s, 8px);
+      transition:
+        background-color var(--transition-fast, 120ms) var(--transition-easing-standard, ease),
+        color var(--transition-fast, 120ms) var(--transition-easing-standard, ease);
+    }
+    .card__bar-icon:hover {
+      background: color-mix(in oklab, var(--color-danger), var(--color-bg-primary) 92%);
+      color: var(--color-danger);
+    }
+    .card__bar-icon svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+      stroke: currentColor;
+    }
+    .page__header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-m, 16px);
+    }
+    .page__actions {
+      display: flex;
+      gap: var(--space-xs, 10px);
+      align-items: center;
+    }
+    .share-modal__form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+      margin-bottom: 16px;
+    }
+    .share-modal__form fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0;
+      min-width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .share-modal__form label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+    .share-modal__form input,
+    .share-modal__form select {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--color-border-primary, #d1d5db);
+      font: inherit;
+      min-height: 36px;
+    }
+    .share-modal__error {
+      display: none;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid color-mix(in oklab, var(--color-danger), white 35%);
+      background: color-mix(in oklab, var(--color-danger), white 90%);
+      color: color-mix(in oklab, var(--color-danger), black 30%);
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    .share-modal__table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .share-modal__table thead {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--color-text-secondary);
+    }
+    .share-modal__table th,
+    .share-modal__table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--color-border-secondary, #e5e7eb);
+      vertical-align: middle;
+      text-align: left;
+    }
+    .share-modal__status {
+      font-size: 0.8rem;
+      color: var(--color-text-secondary);
+    }
+    .share-modal__status--pending {
+      color: color-mix(in oklab, var(--color-warning), black 15%);
+    }
+    .share-modal__empty {
+      padding: 16px;
+      text-align: center;
+      color: var(--color-text-secondary);
+      font-size: 0.95rem;
+    }
+    .share-modal__loading {
+      padding: 16px;
+      text-align: center;
+    }
+    .share-modal__actions {
+      display: flex;
+      gap: 6px;
+    }
+    .share-modal__role {
+      min-width: 140px;
+    }
+    .share-modal__tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: color-mix(in oklab, var(--color-bg-secondary), white 40%);
+      border: 1px solid var(--color-border-primary);
+      color: var(--color-text-secondary);
+    }
   }
 </style>
 <main
@@ -184,16 +185,27 @@
       <h2 class="sv-page__title">{{project.name}}</h2>
       <p class="sv-page__subtitle">{{project.desc}}</p>
     </div>
-    {{#if share.canView}}
-    <button
-      type="button"
-      class="button sv-button sv-button--primary"
-      data-modal-open="share-project"
-      data-share-trigger
-    >
-      {{#if share.canManage}}Share project{{else}}View access{{/if}}
-    </button>
-    {{/if}}
+    <div class="flex row flex-space-between align-items-center gap-xs">
+      <a
+        role="button"
+        class="button sv-button"
+        href="/blog/{{project.id}}/post/new"
+        title="Create post"
+        aria-label="Create post"
+      >
+        Create post
+      </a>
+      {{#if share.canView}}
+      <button
+        type="button"
+        class="button sv-button sv-button--primary"
+        data-modal-open="share-project"
+        data-share-trigger
+      >
+        {{#if share.canManage}}Share project{{else}}View access{{/if}}
+      </button>
+      {{/if}}
+    </div>
   </header>
 
   <nav class="sv-breadcrumb" aria-label="Breadcrumb">
@@ -235,43 +247,13 @@
             placeholder="Search posts…"
             autocomplete="off"
           />
-          <a
-            role="button"
-            class="card__bar-icon"
-            href="/blog/{{project.id}}/post/new"
-            title="Create post"
-            aria-label="Create post"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-6"
-              role="img"
-              aria-hidden="true"
-              focusable="false"
-            >
-              <title>Create post</title>
-              <path
-                d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </a>
         </div>
       </div>
       <div class="card__body table-wrap">
         <table id="posts-table" aria-label="Posts">
           <thead>
             <tr>
-              <th style="width: 40%">Title</th>
+              <th style="width: 35%">Title</th>
               <th>Path</th>
               <th>Tags</th>
               <th>Status</th>
@@ -302,9 +284,9 @@
 
     <!-- Project Meta -->
     <aside class="sv-card sv-col-4">
-      <div class="sv-card__header">
+      <div class="sv-card__header" style="padding-top: 21px; padding-bottom: 21px">
         <strong>Project Meta</strong>
-        <button class="card__bar-icon" type="button" aria-label="Project info" title="Project info">
+        <!-- <button class="card__bar-icon" type="button" aria-label="Project info" title="Project info">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -327,7 +309,7 @@
               d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
             />
           </svg>
-        </button>
+        </button> -->
       </div>
       <div class="card__body padding-m">
         <div class="flex col gap-s">

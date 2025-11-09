@@ -1,11 +1,11 @@
 {
-  "type": "custom",
   "id": "@sovereign/blog",
   "namespace": "blog",
   "name": "Blog",
   "description": "Sovereign Blog",
   "version": "1.0.0-alpha.7",
-  "devOnly": true,
+  "type": "custom",
+  "devOnly": false,
   "draft": false,
   "entryPoints": {
     "api": "routes/api/index.js",
@@ -27,7 +27,7 @@
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": true,
-    "compat": { "platform": "^0.7.3", "node": ">=20" },
+    "compat": { "platform": "^0.8.0", "node": ">=20" },
     "platformCapabilities": {
       "database": true,
       "git": true,

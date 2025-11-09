@@ -86,7 +86,7 @@
       <td>${iso ? `<time datetime="${iso}">${escapeHtml(label)}</time>` : "—"}</td>
       <td>
         <div class="row-actions flex row align-items-center gap-s">
-          <a class="button sv-button" role="button" href="${hrefEdit}">
+          <a class="button sv-icon-button" role="button" href="${hrefEdit}">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -104,7 +104,7 @@
               />
             </svg>
           </a>
-          <button class="button sv-button" type="button" data-action="delete" data-id="${escapeAttr(post.filename)}">
+          <button class="button sv-icon-button" type="button" data-action="delete" data-id="${escapeAttr(post.filename)}">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
