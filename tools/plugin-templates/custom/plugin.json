@@ -11,8 +11,20 @@
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
   },
+  "sidebarHidden": false,
   "author": "{{AUTHOR}}",
   "license": "{{LICENSE}}",
+  "ui": {
+    "icon": { "name": "default" },
+    "palette": {
+      "primary": "violet-500",
+      "accent": "rose-500"
+    },
+    "layout": {
+      "sidebar": true,
+      "header": true
+    }
+  },
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": true,

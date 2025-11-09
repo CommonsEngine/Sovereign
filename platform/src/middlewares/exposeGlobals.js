@@ -56,7 +56,28 @@ export default function exposeGlobals(req, res, next) {
     primaryRole: req.user?.role || null,
   };
 
-  res.locals.modules = manifest.modules || [];
+  const manifestModules = Array.isArray(manifest.modules) ? manifest.modules : [];
+  const pathname = req.path || "/";
+  const activeModule =
+    manifestModules.find((mod) => {
+      const slug = typeof mod?.value === "string" ? mod.value.trim() : "";
+      if (!slug) return false;
+      const base = `/${slug}`;
+      return pathname === base || pathname.startsWith(`${base}/`);
+    }) || null;
+
+  res.locals.modules = manifestModules.map((mod) => ({
+    ...mod,
+    isActive: activeModule ? activeModule.value === mod.value : false,
+  }));
+
+  if (typeof res.locals.showHeader === "undefined") {
+    res.locals.showHeader = activeModule ? activeModule?.ui?.layout?.header !== false : true;
+  }
+
+  if (typeof res.locals.showSidebar === "undefined") {
+    res.locals.showSidebar = activeModule ? activeModule?.ui?.layout?.sidebar !== false : true;
+  }
 
   next();
 }

@@ -7,9 +7,9 @@
     <!-- top loading spinner -->
     <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
 
-    {{> sidebar}}
+    {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
-      {{> header}}
+      {{#if showHeader}} {{> header}} {{/if}}
       <section id="plugin-root" class="sv-container">
         {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
         <section>

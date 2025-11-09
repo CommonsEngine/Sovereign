@@ -13,6 +13,17 @@
   },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
+  "ui": {
+    "icon": { "name": "split" },
+    "palette": {
+      "primary": "emerald-500",
+      "accent": "emerald-300"
+    },
+    "layout": {
+      "sidebar": true,
+      "header": true
+    }
+  },
   "sovereign": {
     "schemaVersion": 1,
     "allowMultipleInstances": false,

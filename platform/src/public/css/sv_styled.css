@@ -179,6 +179,7 @@
     background: var(--color-bg-primary);
     box-shadow: var(--shadow-s);
     color: var(--color-text-primary) !important;
+    --sv-sidebar-icon-color: var(--color-text-primary);
     text-decoration: none;
     transition:
       background-color var(--transition-base, 200ms) var(--transition-easing-standard, ease),
@@ -207,6 +208,7 @@
     width: 18px;
     height: 18px;
     stroke: currentColor;
+    color: var(--sv-sidebar-icon-color);
     pointer-events: none;
   }
   .sv-sidebar__spacer {

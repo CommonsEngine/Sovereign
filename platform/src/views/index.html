@@ -8,9 +8,9 @@
     <!-- top loading spinner -->
     <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
 
-    {{> sidebar}}
+    {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
-      {{> header}}
+      {{#if showHeader}} {{> header}} {{/if}}
       <div class="sv-container">
         <div class="sv-page__wrap sv-page__wrap--center">
           <header class="sv-page__header">
