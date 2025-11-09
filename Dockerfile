@@ -51,31 +51,20 @@ ENV DATABASE_URL="file:/app/data/sovereign.db"
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
-# Copy only the files needed to run a production install
-COPY package.json yarn.lock ./
-
-# Production-only deps, no scripts (they’ve already run in build stage)
-RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
-    yarn install --frozen-lockfile --production --ignore-scripts
-
 # Bring built app and prisma **artifacts** (client + engine) from build
-COPY --from=build /app/dist ./dist
+# Copy the platform app since the runtime entry is /platform/index.cjs
+COPY --from=build /app/platform ./platform
 COPY --from=build /app/prisma ./prisma
 
 # Copy Prisma client output generated during build (so we don't need prisma CLI now)
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 
-
-
-# Copy production node_modules from deps
-COPY --from=deps /app/node_modules ./node_modules
+# Copy node_modules from build (matches built artifacts and avoids registry lookups)
+COPY --from=build /app/node_modules ./node_modules
 
 # Copy build artifacts and required folders
 COPY --from=build /app/package.json ./package.json
-
-# Ensure Prisma client is generated for the runtime environment
-RUN yarn prisma generate
 
 # Prepare persistent data directory for sqlite
 RUN mkdir -p /app/data \
@@ -90,4 +79,4 @@ USER node
 EXPOSE 5000
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
-CMD ["node", "dist/index.mjs"]
+CMD ["node", "platform/index.cjs"]

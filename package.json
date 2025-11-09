@@ -52,7 +52,6 @@
     "lint-staged": "^16.2.6"
   },
   "devDependencies": {
-    "@sovereign/ui-assets": "0.0.0",
     "@eslint/js": "^9.36.0",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
