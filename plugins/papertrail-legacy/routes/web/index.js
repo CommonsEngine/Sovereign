@@ -13,13 +13,11 @@ const CONTRIBUTOR_STATUS = {
 };
 
 const RELATION_SELECT_MAP = {
-  blog: "Blog",
-  papertrail: "PaperTrail",
+  papertrail: "paperTrail",
 };
 
 const RELATION_RESULT_MAP = {
-  Blog: "blog",
-  PaperTrail: "papertrail",
+  paperTrail: "papertrail",
 };
 
 const renameSelectKey = (key) => RELATION_SELECT_MAP[key] || key;

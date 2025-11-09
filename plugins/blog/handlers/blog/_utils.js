@@ -29,7 +29,16 @@ const CONTRIBUTOR_STATUS = {
   revoked: "revoked",
 };
 
-const renameBlogKey = (value) => (value === "blog" ? "Blog" : value);
+const RELATION_SELECT_MAP = {
+  papertrail: "blog",
+};
+
+const RELATION_RESULT_MAP = {
+  paperTrail: "blog",
+};
+
+const renameSelectKey = (key) => RELATION_SELECT_MAP[key] || key;
+// const renameSelectKey = (value) => (value === "blog" ? "Blog" : value);
 
 function normalizeSelectionShape(node) {
   if (!node || typeof node !== "object") return node;
@@ -38,7 +47,7 @@ function normalizeSelectionShape(node) {
   }
   const normalized = {};
   for (const [key, val] of Object.entries(node)) {
-    const normalizedKey = renameBlogKey(key);
+    const normalizedKey = renameSelectKey(key);
     if (val && typeof val === "object") {
       normalized[normalizedKey] = normalizeSelectionShape(val);
     } else {
@@ -50,12 +59,15 @@ function normalizeSelectionShape(node) {
 
 function normalizeProjectResult(project) {
   if (!project || typeof project !== "object") return project;
-  if (!Object.prototype.hasOwnProperty.call(project, "Blog")) return project;
   const normalized = { ...project };
-  if (normalized.Blog !== undefined && normalized.blog === undefined) {
-    normalized.blog = normalized.Blog;
+  for (const [dbKey, alias] of Object.entries(RELATION_RESULT_MAP)) {
+    if (Object.prototype.hasOwnProperty.call(normalized, dbKey)) {
+      if (!Object.prototype.hasOwnProperty.call(normalized, alias)) {
+        normalized[alias] = normalized[dbKey];
+      }
+      delete normalized[dbKey];
+    }
   }
-  delete normalized.Blog;
   return normalized;
 }
 
@@ -175,7 +187,7 @@ export async function getProjectContext(req, projectId, options = {}, ctx = {}) 
       status: true,
       createdAt: true,
       updatedAt: true,
-      Blog: {
+      blog: {
         select: {
           id: true,
           projectId: true,
