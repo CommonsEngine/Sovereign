@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { engine as hbsEngine } from "express-handlebars";
 import fs from "fs/promises";
 import path from "path";
+import { randomUUID } from "node:crypto";
 
 import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 
@@ -66,9 +67,18 @@ export default async function createServer(manifest) {
   app.use(useJSX);
 
   // Trust proxy (needed if running behind reverse proxy to set secure cookies properly)
-  app.set("trust proxy", true);
+  app.set("trust proxy", 1);
+
+  // For observability logs
+  app.use((req, res, next) => {
+    req.id = randomUUID();
+    res.set("x-request-id", req.id);
+    next();
+  });
 
   // Core middleware
+  // TODO: create a nonce per request, store on res.locals.cspNonce
+  // set helmet contentSecurityPolicy with script-src 'nonce-<nonce>' 'strict-dynamic' https:
   app.use(
     helmet({
       contentSecurityPolicy: IS_PROD

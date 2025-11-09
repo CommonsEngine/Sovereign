@@ -14,6 +14,13 @@ export async function bootstrap(manifest) {
   logger.info(`➜ Plugin directory: ${manifest.__pluginsdir}`);
   const start = Date.now();
 
+  process.on("unhandledRejection", (reason) => {
+    logger.error("✗ Unhandled promise rejection:", reason);
+  });
+  process.on("uncaughtException", (err) => {
+    logger.error("✗ Uncaught exception:", err?.stack || err);
+  });
+
   try {
     await connectPrismaWithRetry();
 
@@ -22,9 +29,14 @@ export async function bootstrap(manifest) {
     const extHost = await createExtHost(manifest, { pluginsDir: __pluginsdir });
 
     logger.info("- Initializing HTTP server...");
-    // This sets up Express, middlewares, coreRoutes etc.
     const server = await createServer(extHost);
-    server.start();
+    await server.start();
+
+    // platform/src/bootstrap.js (after await server.start())
+    const handles = process._getActiveHandles?.() || [];
+    logger.info(
+      `  ➜  Active Handles: ${handles.length} :: ${handles.map((h) => h.constructor?.name || typeof h).join(", ")}`
+    );
 
     logger.info(`✓ Sovereign server ready in ${Date.now() - start}ms`);
     logger.info(`  ➜  Version: ${server.appVersion}`);
@@ -41,7 +53,7 @@ export async function bootstrap(manifest) {
       logger.warn(`Received ${signal}, shutting down gracefully...`);
       try {
         await gracefulShutdown(signal);
-        // await server.stop();
+        await server.stop();
         logger.info("✓ Clean shutdown complete");
       } catch (err) {
         logger.error("✗ Error during shutdown", err.stack || err);
