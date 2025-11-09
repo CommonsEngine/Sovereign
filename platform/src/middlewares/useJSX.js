@@ -141,7 +141,7 @@ async function renderHead(res) {
       }
     });
   }).catch(() => {
-    const title = (locals.head && locals.head.title) || "Sovereign";
+    const title = (locals?.head && locals?.head?.title) || "Sovereign";
     const version = locals.app?.version || "0.0.0";
     return `<meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />

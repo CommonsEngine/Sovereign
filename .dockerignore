@@ -6,7 +6,6 @@ yarn-error.log
 
 # Local env & config
 .env
-.env.*
 *.local
 
 # Build outputs / caches

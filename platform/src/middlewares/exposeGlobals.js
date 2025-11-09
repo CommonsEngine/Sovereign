@@ -61,17 +61,17 @@ export default function exposeGlobals(req, res, next) {
   // TODO: Expose api level globals too
   res.locals.head = {
     lang: { short: "en", long: "en-US" },
-    title: manifest.platform.title,
+    title: manifest?.platform?.title,
     meta: [
-      { name: "application-name", content: manifest.platform.title },
+      { name: "application-name", content: manifest?.platform?.title },
       { name: "description", content: manifest.platform.description },
       { name: "keywords", content: manifest.platform.keywords?.join(", ") }, // TODO: Pick keywords from manifest
       { name: "robots", content: "index,follow" },
       { name: "theme-color", content: "#ffffff" },
       // Open Graph
-      { property: "og:site_name", content: manifest.platform.title },
+      { property: "og:site_name", content: manifest?.platform?.title },
       { property: "og:type", content: "app" },
-      { property: "og:title", content: manifest.platform.title },
+      { property: "og:title", content: manifest?.platform?.title },
       { property: "og:description", content: manifest.platform.description },
       { property: "og:url", content: "/" },
       { property: "og:image", content: "/assets/og-image.png" },
