@@ -49,6 +49,13 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 - **Asset strategy**: Static assets under `public/` are copied verbatim. Code under `src/` or `routes/` is transpiled but keeps file extensions so dynamic imports remain stable.
 - **Development ergonomics**: SPA plugins can declare a Vite dev server so the platform proxies HMR traffic automatically when `NODE_ENV !== "production"`.
 
+### Module vs. Project Plugins
+
+- **Module plugins** (`allowMultipleInstances` omitted/false) behave like global features. They mount once (e.g., `/blog`) and store configuration at the workspace level. They are ideal for dashboard-style utilities or single-instance tools.
+- **Project plugins** (`sovereign.allowMultipleInstances: true`) support many instances per tenant/project. Routes automatically include project identifiers (e.g., `/blog/:id`) and the runtime expects per-project settings plus RBAC scoping.
+- The kind is inferred at runtime (`pluginKind = allowMultipleInstances ? "project" : "module"` in `platform/src/ext-host/build-routes.js`). This influences route wiring: SPA project plugins mount `/namespace/:id` while module variants mount `/namespace`.
+- Manifests may also set `featureAccess.roles` to further restrict who can load module/project routes; the platform applies those guards uniformly when wiring routers.
+
 ## Styling System
 
 - **Design tokens first**: `platform/src/public/css/sv_base.css` defines colors, spacing, typography, radii, and elevation tokens under CSS custom properties. Every UI element extends those tokens, so plugins can opt into the same visual DNA without pulling in a component library.

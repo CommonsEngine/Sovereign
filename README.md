@@ -19,7 +19,7 @@ We use [Node.js](https://nodejs.org/) and [Express](https://expressjs.com/) with
 
 Please refer [Sovereign Wiki](https://github.com/CommonsEngine/Sovereign/wiki) (WIP) for extended (evolving) documentation.
 
-For a system-level overview, read `docs/architecture.md`.
+For a system-level overview, read [`docs/architecture.md`](docs/architecture.md).
 
 ### Database & Prisma workflow
 
@@ -36,7 +36,7 @@ To add plugin data models:
 - Create/append `plugins/<plugin>/prisma/extension.prisma`.
 - Define plugin-specific enums/models that reference base models via relations as needed.
 - Keep the file scoped—no datasource/generator blocks or edits to shared tables.
-- Run `yarn prisma:compose` followed by your usual Prisma command (`db:generate`, `db:migrate`, etc.). The composed schema will be re-formatted automatically.
+- Run `yarn prisma:compose` followed by your usual Prisma command (`prisma:generate`, `prisma:migrate`, etc.). The composed schema will be re-formatted automatically.
 
 > ⚠️ Never edit `platform/prisma/schema.prisma` by hand; it will be overwritten by the compose step.
 
@@ -63,7 +63,7 @@ sv plugins show <namespace> [--json]
 sv plugins validate <path>
 ```
 
-See [docs/CLI.md](docs/CLI.md) for detailed command usage, global flags, and scaffolding flows.
+See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and scaffolding flows.
 
 #### Notes for Contributors
 
@@ -363,6 +363,7 @@ We follow a [Git Flow](https://nvie.com/posts/a-successful-git-branching-model/)
 - `fix/` → bug fixes branched from develop.
 - `chore/` → maintenance tasks (docs, tooling, dependencies, CI), no product changes.
 - `improv/` → improvements
+- `poc/` → POCs
 
 ##### Workflow
 
@@ -445,13 +446,6 @@ Breaking change example (footer):
 
 - feat(api): change user payload
 - BREAKING CHANGE: "email" field moved from User -> UserEmail; update clients.
-
-<!--
-Tooling:
-
-- Use commitlint / husky if you want to enforce messages in CI.
-- A "prepare" script can run a commit template or interactive prompt (optional).
--->
 
 ## Docker Setup
 
