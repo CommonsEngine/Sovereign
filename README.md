@@ -96,26 +96,28 @@ See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and s
 3. Configure environment
 
    ```bash
-   yarn init:prepare
+   yarn prepare:init
    ```
 
-   - `init:prepare` script will copy `.env.example` → `.env`
-   - Update `.env` with required variables
+   - `prepare:init` will prepare the envirement and copies `platform/.env.example` → `platform/.env`.
+   - You have to manaully update `.env` with required variables before moving forward,
 
-4. Generate Prisma client and apply migrations
+4. Prepare for the buid
 
    ```bash
-   yarn prisma db push
+   yarn prepare:all
    ```
 
-5. Seed DB
+   - `prepare:all` will run a few commands to prepare the database and build the initial manifest.
+   - It also run `postprepare:all` script after to seed the initial database entries
+
+5. Build the app
 
    ```bash
-   yarn init:start
+   yarn build
    ```
 
-   - `init:start` script will reset prisma, and the codebase if alreay configured, and run the seed script (`yarn prisma:seed`) after.
-   - By default seed scripts will add App Settings, [RBAC](<https://github.com/CommonsEngine/Sovereign/wiki/1.1.-Role%E2%80%90Based-Access-Control-(RBAC)-Architecture>) data.
+   - `prebuild` script will runs prior to re-generate manifest
 
 6. Run app (example)
    ```bash
@@ -124,10 +126,12 @@ See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and s
 
 Use `yarn dev` to launch the development server with automatic file watching. For the production build, use `yarn start`.
 
-7. Updating Prisma schema and apply migrations
+6. Updating Prisma schema and apply migrations
    - Update `platform/prisma/base.prisma` (or `plugins/<ns>/prisma/extension.prisma` for plugin-owned tables) and re-run `yarn prisma:compose`.
    - Run `yarn prisma validate` and `yarn prisma format` to ensure the schema is valid and formatted.
    - Run the migration command to log the change with `yarn prisma migrate dev --name <migration_name_in_snake_case>`.
+
+> You can always run `yarn reset:all` for fresh start.
 
 #### Local dev domain (macOS): `sovereign.test`
 

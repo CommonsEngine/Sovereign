@@ -1,5 +1,5 @@
 /// GENERATED FILE — DO NOT EDIT
-/// Combined on 2025-11-07T23:35:01.214Z
+/// Combined on 2025-11-09T14:46:21.631Z
 
 datasource db {
   provider = "sqlite"
@@ -292,8 +292,8 @@ model Project {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   GitConfig  GitConfig?
-  Blog       Blog?
-  PaperTrail PaperTrail?
+  blog       Blog?
+  paperTrail PaperTrail?
 
   @@map("projects")
 }
@@ -355,7 +355,7 @@ model GitConfig {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  Blog      Blog[]
+  blogs     Blog[]
 
   @@map("git_configs")
 }

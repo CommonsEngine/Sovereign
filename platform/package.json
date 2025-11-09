@@ -36,8 +36,7 @@
     "start:src": "node --import ./scripts/register-alias.mjs ./index.cjs",
     "dev": "nodemon",
     "build": "node ./scripts/build.mjs",
-    "format:all": "yarn run format && yarn run lint && yarn prisma validate && yarn prisma format --schema prisma/schema.prisma",
-    "check": "yarn format:check && yarn lint:check && yarn prisma validate",
+    "format:all": "yarn prisma validate --schema prisma/schema.prisma && yarn prisma format --schema prisma/schema.prisma",
     "reset": "./scripts/reset.sh"
   },
   "nodemonConfig": {
