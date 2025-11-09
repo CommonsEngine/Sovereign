@@ -30,25 +30,41 @@ export const iconRegistry = {
   cog: {
     viewBox: "0 0 24 24",
     body: [
-      `<circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.6" />`,
-      `<path d="M12 4v2.5M12 17.5V20M4 12h2.5M17.5 12H20M6.2 6.2l1.8 1.8M16 16l1.8 1.8M6.2 17.8l1.8-1.8M16 8l1.8-1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />`,
+      `<path
+          d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />`,
+      `<path
+          d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.6-2-3.5-2.4.7a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 2.6a8 8 0 0 0-2.6 1.5l-2.4-.7-2 3.5 2 1.6a7.9 7.9 0 0 0 0 3l-2 1.6 2 3.5 2.4-.7a8 8 0 0 0 2.6 1.5l.4 2.6h4l.4-2.6a8 8 0 0 0 2.6-1.5l2.4.7 2-3.5-2-1.6Z"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />`,
     ].join(""),
   },
   split: {
     viewBox: "0 0 24 24",
     body: [
       `<path d="M7 5v7.5c0 .97.39 1.9 1.08 2.59L15 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />`,
-      `<path d="M17 5v6.5c0 .97-.39 1.9-1.08 2.59L9 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />`,
-      `<path d="M4.75 5H9M15 5h4.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />`,
     ].join(""),
   },
   users: {
     viewBox: "0 0 24 24",
     body: [
-      `<circle cx="15" cy="9" r="3" fill="none" stroke="currentColor" stroke-width="1.5" />`,
-      `<circle cx="8.5" cy="12" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5" />`,
-      `<path d="M3.5 19c0-3 2.5-5 5.5-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />`,
-      `<path d="M13 19c0-3 2.5-5 5.5-5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />`,
+      `<path
+          d="M15.5 10a3.5 3.5 0 1 0-3.001-5.25M10 10a3.5 3.5 0 1 1-6.999-1.001A3.5 3.5 0 0 1 10 10Z"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />`,
+      `<path
+          d="M2 18.5c.8-2.4 3.3-4 6-4s5.2 1.6 6 4M18 14.5c2.3 0 4.3 1.3 5 3.5"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />`,
     ].join(""),
   },
 };
