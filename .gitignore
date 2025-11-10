@@ -13,6 +13,8 @@ manifest.json
 /prisma/data/sovereign.db
 
 # FS
+.state
+logs
 /data/*
 !/data/.gitkeep
 
