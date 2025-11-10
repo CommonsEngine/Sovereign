@@ -14,7 +14,9 @@
     "packages/*"
   ],
   "scripts": {
-    "postinstall": "husky",
+    "prepare": "husky",
+    "postinstall": "node -e \"if (process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
+    "sv:link": "yarn link --silent || true",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
     "prepare:manifest": "yarn build:manifest",
@@ -40,16 +42,14 @@
     "prisma:seed": "node tools/database-seed-all.mjs",
     "prisma:studio": "yarn workspace @sovereign/platform prisma:studio",
     "prisma:reset": "yarn workspace @sovereign/platform prisma:reset",
-    "test": "node --import ./platform/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
+    "test": "node --import ./platform/scripts/register-alias.mjs --test --import ./tests/setup.mjs ./tests/*.test.mjs",
     "test:watch": "node --import ./platform/scripts/register-alias.mjs --test --watch --import ./tests/setup.mjs ./tests/*.test.mjs",
     "reset:all": "yarn workspace @sovereign/platform reset"
   },
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "execa": "^9.6.0",
-    "fast-glob": "^3.3.3",
-    "husky": "^9.1.7",
-    "lint-staged": "^16.2.6"
+    "fast-glob": "^3.3.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
@@ -58,7 +58,9 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-n": "^17.23.1",
     "eslint-plugin-promise": "^7.2.1",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6"
   },
   "engines": {
     "node": ">=20"

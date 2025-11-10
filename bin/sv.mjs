@@ -617,8 +617,179 @@ function formatEnabledEntrySet(manifest) {
   );
 }
 
+// -------- Serve helpers (pm2 + build orchestration) --------
+async function which(cmd) {
+  try {
+    await execFileAsync(process.platform === "win32" ? "where" : "which", [cmd], { timeout: 5000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function pm2Cmd(args, opts = {}) {
+  if (await which("pm2")) {
+    return execFileAsync("pm2", args, { maxBuffer: 10 * 1024 * 1024, ...opts });
+  }
+  return execFileAsync("npx", ["pm2@latest", ...args], { maxBuffer: 10 * 1024 * 1024, ...opts });
+}
+
+async function yarnListScripts() {
+  try {
+    const { stdout } = await execFileAsync("yarn", ["-s", "run"]);
+    return stdout
+      ? stdout
+          .split(/\r?\n/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+async function yarnHasScript(name) {
+  const lines = await yarnListScripts();
+  return lines.some((l) => l === name);
+}
+
+async function runYarnScript(name, ...args) {
+  if (!(await yarnHasScript(name))) {
+    console.log(`[serve] (skip) no yarn script "${name}"`);
+    return;
+  }
+  console.log(`[serve] running: yarn ${name}${args.length ? " " + args.join(" ") : ""}`);
+  await execFileAsync("yarn", [name, ...args], { stdio: "inherit" });
+}
+
+async function pathIsDir(p) {
+  try {
+    const st = await fs.stat(p);
+    return st.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+async function firstRunNeededCLI() {
+  const nm = await pathIsDir(resolve(process.cwd(), "node_modules"));
+  const plat = await pathIsDir(resolve(process.cwd(), "platform"));
+  const dist = await pathIsDir(resolve(process.cwd(), "platform", "dist"));
+  const prepared = await pathExists(resolve(process.cwd(), ".state", "prepared"));
+  return !nm || !plat || !dist || !prepared;
+}
+
+async function healthCheck({ port = 4000, path = "/readyz", tries = 30, intervalMs = 1000 } = {}) {
+  const url = `http://127.0.0.1:${port}${path}`;
+  for (let i = 0; i < tries; i++) {
+    try {
+      // eslint-disable-next-line n/no-unsupported-features/node-builtins
+      const res = await fetch(url, { method: "GET" });
+      if (res.ok) {
+        console.log(`[serve] ✅ healthy at ${url}`);
+        return true;
+      }
+    } catch {
+      /* empty */
+    }
+    // eslint-disable-next-line promise/param-names
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  console.warn(`[serve] ❌ health check failed at ${url}`);
+  try {
+    await pm2Cmd(["logs", "sovereign", "--lines", "200"]);
+    // eslint-disable-next-line no-empty
+  } catch {}
+  return false;
+}
+
+async function startOrRestart({ ecosystem = "ecosystem.config.cjs" } = {}) {
+  try {
+    await pm2Cmd(["show", "sovereign"]);
+    console.log("[serve] restarting sovereign");
+    await pm2Cmd(["restart", "sovereign", "--update-env"]);
+  } catch {
+    console.log("[serve] starting sovereign");
+    await pm2Cmd(["start", ecosystem, "--env", "production"]);
+  }
+  try {
+    await pm2Cmd(["save"]);
+    // eslint-disable-next-line no-empty
+  } catch {}
+}
+
+async function fullBuildCLI() {
+  // install on truly first run
+  if (!(await pathIsDir(resolve(process.cwd(), "node_modules")))) {
+    console.log("[serve] installing deps…");
+    try {
+      await execFileAsync("yarn", ["install", "--frozen-lockfile"], { stdio: "inherit" });
+    } catch {
+      await execFileAsync("yarn", ["install"], { stdio: "inherit" });
+    }
+  }
+  await runYarnScript("prepare:init");
+  await runYarnScript("prepare:all");
+  await runYarnScript("build");
+  await runYarnScript("build:manifest");
+  await fs.mkdir(resolve(process.cwd(), ".state"), { recursive: true });
+  await fs.writeFile(resolve(process.cwd(), ".state", "prepared"), `${new Date().toISOString()}\n`);
+}
+
+async function rebuildCLI() {
+  await runYarnScript("build:manifest");
+  await runYarnScript("build");
+}
+
 // Command Tree
 const commands = {
+  serve: {
+    __help__: `
+      Usage:
+        sv serve [--force] [--no-health] [--port <n>] [--ecosystem <path>]
+        sv serve rebuild [--no-health] [--port <n>] [--ecosystem <path>]
+        sv serve delete
+
+      Notes:
+        - "serve" without subcommand runs first-run detection:
+          full build on first run (install → prepare:init → prepare:all → build → build:manifest),
+          else fast restart.
+        - Uses PM2 if present, else falls back to "npx pm2@latest".
+    `,
+    async run(args) {
+      const sub = args._[1] || "";
+      const flags = args.flags || {};
+      const port = Number.parseInt(flags.port, 10) || 4000;
+      // eslint-disable-next-line no-extra-boolean-cast
+      const doHealth = !Boolean(flags["no-health"]);
+      const ecosystem = flags.ecosystem || "ecosystem.config.cjs";
+      if (sub === "delete") {
+        try {
+          await pm2Cmd(["delete", "sovereign"]);
+          console.log("[serve] PM2 process removed.");
+        } catch {
+          console.log("[serve] PM2 process not found.");
+        }
+        return;
+      }
+      if (sub === "rebuild") {
+        await rebuildCLI();
+        await startOrRestart({ ecosystem });
+        if (doHealth) await healthCheck({ port });
+        return;
+      }
+      // default: auto
+      const force = Boolean(flags.force);
+      if (force || (await firstRunNeededCLI())) {
+        console.log("[serve] ===== First run (or --force) → full build =====");
+        await fullBuildCLI();
+      } else {
+        console.log("[serve] ===== Not first run → fast restart =====");
+      }
+      await startOrRestart({ ecosystem });
+      if (doHealth) await healthCheck({ port });
+    },
+  },
   // Global meta (no run; handled separately)
   meta: {
     name: "sv",

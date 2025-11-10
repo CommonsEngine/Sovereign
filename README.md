@@ -124,7 +124,51 @@ See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and s
    yarn dev // or yarn start
    ```
 
-Use `yarn dev` to launch the development server with automatic file watching. For the production build, use `yarn start`.
+### Serve via CLI (PM2)
+
+Prefer using the **sv** CLI directly instead of adding `serve` scripts to `package.json`.
+
+**Commands**
+
+```bash
+sv serve                      # first-run detection → install/init/build/manifest, else fast restart
+sv serve rebuild              # rebuild (manifest → build) and (re)start
+sv serve delete               # stop and remove PM2 app
+```
+
+Flags: `--force`, `--no-health`, `--port <n>`, `--ecosystem <path>` (see [`docs/CLI.md`](docs/CLI.md) → Serve Commands).
+
+#### CLI linking (optional): `sv:link` and `postinstall`
+
+If you want a global `sv` command (so you can run `sv …` from anywhere), expose the bin and add a **minimal** linker script. Keep linking **opt‑in** to avoid surprising CI/dev machines.
+
+**package.json (root)**
+
+```jsonc
+{
+  "bin": { "sv": "./bin/sv.mjs" },
+  "scripts": {
+    // Register this repo as a global link & make 'sv' available
+    "sv:link": "chmod +x bin/sv.mjs && yarn link --silent || true",
+
+    // Optional: auto-link on install when you explicitly opt in
+    // Usage: SV_LINK=1 yarn install
+    "postinstall": "node -e \"if(process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
+  },
+}
+```
+
+**Usage**
+
+```bash
+# one-time: create the global 'sv' link (manual)
+yarn sv:link
+
+# or auto-link during install (explicit opt-in)
+SV_LINK=1 yarn install
+```
+
+> Environment injection for serving is handled by your PM2 ecosystem file (Node 20+ supports `--env-file`). Ensure `PORT` and `DATABASE_URL` are defined there or exported in your shell before running `sv serve`.
 
 6. Updating Prisma schema and apply migrations
    - Update `platform/prisma/base.prisma` (or `plugins/<ns>/prisma/extension.prisma` for plugin-owned tables) and re-run `yarn prisma:compose`.

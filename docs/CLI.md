@@ -17,6 +17,71 @@ sv [global options] <namespace> <command> [args]
 | `--verbose`, `--quiet`, `--no-color` | Adjust logging style/verbosity.                       |
 | `--config`, `--cwd`                  | Reserved for future multi-instance support.           |
 
+## Serve Commands
+
+Manage local development/production serving via PM2 with first‑run detection and health checks.
+
+| Command                                                                          | Purpose                                                                                                 |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `sv serve [--force] [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]` | First run: `install → prepare:init → prepare:all → build → build:manifest`, else fast restart + health. |
+| `sv serve rebuild [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`   | Rebuilds `manifest → build`, then (re)starts and health checks.                                         |
+| `sv serve delete`                                                                | Stops and removes the PM2 process named `sovereign`.                                                    |
+
+The command uses a locally installed **PM2** if available, otherwise falls back to `npx pm2@latest`. Health checks hit `GET /readyz` on `127.0.0.1` (default port `4000` unless overridden).
+
+### `sv serve [--force] [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`
+
+Performs **first‑run detection**:
+
+- If no `node_modules`, `platform/dist`, or `.state/prepared` is found, it runs:
+  `yarn install` → `yarn prepare:init` → `yarn prepare:all` → `yarn build` → `yarn build:manifest`.
+- Otherwise it **restarts** the existing PM2 app (`sovereign`) quickly.
+
+**Flags**
+
+| Flag                       | Effect                                                                             |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `--force`                  | Force the full build pipeline even if the workspace appears prepared.              |
+| `--no-health`              | Skip the health probe after (re)start.                                             |
+| `--port &lt;n&gt;`         | Port to probe for `/readyz` (defaults to `4000` or the value in your environment). |
+| `--ecosystem &lt;path&gt;` | Path to the PM2 ecosystem file (defaults to `ecosystem.config.cjs`).               |
+
+**Examples**
+
+```
+# First‑run (or force) full build then serve
+sv serve --force
+
+# Fast restart with a custom port probe
+sv serve --port 5000
+```
+
+### `sv serve rebuild [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`
+
+Rebuilds **manifest first**, then **build**, (re)starts with PM2, and runs the health probe.
+
+**Example**
+
+```
+sv serve rebuild
+sv serve rebuild --no-health
+```
+
+### `sv serve delete`
+
+Stops and removes the PM2 application named `sovereign`. Useful before clean rebuilds.
+
+**Example**
+
+```
+sv serve delete
+```
+
+**Notes**
+
+- Environment injection is handled by your PM2 ecosystem file (e.g., Node 20+ supports `--env-file`). Ensure `PORT` and `DATABASE_URL` (and other secrets) are defined there or in your shell before serving.
+- Keep `instances: 1` while using SQLite. Switch to `cluster`/`instances: "max"` when you move to Postgres/Redis sessions.
+
 ## Plugin Commands
 
 | Command                                            | Purpose                                                                                                   |
