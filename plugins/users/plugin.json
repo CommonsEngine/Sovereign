@@ -5,7 +5,7 @@
   "name": "Users",
   "description": "Manage access, invitations, and roles across your workspace.",
   "version": "0.1.0",
-  "devOnly": true,
+  "devOnly": false,
   "draft": false,
   "entryPoints": {
     "api": "routes/api/index.js",
