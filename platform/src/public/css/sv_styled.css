@@ -50,6 +50,8 @@
   }
   .sv-container {
     flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow-y: scroll;
   }
   .sv-page__wrap {
@@ -246,6 +248,7 @@
     justify-content: flex-end;
     align-items: center;
     background-color: var(--color-bg-primary);
+    z-index: 12;
   }
   .sv-header__user {
     display: inline-flex;

@@ -1,353 +1,331 @@
-<main>
-  <div class="sv-container">
-    <div class="sv-page__wrap sv-page__wrap--center">
-      <header class="sv-page__header flex row flex-space-between align-items-center">
-        <div>
-          <h2 class="sv-page__title">Settings</h2>
-          <p class="sv-page__subtitle">
-            Manage preferences, integrations, and policies across your platfrom.
-          </p>
-        </div>
-      </header>
+<div class="sv-page__wrap sv-page__wrap--center">
+  <header class="sv-page__header flex row flex-space-between align-items-center">
+    <div>
+      <h2 class="sv-page__title">Settings</h2>
+      <p class="sv-page__subtitle">
+        Manage preferences, integrations, and policies across your platfrom.
+      </p>
+    </div>
+  </header>
 
-      <nav class="sv-breadcrumb" aria-label="Breadcrumb">
-        <ol class="sv-breadcrumb__list">
-          <li class="sv-breadcrumb__item">
-            <a class="sv-breadcrumb__link" href="/">Home</a>
-          </li>
-          <li class="sv-breadcrumb__item" aria-current="page">
-            <span class="sv-breadcrumb__current">Settings</span>
-          </li>
-        </ol>
-      </nav>
+  <nav class="sv-breadcrumb" aria-label="Breadcrumb">
+    <ol class="sv-breadcrumb__list">
+      <li class="sv-breadcrumb__item">
+        <a class="sv-breadcrumb__link" href="/">Home</a>
+      </li>
+      <li class="sv-breadcrumb__item" aria-current="page">
+        <span class="sv-breadcrumb__current">Settings</span>
+      </li>
+    </ol>
+  </nav>
 
-      <section class="sv-grid col">
-        <!-- App settings -->
-        <article class="sv-card">
-          <div class="sv-card__header"><strong>App Settings</strong></div>
-          <div class="sv-card__body">
-            <form id="app-form" class="sv-form sv-grid col gap-s">
-              <div class="sv-form__field">
-                <label class="label" for="appName">App Name</label>
-                <input
-                  id="appName"
-                  class="input"
-                  type="text"
-                  placeholder="Sovereign"
-                  value="Sovereign"
-                />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="appTagline">Tagline</label>
-                <input
-                  id="appTagline"
-                  class="input"
-                  type="text"
-                  placeholder="Reclaim your digital freedom."
-                  value="Reclaim your digital freedom."
-                />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="appDescription">Description</label>
-                <textarea
-                  id="appDescription"
-                  class="input"
-                  rows="3"
-                  placeholder="A Sovereign application"
-                >
-A Sovereign application</textarea
-                >
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="baseUrl">Base URL</label>
-                <input
-                  id="baseUrl"
-                  class="input"
-                  type="url"
-                  placeholder="https://example.com"
-                  value="https://example.com"
-                />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="appVersion">App Version</label>
-                <input
-                  id="appVersion"
-                  class="input"
-                  type="text"
-                  placeholder="0.1.0"
-                  value="0.1.0"
-                />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="defaultUserRole">Default User Role</label>
-                <input
-                  id="defaultUserRole"
-                  class="input"
-                  type="text"
-                  placeholder="guest"
-                  value="guest"
-                />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="signupPolicy">Signup Policy</label>
-                <select id="signupPolicy" class="input">
-                  <option value="invite" selected>Invite only</option>
-                  <option value="open">Open registration</option>
-                </select>
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="passwordMinLength">Password Min Length</label>
-                <input id="passwordMinLength" class="input" type="number" min="4" value="8" />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="sessionTtlMs">Session TTL (ms)</label>
-                <input
-                  id="sessionTtlMs"
-                  class="input"
-                  type="number"
-                  min="60000"
-                  step="60000"
-                  value="86400000"
-                />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="cookieName">Session Cookie Name</label>
-                <input
-                  id="cookieName"
-                  class="input"
-                  type="text"
-                  placeholder="svg_session"
-                  value="svg_session"
-                />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="dateFormat">Date Format</label>
-                <select id="dateFormat" class="input">
-                  <option value="locale" selected>System locale</option>
-                  <option value="iso">ISO 8601</option>
-                  <option value="ymd">YYYY-MM-DD HH:mm</option>
-                  <option value="mdy">MMM d, yyyy h:mm a</option>
-                </select>
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label">Access & Compliance</label>
-                <div class="flex row">
-                  <div class="sv-col-2">
-                    <label class="flex align-items-center flex-start">
-                      <input id="allowGuest" class="sv-checkbox margin-right-xs" type="checkbox" />
-                      <span>Enable guest mode</span>
-                    </label>
-                  </div>
-                  <div class="sv-col-2">
-                    <label class="flex align-items-center flex-start">
-                      <input id="guestBypass" class="sv-checkbox margin-right-xs" type="checkbox" />
-                      <span>Guest login bypass</span>
-                    </label>
-                  </div>
-                  <div class="sv-col-2">
-                    <label class="flex align-items-center flex-start">
-                      <input
-                        id="requireTerms"
-                        class="sv-checkbox margin-right-xs"
-                        type="checkbox"
-                      />
-                      <span>Require terms acceptance</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="sv-form__actions">
-                <button id="save-app" class="button sv-button sv-button--primary" type="submit">
-                  Save changes
-                </button>
-                <button id="reset-app" class="button sv-button" type="button">Reset</button>
-              </div>
-            </form>
+  <section class="sv-grid col">
+    <!-- App settings -->
+    <article class="sv-card">
+      <div class="sv-card__header"><strong>App Settings</strong></div>
+      <div class="sv-card__body">
+        <form id="app-form" class="sv-form sv-grid col gap-s">
+          <div class="sv-form__field">
+            <label class="label" for="appName">App Name</label>
+            <input
+              id="appName"
+              class="input"
+              type="text"
+              placeholder="Sovereign"
+              value="Sovereign"
+            />
           </div>
-        </article>
+          <div class="sv-form__field">
+            <label class="label" for="appTagline">Tagline</label>
+            <input
+              id="appTagline"
+              class="input"
+              type="text"
+              placeholder="Reclaim your digital freedom."
+              value="Reclaim your digital freedom."
+            />
+          </div>
 
-        <!-- Email -->
-        <article class="sv-card">
-          <div class="sv-card__header"><strong>Email Settings</strong></div>
-          <div class="sv-card__body">
-            <form id="email-form" class="sv-form sv-grid col gap-s">
-              <div class="sv-form__field">
-                <label class="label" for="emailFromName">From Name</label>
-                <input id="emailFromName" class="input" type="text" placeholder="Sovereign" />
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="emailFromAddress">From Address</label>
-                <input
-                  id="emailFromAddress"
-                  class="input"
-                  type="email"
-                  placeholder="no-reply@example.com"
-                />
-              </div>
+          <div class="sv-form__field">
+            <label class="label" for="appDescription">Description</label>
+            <textarea
+              id="appDescription"
+              class="input"
+              rows="3"
+              placeholder="A Sovereign application"
+            >
+A Sovereign application</textarea
+            >
+          </div>
 
-              <div class="sv-form__field">
-                <label class="label" for="emailReplyTo">Reply-To</label>
-                <dv>
-                  <input
-                    id="emailReplyTo"
-                    class="input"
-                    type="email"
-                    placeholder="support@example.com"
-                  />
-                  <span class="form__field-helptext sv-form__field-helptext">
-                    Optional: leave blank to use the From address.
-                  </span>
-                </dv>
-              </div>
-              <div class="sv-form__field">
-                <label class="label">Delivery</label>
-                <label>
-                  <input id="emailBypass" type="sv-checkbox" />
-                  <span>Bypass outbound email (log only)</span>
+          <div class="sv-form__field">
+            <label class="label" for="baseUrl">Base URL</label>
+            <input
+              id="baseUrl"
+              class="input"
+              type="url"
+              placeholder="https://example.com"
+              value="https://example.com"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="appVersion">App Version</label>
+            <input id="appVersion" class="input" type="text" placeholder="0.1.0" value="0.1.0" />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="defaultUserRole">Default User Role</label>
+            <input
+              id="defaultUserRole"
+              class="input"
+              type="text"
+              placeholder="guest"
+              value="guest"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="signupPolicy">Signup Policy</label>
+            <select id="signupPolicy" class="input">
+              <option value="invite" selected>Invite only</option>
+              <option value="open">Open registration</option>
+            </select>
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="passwordMinLength">Password Min Length</label>
+            <input id="passwordMinLength" class="input" type="number" min="4" value="8" />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="sessionTtlMs">Session TTL (ms)</label>
+            <input
+              id="sessionTtlMs"
+              class="input"
+              type="number"
+              min="60000"
+              step="60000"
+              value="86400000"
+            />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="cookieName">Session Cookie Name</label>
+            <input
+              id="cookieName"
+              class="input"
+              type="text"
+              placeholder="svg_session"
+              value="svg_session"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="dateFormat">Date Format</label>
+            <select id="dateFormat" class="input">
+              <option value="locale" selected>System locale</option>
+              <option value="iso">ISO 8601</option>
+              <option value="ymd">YYYY-MM-DD HH:mm</option>
+              <option value="mdy">MMM d, yyyy h:mm a</option>
+            </select>
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label">Access & Compliance</label>
+            <div class="flex row">
+              <div class="sv-col-2">
+                <label class="flex align-items-center flex-start">
+                  <input id="allowGuest" class="sv-checkbox margin-right-xs" type="checkbox" />
+                  <span>Enable guest mode</span>
                 </label>
               </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="smtpUrl">SMTP URL</label>
-                <div>
-                  <input
-                    id="smtpUrl"
-                    class="input"
-                    type="text"
-                    placeholder="smtps://user:pass@mail.example.com:465"
-                  />
-                  <span class="form__field-helptext sv-form__field-helptext">
-                    Optional: overrides host/port/user fields when provided.
-                  </span>
-                </div>
+              <div class="sv-col-2">
+                <label class="flex align-items-center flex-start">
+                  <input id="guestBypass" class="sv-checkbox margin-right-xs" type="checkbox" />
+                  <span>Guest login bypass</span>
+                </label>
               </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="smtpHost">SMTP Host</label>
-                <input id="smtpHost" class="input" type="text" placeholder="mail.example.com" />
+              <div class="sv-col-2">
+                <label class="flex align-items-center flex-start">
+                  <input id="requireTerms" class="sv-checkbox margin-right-xs" type="checkbox" />
+                  <span>Require terms acceptance</span>
+                </label>
               </div>
-              <div class="sv-form__field">
-                <label class="label" for="smtpPort">SMTP Port</label>
-                <input
-                  id="smtpPort"
-                  class="input"
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="587"
-                />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="smtpUser">SMTP Username</label>
-                <input id="smtpUser" class="input" type="text" placeholder="smtp-user" />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label" for="smtpPassword">SMTP Password</label>
-                <input
-                  id="smtpPassword"
-                  class="input"
-                  type="password"
-                  autocomplete="new-password"
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div class="sv-form__field">
-                <label class="label">Security</label>
-                <div class="flex row">
-                  <div class="sv-col-3">
-                    <label class="flex align-items-center flex-start">
-                      <input id="smtpSecure" class="sv-checkbox margin-right-xs" type="checkbox" />
-                      <span>Use secure connection (TLS/SSL)</span>
-                    </label>
-                  </div>
-                  <div class="sv-col-3">
-                    <label class="flex align-items-center flex-start">
-                      <input
-                        id="smtpIgnoreTls"
-                        class="sv-checkbox margin-right-xs"
-                        type="checkbox"
-                      />
-                      <span>Ignore TLS certificate validation</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="sv-form__actions">
-                <button class="button sv-button--primary" type="submit">Save changes</button>
-                <button id="reset-email" class="button" type="button">Reset</button>
-              </div>
-            </form>
+            </div>
           </div>
-        </article>
 
-        <!-- Localization -->
-        <article class="sv-card">
-          <div class="sv-card__header"><strong>Localization</strong></div>
-          <div class="sv-card__body">
-            <form id="loc-form" class="sv-form sv-grid col gap-s">
-              <div class="sv-form__field">
-                <label class="label" for="defaultLocale">Default Locale</label>
-                <select id="defaultLocale" class="input" data-default="en-US">
-                  <option value="en-US" selected>English (US)</option>
-                  <option value="en-GB">English (UK)</option>
-                  <!-- <option value="en-CA">English (Canada)</option>
+          <div class="sv-form__actions">
+            <button id="save-app" class="button sv-button sv-button--primary" type="submit">
+              Save changes
+            </button>
+            <button id="reset-app" class="button sv-button" type="button">Reset</button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <!-- Email -->
+    <article class="sv-card">
+      <div class="sv-card__header"><strong>Email Settings</strong></div>
+      <div class="sv-card__body">
+        <form id="email-form" class="sv-form sv-grid col gap-s">
+          <div class="sv-form__field">
+            <label class="label" for="emailFromName">From Name</label>
+            <input id="emailFromName" class="input" type="text" placeholder="Sovereign" />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="emailFromAddress">From Address</label>
+            <input
+              id="emailFromAddress"
+              class="input"
+              type="email"
+              placeholder="no-reply@example.com"
+            />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="emailReplyTo">Reply-To</label>
+            <dv>
+              <input
+                id="emailReplyTo"
+                class="input"
+                type="email"
+                placeholder="support@example.com"
+              />
+              <span class="form__field-helptext sv-form__field-helptext">
+                Optional: leave blank to use the From address.
+              </span>
+            </dv>
+          </div>
+          <div class="sv-form__field">
+            <label class="label">Delivery</label>
+            <label>
+              <input id="emailBypass" type="sv-checkbox" />
+              <span>Bypass outbound email (log only)</span>
+            </label>
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="smtpUrl">SMTP URL</label>
+            <div>
+              <input
+                id="smtpUrl"
+                class="input"
+                type="text"
+                placeholder="smtps://user:pass@mail.example.com:465"
+              />
+              <span class="form__field-helptext sv-form__field-helptext">
+                Optional: overrides host/port/user fields when provided.
+              </span>
+            </div>
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="smtpHost">SMTP Host</label>
+            <input id="smtpHost" class="input" type="text" placeholder="mail.example.com" />
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="smtpPort">SMTP Port</label>
+            <input id="smtpPort" class="input" type="number" min="1" step="1" placeholder="587" />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="smtpUser">SMTP Username</label>
+            <input id="smtpUser" class="input" type="text" placeholder="smtp-user" />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label" for="smtpPassword">SMTP Password</label>
+            <input
+              id="smtpPassword"
+              class="input"
+              type="password"
+              autocomplete="new-password"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <div class="sv-form__field">
+            <label class="label">Security</label>
+            <div class="flex row">
+              <div class="sv-col-3">
+                <label class="flex align-items-center flex-start">
+                  <input id="smtpSecure" class="sv-checkbox margin-right-xs" type="checkbox" />
+                  <span>Use secure connection (TLS/SSL)</span>
+                </label>
+              </div>
+              <div class="sv-col-3">
+                <label class="flex align-items-center flex-start">
+                  <input id="smtpIgnoreTls" class="sv-checkbox margin-right-xs" type="checkbox" />
+                  <span>Ignore TLS certificate validation</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="sv-form__actions">
+            <button class="button sv-button--primary" type="submit">Save changes</button>
+            <button id="reset-email" class="button" type="button">Reset</button>
+          </div>
+        </form>
+      </div>
+    </article>
+
+    <!-- Localization -->
+    <article class="sv-card">
+      <div class="sv-card__header"><strong>Localization</strong></div>
+      <div class="sv-card__body">
+        <form id="loc-form" class="sv-form sv-grid col gap-s">
+          <div class="sv-form__field">
+            <label class="label" for="defaultLocale">Default Locale</label>
+            <select id="defaultLocale" class="input" data-default="en-US">
+              <option value="en-US" selected>English (US)</option>
+              <option value="en-GB">English (UK)</option>
+              <!-- <option value="en-CA">English (Canada)</option>
                     <option value="fr-FR">French (France)</option>
                     <option value="de-DE">German (Germany)</option>
                     <option value="es-ES">Spanish (Spain)</option>
                     <option value="es-MX">Spanish (Mexico)</option>
                     <option value="pt-BR">Portuguese (Brazil)</option>
                     <option value="ja-JP">Japanese</option> -->
-                </select>
-              </div>
-              <div class="sv-form__field">
-                <label class="label" for="defaultCurrency">Default Currency</label>
-                <input
-                  id="defaultCurrency"
-                  class="input"
-                  type="text"
-                  placeholder="USD"
-                  value="USD"
-                  data-default="USD"
-                  readonly
-                />
-              </div>
+            </select>
+          </div>
+          <div class="sv-form__field">
+            <label class="label" for="defaultCurrency">Default Currency</label>
+            <input
+              id="defaultCurrency"
+              class="input"
+              type="text"
+              placeholder="USD"
+              value="USD"
+              data-default="USD"
+              readonly
+            />
+          </div>
 
-              <div class="sv-form__field">
-                <label class="label" for="supportedLocales">Supported Locales</label>
-                <div>
-                  <textarea
-                    id="supportedLocales"
-                    class="input"
-                    rows="2"
-                    placeholder="en-US,en-GB"
-                    data-default="en-US,en-GB"
-                    readonly
-                  >
+          <div class="sv-form__field">
+            <label class="label" for="supportedLocales">Supported Locales</label>
+            <div>
+              <textarea
+                id="supportedLocales"
+                class="input"
+                rows="2"
+                placeholder="en-US,en-GB"
+                data-default="en-US,en-GB"
+                readonly
+              >
                     en-US
-                  </textarea>
-                  <span class="form__field-helptext sv-form__field-helptext">
-                    Comma separated list of locale codes.
-                  </span>
-                </div>
-              </div>
+                  </textarea
+              >
+              <span class="form__field-helptext sv-form__field-helptext">
+                Comma separated list of locale codes.
+              </span>
+            </div>
+          </div>
 
-              <div class="sv-form__field">
-                <label class="label" for="timeZone">Time Zone</label>
-                <div>
-                  <select id="timeZone" class="input" data-default="UTC">
-                    <option value="UTC" selected>UTC</option>
-                    <!-- <option value="Europe/London">Europe/London</option>
+          <div class="sv-form__field">
+            <label class="label" for="timeZone">Time Zone</label>
+            <div>
+              <select id="timeZone" class="input" data-default="UTC">
+                <option value="UTC" selected>UTC</option>
+                <!-- <option value="Europe/London">Europe/London</option>
                     <option value="Europe/Berlin">Europe/Berlin</option>
                     <option value="Europe/Paris">Europe/Paris</option>
                     <option value="America/New_York">America/New_York</option>
@@ -358,26 +336,24 @@ A Sovereign application</textarea
                     <option value="Asia/Kolkata">Asia/Kolkata</option>
                     <option value="Asia/Tokyo">Asia/Tokyo</option>
                     <option value="Australia/Sydney">Australia/Sydney</option> -->
-                  </select>
-                  <span class="form__field-helptext sv-form__field-helptext">
-                    Used for displaying dates/times across the app.
-                  </span>
-                </div>
-              </div>
-
-              <div class="sv-form__actions">
-                <button id="save-loc" class="button sv-button sv-button--primary" type="submit">
-                  Save changes
-                </button>
-                <button id="reset-loc" class="button" type="button">Reset</button>
-              </div>
-            </form>
+              </select>
+              <span class="form__field-helptext sv-form__field-helptext">
+                Used for displaying dates/times across the app.
+              </span>
+            </div>
           </div>
-        </article>
-      </section>
-    </div>
-  </div>
-</main>
+
+          <div class="sv-form__actions">
+            <button id="save-loc" class="button sv-button sv-button--primary" type="submit">
+              Save changes
+            </button>
+            <button id="reset-loc" class="button" type="button">Reset</button>
+          </div>
+        </form>
+      </div>
+    </article>
+  </section>
+</div>
 <script>
   const SETTINGS_FIELD_MAP = {
     "env.app.name": { id: "appName" },

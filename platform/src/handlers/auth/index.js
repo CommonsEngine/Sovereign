@@ -466,6 +466,14 @@ export async function verifyToken(req, res) {
         status: "active",
       },
     });
+    // TODO: This need to take based on process.env.DEFAULT_USER_ROLE;
+    const roleId = 3;
+    await prisma.userRoleAssignment.upsert({
+      where: { userId_roleId: { userId: vt.userId, roleId } },
+      create: { userId: vt.userId, roleId },
+      update: {}, // nothing to change if exists
+    });
+    // TODO: Update userEmail.isVerifeid too
     await prisma.verificationToken.delete({ where: { token } });
 
     if (wantsHtml) {

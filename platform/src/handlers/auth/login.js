@@ -73,7 +73,7 @@ export default async function login(req, res) {
     });
 
     // require an email record, linked user, and a verified email for login
-    if (!userEmailRec || !userEmailRec.user || !userEmailRec.isVerified) {
+    if (!userEmailRec || !userEmailRec.user || !userEmailRec.user.status === "active") {
       if (isFormContent) {
         return res.status(401).render("login", {
           error: "Invalid email or password.",
