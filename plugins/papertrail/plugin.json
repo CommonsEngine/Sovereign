@@ -4,8 +4,8 @@
   "namespace": "papertrail",
   "name": "PaperTrail",
   "description": "Sovereign PaperTrail",
-  "version": "0.1.0",
-  "devOnly": true,
+  "version": "0.2.0",
+  "devOnly": false,
   "draft": false,
   "entryPoints": {
     "web": "dist/index.js",
