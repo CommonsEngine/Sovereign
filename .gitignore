@@ -14,10 +14,11 @@ manifest.json
 
 # FS
 .state
+.backups
 logs
 /data/*
 !/data/.gitkeep
 
 .env
-devOnly/
+localOnly/
 .vscode
