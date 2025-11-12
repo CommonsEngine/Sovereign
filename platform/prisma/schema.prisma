@@ -1,5 +1,5 @@
 /// GENERATED FILE — DO NOT EDIT
-/// Combined on 2025-11-09T14:46:21.631Z
+/// Combined on 2025-11-12T07:54:34.396Z
 
 datasource db {
   provider = "sqlite"
@@ -510,3 +510,14 @@ model PapertrailAttachment {
   @@index([projectId, nodeId])
   @@map("papertrail_attachment")
 }
+
+/// --- Plugin: tasks ---
+/// Source: plugins/tasks/prisma/extension.prisma
+
+// Add plugin-specific Prisma models/enums here.
+// Example:
+// model {{ModelName}} {
+//   id      String   @id @default(cuid())
+//   ownerId String
+//   owner   Tenant   @relation(fields: [ownerId], references: [id])
+// }
