@@ -29,6 +29,4 @@ generated/prisma
 !/plugins/users/
 !/plugins/settings/
 !/plugins/blog/
-!/plugins/papertrail/
-!/plugins/papertrail-legacy/
 !/plugins/splitify/
