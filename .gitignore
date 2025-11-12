@@ -2,23 +2,33 @@
 node_modules
 dist
 build
-.eslintcache
-.DS_Store
+logs
+localOnly/
 package-lock.json
-.yarn
 manifest.json
-
-# Prisma
-/generated/prisma
-/prisma/data/sovereign.db
-
-# FS
+.continue
+.vscode
 .state
 .backups
-logs
+.eslintcache
+.DS_Store
+.yarn
+.env
+
+# FS
 /data/*
 !/data/.gitkeep
 
-.env
-localOnly/
-.vscode
+# Prisma
+generated/prisma
+
+# Ignore all plugins by default
+/plugins/*
+!/plugins/.gitkeep
+# .. and whitelist plugins to be shipped with the core
+!/plugins/users/
+!/plugins/settings/
+!/plugins/blog/
+!/plugins/papertrail/
+!/plugins/papertrail-legacy/
+!/plugins/splitify/
