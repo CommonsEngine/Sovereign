@@ -2,6 +2,9 @@
   .flex {
     display: flex;
   }
+  .inline-flex {
+    display: inline-flex;
+  }
   .flex-end {
     justify-content: flex-end;
   }
@@ -19,6 +22,12 @@
   }
   .row {
     flex-direction: row;
+  }
+  .wrap {
+    flex-wrap: wrap;
+  }
+  .nowrap {
+    flex-wrap: nowrap;
   }
   .align-items-center {
     align-items: center;
@@ -48,6 +57,15 @@
   .margin-right-xs {
     margin-right: var(--space-xs);
   }
+  .w-100 {
+    width: 100%;
+  }
+  .shrink-0 {
+    flex-shrink: 0;
+  }
+  .grow {
+    flex: 1 1 auto;
+  }
   .padding-none {
     padding: 0;
   }
@@ -59,6 +77,21 @@
   }
   .padding-l {
     padding: var(--space-l);
+  }
+  .overflow-x-auto {
+    overflow-x: auto;
+  }
+  .overflow-y-auto {
+    overflow-y: auto;
+  }
+  .min-w-280 {
+    min-width: 280px;
+  }
+  .min-w-320 {
+    min-width: 320px;
+  }
+  .min-w-360 {
+    min-width: 360px;
   }
   /* Typography */
   .text-align-center {
