@@ -1,10 +1,10 @@
 {
-  "type": "custom",
   "id": "@sovereign/users",
   "namespace": "users",
   "name": "Users",
   "description": "Manage access, invitations, and roles across your workspace.",
   "version": "0.1.0",
+  "framework": "js",
   "devOnly": false,
   "draft": false,
   "entryPoints": {

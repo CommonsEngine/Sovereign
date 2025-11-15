@@ -215,7 +215,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
         return res.status(404).render("error", {
           code: 404,
           message: "Unsupported Plugin Type or JSX Markup",
-          description: `${plugin?.type} plugin type is not supported yet.`,
+          description: `${plugin?.framework} plugin framework is not supported yet.`,
         });
       }
     }
@@ -227,7 +227,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
         id: plugin.id,
         name: plugin.name,
         namespace,
-        type: plugin.type,
+        framework: plugin.framework,
         version: plugin.version,
       },
     };
@@ -319,11 +319,11 @@ export async function renderSPA(req, res, _, { plugins }) {
       });
     }
 
-    if (plugin?.type !== "spa") {
+    if (plugin?.framework !== "react") {
       return res.status(404).render("error", {
         code: 404,
         message: "Unsupported Plugin Type",
-        description: `${plugin?.type} plugin type is not supported yet.`,
+        description: `${plugin?.framework} plugin framework is not supported yet.`,
       });
     }
 
@@ -331,7 +331,7 @@ export async function renderSPA(req, res, _, { plugins }) {
     const pluginRoot =
       (pluginsRootDir && namespace ? path.join(pluginsRootDir, namespace) : null) ||
       (plugin.entry
-        ? path.resolve(path.dirname(plugin.entry), plugin.type === "spa" ? ".." : ".")
+        ? path.resolve(path.dirname(plugin.entry), plugin.framework === "react" ? ".." : ".")
         : null);
 
     if (!pluginRoot) {
@@ -402,7 +402,7 @@ export async function renderSPA(req, res, _, { plugins }) {
         return res.status(404).render("error", {
           code: 404,
           message: "Unsupported Plugin Type or JSX Markup",
-          description: `${plugin?.type} plugin type is not supported yet.`,
+          description: `${plugin?.framework} plugin framework is not supported yet.`,
         });
       }
     }
@@ -414,7 +414,7 @@ export async function renderSPA(req, res, _, { plugins }) {
         id: plugin.id,
         name: plugin.name,
         namespace,
-        type: plugin.type,
+        framework: plugin.framework,
         version: plugin.version,
       },
       project: {

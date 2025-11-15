@@ -1,10 +1,10 @@
 {
-  "type": "spa",
   "id": "@sovereign/splitify",
   "namespace": "splitify",
   "name": "Splitify",
   "description": "a simple, privacy-first way to track shared expenses and personal budgets. Built on Sovereign, it helps friends, teams, and collectives manage money fairly — without giving up control of their data",
   "version": "0.1.0",
+  "framework": "react",
   "devOnly": true,
   "draft": false,
   "entryPoints": {

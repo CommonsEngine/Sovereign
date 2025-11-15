@@ -53,9 +53,10 @@ const CORE_MIGRATIONS_DIR = resolve(__dirname, "../platform/prisma/migrations");
 const MIGRATION_STATE_PATH = resolve(__dirname, "../data/.sv-migrations-state.json");
 const PLUGIN_TEMPLATES_DIR = resolve(__dirname, "../tools/plugin-templates");
 const PLUGIN_TEMPLATE_MAP = {
-  custom: resolve(PLUGIN_TEMPLATES_DIR, "custom"),
-  spa: resolve(PLUGIN_TEMPLATES_DIR, "spa"),
+  js: resolve(PLUGIN_TEMPLATES_DIR, "custom"),
+  react: resolve(PLUGIN_TEMPLATES_DIR, "spa"),
 };
+const SUPPORTED_PLUGIN_FRAMEWORKS = Object.keys(PLUGIN_TEMPLATE_MAP);
 const TEMPLATE_TEXT_EXTENSIONS = new Set([
   ".json",
   ".js",
@@ -182,8 +183,8 @@ function printManifestSummary(manifest) {
     console.log("  (none)");
   }
   console.log(
-    `Modules (${modules.length}) / Projects (${projects.length}) | Allowed types: ${
-      (manifest.allowedPluginTypes || []).join(", ") || "(none)"
+    `Modules (${modules.length}) / Projects (${projects.length}) | Allowed frameworks: ${
+      (manifest.allowedPluginFrameworks || []).join(", ") || "(none)"
     }`
   );
   console.log(`Last updated: ${manifest.updatedAt || "(unknown)"}`);
@@ -306,14 +307,14 @@ async function readPluginManifest(sourceDir) {
   } catch (err) {
     throw new Error(`Invalid plugin manifest JSON at ${manifestPath}: ${err?.message || err}`);
   }
-  const requiredFields = ["id", "name", "version", "type"];
+  const requiredFields = ["id", "name", "version", "framework"];
   for (const field of requiredFields) {
     if (!manifest[field] || typeof manifest[field] !== "string") {
       throw new Error(`plugin.json is missing required field "${field}".`);
     }
   }
-  if (!["custom", "spa"].includes(manifest.type)) {
-    throw new Error(`Unsupported plugin type "${manifest.type}".`);
+  if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(manifest.framework)) {
+    throw new Error(`Unsupported plugin framework "${manifest.framework}".`);
   }
   return { manifest, manifestPath };
 }
@@ -422,12 +423,12 @@ async function hashDirectory(rootDir) {
   return hash.digest("hex");
 }
 
-async function resolvePluginTemplateDir(type) {
-  const normalized = String(type || "").toLowerCase();
+async function resolvePluginTemplateDir(framework) {
+  const normalized = String(framework || "").toLowerCase();
   const templatePath = PLUGIN_TEMPLATE_MAP[normalized];
   if (!templatePath) {
     throw new Error(
-      `Unknown plugin template type "${type}". Expected one of ${Object.keys(PLUGIN_TEMPLATE_MAP).join(", ")}.`
+      `Unknown plugin template framework "${framework}". Expected one of ${SUPPORTED_PLUGIN_FRAMEWORKS.join(", ")}.`
     );
   }
   const exists = await pathExists(templatePath);
@@ -469,8 +470,8 @@ function formatLibraryGlobal(displayName, namespace) {
   return cleaned || "SovereignPlugin";
 }
 
-async function copyPluginTemplate(type, targetDir, replacements) {
-  const templateDir = await resolvePluginTemplateDir(type);
+async function copyPluginTemplate(framework, targetDir, replacements) {
+  const templateDir = await resolvePluginTemplateDir(framework);
   await copyPluginSource(templateDir, targetDir);
   await replaceTemplatePlaceholders(targetDir, replacements);
   return templateDir;
@@ -810,7 +811,7 @@ const commands = {
   plugins: {
     __help__: `
       Usage:
-        sv plugins create <namespace> [--type custom|spa] [options]
+        sv plugins create <namespace> [--framework js|react] [options]
         sv plugins add <spec>
         sv plugins list [--json] [--enabled|--disabled]
         sv plugins enable <namespace>
@@ -837,12 +838,19 @@ const commands = {
         const dryRun = Boolean(args.flags["dry-run"]);
         const skipManifest = Boolean(args.flags["skip-manifest"]);
         const outputJson = Boolean(args.flags.json);
-        const type = String(args.flags.type || "custom").toLowerCase();
+        const frameworkInput = args.flags.framework || args.flags.type || "js";
+        const framework = String(frameworkInput).toLowerCase();
+        if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(framework)) {
+          exitUsage(
+            `Unknown plugin framework "${framework}". Expected one of ${SUPPORTED_PLUGIN_FRAMEWORKS.join(", ")}.`
+          );
+        }
         const version = args.flags.version || "0.1.0";
         const displayName =
           args.flags.name || args.flags["display-name"] || toTitleCase(namespace) || namespace;
         const description =
-          args.flags.description || `Kickstart the ${displayName} ${type} plugin for Sovereign.`;
+          args.flags.description ||
+          `Kickstart the ${displayName} ${framework} plugin for Sovereign.`;
         const author =
           args.flags.author || pkg?.contributors?.[0]?.name || "Sovereign Plugin Author";
         const license = args.flags.license || "AGPL-3.0";
@@ -888,10 +896,10 @@ const commands = {
 
         let templateDir;
         if (dryRun) {
-          templateDir = await resolvePluginTemplateDir(type);
+          templateDir = await resolvePluginTemplateDir(framework);
         } else {
           await fs.mkdir(PLUGINS_DIR, { recursive: true });
-          templateDir = await copyPluginTemplate(type, targetDir, replacements);
+          templateDir = await copyPluginTemplate(framework, targetDir, replacements);
           if (!skipManifest) {
             await runManifestBuild();
           }
@@ -901,7 +909,7 @@ const commands = {
           action: dryRun ? "plan" : "create",
           namespace,
           id: pluginId,
-          type,
+          framework,
           targetDir,
           templateDir,
           dryRun,
@@ -911,11 +919,11 @@ const commands = {
           console.log(JSON.stringify(result, null, 2));
         } else if (dryRun) {
           console.log(
-            `Would scaffold ${type} plugin "${pluginId}" at ${targetDir} from template ${templateDir}.`
+            `Would scaffold ${framework} plugin "${pluginId}" at ${targetDir} from template ${templateDir}.`
           );
         } else {
           console.log(
-            `Created ${type} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
+            `Created ${framework} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
           );
           if (!skipManifest) {
             console.log(`Manifest updated via tools/build-manifest.mjs.`);
@@ -1054,7 +1062,7 @@ const commands = {
             namespace: ns,
             id: plugin?.id || ns,
             version: plugin?.version || "(unknown)",
-            type: plugin?.type || "(unknown)",
+            framework: plugin?.framework || "(unknown)",
             enabled: enabledEntries.has(ns),
           };
         });
@@ -1082,7 +1090,7 @@ const commands = {
           { key: "namespace", label: "Namespace" },
           { key: "id", label: "ID" },
           { key: "version", label: "Version" },
-          { key: "type", label: "Type" },
+          { key: "framework", label: "Framework" },
           { key: "enabled", label: "Enabled" },
         ];
 
@@ -1306,7 +1314,7 @@ const commands = {
           id: manifest.id,
           name: manifest.name,
           version: manifest.version,
-          type: manifest.type,
+          framework: manifest.framework,
           enabled,
           draft: manifest.draft ?? null,
           devOnly: manifest.devOnly ?? null,
@@ -1326,7 +1334,7 @@ const commands = {
         console.log(`ID: ${detail.id}`);
         console.log(`Name: ${detail.name}`);
         console.log(`Version: ${detail.version}`);
-        console.log(`Type: ${detail.type}`);
+        console.log(`Framework: ${detail.framework}`);
         console.log(`Enabled: ${detail.enabled ? "yes" : "no"}`);
         console.log(`draft=${detail.draft}, devOnly=${detail.devOnly}`);
         console.log(`Directory: ${detail.directory}`);
@@ -1377,10 +1385,10 @@ const commands = {
         let manifest = manifestInfo?.manifest;
         if (manifest) {
           const required = [];
-          if (manifest.type === "custom") {
+          if (manifest.framework === "js") {
             required.push("index.js");
           }
-          if (manifest.type === "spa") {
+          if (manifest.framework === "react") {
             required.push("dist/index.js");
           }
           for (const rel of required) {
@@ -1388,7 +1396,7 @@ const commands = {
 
             const exists = await pathExists(fullPath);
             if (!exists) {
-              diagnostics.push(`Missing required file for ${manifest.type} plugin: ${rel}`);
+              diagnostics.push(`Missing required file for ${manifest.framework} plugin: ${rel}`);
             }
           }
         }

@@ -1,10 +1,10 @@
 {
-  "type": "spa",
   "id": "{{PLUGIN_ID}}",
   "namespace": "{{NAMESPACE}}",
   "name": "{{DISPLAY_NAME}}",
   "description": "{{DESCRIPTION}}",
   "version": "{{VERSION}}",
+  "framework": "js",
   "devOnly": true,
   "draft": false,
   "entryPoints": {

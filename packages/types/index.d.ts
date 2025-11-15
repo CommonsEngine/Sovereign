@@ -74,7 +74,7 @@ export interface PluginManifest {
   name: string;
   description?: string;
   version: string;
-  type: "spa" | "custom";
+  framework: "js" | "react";
   devOnly: boolean;
   draft?: boolean;
   author: string;

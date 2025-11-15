@@ -168,7 +168,7 @@ const manifest = {
   projects: [],
   modules: [],
   enabledPlugins: [], // [@<org>/<ns>]
-  allowedPluginTypes: [],
+  allowedPluginFrameworks: [],
   __rootdir,
   __pluginsdir,
   __datadir,
@@ -182,14 +182,14 @@ const manifest = {
 const pluginManifestSchema = {
   $id: "PluginManifest",
   type: "object",
-  required: ["id", "name", "version", "type", "sovereign", "devOnly", "author", "license"],
+  required: ["id", "name", "version", "framework", "sovereign", "devOnly", "author", "license"],
   additionalProperties: true,
   properties: {
     id: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     version: { type: "string", minLength: 1 },
-    type: { type: "string", enum: ["custom", "spa"] },
+    framework: { type: "string", enum: ["js", "react"] },
     devOnly: { type: "boolean" },
     draft: { type: "boolean" },
     author: { type: "string" },
@@ -433,13 +433,13 @@ const buildManifest = async () => {
         : !pluginManifest.devOnly && !pluginManifest.draft;
 
     if (isEnabledPlugin) {
-      if (!manifest.allowedPluginTypes.includes(pluginManifest.type)) {
-        manifest.allowedPluginTypes.push(pluginManifest.type);
+      if (!manifest.allowedPluginFrameworks.includes(pluginManifest.framework)) {
+        manifest.allowedPluginFrameworks.push(pluginManifest.framework);
       }
 
-      if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
+      if (!pluginManifest?.framework || !["react", "js"].includes(pluginManifest.framework)) {
         console?.warn?.(
-          formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
+          formatError(`unknown or missing plugin framework: ${pluginManifest?.framework}`, {
             manifestPath: pluginManifestPath,
             pluginDir: plugingRoot,
           })
@@ -464,7 +464,7 @@ const buildManifest = async () => {
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
-      if (pluginManifest.type === "custom") {
+      if (pluginManifest.framework === "js") {
         entry = path.join(plugingRoot, "index.js");
       }
 
@@ -476,7 +476,7 @@ const buildManifest = async () => {
         console?.debug?.(`no public dir: ${publicDir}`);
       }
 
-      if (pluginManifest.type === "spa") {
+      if (pluginManifest.framework === "react") {
         if (await exists(distDir)) {
           manifest.__assets.push({ base: `/plugins/${manifestNamespace}/`, dir: distDir });
         } else if (process.env.DEBUG === "true") {
@@ -484,7 +484,7 @@ const buildManifest = async () => {
         }
       }
 
-      if (pluginManifest.type === "custom") {
+      if (pluginManifest.framework === "js") {
         //__views
         const viewsDir = path.join(plugingRoot, "views");
         if (await exists(viewsDir)) {
@@ -615,7 +615,7 @@ const buildManifest = async () => {
 
   const outputManifest = {
     ...manifest,
-    allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
+    allowedPluginFrameworks: [...new Set(manifest.allowedPluginFrameworks || [])],
     plugins: finalPlugins,
     pluginCapabilities: {
       signature: capabilitySignature,

@@ -8,14 +8,14 @@ Sovereign’s plugin architecture makes the platform fully extensible. Plugins c
 
 Plugins are self-contained modules discovered and mounted automatically at runtime through their `plugin.json` manifest.
 
-## 2. Plugin Types
+## 2. Plugin Frameworks
 
-There are two supported plugin types, defined in `plugin.json` under the `type` field.
+There are two supported plugin frameworks, defined in `plugin.json` under the `framework` field.
 
-| Type         | Description                                                                                                                                                                                                                                    | Typical Use                                 |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **`custom`** | Server-side plugins written as **Express apps**. They export routers or middleware that Sovereign mounts under `/namespace` and `/api/plugins/namespace`.                                                                                      | APIs, integrations, or background services. |
-| **`spa`**    | Front-end plugins built with **Vite** (or compatible bundlers). Each ships a compiled SPA (`dist/index.html`) and optional dev-server metadata for hot reload. Sovereign proxies them in development and serves them statically in production. | Dashboards, editors, client tools.          |
+| Framework   | Description                                                                                                                                                                                                                                    | Typical Use                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **`js`**    | Server-side plugins written as **Express apps**. They export routers or middleware that Sovereign mounts under `/namespace` and `/api/plugins/namespace`.                                                                                      | APIs, integrations, or background services. |
+| **`react`** | Front-end plugins built with **Vite** (or compatible bundlers). Each ships a compiled SPA (`dist/index.html`) and optional dev-server metadata for hot reload. Sovereign proxies them in development and serves them statically in production. | Dashboards, editors, client tools.          |
 
 ## 3. Plugin Kinds
 
@@ -56,7 +56,7 @@ A minimal manifest looks like this:
 {
   "id": "@sovereign/blog",
   "name": "Blog",
-  "type": "spa",
+  "framework": "react",
   "entry": "dist/index.html",
   "allowMultipleInstances": true,
   "sovereign": {
@@ -91,7 +91,7 @@ Plugins may export lifecycle hooks from their entry file:
 
 1. **Scaffold a plugin**
    ```bash
-   sv plugins create <namespace> --type spa|custom
+   sv plugins create <namespace> --framework react|js
    ```
 2. **Run the dev server**
    - SPA: Sovereign proxies Vite dev server.
@@ -167,7 +167,7 @@ External or private plugins can be cloned or mounted into `/plugins` before the 
 ## 14. Summary
 
 - Sovereign currently supports:
-  - **Two plugin types** → `spa`, `custom`
+- **Two plugin frameworks** → `react`, `js`
   - **Two plugin kinds** → `module`, `project`
 - The manifest defines all metadata, routes, and capabilities.
 - Plugins integrate with the same RBAC and service layer as the core.
