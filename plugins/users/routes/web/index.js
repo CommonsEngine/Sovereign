@@ -1,17 +1,11 @@
 import express from "express";
 
-const USER_ROLES = Object.freeze({
-  "platform:admin": { label: "Platform Admin" },
-  "platform:engineer": { label: "Platform Engineer" },
-  "tenant:admin": { label: "Tenant Admin" },
-  "platform:user": { label: "Platform User" },
-  "project:admin": { label: "Project Admin" },
-  "project:editor": { label: "Project Editor" },
-  "project:contributor": { label: "Project Contributor" },
-  "project:viewer": { label: "Project Viewer" },
-  "project:guest": { label: "Project Guest" },
-  automation_bot: { label: "Sovereign Bot" },
-});
+import { USER_ROLES } from "../../config/roles.js";
+import {
+  ensureTenantIds,
+  tenantIdsFromContributions,
+  hasTenantIntersection,
+} from "../../utils/tenants.js";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -87,8 +81,18 @@ function formatPercent(part, total) {
   return `${Math.round((part / total) * 100)}%`;
 }
 
-async function viewUsers(req, res, _, { prisma, logger }) {
+function userHasRole(user, roleKey) {
+  if (!user || !Array.isArray(user.roles) || !roleKey) return false;
+  const normalizedKey = String(roleKey).toLowerCase();
+  return user.roles.some(
+    (role) => typeof role?.key === "string" && role.key.toLowerCase() === normalizedKey
+  );
+}
+
+async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
   try {
+    const tenantFallback = defaultTenantId || "tenant-0";
+
     const rawUsers = await prisma.user.findMany({
       include: {
         primaryEmail: { select: { email: true, isVerified: true } },
@@ -122,7 +126,14 @@ async function viewUsers(req, res, _, { prisma, logger }) {
         },
         projectContributions: {
           where: { status: "active", role: "owner" },
-          select: { projectId: true },
+          select: {
+            projectId: true,
+            project: {
+              select: {
+                tenantId: true,
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: "asc" },
@@ -184,6 +195,8 @@ async function viewUsers(req, res, _, { prisma, logger }) {
       const projectsOwned = user.projectContributions?.length ?? 0;
       const projectsAssigned = projectsOwned;
       const projectsSummary = `${projectsOwned} ${projectsOwned === 1 ? "project" : "projects"}`;
+      const tenantIds = tenantIdsFromContributions(user.projectContributions, tenantFallback);
+      const roleKeys = roles.map((role) => role.key).filter(Boolean);
 
       return {
         id: user.id,
@@ -223,10 +236,27 @@ async function viewUsers(req, res, _, { prisma, logger }) {
         inviteSentRelative,
         inviteExpiresISO: inviteExpires.iso,
         inviteExpired,
+        roleKeys: roleKeys.join(","),
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        tenantIds,
       };
     });
 
-    const totals = users.reduce(
+    const currentUserTenantIds = ensureTenantIds(req.user?.tenantIds, tenantFallback);
+    const isPlatformAdmin = userHasRole(req.user, "platform:admin");
+    const isTenantAdmin = userHasRole(req.user, "tenant:admin");
+    let visibleUsers = users;
+    if (!isPlatformAdmin && isTenantAdmin) {
+      const allowedTenants = new Set(currentUserTenantIds);
+      visibleUsers = users.filter(
+        (user) =>
+          userHasRole(user, "platform:user") &&
+          hasTenantIntersection(user.tenantIds, allowedTenants)
+      );
+    }
+
+    const totals = visibleUsers.reduce(
       (acc, user) => {
         acc.total += 1;
         if (user.status === "active") acc.active += 1;
@@ -265,7 +295,7 @@ async function viewUsers(req, res, _, { prisma, logger }) {
     ];
 
     return res.render("users/index", {
-      users,
+      users: visibleUsers,
       stats,
       statusFilters: Object.entries(STATUS_META).map(([value, meta]) => ({
         value,
