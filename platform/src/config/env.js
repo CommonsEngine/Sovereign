@@ -47,10 +47,10 @@ const DEFAULT_GUEST_TTL_HOURS = Number.isFinite(rawGuestTtl) && rawGuestTtl > 0 
 const DEFAULT_GUEST_TTL_MS = DEFAULT_GUEST_TTL_HOURS * 60 * 60 * 1000;
 
 const baseTemplate = Object.freeze({
-  APP_NAME: manifest.platform.title,
-  APP_TAGLINE: manifest.platform.tagline,
-  APP_DESCRIPTION: manifest.platform.description,
-  APP_VERSION: manifest.platform.version,
+  APP_NAME: manifest?.platform?.title,
+  APP_TAGLINE: manifest?.platform?.tagline,
+  APP_DESCRIPTION: manifest?.platform?.description,
+  APP_VERSION: manifest?.platform?.version,
   PLUGIN_CAPABILITIES_SIGNATURE: pluginCapabilities.signature || null,
   PLUGIN_CAPABILITIES: pluginCapabilities.definitions || [],
   APP_URL: process.env.APP_URL || "http://localhost:3000",

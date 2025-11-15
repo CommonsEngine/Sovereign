@@ -3,7 +3,7 @@ import "dotenv/config";
 import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
-const pkg = require("../../manifest.json");
+const manifest = require("../../manifest.json");
 
 function parseBoolLike(v) {
   const s = String(v ?? "")
@@ -18,22 +18,23 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "env.app.name",
-    value: process.env.APP_NAME ?? pkg.title ?? "Sovereign",
+    value: process.env.APP_NAME ?? manifest.platform.title ?? "Sovereign",
   },
   {
     scope: "platform",
     key: "env.app.tagline",
-    value: process.env.APP_TAGLINE ?? pkg.tagline ?? "Reclaim your digital freedom.",
+    value: process.env.APP_TAGLINE ?? manifest.platform.tagline ?? "Reclaim your digital freedom.",
   },
   {
     scope: "platform",
     key: "env.app.description",
-    value: process.env.APP_DESCRIPTION ?? pkg.description ?? "A Sovereign application",
+    value:
+      process.env.APP_DESCRIPTION ?? manifest.platform.description ?? "A Sovereign application",
   },
   {
     scope: "platform",
     key: "env.app.version",
-    value: process.env.APP_VERSION ?? pkg.version ?? "0.1.0",
+    value: process.env.APP_VERSION ?? manifest.platform.version ?? "0.1.0",
   },
   {
     scope: "platform",
@@ -53,7 +54,8 @@ const defaultConfigs = [
   {
     scope: "platform",
     key: "email.from.name",
-    value: process.env.EMAIL_FROM_NAME ?? process.env.APP_NAME ?? pkg.title ?? "Sovereign",
+    value:
+      process.env.EMAIL_FROM_NAME ?? process.env.APP_NAME ?? manifest.platfom.title ?? "Sovereign",
   },
   {
     scope: "platform",

@@ -178,18 +178,16 @@ export default async function createServer(manifest) {
     })
   );
 
-  if (!IS_PROD) {
-    // --- Demo routes ---
-    // Example route for React-SSR handled view (captures any subpath)
-    app.get(/^\/example\/react(?:\/(.*))?$/, requireAuth, exposeGlobals, async (req, res, next) => {
-      try {
-        const subpath = req.params[0] || "";
-        await res.renderJSX("example/react/index", { path: subpath });
-      } catch (e) {
-        next(e);
-      }
-    });
-  }
+  // Health-check
+  app.get("/healthz", (req, res) => res.send("ok"));
+  app.get("/readyz", async (req, res) => {
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.send("ready");
+    } catch {
+      res.status(503).send("db-down");
+    }
+  });
 
   // Auth Routes
   app.post("/auth/invite", requireAuth, rateLimiters.authedApi, authHandler.inviteUser);
