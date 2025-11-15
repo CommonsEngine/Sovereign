@@ -411,10 +411,10 @@ See [Managing releases in a repository](https://docs.github.com/en/repositories/
 
 ## Contributing
 
-See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md). Please read and sign [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before contributing.
+See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md).
+
+Contributors must sign the [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before we can merge pull requests.
 
 ## License
 
 Sovereign Core (repository root and `platform/`) is distributed under AGPL-3.0; [`CommonsEngine`](https://github.com/CommonsEngine) may also offer commercial dual licenses for individuals/organizations that need to operate the Core privately; email `mailtokasun[at]gmail.com` for details. Plugins may declare their own licenses (e.g., MIT, AGPL-3.0, proprietary) provided they comply with the Sovereign Terms of Service and clearly ship a `LICENSE` file in the plugin directory.
-
-Contributors must sign the [Sovereign Contributor License Agreement](docs/legal/Contributor-License-Agreement.md) before we can merge pull requests.
