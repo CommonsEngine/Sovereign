@@ -1,0 +1,252 @@
+<div data-modal="edit-user" class="sv-modal" hidden>
+  <div class="sv-modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="sv-modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="edit-user-modal-title"
+  >
+    <header class="sv-modal__header">
+      <h3 id="edit-user-modal-title" class="sv-modal__title">Edit user</h3>
+    </header>
+
+    <div class="sv-modal__body">
+      <form class="sv-modal__form" data-modal-form novalidate>
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="edit-user-first-name">First name</label>
+          <input
+            id="edit-user-first-name"
+            class="sv-modal__input input"
+            type="text"
+            maxlength="32"
+            placeholder="First name"
+          />
+        </div>
+
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="edit-user-last-name">Last name</label>
+          <input
+            id="edit-user-last-name"
+            class="sv-modal__input input"
+            type="text"
+            maxlength="32"
+            placeholder="Last name"
+          />
+        </div>
+
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="edit-user-email">Email</label>
+          <input
+            id="edit-user-email"
+            class="sv-modal__input input"
+            type="email"
+            readonly
+            placeholder="Email"
+          />
+        </div>
+
+        <div class="sv-modal__field">
+          <span class="sv-modal__label">Roles</span>
+          <div class="sv-checkbox-grid" data-role-list>
+            {{#each data.roles}}
+            <label class="sv-checkbox">
+              <input type="checkbox" value="{{this.value}}" data-role-checkbox />
+              <span>{{this.label}}</span>
+            </label>
+            {{/each}}
+          </div>
+        </div>
+
+        <div
+          class="sv-modal__alert modal__alert--error"
+          data-modal-alert="error"
+          style="display: none"
+        ></div>
+        <div
+          class="sv-modal__alert modal__alert--success"
+          data-modal-alert="success"
+          style="display: none"
+        ></div>
+      </form>
+    </div>
+
+    <footer class="sv-modal__footer">
+      <button type="button" class="chip button" data-modal-close>Cancel</button>
+      <button type="button" class="chip button chip--secondary" data-reset-password>
+        Send password reset email
+      </button>
+      <button type="button" class="chip chip--primary button button--primary" data-modal-submit>
+        Save
+      </button>
+    </footer>
+  </div>
+
+  <script>
+    (function initEditUserModal(root = document.querySelector('[data-modal="edit-user"]')) {
+      if (!root) return;
+
+      const form = root.querySelector("[data-modal-form]");
+      const firstNameEl = root.querySelector("#edit-user-first-name");
+      const lastNameEl = root.querySelector("#edit-user-last-name");
+      const emailEl = root.querySelector("#edit-user-email");
+      const roleCheckboxes = Array.from(root.querySelectorAll("[data-role-checkbox]"));
+      const submitBtn = root.querySelector("[data-modal-submit]");
+      const resetBtn = root.querySelector("[data-reset-password]");
+      const errorAlert = root.querySelector('[data-modal-alert="error"]');
+      const successAlert = root.querySelector('[data-modal-alert="success"]');
+      const modalTitle = root.querySelector("#edit-user-modal-title");
+
+      function showAlert(el, message) {
+        if (!el) return;
+        if (!message) {
+          el.style.display = "none";
+          el.textContent = "";
+          return;
+        }
+        el.textContent = message;
+        el.style.display = "block";
+      }
+
+      function resetForm() {
+        form?.reset();
+        form?.removeAttribute("data-user-id");
+        roleCheckboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+        showAlert(errorAlert, "");
+        showAlert(successAlert, "");
+        submitBtn?.removeAttribute("disabled");
+        resetBtn?.removeAttribute("disabled");
+      }
+
+      function populateForm(row) {
+        const userId = row.dataset.id;
+        const displayName = row.dataset.name || "User";
+        const firstName = row.dataset.firstName || "";
+        const lastName = row.dataset.lastName || "";
+        const email = row.dataset.email || "";
+        const roleKeys = (row.dataset.roleKeys || "")
+          .split(",")
+          .map((value) => (value || "").trim())
+          .filter(Boolean);
+
+        modalTitle.textContent = `Edit ${displayName}`;
+        form?.setAttribute("data-user-id", userId);
+        if (firstNameEl) firstNameEl.value = firstName;
+        if (lastNameEl) lastNameEl.value = lastName;
+        if (emailEl) emailEl.value = email;
+        roleCheckboxes.forEach((checkbox) => {
+          checkbox.checked = roleKeys.includes(checkbox.value);
+        });
+        showAlert(errorAlert, "");
+        showAlert(successAlert, "");
+      }
+
+      async function handleUpdate(event) {
+        event?.preventDefault?.();
+        const userId = form?.dataset.userId;
+        if (!userId) return;
+
+        const selectedRoles = roleCheckboxes
+          .filter((checkbox) => checkbox.checked)
+          .map((checkbox) => checkbox.value)
+          .filter(Boolean);
+
+        const payload = {
+          firstName: firstNameEl?.value?.trim() || "",
+          lastName: lastNameEl?.value?.trim() || "",
+          roles: selectedRoles,
+        };
+
+        submitBtn?.setAttribute("disabled", "true");
+        showAlert(errorAlert, "");
+        try {
+          const resp = await fetch(`/api/plugins/users/${encodeURIComponent(userId)}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(payload),
+            credentials: "same-origin",
+          });
+          const body = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(body?.error || `HTTP ${resp.status}`);
+          }
+          showAlert(successAlert, "User saved. Refreshing…");
+          setTimeout(() => {
+            window.ModalRuntime?.close?.(root);
+            window.location.reload();
+          }, 400);
+        } catch (err) {
+          console.error("Failed to update user", err);
+          showAlert(errorAlert, err?.message || "Unable to update user.");
+        } finally {
+          submitBtn?.removeAttribute("disabled");
+        }
+      }
+
+      async function handlePasswordReset(event) {
+        event?.preventDefault?.();
+        const email = emailEl?.value?.trim();
+        if (!email) return;
+
+        resetBtn?.setAttribute("disabled", "true");
+        showAlert(errorAlert, "");
+        showAlert(successAlert, "");
+        try {
+          const resp = await fetch("/auth/password/forgot", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({ email }),
+            credentials: "same-origin",
+          });
+          const body = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(body?.error || `HTTP ${resp.status}`);
+          }
+          showAlert(successAlert, "Password reset email sent.");
+        } catch (err) {
+          console.error("Failed to send password reset email", err);
+          showAlert(errorAlert, err?.message || "Unable to send reset email.");
+        } finally {
+          resetBtn?.removeAttribute("disabled");
+        }
+      }
+
+      document.addEventListener("click", (event) => {
+        const opener = event.target.closest('[data-action="edit-user"]');
+        if (!opener) return;
+        event.preventDefault();
+        const row = opener.closest("tr[data-id]");
+        if (!row) return;
+        populateForm(row);
+        window.ModalRuntime?.open?.(root);
+      });
+
+      form?.addEventListener("submit", handleUpdate);
+
+      root.addEventListener("click", (event) => {
+        if (!event.target.closest("[data-modal-submit]")) return;
+        handleUpdate(event);
+      });
+
+      resetBtn?.addEventListener("click", handlePasswordReset);
+
+      const obs = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type !== "attributes") continue;
+          if (mutation.attributeName !== "hidden") continue;
+          if (root.hasAttribute("hidden")) {
+            resetForm();
+          }
+        }
+      });
+      obs.observe(root, { attributes: true, attributeFilter: ["hidden"] });
+    })();
+  </script>
+</div>

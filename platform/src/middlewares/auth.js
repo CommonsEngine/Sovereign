@@ -1,11 +1,13 @@
 import { getSessionWithUser, getOrCreateSingletonGuestUser, createSession } from "$/utils/auth.js";
 import env from "$/config/env.js";
+import { ensureTenantIds } from "$/utils/tenants.js";
 
 const {
   AUTH_SESSION_COOKIE_NAME,
   COOKIE_OPTS,
   GUEST_LOGIN_ENABLED,
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
+  DEFAULT_TENANT_ID,
 } = env();
 
 export async function requireAuth(req, res, next) {
@@ -23,6 +25,8 @@ export async function requireAuth(req, res, next) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const tenantIds = ensureTenantIds(session.user?.tenantIds, DEFAULT_TENANT_ID);
+
     req.user = {
       id: session.userId,
       name: session.user.name,
@@ -31,6 +35,7 @@ export async function requireAuth(req, res, next) {
       roles,
       role: roles[0] || null,
       capabilities,
+      tenantIds,
     };
     req.sessionToken = token;
     next();
@@ -47,6 +52,8 @@ export async function requireAuth(req, res, next) {
         const guestEmailId = Array.isArray(guest.emails)
           ? guest.emails.find((e) => e.isPrimary)?.id || guest.emails[0]?.id
           : null;
+        const tenantIds = ensureTenantIds([], DEFAULT_TENANT_ID);
+
         req.user = {
           id: guest.id,
           name: guest.name,
@@ -55,6 +62,7 @@ export async function requireAuth(req, res, next) {
           roles: [],
           role: null,
           capabilities: {},
+          tenantIds,
         };
         return next();
       }
@@ -64,6 +72,8 @@ export async function requireAuth(req, res, next) {
       const returnTo = encodeURIComponent(req.originalUrl || "/");
       return res.redirect(302, `/login?return_to=${returnTo}`);
     } else {
+      const tenantIds = ensureTenantIds(session.user?.tenantIds, DEFAULT_TENANT_ID);
+
       req.user = {
         id: session.userId,
         name: session.user.name,
@@ -72,6 +82,7 @@ export async function requireAuth(req, res, next) {
         roles,
         role: roles[0] || null,
         capabilities,
+        tenantIds,
       };
       req.sessionToken = token;
       next();

@@ -2,12 +2,18 @@
 import crypto from "crypto";
 import argon2 from "argon2";
 
-import { prisma } from "../services/database.js";
-import env from "../config/env.js";
-import logger from "../services/logger.js";
+import { prisma } from "$/services/database.js";
+import logger from "$/services/logger.js";
+import env from "$/config/env.js";
+import { ensureTenantIds, resolveTenantIdsForUserId } from "$/utils/tenants.js";
 
-const { AUTH_SESSION_COOKIE_NAME, SESSION_TTL_MS, COOKIE_OPTS, PLUGIN_CAPABILITIES_SIGNATURE } =
-  env();
+const {
+  AUTH_SESSION_COOKIE_NAME,
+  SESSION_TTL_MS,
+  COOKIE_OPTS,
+  PLUGIN_CAPABILITIES_SIGNATURE,
+  DEFAULT_TENANT_ID,
+} = env();
 
 const CAPABILITY_PRECEDENCE = {
   allow: 6,
@@ -74,7 +80,7 @@ async function resolvePrimaryEmailSnapshot(user) {
   return null;
 }
 
-function buildUserSnapshot(user, primaryEmail) {
+function buildUserSnapshot(user, primaryEmail, tenantIds = []) {
   const safePrimary = primaryEmail
     ? {
         id: primaryEmail.id ?? null,
@@ -82,6 +88,8 @@ function buildUserSnapshot(user, primaryEmail) {
         isVerified: !!primaryEmail.isVerified,
       }
     : null;
+
+  const normalizedTenants = ensureTenantIds(tenantIds, DEFAULT_TENANT_ID);
 
   return {
     id: user.id,
@@ -91,6 +99,7 @@ function buildUserSnapshot(user, primaryEmail) {
     pictureUrl: user.pictureUrl ?? null,
     primaryEmail: safePrimary,
     primaryEmailId: safePrimary?.id ?? user.primaryEmailId ?? user.sessionEmailId ?? null,
+    tenantIds: normalizedTenants,
   };
 }
 
@@ -278,7 +287,8 @@ export async function createSession(req, res, user) {
   }
 
   const primaryEmail = await resolvePrimaryEmailSnapshot(user);
-  const userSnapshot = buildUserSnapshot(user, primaryEmail);
+  const tenantIds = await resolveTenantIdsForUserId(user.id, DEFAULT_TENANT_ID);
+  const userSnapshot = buildUserSnapshot(user, primaryEmail, tenantIds);
 
   await prisma.session.create({
     data: {
@@ -342,7 +352,8 @@ export async function getSessionWithUser(token) {
     }
 
     const primaryEmail = await resolvePrimaryEmailSnapshot(user);
-    snapshot = buildUserSnapshot(user, primaryEmail);
+    const tenantIds = await resolveTenantIdsForUserId(user.id, DEFAULT_TENANT_ID);
+    snapshot = buildUserSnapshot(user, primaryEmail, tenantIds);
 
     try {
       await prisma.session.update({
@@ -351,6 +362,19 @@ export async function getSessionWithUser(token) {
       });
     } catch (err) {
       logger.warn("Failed to persist session user snapshot", err);
+    }
+  }
+
+  if (!Array.isArray(snapshot.tenantIds) || snapshot.tenantIds.length === 0) {
+    const tenantIds = await resolveTenantIdsForUserId(s.userId, DEFAULT_TENANT_ID);
+    snapshot = { ...snapshot, tenantIds };
+    try {
+      await prisma.session.update({
+        where: { token },
+        data: { userSnapshot: snapshot },
+      });
+    } catch (err) {
+      logger.warn("Failed to persist session tenant snapshot", err);
     }
   }
 

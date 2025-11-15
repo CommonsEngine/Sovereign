@@ -27,7 +27,7 @@
       </svg>
     </a>
     <!-- Users -->
-    {{#if (eq user.primaryRole.key 'platform:admin')}}
+    {{#if (or (eq user.primaryRole.key 'platform:admin') (eq user.primaryRole.key 'tenant:admin'))}}
     <a
       class="sv-sidebar__btn{{#if users_active}} is-active{{/if}}"
       href="/users"
