@@ -18,6 +18,20 @@ const BOOLEAN_KEYS = new Set([
 ]);
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PLUGIN_SELECT = {
+  pluginId: true,
+  namespace: true,
+  name: true,
+  description: true,
+  version: true,
+  type: true,
+  devOnly: true,
+  enabled: true,
+  corePlugin: true,
+  enabledAt: true,
+  disabledAt: true,
+  updatedAt: true,
+};
 
 function parseBooleanLike(value) {
   if (value === null || value === undefined) return null;
@@ -388,8 +402,114 @@ async function updateAppSettings(req, res, _, { prisma, logger, refreshEnvCache 
   }
 }
 
+async function listPlugins(req, res, _, { prisma, logger }) {
+  try {
+    const plugins = await prisma.plugin.findMany({
+      select: PLUGIN_SELECT,
+      orderBy: { namespace: "asc" },
+    });
+    return res.json({ plugins });
+  } catch (err) {
+    logger.error("✗ listPlugins failed", err);
+    return res.status(500).json({ error: "Failed to load plugins" });
+  }
+}
+
+function normalizePluginUpdate(entry, idx) {
+  const pluginId = typeof entry?.pluginId === "string" ? entry.pluginId.trim() : "";
+  const namespace = typeof entry?.namespace === "string" ? entry.namespace.trim() : "";
+  if (!pluginId && !namespace) {
+    throw new Error(`Entry ${idx}: pluginId or namespace is required`);
+  }
+
+  let enabledFlag = null;
+  if ("enabled" in entry) {
+    const parsed = parseBooleanLike(entry.enabled);
+    if (parsed === null) throw new Error(`Entry ${idx}: enabled must be a boolean`);
+    enabledFlag = parsed;
+  }
+
+  let devOnlyFlag = null;
+  if ("devOnly" in entry) {
+    const parsed = parseBooleanLike(entry.devOnly);
+    if (parsed === null) throw new Error(`Entry ${idx}: devOnly must be a boolean`);
+    devOnlyFlag = parsed;
+  }
+
+  if (enabledFlag === null && devOnlyFlag === null) {
+    throw new Error(`Entry ${idx}: no fields to update`);
+  }
+
+  const now = new Date();
+  const data = {};
+  if (enabledFlag !== null) {
+    data.enabled = enabledFlag;
+    data.enabledAt = enabledFlag ? now : null;
+    data.disabledAt = enabledFlag ? null : now;
+  }
+  if (devOnlyFlag !== null) {
+    data.devOnly = devOnlyFlag;
+  }
+
+  return {
+    where: pluginId ? { pluginId } : { namespace },
+    data,
+  };
+}
+
+async function updatePlugins(req, res, _, { prisma, logger }) {
+  const entries = Array.isArray(req.body?.plugins) ? req.body.plugins : null;
+  if (!entries || entries.length === 0) {
+    return res.status(400).json({ error: "No plugins provided" });
+  }
+
+  const updates = [];
+  const errors = [];
+  for (let idx = 0; idx < entries.length; idx += 1) {
+    try {
+      updates.push(normalizePluginUpdate(entries[idx], idx));
+    } catch (err) {
+      errors.push(err.message || `Entry ${idx}: invalid payload`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({ error: "Validation failed", details: errors });
+  }
+
+  const updated = [];
+  const missing = [];
+  for (const update of updates) {
+    try {
+      const row = await prisma.plugin.update({
+        where: update.where,
+        data: update.data,
+        select: PLUGIN_SELECT,
+      });
+      updated.push(row);
+    } catch (err) {
+      if (err?.code === "P2025") {
+        const ref = update.where.pluginId || update.where.namespace;
+        missing.push(`Plugin not found: ${ref}`);
+        continue;
+      }
+      logger.error("✗ updatePlugins failed", err);
+      return res.status(500).json({ error: "Failed to update plugins" });
+    }
+  }
+
+  if (missing.length > 0) {
+    return res.status(404).json({ error: "One or more plugins were not found", details: missing });
+  }
+
+  return res.json({ plugins: updated });
+}
+
 export default (ctx) => {
   const router = express.Router();
+
+  router.get("/plugins", (req, res, next) => listPlugins(req, res, next, ctx));
+  router.patch("/plugins", (req, res, next) => updatePlugins(req, res, next, ctx));
 
   router.get("/", (req, res, next) => {
     return getAppSettings(req, res, next, ctx);
