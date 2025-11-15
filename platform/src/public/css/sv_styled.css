@@ -30,7 +30,7 @@
     --no-op: 0;
   }
   .sv-sidebar {
-    width: 56px;
+    width: var(--sidebar-width, 56px);
     position: sticky;
     top: 0;
     height: 100vh;
@@ -53,6 +53,7 @@
     display: flex;
     flex-direction: column;
     overflow-y: scroll;
+    width: calc(100vw - var(--sidebar-width, 56px));
   }
   .sv-page__wrap {
     margin: 0;

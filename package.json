@@ -25,6 +25,7 @@
     "prebuild": "yarn build:manifest",
     "build": "yarn workspaces run build",
     "build:manifest": "node tools/build-manifest.mjs",
+    "openapi:validate": "node tools/validate-openapi.mjs",
     "postbuild": "yarn build:manifest && yarn workspace @sovereign/platform prepare:db",
     "dev": "yarn workspace @sovereign/platform dev",
     "start": "yarn workspace @sovereign/platform start",

@@ -8,6 +8,5 @@ prisma/schema.prisma
 platform/src/views/_partials/layout/head.html
 platform/src/views/_partials/sidebar.html
 platform/src/views/register.html
-plugins/blog/views/blog/editor.html
-plugins/papertrail/*
+plugins/**
 tools/plugin-templates/spa/vite.config.js
