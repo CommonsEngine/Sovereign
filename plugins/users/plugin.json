@@ -36,7 +36,7 @@
       {
         "key": "user:plugin.users.feature",
         "description": "Enable plugin.",
-        "roles": ["platform:admin"]
+        "roles": ["platform:admin", "tenant:admin"]
       }
     ]
   }

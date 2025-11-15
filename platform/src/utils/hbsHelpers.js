@@ -26,6 +26,14 @@ Handlebars.registerHelper("eq", function (a, b) {
 });
 
 /**
+ * Logical OR
+ * Usage: {{#if (or a b)}} ... {{/if}}
+ */
+Handlebars.registerHelper("or", function (...args) {
+  return args.slice(0, -1).some(Boolean);
+});
+
+/**
  * Optional: you can export to reuse if needed
  */
 export default Handlebars.helpers;

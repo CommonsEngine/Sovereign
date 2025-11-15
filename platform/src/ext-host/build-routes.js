@@ -33,6 +33,7 @@ export async function buildPluginRoutes(app, manifest, config) {
       env: { nodeEnv: NODE_ENV },
       logger,
       path,
+      defaultTenantId: config.DEFAULT_TENANT_ID ?? "tenant-0",
     };
 
     const { context: capabilityContext, granted } = resolvePluginCapabilities(plugin, {
