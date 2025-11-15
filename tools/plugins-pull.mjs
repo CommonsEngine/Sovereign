@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
+const authRoot =
+  process.env.SV_PLUGINS_AUTH_DIR || path.join(repoRoot, ".ssh", "sovereign-plugins");
 
 async function loadNodeEnv() {
   const envPath = path.join(repoRoot, "platform/.env");
@@ -77,11 +79,66 @@ function sshToHttps(url) {
   return null;
 }
 
-function gitClone(repoUrl, destination) {
+async function pathExists(targetPath) {
+  try {
+    await stat(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeNamespace(pluginName) {
+  return pluginName.replace(/[^a-zA-Z0-9_.-]/g, "_");
+}
+
+async function loadPluginCredential(pluginName) {
+  const keyBase = path.join(authRoot, sanitizeNamespace(pluginName));
+  const sshKeyPath = `${keyBase}.key`;
+  const patPath = `${keyBase}.pat`;
+
+  const [hasSsh, hasPat] = await Promise.all([pathExists(sshKeyPath), pathExists(patPath)]);
+  let pat = null;
+  if (hasPat) {
+    try {
+      pat = (await readFile(patPath, "utf8")).trim();
+    } catch {
+      pat = null;
+    }
+  }
+
+  return {
+    sshKeyPath: hasSsh ? sshKeyPath : null,
+    pat: pat || null,
+  };
+}
+
+function buildCloneConfig(url, cred) {
+  const env = {};
+  let cloneUrl = url;
+
+  if (cred?.sshKeyPath && (url.startsWith("git@") || url.startsWith("ssh://"))) {
+    env.GIT_SSH_COMMAND = `ssh -i ${cred.sshKeyPath} -o IdentitiesOnly=yes -F /dev/null`;
+  } else if (cred?.pat && url.startsWith("http")) {
+    try {
+      const parsed = new URL(url);
+      parsed.username = parsed.username || "x-access-token";
+      parsed.password = cred.pat;
+      cloneUrl = parsed.toString();
+    } catch {
+      /* fall through without token injection */
+    }
+  }
+
+  return { url: cloneUrl, env };
+}
+
+function gitClone(repoUrl, destination, env = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn("git", ["clone", repoUrl, destination], {
       cwd: repoRoot,
       stdio: "inherit",
+      env: { ...process.env, ...env },
     });
 
     child.on("error", reject);
@@ -109,10 +166,13 @@ async function clonePlugin(name, repoUrl) {
     attempts.push(httpsCandidate);
   }
 
+  const credentials = await loadPluginCredential(name);
+
   for (const [index, url] of attempts.entries()) {
     try {
+      const { url: cloneUrl, env } = buildCloneConfig(url, credentials);
       console.log(`Cloning ${name} from ${url}...`);
-      await gitClone(url, destination);
+      await gitClone(cloneUrl, destination, env);
       return true;
     } catch (error) {
       const isLastAttempt = index === attempts.length - 1;
