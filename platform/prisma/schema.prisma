@@ -1,5 +1,5 @@
 /// GENERATED FILE — DO NOT EDIT
-/// Combined on 2025-11-12T07:54:34.396Z
+/// Combined on 2025-11-15T04:05:16.152Z
 
 datasource db {
   provider = "sqlite"
@@ -291,9 +291,8 @@ model Project {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  GitConfig  GitConfig?
-  blog       Blog?
-  paperTrail PaperTrail?
+  GitConfig GitConfig?
+  blog      Blog?
 
   @@map("projects")
 }
@@ -388,136 +387,120 @@ model Blog {
   @@map("blogs")
 }
 
-/// --- Plugin: papertrail-legacy ---
-/// Source: plugins/papertrail-legacy/prisma/extension.prisma
-
-// [3.2] Papertrail model (for projects of type 'papertrail')
-model PaperTrail {
-  id        String   @id @default(cuid()) @map("id")
-  projectId String   @unique @map("project_id")
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  title         String  @default("Untitled") @map("title")
-  schemaVersion Int     @default(1) @map("schema_version")
-  layout        String? // global board layout preferences (hierarchical, force-directed)
-  meta          Json?
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  nodes PaperTrailNode[]
-  edges PaperTrailEdge[]
-
-  @@index([createdAt])
-  @@map("papertrail_boards")
-}
-
-// [3.2.1] Nodes for PaperTrail
-model PaperTrailNode {
-  id      String     @id @default(cuid()) @map("id")
-  boardId String     @map("board_id")
-  board   PaperTrail @relation(fields: [boardId], references: [id], onDelete: Cascade)
-
-  type String @map("type") // text | image | link
-  x    Int    @map("x")
-  y    Int    @map("y")
-  w    Int?   @map("w")
-  h    Int?   @map("h")
-
-  // content fields expected by server.mjs
-  title    String? @map("title")
-  text     String? @map("text")
-  html     String? @map("html")
-  descHtml String? @map("desc_html")
-  linkUrl  String? @map("link_url")
-  imageUrl String? @map("image_url")
-
-  meta Json? // custom fields
-  tags PaperTrailNodeTag[]
-
-  @@index([boardId])
-  @@index([boardId, type])
-  @@map("papertrail_nodes")
-}
-
-// [3.2.1] Edges for PaperTrail.Nodes
-model PaperTrailEdge {
-  id      String     @id @default(cuid()) @map("id")
-  boardId String     @map("board_id")
-  board   PaperTrail @relation(fields: [boardId], references: [id], onDelete: Cascade)
-
-  sourceId String  @map("source_id")
-  targetId String  @map("target_id")
-  label    String? @map("label")
-  dashed   Boolean @default(false) @map("dashed") // TODO: maybe can this can merge into `style` later.
-  color    String? @map("color")
-
-  @@index([boardId])
-  @@index([boardId, sourceId])
-  @@index([boardId, targetId])
-  @@map("papertrail_edges")
-}
-
-// [3.2.2] Tags for PaperTrail.Nodes
-model PaperTrailTag {
-  id    String              @id @default(cuid()) @map("id")
-  name  String              @unique @map("name")
-  nodes PaperTrailNodeTag[]
-
-  @@map("tags")
-}
-
-// [3.2.3] Tags for PaperTrail.Nodes-Tags
-model PaperTrailNodeTag {
-  nodeId String         @map("node_id")
-  node   PaperTrailNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
-
-  tagId String        @map("tag_id")
-  tag   PaperTrailTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
-
-  @@id([nodeId, tagId])
-  @@index([nodeId])
-  @@index([tagId])
-  @@map("papertrail_node_tags")
-}
-
-// [3.2.4] Tags for PaperTrail
-model PapertrailComment {
-  id        String   @id @default(uuid())
-  projectId String   @map("project_id")
-  entityId  String   @map("entity_id") // --> node:<nodeId>, edge:<edgeId>
-  authorId  String   @map("author_id")
-  body      String
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([projectId, entityId])
-  @@map("papertrail_comments")
-}
-
-// [3.2.5] Attachments for PaperTrail
-model PapertrailAttachment {
-  id        String   @id @default(uuid())
-  projectId String   @map("project_id")
-  nodeId    String?  @map("node_id")
-  kind      String // 'file' | 'url'
-  url       String?
-  fileKey   String?  @map("file_key") // storage key
-  name      String?
-  sizeBytes Int?     @map("size_bytes")
-  meta      Json?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([projectId, nodeId])
-  @@map("papertrail_attachment")
-}
-
 /// --- Plugin: tasks ---
 /// Source: plugins/tasks/prisma/extension.prisma
 
-// Add plugin-specific Prisma models/enums here.
-// Example:
-// model {{ModelName}} {
-//   id      String   @id @default(cuid())
-//   ownerId String
-//   owner   Tenant   @relation(fields: [ownerId], references: [id])
-// }
+// ============================================================
+// Sovereign Tasks – Prisma Extension Schema (Phase 2 Draft)
+// This file defines server-side persistence for the Tasks plugin.
+// ============================================================
+
+// ============================================================
+// TASK LISTS
+// ============================================================
+
+model TaskList {
+  id        Int      @id @default(autoincrement()) @map("id")
+  userId    String   @map("user_id")
+  name      String   @map("name")
+  slug      String   @map("slug")
+  position  Int      @default(0) @map("position") // ordering among lists
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tasks        Task[]
+  shareInvites TaskListShareInvite[]
+
+  @@unique([userId, slug])
+  @@index([userId])
+  @@index([position])
+  @@map("task_lists")
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+
+model Task {
+  id          Int       @id @default(autoincrement()) @map("id")
+  userId      String    @map("user_id")
+  listId      Int       @map("list_id")
+  title       String    @map("title")
+  description String?   @map("description")
+  dueDate     DateTime? @map("due_date")
+
+  /// Structured recurrence configuration (mirrors client-side `task.recurring`):
+  /// {
+  ///   "kind": "preset" | "custom",
+  ///   "preset"?: "daily" | "weekly" | "monthly" | "yearly" | "weekday",
+  ///   "custom"?: {
+  ///     "interval": number,
+  ///     "unit": "day" | "week" | "month" | "year",
+  ///     "ends": {
+  ///       "type": "never" | "onDate" | "afterCount",
+  ///       "date"?: string,   // ISO date for "onDate"
+  ///       "count"?: number   // remaining occurrences for "afterCount"
+  ///     }
+  ///   }
+  /// }
+  recurringConfig Json? @map("recurring_config")
+
+  completed Boolean  @default(false) @map("completed")
+  starred   Boolean  @default(false) @map("starred")
+  position  Int      @default(0) @map("position") // ordering inside list
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  list          TaskList       @relation(fields: [listId], references: [id])
+  taskReminders TaskReminder[]
+
+  @@index([userId])
+  @@index([listId])
+  @@index([position])
+  @@map("tasks")
+}
+
+// ============================================================
+// OPTIONAL: REMINDERS / AUTOMATION HOOKS (Phase 2.5+)
+// ============================================================
+
+model TaskReminder {
+  id           Int       @id @default(autoincrement()) @map("id")
+  taskId       Int       @map("task_id")
+  userId       String    @map("user_id")
+  reminderAt   DateTime  @map("reminder_at")
+  snoozeUntil  DateTime? @map("snooze_until")
+  sourcePlugin String?   @map("source_plugin")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taskId])
+  @@map("task_reminders")
+}
+
+// ============================================================
+// TASK LIST SHARING – INVITES (Phase 2)
+// ============================================================
+
+model TaskListShareInvite {
+  id        Int      @id @default(autoincrement()) @map("id")
+  listId    Int      @map("list_id")
+  inviterId String   @map("inviter_id") // user who initiated the share
+  email     String   @map("email") // email address of the invitee
+  token     String   @unique @map("token")
+  role      String   @default("editor") @map("role") // e.g. "viewer" | "editor"
+  status    String   @default("pending") @map("status") // "pending" | "accepted" | "revoked"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  list TaskList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@index([listId])
+  @@index([email])
+  @@index([inviterId])
+  @@map("task_list_share_invites")
+}
