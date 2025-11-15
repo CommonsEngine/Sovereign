@@ -30,5 +30,3 @@ platform/prisma/schema.prisma
 # .. and whitelist plugins to be shipped with the core
 !/plugins/users/
 !/plugins/settings/
-!/plugins/blog/
-!/plugins/splitify/
