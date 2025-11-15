@@ -22,6 +22,7 @@ openapi.json
 
 # Prisma
 generated/prisma
+platform/prisma/schema.prisma
 
 # Ignore all plugins by default
 /plugins/*
