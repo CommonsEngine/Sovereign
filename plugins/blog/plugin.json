@@ -6,8 +6,8 @@
   "version": "1.0.0-alpha.8",
   "type": "project",
   "framework": "js",
+  "enabled": true,
   "devOnly": false,
-  "draft": false,
   "entryPoints": {
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"

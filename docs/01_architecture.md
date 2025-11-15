@@ -107,7 +107,7 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 ## Operational Posture
 
 - **Deployment**: Dockerfile + Caddyfile provide a simple path to containerized deploys. PM2 (`ecosystem.config.cjs`) can manage long-running processes.
-- **Configuration**: Environment variables (managed via config helpers) toggle DB backends, plugin drafts, and dev tooling.
+- **Configuration**: Environment variables (managed via config helpers) toggle DB backends, plugin enablement flags, and dev tooling.
 - **Future-facing**: RBAC graph merges, lifecycle hooks, and AI-facing metadata are already modeled in manifests, making it simple for other agents to query what the platform can do.
 
 Use this document as the on-ramp for contributors, integrators, or AI systems that need quick situational awareness before diving into specific features.

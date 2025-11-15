@@ -6,8 +6,8 @@
   "version": "{{VERSION}}",
   "type": "{{PLUGIN_TYPE}}",
   "framework": "react",
+  "enabled": true,
   "devOnly": true,
-  "draft": false,
   "entryPoints": {
     "web": "dist/index.js",
     "api": "routes/api/index.js"

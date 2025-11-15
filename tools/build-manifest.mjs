@@ -202,8 +202,8 @@ const pluginManifestSchema = {
     version: { type: "string", minLength: 1 },
     framework: { type: "string", enum: ["js", "react"] },
     type: { type: "string", enum: ["module", "project"] },
+    enabled: { type: "boolean" },
     devOnly: { type: "boolean" },
-    draft: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
     ui: {
@@ -438,10 +438,11 @@ const buildManifest = async () => {
       continue;
     }
 
+    const manifestEnabled = pluginManifest.enabled !== false;
     const isEnabledPlugin =
       process.env.NODE_ENV !== "production"
-        ? !pluginManifest.draft
-        : !pluginManifest.devOnly && !pluginManifest.draft;
+        ? manifestEnabled
+        : manifestEnabled && !pluginManifest.devOnly;
 
     if (isEnabledPlugin) {
       if (!manifest.allowedPluginFrameworks.includes(pluginManifest.framework)) {

@@ -57,6 +57,7 @@ A minimal manifest looks like this:
   "id": "@sovereign/blog",
   "name": "Blog",
   "framework": "react",
+  "enabled": true,
   "type": "project",
   "entry": "dist/index.html",
   "sovereign": {
@@ -131,11 +132,11 @@ During manifest generation, **all plugins present under `/plugins/*`** are inclu
 
 The only filters applied are based on plugin manifest flags:
 
-- **`devOnly: true`** → Excluded from manifest in all builds except explicitly forced test runs.
-- **`draft: true`** → Excluded from production builds; included in development for testing and previews.
+- **`enabled: false`** → Excluded from all builds until re-enabled.
+- **`devOnly: true`** → Excluded from manifest in all builds except explicitly forced test runs (even if `enabled`).
 
 There is **no environment-based exclusion** beyond these flags.  
-If a plugin exists in the filesystem, it will be included unless marked `devOnly` or `draft`.
+If a plugin exists in the filesystem, it will be included unless marked `devOnly` or `enabled: false`.
 
 ### Repository Whitelisting with `.gitignore`
 

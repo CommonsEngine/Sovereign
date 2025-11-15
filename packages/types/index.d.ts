@@ -75,8 +75,8 @@ export interface PluginManifest {
   version: string;
   framework: "js" | "react";
   type: "module" | "project";
+  enabled?: boolean;
   devOnly: boolean;
-  draft?: boolean;
   author: string;
   license: string;
   entryPoints?: Record<string, string>;

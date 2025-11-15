@@ -86,16 +86,16 @@ sv serve delete
 
 ## Plugin Commands
 
-| Command                                            | Purpose                                                                                                   |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates.                                                        |
-| `sv plugins add <spec>`                            | Install a plugin from a directory or git URL.                                                             |
-| `sv plugins list [--json] [--enabled\|--disabled]` | Inspect installed plugins plus their enablement state.                                                    |
-| `sv plugins enable <namespace>`                    | Turn on a plugin by clearing `draft`/`devOnly` in its manifest and rebuilding the workspace manifest.     |
-| `sv plugins disable <namespace>`                   | Take a plugin offline by forcing `draft`/`devOnly` in its manifest and rebuilding the workspace manifest. |
-| `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files.                         |
-| `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                   |
-| `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                      |
+| Command                                            | Purpose                                                                                                                    |
+| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates.                                                                         |
+| `sv plugins add <spec>`                            | Install a plugin from a directory or git URL.                                                                              |
+| `sv plugins list [--json] [--enabled\|--disabled]` | Inspect installed plugins plus their enablement state.                                                                     |
+| `sv plugins enable <namespace>`                    | Turn on a plugin by setting `enabled: true` / `devOnly: false` in its manifest and rebuilding the workspace manifest.      |
+| `sv plugins disable <namespace>`                   | Take a plugin offline by forcing `enabled: false` / `devOnly: true` in its manifest and rebuilding the workspace manifest. |
+| `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files.                                          |
+| `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                                    |
+| `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                                       |
 
 ### `sv plugins create <namespace> [--framework js|react] [--type module|project]`
 
@@ -187,7 +187,7 @@ blog               @sovereign/blog              1.0.0-alpha.7  js         projec
 
 ### `sv plugins enable <namespace>`
 
-Marks an installed plugin as production-ready by forcing its `plugin.json` to set `draft: false` and `devOnly: false`, then regenerates `manifest.json` so the platform picks up the change. The command fails if the namespace is unknown.
+Marks an installed plugin as production-ready by forcing its `plugin.json` to set `enabled: true` and `devOnly: false`, then regenerates `manifest.json` so the platform picks up the change. The command fails if the namespace is unknown.
 
 **Flags**
 
@@ -207,7 +207,7 @@ sv plugins enable papertrail --dry-run
 
 ### `sv plugins disable <namespace>`
 
-Flips an installed plugin back into draft/dev-only mode by setting `draft: true` and `devOnly: true` in its `plugin.json`, then rebuilds `manifest.json`. This ensures runtime components stop treating the plugin as enabled. The command exits with an error if the namespace does not map to an installed plugin.
+Flips an installed plugin back into disabled/dev-only mode by setting `enabled: false` and `devOnly: true` in its `plugin.json`, then rebuilds `manifest.json`. This ensures runtime components stop treating the plugin as enabled. The command exits with an error if the namespace does not map to an installed plugin.
 
 **Flags**
 
@@ -227,7 +227,7 @@ sv plugins disable blog --dry-run
 
 ### `sv plugins remove <namespace>`
 
-Unregisters a plugin entirely. The plugin must already be disabled (`draft: true` and `devOnly: true`) so that running services are not surprised by the removal. Before touching disk the command verifies the namespace exists and that there are no lingering migrations under `plugins/<namespace>/migrations` or `plugins/<namespace>/prisma/migrations`; if either directory still contains files, removal aborts so you can clean up manually. When the checks pass the plugin directory is deleted (or archived) and `tools/build-manifest.mjs` is invoked to keep `manifest.json` in sync. Use this after you are sure the plugin is no longer needed.
+Unregisters a plugin entirely. The plugin must already be disabled (`enabled: false` and `devOnly: true`) so that running services are not surprised by the removal. Before touching disk the command verifies the namespace exists and that there are no lingering migrations under `plugins/<namespace>/migrations` or `plugins/<namespace>/prisma/migrations`; if either directory still contains files, removal aborts so you can clean up manually. When the checks pass the plugin directory is deleted (or archived) and `tools/build-manifest.mjs` is invoked to keep `manifest.json` in sync. Use this after you are sure the plugin is no longer needed.
 
 **Flags**
 

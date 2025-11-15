@@ -1152,7 +1152,7 @@ const commands = {
 
         const { manifest, manifestPath } = await readPluginManifest(match.dir);
         const updates = {};
-        if (manifest.draft !== false) updates.draft = false;
+        if (manifest.enabled !== true) updates.enabled = true;
         if (manifest.devOnly !== false) updates.devOnly = false;
 
         if (!Object.keys(updates).length) {
@@ -1171,7 +1171,7 @@ const commands = {
 
         await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
         console.log(
-          `Updated ${manifestPath}: draft=false, devOnly=false for ${manifest.id || namespace}.`
+          `Updated ${manifestPath}: enabled=true, devOnly=false for ${manifest.id || namespace}.`
         );
         await runManifestBuild();
         console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
@@ -1196,7 +1196,7 @@ const commands = {
 
         const { manifest, manifestPath } = await readPluginManifest(match.dir);
         const updates = {};
-        if (manifest.draft !== true) updates.draft = true;
+        if (manifest.enabled !== false) updates.enabled = false;
         if (manifest.devOnly !== true) updates.devOnly = true;
 
         if (!Object.keys(updates).length) {
@@ -1215,7 +1215,7 @@ const commands = {
 
         await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
         console.log(
-          `Updated ${manifestPath}: draft=true, devOnly=true for ${manifest.id || namespace}.`
+          `Updated ${manifestPath}: enabled=false, devOnly=true for ${manifest.id || namespace}.`
         );
         await runManifestBuild();
         console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
@@ -1242,7 +1242,8 @@ const commands = {
 
         const { manifest } = await readPluginManifest(match.dir);
         const pluginId = manifest.id || namespace;
-        const isDisabled = manifest.draft === true && manifest.devOnly === true;
+        const manifestEnabled = manifest.enabled !== false;
+        const isDisabled = manifestEnabled === false && manifest.devOnly === true;
         if (!isDisabled) {
           console.error(
             `${pluginId} is currently enabled. Disable it first via "sv plugins disable ${namespace}".`
@@ -1329,7 +1330,7 @@ const commands = {
           framework: manifest.framework,
           type: manifest.type,
           enabled,
-          draft: manifest.draft ?? null,
+          manifestEnabled: manifest.enabled !== false,
           devOnly: manifest.devOnly ?? null,
           directory: match.dir,
           manifestPath,
@@ -1349,8 +1350,10 @@ const commands = {
         console.log(`Version: ${detail.version}`);
         console.log(`Framework: ${detail.framework}`);
         console.log(`Type: ${detail.type}`);
-        console.log(`Enabled: ${detail.enabled ? "yes" : "no"}`);
-        console.log(`draft=${detail.draft}, devOnly=${detail.devOnly}`);
+        console.log(`Enabled (workspace): ${detail.enabled ? "yes" : "no"}`);
+        console.log(
+          `Manifest enabled=${detail.manifestEnabled ? "true" : "false"}, devOnly=${detail.devOnly}`
+        );
         console.log(`Directory: ${detail.directory}`);
         console.log(`Manifest: ${detail.manifestPath}`);
         console.log(`Registered in manifest.json: ${detail.registered ? "yes" : "no"}`);

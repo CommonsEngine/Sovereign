@@ -6,8 +6,8 @@
   "version": "0.1.0",
   "type": "module",
   "framework": "react",
+  "enabled": true,
   "devOnly": true,
-  "draft": false,
   "entryPoints": {
     "web": "dist/index.js",
     "api": "routes/api/index.js"
