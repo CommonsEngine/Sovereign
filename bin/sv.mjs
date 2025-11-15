@@ -42,6 +42,8 @@ if (!aliasLoaded) {
 }
 
 const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
+const PLUGINS_UPDATE_SCRIPT = resolve(__dirname, "../tools/plugins-update.mjs");
+const PLUGINS_REMOVE_SCRIPT = resolve(__dirname, "../tools/plugins-remove.mjs");
 const MANIFEST_PATH = resolve(__dirname, "../manifest.json");
 const PLUGINS_DIR = resolve(__dirname, "../plugins");
 const execFileAsync = promisify(execFile);
@@ -100,7 +102,7 @@ function printUsage() {
 
     Namespaces & commands:
       plugins
-        add <spec>                      Register/install a plugin (path|git|npm)
+        add <spec>                      Register/install a plugin (git url | file path)
         list [--json] [--enabled|--disabled]
         enable <namespace>
         disable <namespace>
@@ -145,6 +147,20 @@ function printNamespaceHelp(ns) {
 
 async function runManifestBuild() {
   await import(BUILD_MANIFEST_SCRIPT);
+}
+
+async function runPluginTool(scriptPath, args = []) {
+  const displayArgs = args.length ? ` ${args.join(" ")}` : "";
+  console.log(`[plugins] running: node ${relative(process.cwd(), scriptPath)}${displayArgs}`);
+  await execFileAsync("node", [scriptPath, ...args], { stdio: "inherit" });
+}
+
+async function runPluginsUpdateTool(args = []) {
+  await runPluginTool(PLUGINS_UPDATE_SCRIPT, args);
+}
+
+async function runPluginsRemoveTool(args = []) {
+  await runPluginTool(PLUGINS_REMOVE_SCRIPT, args);
 }
 
 async function readManifestFile() {
@@ -200,23 +216,6 @@ async function pathExists(target) {
   }
 }
 
-async function directoryHasContent(dir) {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.some((entry) => {
-      const name = entry.name;
-      if (!name || name === "." || name === "..") return false;
-      if (COPY_SKIP_FILES.has(name)) return false;
-      return true;
-    });
-  } catch (err) {
-    if (err?.code === "ENOENT") {
-      return false;
-    }
-    throw err;
-  }
-}
-
 function isGitSpec(spec = "") {
   return (
     /^(?:https?|git|ssh):/i.test(spec) ||
@@ -248,22 +247,33 @@ async function execGit(args, options = {}) {
 }
 
 async function resolvePluginSpec(spec) {
-  if (isGitSpec(spec)) {
-    const { path, cleanup } = await cloneGitSpec(spec);
+  let normalizedSpec = spec;
+  if (typeof spec === "string" && spec.startsWith("file://")) {
+    try {
+      normalizedSpec = fileURLToPath(spec);
+    } catch (err) {
+      throw new Error(`Invalid file URL "${spec}": ${err?.message || err}`);
+    }
+  }
+
+  if (isGitSpec(normalizedSpec)) {
+    const { path, cleanup } = await cloneGitSpec(normalizedSpec);
     return { sourcePath: path, cleanup, provenance: spec, sourceType: "git" };
   }
-  const absPath = resolve(process.cwd(), spec);
+  const absPath = resolve(process.cwd(), normalizedSpec);
   let stats;
   try {
     stats = await fs.stat(absPath);
   } catch (err) {
     if (err?.code === "ENOENT") {
-      throw new Error(`Plugin spec "${spec}" does not exist (${absPath}).`);
+      throw new Error(
+        `Plugin spec "${spec}" does not exist (${absPath}). Pass a git URL or a directory path.`
+      );
     }
     throw err;
   }
   if (!stats?.isDirectory?.()) {
-    throw new Error(`Plugin spec must be a directory; received "${spec}".`);
+    throw new Error(`Plugin spec must be a directory when using a path; received "${spec}".`);
   }
   return {
     sourcePath: absPath,
@@ -910,7 +920,7 @@ const commands = {
           await fs.mkdir(PLUGINS_DIR, { recursive: true });
           templateDir = await copyPluginTemplate(framework, targetDir, replacements);
           if (!skipManifest) {
-            await runManifestBuild();
+            await runPluginsUpdateTool();
           }
         }
 
@@ -936,7 +946,7 @@ const commands = {
             `Created ${framework} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
           );
           if (!skipManifest) {
-            console.log(`Manifest updated via tools/build-manifest.mjs.`);
+            console.log(`Plugins synced via tools/plugins-update.mjs.`);
           } else {
             console.log(`--skip-manifest set; run "sv manifest generate" when ready.`);
           }
@@ -945,11 +955,11 @@ const commands = {
     },
 
     add: {
-      desc: "Register/install a plugin from path/git/npm",
+      desc: "Register/install a plugin from a git URL or local directory",
       async run(args) {
         const spec = args._[2];
         if (!spec) {
-          exitUsage(`Missing plugin spec. Usage: sv plugins add <spec>`);
+          exitUsage(`Missing plugin spec. Usage: sv plugins add <git-url|path>`);
         }
 
         const dryRun = Boolean(args.flags["dry-run"]);
@@ -1005,7 +1015,7 @@ const commands = {
 
           if (!dryRun) {
             await copyPluginSource(specContext.sourcePath, targetDir);
-            await runManifestBuild();
+            await runPluginsUpdateTool();
           }
 
           const result = {
@@ -1030,7 +1040,7 @@ const commands = {
               console.log(`Checksum verified: ${computedChecksum}`);
             }
             if (!dryRun) {
-              console.log(`Manifest updated via tools/build-manifest.mjs.`);
+              console.log(`Plugins synced via tools/plugins-update.mjs.`);
             } else {
               console.log(`--dry-run enabled; no files were changed.`);
             }
@@ -1232,66 +1242,10 @@ const commands = {
 
         const dryRun = Boolean(args.flags["dry-run"]);
         const keepFiles = Boolean(args.flags["keep-files"]);
-
-        const installed = await indexInstalledPlugins();
-        const match = installed.byNamespace.get(namespace);
-        if (!match) {
-          console.error(`Plugin namespace "${namespace}" is not installed under ${PLUGINS_DIR}.`);
-          process.exit(1);
-        }
-
-        const { manifest } = await readPluginManifest(match.dir);
-        const pluginId = manifest.id || namespace;
-        const manifestEnabled = manifest.enabled !== false;
-        const isDisabled = manifestEnabled === false && manifest.devOnly === true;
-        if (!isDisabled) {
-          console.error(
-            `${pluginId} is currently enabled. Disable it first via "sv plugins disable ${namespace}".`
-          );
-          process.exit(1);
-        }
-
-        const migrationDirs = [
-          resolve(match.dir, "migrations"),
-          resolve(match.dir, "prisma", "migrations"),
-        ];
-        for (const dir of migrationDirs) {
-          const hasMigrations = await directoryHasContent(dir);
-          if (hasMigrations) {
-            console.error(
-              `${pluginId} has unapplied or historical migrations under ${dir}. Remove those migrations or archive the plugin manually before proceeding.`
-            );
-            process.exit(1);
-          }
-        }
-
-        const archiveRoot = resolve(PLUGINS_DIR, "..", ".sv-plugins-archive");
-        const archiveTarget = resolve(
-          archiveRoot,
-          `${namespace}-${new Date().toISOString().replace(/[:.]/g, "-")}`
-        );
-
-        if (dryRun) {
-          console.log(
-            `[dry-run] Would remove plugin ${pluginId} from ${match.dir} (keepFiles=${
-              keepFiles ? "true" : "false"
-            }).`
-          );
-          console.log("[dry-run] Would rebuild manifest via tools/build-manifest.mjs.");
-          return;
-        }
-
-        if (keepFiles) {
-          await fs.mkdir(archiveRoot, { recursive: true });
-          await fs.rename(match.dir, archiveTarget);
-          console.log(`Archived plugin files to ${archiveTarget}.`);
-        } else {
-          await fs.rm(match.dir, { recursive: true, force: true });
-          console.log(`Removed plugin directory ${match.dir}.`);
-        }
-
-        await runManifestBuild();
-        console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
+        const toolArgs = [namespace];
+        if (keepFiles) toolArgs.push("--keep-files");
+        if (dryRun) toolArgs.push("--dry-run");
+        await runPluginsRemoveTool(toolArgs);
       },
     },
 
