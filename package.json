@@ -14,7 +14,7 @@
     "packages/*"
   ],
   "scripts": {
-    "preinstall": "node tools/plugins-pull.mjs",
+    "preinstall": "yarn plugins:pull",
     "prepare": "husky",
     "postinstall": "node -e \"if (process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
     "sv:link": "yarn link --silent || true",
@@ -35,6 +35,8 @@
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
     "format:all": "yarn format && yarn lint && yarn workspace @sovereign/platform format:all",
+    "plugins:pull": "node tools/plugins-pull.mjs",
+    "plugins:update": "node tools/plugins-update.mjs",
     "prisma:compose": "node tools/database-prisma-compose.mjs",
     "prisma:compose:check": "node tools/database-prisma-compose.mjs --check",
     "prisma:generate": "yarn workspace @sovereign/platform prisma:generate",
