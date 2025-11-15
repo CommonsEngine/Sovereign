@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import { randomBytes } from "node:crypto";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "module";
 
 import { collectPluginCapabilities } from "./lib/plugin-capabilities.mjs";
@@ -634,6 +634,149 @@ const buildManifest = async () => {
   await fs.writeFile(__finalManifestPath, JSON.stringify(outputManifest, null, 2) + "\n");
   console?.log?.(`➜ Enabled plugins: ${manifest.enabledPlugins.join(", ") || "(none)"}`);
   console?.log?.(`✓ Manifest written: ${__finalManifestPath}`);
+
+  // --- Generate OpenAPI spec for plugin APIs ---
+  async function extractRoutesFromRouter(router) {
+    const routes = [];
+    if (!router || !router.stack || !Array.isArray(router.stack)) return routes;
+    for (const layer of router.stack) {
+      if (layer && layer.route && layer.route.path) {
+        const path = layer.route.path;
+        const methods = Object.keys(layer.route.methods || {}).filter(
+          (m) => layer.route.methods[m]
+        );
+        for (const m of methods) {
+          routes.push({ method: m.toLowerCase(), path });
+        }
+      } else if (layer && layer.name === "router" && layer.handle && layer.handle.stack) {
+        // Nested router – best-effort recursion without mount prefix (Express does not expose it reliably here)
+        const nested = await extractRoutesFromRouter(layer.handle);
+        routes.push(...nested);
+      }
+    }
+    return routes;
+  }
+
+  function toOpenApiPath(expressPath) {
+    if (!expressPath) return "/";
+    // Convert Express ":id" style params to OpenAPI "{id}"
+    return String(expressPath).replace(/:([A-Za-z0-9_]+)/g, "{$1}");
+  }
+
+  async function resolvePluginApiRouter(entryAbs, pluginNamespace) {
+    try {
+      const href = pathToFileURL(entryAbs).href;
+      const mod = await import(href);
+      let exported =
+        mod?.default && typeof mod.default === "function" && mod.default.name === "router"
+          ? mod.default
+          : mod?.default && typeof mod.default === "function" && mod.default.name !== "router"
+            ? mod.default
+            : mod?.router
+              ? mod.router
+              : typeof mod === "function"
+                ? mod()
+                : null;
+
+      // If it's a factory, invoke it with a minimal context
+      if (typeof exported === "function" && !exported.stack) {
+        const ctx = {
+          logger: console,
+          prisma: {},
+          path,
+          env: { nodeEnv: process.env.NODE_ENV },
+          pluginAuth: { requireAuthz: () => (req, res, next) => next?.() },
+          auth: { require: () => (req, res, next) => next?.() },
+        };
+        try {
+          exported = exported(ctx);
+        } catch (e) {
+          console?.warn?.(
+            `⚠️  ${pluginNamespace}: router factory invocation failed for spec generation:`,
+            e?.message || e
+          );
+          return null;
+        }
+      }
+
+      if (exported && typeof exported === "function" && exported.stack) {
+        return exported;
+      }
+    } catch (e) {
+      console?.warn?.(
+        `⚠️  Failed to import API router at ${entryAbs} for OpenAPI generation:`,
+        e?.message || e
+      );
+    }
+    return null;
+  }
+
+  async function buildOpenAPISpec(outputPath) {
+    const openapi = {
+      openapi: "3.0.3",
+      info: {
+        title: "Sovereign Plugin API",
+        version: outputManifest?.platform?.version || "0.0.0",
+        description: "Automatically generated from plugin Express routers at build time.",
+      },
+      servers: [{ url: "/", description: "Relative server (same-origin)" }],
+      paths: {},
+      tags: [],
+      components: {},
+    };
+
+    for (const ns of Object.keys(finalPlugins)) {
+      const plugin = finalPlugins[ns];
+      const apiEntry = plugin?.entryPoints?.api;
+      if (!apiEntry) continue;
+      const router = await resolvePluginApiRouter(apiEntry, ns);
+      if (!router) continue;
+
+      const base = `/api/plugins/${ns}`;
+      openapi.tags.push({ name: ns });
+
+      const routes = await extractRoutesFromRouter(router);
+      for (const r of routes) {
+        const fullPath = base + toOpenApiPath(r.path || "/");
+        const method = (r.method || "get").toLowerCase();
+        if (!openapi.paths[fullPath]) openapi.paths[fullPath] = {};
+
+        const isWrite = method === "post" || method === "put" || method === "patch";
+        const isCreate = method === "post";
+
+        openapi.paths[fullPath][method] = {
+          tags: [ns],
+          summary: `${ns} ${method.toUpperCase()} ${fullPath}`,
+          requestBody: isWrite
+            ? {
+                required: false,
+                content: {
+                  "application/json": {
+                    schema: { type: "object", additionalProperties: true },
+                  },
+                },
+              }
+            : undefined,
+          responses: {
+            ...(isCreate ? { 201: { description: "Created" } } : { 200: { description: "OK" } }),
+            400: { description: "Bad Request" },
+            401: { description: "Unauthorized" },
+            404: { description: "Not Found" },
+          },
+        };
+      }
+    }
+
+    await fs.writeFile(outputPath, JSON.stringify(openapi, null, 2) + "\n");
+    console?.log?.(`✓ OpenAPI written: ${outputPath}`);
+  }
+
+  try {
+    const openapiOut = path.join(__rootdir, "openapi.json");
+    await buildOpenAPISpec(openapiOut);
+  } catch (e) {
+    console?.warn?.("⚠️  OpenAPI generation failed:", e?.message || e);
+  }
 };
 
 await buildManifest();

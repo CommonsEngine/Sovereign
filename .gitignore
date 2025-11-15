@@ -6,6 +6,7 @@ logs
 localOnly/
 package-lock.json
 manifest.json
+openapi.json
 .continue
 .vscode
 .state
