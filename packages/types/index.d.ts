@@ -21,7 +21,6 @@ export interface PluginUserCapability {
 
 export interface PluginSovereignMetadata {
   schemaVersion: number;
-  allowMultipleInstances?: boolean;
   compat?: {
     platform?: string;
     node?: string;
@@ -75,6 +74,7 @@ export interface PluginManifest {
   description?: string;
   version: string;
   framework: "js" | "react";
+  type: "module" | "project";
   devOnly: boolean;
   draft?: boolean;
   author: string;

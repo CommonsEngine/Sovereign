@@ -83,8 +83,8 @@ export async function buildPluginRoutes(app, manifest, config) {
     for (const ns of Object.keys(plugins)) {
       const plugin = plugins[ns];
       const pluginFramework = plugin.framework; // react | js
-      const pluginKind = plugin?.sovereign?.allowMultipleInstances ? "project" : "module";
-      const pluginKey = `${pluginFramework}::${pluginKind}`;
+      const pluginType = plugin?.type ?? "module";
+      const pluginKey = `${pluginFramework}::${pluginType}`;
       const pluginAccessGuard = createPluginAccessGuard(plugin);
       const viewMiddlewares = [requireAuth];
       if (pluginAccessGuard) viewMiddlewares.push(pluginAccessGuard);

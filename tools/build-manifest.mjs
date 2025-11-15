@@ -38,6 +38,7 @@ function formatError(message, options = {}) {
 
 const DEFAULT_ICON_NAME = "default";
 const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
+const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
 
 function normalizeRoleValue(role) {
   if (!role) return null;
@@ -182,7 +183,17 @@ const manifest = {
 const pluginManifestSchema = {
   $id: "PluginManifest",
   type: "object",
-  required: ["id", "name", "version", "framework", "sovereign", "devOnly", "author", "license"],
+  required: [
+    "id",
+    "name",
+    "version",
+    "framework",
+    "type",
+    "sovereign",
+    "devOnly",
+    "author",
+    "license",
+  ],
   additionalProperties: true,
   properties: {
     id: { type: "string", minLength: 1 },
@@ -190,6 +201,7 @@ const pluginManifestSchema = {
     description: { type: "string" },
     version: { type: "string", minLength: 1 },
     framework: { type: "string", enum: ["js", "react"] },
+    type: { type: "string", enum: ["module", "project"] },
     devOnly: { type: "boolean" },
     draft: { type: "boolean" },
     author: { type: "string" },
@@ -243,7 +255,6 @@ const pluginManifestSchema = {
       additionalProperties: true,
       properties: {
         schemaVersion: { type: "integer", minimum: 1 },
-        allowMultipleInstances: { type: "boolean" },
         compat: {
           type: "object",
           additionalProperties: false,
@@ -445,6 +456,14 @@ const buildManifest = async () => {
           })
         );
       }
+      if (!pluginManifest?.type || !SUPPORTED_PLUGIN_TYPES.includes(pluginManifest.type)) {
+        console?.warn?.(
+          formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
+            manifestPath: pluginManifestPath,
+            pluginDir: plugingRoot,
+          })
+        );
+      }
       if (!pluginManifest?.version) {
         console?.warn?.(
           formatError(`missing version in plugin.json`, {
@@ -587,11 +606,12 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, ui, featureAccess, corePlugin } = finalPlugins[k];
+    const { id, name, namespace, type, ui, featureAccess, corePlugin } = finalPlugins[k];
     const resolvedUi = ui || normalizeUiConfig(undefined);
     const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
+    const pluginType = type === "project" ? "project" : "module";
 
-    if (sovereign.allowMultipleInstances) {
+    if (pluginType === "project") {
       manifest.projects.push({
         id,
         label: name,

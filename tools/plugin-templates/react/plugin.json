@@ -4,7 +4,8 @@
   "name": "{{DISPLAY_NAME}}",
   "description": "{{DESCRIPTION}}",
   "version": "{{VERSION}}",
-  "framework": "js",
+  "type": "{{PLUGIN_TYPE}}",
+  "framework": "react",
   "devOnly": true,
   "draft": false,
   "entryPoints": {
@@ -26,7 +27,6 @@
   },
   "sovereign": {
     "schemaVersion": 1,
-    "allowMultipleInstances": true,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true

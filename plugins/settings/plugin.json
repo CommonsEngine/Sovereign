@@ -4,6 +4,7 @@
   "name": "Settings",
   "description": "Manage preferences, integrations, and policies across your platfrom.",
   "version": "0.1.0",
+  "type": "module",
   "framework": "js",
   "devOnly": false,
   "draft": false,
@@ -27,7 +28,6 @@
   },
   "sovereign": {
     "schemaVersion": 1,
-    "allowMultipleInstances": false,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true,

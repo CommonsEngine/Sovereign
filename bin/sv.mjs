@@ -57,6 +57,7 @@ const PLUGIN_TEMPLATE_MAP = {
   react: resolve(PLUGIN_TEMPLATES_DIR, "react"),
 };
 const SUPPORTED_PLUGIN_FRAMEWORKS = Object.keys(PLUGIN_TEMPLATE_MAP);
+const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
 const TEMPLATE_TEXT_EXTENSIONS = new Set([
   ".json",
   ".js",
@@ -307,7 +308,7 @@ async function readPluginManifest(sourceDir) {
   } catch (err) {
     throw new Error(`Invalid plugin manifest JSON at ${manifestPath}: ${err?.message || err}`);
   }
-  const requiredFields = ["id", "name", "version", "framework"];
+  const requiredFields = ["id", "name", "version", "framework", "type"];
   for (const field of requiredFields) {
     if (!manifest[field] || typeof manifest[field] !== "string") {
       throw new Error(`plugin.json is missing required field "${field}".`);
@@ -315,6 +316,9 @@ async function readPluginManifest(sourceDir) {
   }
   if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(manifest.framework)) {
     throw new Error(`Unsupported plugin framework "${manifest.framework}".`);
+  }
+  if (!SUPPORTED_PLUGIN_TYPES.includes(manifest.type)) {
+    throw new Error(`Unsupported plugin type "${manifest.type}".`);
   }
   return { manifest, manifestPath };
 }
@@ -838,13 +842,17 @@ const commands = {
         const dryRun = Boolean(args.flags["dry-run"]);
         const skipManifest = Boolean(args.flags["skip-manifest"]);
         const outputJson = Boolean(args.flags.json);
-        const frameworkInput = args.flags.framework || args.flags.type || "js";
+        const frameworkInput = args.flags.framework || "js";
         const framework = String(frameworkInput).toLowerCase();
         if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(framework)) {
           exitUsage(
             `Unknown plugin framework "${framework}". Expected one of ${SUPPORTED_PLUGIN_FRAMEWORKS.join(", ")}.`
           );
         }
+        const pluginTypeInput = args.flags.type || args.flags["plugin-type"] || "module";
+        const pluginType = SUPPORTED_PLUGIN_TYPES.includes(String(pluginTypeInput).toLowerCase())
+          ? String(pluginTypeInput).toLowerCase()
+          : "module";
         const version = args.flags.version || "0.1.0";
         const displayName =
           args.flags.name || args.flags["display-name"] || toTitleCase(namespace) || namespace;
@@ -892,6 +900,7 @@ const commands = {
           DEV_ORIGIN: devOrigin,
           PREVIEW_PORT: String(previewPort),
           LIB_GLOBAL: libraryGlobal,
+          PLUGIN_TYPE: pluginType,
         };
 
         let templateDir;
@@ -910,6 +919,7 @@ const commands = {
           namespace,
           id: pluginId,
           framework,
+          type: pluginType,
           targetDir,
           templateDir,
           dryRun,
@@ -1063,6 +1073,7 @@ const commands = {
             id: plugin?.id || ns,
             version: plugin?.version || "(unknown)",
             framework: plugin?.framework || "(unknown)",
+            type: plugin?.type || "(unknown)",
             enabled: enabledEntries.has(ns),
           };
         });
@@ -1091,6 +1102,7 @@ const commands = {
           { key: "id", label: "ID" },
           { key: "version", label: "Version" },
           { key: "framework", label: "Framework" },
+          { key: "type", label: "Type" },
           { key: "enabled", label: "Enabled" },
         ];
 
@@ -1315,6 +1327,7 @@ const commands = {
           name: manifest.name,
           version: manifest.version,
           framework: manifest.framework,
+          type: manifest.type,
           enabled,
           draft: manifest.draft ?? null,
           devOnly: manifest.devOnly ?? null,
@@ -1335,6 +1348,7 @@ const commands = {
         console.log(`Name: ${detail.name}`);
         console.log(`Version: ${detail.version}`);
         console.log(`Framework: ${detail.framework}`);
+        console.log(`Type: ${detail.type}`);
         console.log(`Enabled: ${detail.enabled ? "yes" : "no"}`);
         console.log(`draft=${detail.draft}, devOnly=${detail.devOnly}`);
         console.log(`Directory: ${detail.directory}`);

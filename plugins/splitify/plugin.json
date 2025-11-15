@@ -4,6 +4,7 @@
   "name": "Splitify",
   "description": "a simple, privacy-first way to track shared expenses and personal budgets. Built on Sovereign, it helps friends, teams, and collectives manage money fairly — without giving up control of their data",
   "version": "0.1.0",
+  "type": "module",
   "framework": "react",
   "devOnly": true,
   "draft": false,
@@ -26,7 +27,6 @@
   },
   "sovereign": {
     "schemaVersion": 1,
-    "allowMultipleInstances": false,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true

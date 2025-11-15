@@ -17,14 +17,14 @@ There are two supported plugin frameworks, defined in `plugin.json` under the `f
 | **`js`**    | Server-side plugins written as **Express apps**. They export routers or middleware that Sovereign mounts under `/namespace` and `/api/plugins/namespace`.                                                                                      | APIs, integrations, or background services. |
 | **`react`** | Front-end plugins built with **Vite** (or compatible bundlers). Each ships a compiled SPA (`dist/index.html`) and optional dev-server metadata for hot reload. Sovereign proxies them in development and serves them statically in production. | Dashboards, editors, client tools.          |
 
-## 3. Plugin Kinds
+## 3. Plugin Types
 
-The _kind_ determines whether a plugin is global or project‑scoped. It is inferred at runtime from the `allowMultipleInstances` flag in `plugin.json`.
+The _type_ determines whether a plugin is global or project‑scoped. Set it explicitly via the top-level `type` field in `plugin.json`.
 
-| Kind               | Key Property                                | Mount Path       | Behavior                                                                                     |
-| ------------------ | ------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| **Module plugin**  | `"allowMultipleInstances": false` (default) | `/namespace`     | Single global instance for the whole workspace. Configuration stored once at platform level. |
-| **Project plugin** | `"allowMultipleInstances": true`            | `/namespace/:id` | Supports multiple instances per tenant or project, with data and config scoped by project.   |
+| Type               | Key Property        | Mount Path       | Behavior                                                                                     |
+| ------------------ | ------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
+| **Module plugin**  | `"type": "module"`  | `/namespace`     | Single global instance for the whole workspace. Configuration stored once at platform level. |
+| **Project plugin** | `"type": "project"` | `/namespace/:id` | Supports multiple instances per tenant or project, with data and config scoped by project.   |
 
 ## 4. Directory Layout
 
@@ -57,8 +57,8 @@ A minimal manifest looks like this:
   "id": "@sovereign/blog",
   "name": "Blog",
   "framework": "react",
+  "type": "project",
   "entry": "dist/index.html",
-  "allowMultipleInstances": true,
   "sovereign": {
     "platformCapabilities": { "database": true },
     "userCapabilities": [{ "key": "user:plugin.blog.post.create", "roles": ["project:editor"] }],
@@ -91,7 +91,7 @@ Plugins may export lifecycle hooks from their entry file:
 
 1. **Scaffold a plugin**
    ```bash
-   sv plugins create <namespace> --framework react|js
+   sv plugins create <namespace> --framework react|js --type module|project
    ```
 2. **Run the dev server**
    - SPA: Sovereign proxies Vite dev server.
@@ -168,6 +168,7 @@ External or private plugins can be cloned or mounted into `/plugins` before the 
 
 - Sovereign currently supports:
 - **Two plugin frameworks** → `react`, `js`
+- **Two plugin kinds** → `project`, `module`
   - **Two plugin kinds** → `module`, `project`
 - The manifest defines all metadata, routes, and capabilities.
 - Plugins integrate with the same RBAC and service layer as the core.

@@ -97,15 +97,16 @@ sv serve delete
 | `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                   |
 | `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                      |
 
-### `sv plugins create <namespace> [--framework js|react]`
+### `sv plugins create <namespace> [--framework js|react] [--type module|project]`
 
-Bootstraps a plugin directory under `plugins/<namespace>` using the curated templates stored in `tools/plugin-templates`. The command rejects duplicate namespaces or manifest ids, copies either the `js` (custom Express) or `react` (SPA) scaffold, replaces placeholders (name, description, ids, dev server port, etc.), and optionally rebuilds `manifest.json`.
+Bootstraps a plugin directory under `plugins/<namespace>` using the curated templates stored in `tools/plugin-templates`. The command rejects duplicate namespaces or manifest ids, copies either the `js` (custom Express) or `react` (SPA) scaffold, lets you opt into `module` vs. `project` plugin types, replaces placeholders (name, description, ids, dev server port, etc.), and optionally rebuilds `manifest.json`.
 
 **Flags**
 
 | Flag                       | Effect                                                                                             |
 | -------------------------- | -------------------------------------------------------------------------------------------------- |
 | `--framework <js\|react>`  | Choose which scaffold to use (`js` by default).                                                    |
+| `--type <module\|project>` | Set the plugin kind (`module` by default).                                                         |
 | `--name "<display name>"`  | Human-facing plugin name; defaults to the namespace in Title Case.                                 |
 | `--description "<text>"`   | Short description embedded into the manifest.                                                      |
 | `--id <@scope/name>`       | Override the generated `plugin.json#id` (`@sovereign/<namespace>` by default).                     |
@@ -123,8 +124,8 @@ Bootstraps a plugin directory under `plugins/<namespace>` using the curated temp
 # Create a custom plugin
 sv plugins create acme-support --name "Acme Support Desk"
 
-# Create a React SPA plugin using a specific id + dev port
-sv plugins create companion --framework react --id @acme/companion --dev-port 4500
+# Create a React project-scoped plugin using a specific id + dev port
+sv plugins create companion --framework react --type project --id @acme/companion --dev-port 4500
 ```
 
 ### `sv plugins add <spec>`
@@ -137,7 +138,7 @@ sv plugins create companion --framework react --id @acme/companion --dev-port 45
 During installation the CLI:
 
 1. Resolves and clones (if needed) the spec into a temporary directory.
-2. Loads `plugin.json`, ensuring `id`, `version`, `framework`, and namespace are valid.
+2. Loads `plugin.json`, ensuring `id`, `version`, `framework`, `type`, and namespace are valid.
 3. Prevents conflicts by comparing against existing plugins (by `id` and namespace).
 4. Copies the plugin into `plugins/<namespace>` while skipping VCS folders (e.g. `.git`).
 5. Rebuilds `manifest.json` by invoking `tools/build-manifest.mjs`.
@@ -165,7 +166,7 @@ sv plugins add ../my-plugin --dry-run --json
 
 ### `sv plugins list`
 
-Lists every plugin known to the manifest registry and annotates each with its namespace, plugin id, version, framework, and whether the manifest currently marks it as enabled. Empty registries simply report `No plugins found.` and exit with status `0`.
+Lists every plugin known to the manifest registry and annotates each with its namespace, plugin id, version, framework, type, and whether the manifest currently marks it as enabled. Empty registries simply report `No plugins found.` and exit with status `0`.
 
 **Flags**
 
@@ -179,9 +180,9 @@ Lists every plugin known to the manifest registry and annotates each with its na
 
 ```
 sv plugins list
-Namespace          ID                           Version        Framework  Enabled
------------------  ---------------------------  -------------  ---------  -------
-blog               @sovereign/blog              1.0.0-alpha.7  js         yes
+Namespace          ID                           Version        Framework  Type     Enabled
+-----------------  ---------------------------  -------------  ---------  -------  -------
+blog               @sovereign/blog              1.0.0-alpha.7  js         project  yes
 ```
 
 ### `sv plugins enable <namespace>`
