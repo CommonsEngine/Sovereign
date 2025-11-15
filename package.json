@@ -14,14 +14,14 @@
     "packages/*"
   ],
   "scripts": {
+    "preinstall": "node tools/plugins-pull.mjs",
     "prepare": "husky",
     "postinstall": "node -e \"if (process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
     "sv:link": "yarn link --silent || true",
     "prepare:env": "yarn workspace @sovereign/platform prepare:env",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
-    "prepare:plugins": "node tools/plugins-pull.mjs",
     "prepare:manifest": "yarn build:manifest",
-    "prepare:all": "yarn prepare:db && prepare:plugins && yarn prepare:manifest",
+    "prepare:all": "yarn prepare:db && yarn prepare:manifest",
     "postprepare:all": "yarn prisma:seed",
     "prebuild": "yarn build:manifest",
     "build": "yarn workspaces run build",
