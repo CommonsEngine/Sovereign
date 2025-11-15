@@ -74,10 +74,10 @@ See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and s
 3. Configure environment
 
    ```bash
-   yarn prepare:init
+   yarn prepare:env
    ```
 
-   - `prepare:init` will prepare the envirement and copies `platform/.env.example` → `platform/.env`.
+   - `prepare:env` will prepare the envirement and copies `platform/.env.example` → `platform/.env`.
    - You have to manaully update `.env` with required variables before moving forward,
 
 4. Prepare for the buid
@@ -337,7 +337,7 @@ If you prefer a bare-metal deployment without Docker or anything heavy, can use 
    corepack enable || true
    corepack prepare yarn@stable --activate || true
    yarn install --frozen-lockfile || yarn install
-   yarn prepare:init
+   yarn prepare:env
    // Update .env
    yarn prepare:all
    yarn build

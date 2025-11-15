@@ -23,11 +23,11 @@ sv [global options] <namespace> <command> [args]
 
 Manage local development/production serving via PM2 with first‑run detection and health checks.
 
-| Command                                                                          | Purpose                                                                                                 |
-| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `sv serve [--force] [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]` | First run: `install → prepare:init → prepare:all → build → build:manifest`, else fast restart + health. |
-| `sv serve rebuild [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`   | Rebuilds `manifest → build`, then (re)starts and health checks.                                         |
-| `sv serve delete`                                                                | Stops and removes the PM2 process named `sovereign`.                                                    |
+| Command                                                                          | Purpose                                                                                                |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `sv serve [--force] [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]` | First run: `install → prepare:env → prepare:all → build → build:manifest`, else fast restart + health. |
+| `sv serve rebuild [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`   | Rebuilds `manifest → build`, then (re)starts and health checks.                                        |
+| `sv serve delete`                                                                | Stops and removes the PM2 process named `sovereign`.                                                   |
 
 The command uses a locally installed **PM2** if available, otherwise falls back to `npx pm2@latest`. Health checks hit `GET /readyz` on `127.0.0.1` (default port `4000` unless overridden).
 
@@ -36,7 +36,7 @@ The command uses a locally installed **PM2** if available, otherwise falls back 
 Performs **first‑run detection**:
 
 - If no `node_modules`, `platform/dist`, or `.state/prepared` is found, it runs:
-  `yarn install` → `yarn prepare:init` → `yarn prepare:all` → `yarn build` → `yarn build:manifest`.
+  `yarn install` → `yarn prepare:env` → `yarn prepare:all` → `yarn build` → `yarn build:manifest`.
 - Otherwise it **restarts** the existing PM2 app (`sovereign`) quickly.
 
 **Flags**

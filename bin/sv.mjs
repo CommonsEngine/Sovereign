@@ -733,7 +733,7 @@ async function fullBuildCLI() {
       await execFileAsync("yarn", ["install"], { stdio: "inherit" });
     }
   }
-  await runYarnScript("prepare:init");
+  await runYarnScript("prepare:env");
   await runYarnScript("prepare:all");
   await runYarnScript("build");
   await runYarnScript("build:manifest");
@@ -757,7 +757,7 @@ const commands = {
 
       Notes:
         - "serve" without subcommand runs first-run detection:
-          full build on first run (install → prepare:init → prepare:all → build → build:manifest),
+          full build on first run (install → prepare:env → prepare:all → build → build:manifest),
           else fast restart.
         - Uses PM2 if present, else falls back to "npx pm2@latest".
     `,
