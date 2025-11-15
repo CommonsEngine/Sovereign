@@ -97,10 +97,9 @@ Plugins may export lifecycle hooks from their entry file:
 2. **Run the dev server**
    - SPA: Sovereign proxies Vite dev server.
    - Custom: Express routes hot reload automatically.
-3. **Regenerate the manifest**
-   ```bash
-   sv manifest generate
-   ```
+3. **Sync manifest/DB + reload (when adding new plugins)**
+   - External sources: `sv plugins add <git-url|path>` (accepts `file://` URLs, git URLs, or local dirs). This runs the shared sync tool to rebuild `manifest.json`, upsert plugin metadata into the DB, and reload PM2 if present.
+   - Local edits: `sv manifest generate` is still available for manual rebuilds.
 4. **Toggle enable/disable**
    ```bash
    sv plugins enable <namespace>
@@ -126,7 +125,14 @@ Plugins may export lifecycle hooks from their entry file:
 Each plugin can add Prisma models via `prisma/extension.prisma`.  
 The build process composes all plugin schemas into a unified `platform/prisma/schema.prisma`.
 
-## 11. Deployment and Production
+## 11. Operational Tooling
+
+- **Sync/update**: `node tools/plugins-update.mjs` (or indirectly via `sv plugins add/create`) reads plugin manifests, rebuilds `manifest.json`, upserts plugin metadata into the database, and reloads PM2 when available.
+- **Private plugin pulls**: `tools/plugins-pull.mjs` supports per-plugin SSH keys (`.ssh/sovereign-plugins/<namespace>.key`) or HTTPS tokens (`.ssh/sovereign-plugins/<namespace>.pat`), with the base dir overrideable via `SV_PLUGINS_AUTH_DIR`.
+- **Removal**: `node tools/plugins-remove.mjs <namespace> [--keep-files] [--dry-run]` removes a disabled plugin (safety checks + optional archiving), rebuilds the manifest, removes DB entries, and reloads PM2 if present. The CLI `sv plugins remove` delegates to this script.
+- **PM2 optionality**: Both scripts skip reload gracefully if PM2 is not installed.
+
+## 12. Deployment and Production
 
 During manifest generation, **all plugins present under `/plugins/*`** are included — regardless of environment (`development` or `production`).
 

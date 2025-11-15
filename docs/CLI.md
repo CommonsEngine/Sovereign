@@ -89,17 +89,17 @@ sv serve delete
 | Command                                            | Purpose                                                                                                                    |
 | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | `sv plugins create <namespace>`                    | Scaffold a new plugin from the built-in templates.                                                                         |
-| `sv plugins add <spec>`                            | Install a plugin from a directory or git URL.                                                                              |
+| `sv plugins add <spec>`                            | Install a plugin from a git URL or local directory path (including `file://` URLs).                                        |
 | `sv plugins list [--json] [--enabled\|--disabled]` | Inspect installed plugins plus their enablement state.                                                                     |
 | `sv plugins enable <namespace>`                    | Turn on a plugin by setting `enabled: true` / `devOnly: false` in its manifest and rebuilding the workspace manifest.      |
 | `sv plugins disable <namespace>`                   | Take a plugin offline by forcing `enabled: false` / `devOnly: true` in its manifest and rebuilding the workspace manifest. |
-| `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files.                                          |
+| `sv plugins remove <namespace>`                    | Unregister a disabled plugin after safety checks, optionally archiving its files, and reload PM2 if present.               |
 | `sv plugins show <namespace> [--json]`             | Inspect plugin manifest details plus enablement status.                                                                    |
 | `sv plugins validate <path>`                       | Lint a plugin directory for manifest correctness and required files.                                                       |
 
 ### `sv plugins create <namespace> [--framework js|react] [--type module|project]`
 
-Bootstraps a plugin directory under `plugins/<namespace>` using the curated templates stored in `tools/plugin-templates`. The command rejects duplicate namespaces or manifest ids, copies either the `js` (custom Express) or `react` (SPA) scaffold, lets you opt into `module` vs. `project` plugin types, replaces placeholders (name, description, ids, dev server port, etc.), and optionally rebuilds `manifest.json`.
+Bootstraps a plugin directory under `plugins/<namespace>` using the curated templates stored in `tools/plugin-templates`. The command rejects duplicate namespaces or manifest ids, copies either the `js` (custom Express) or `react` (SPA) scaffold, lets you opt into `module` vs. `project` plugin types, replaces placeholders (name, description, ids, dev server port, etc.), and then runs `tools/plugins-update.mjs` (unless `--skip-manifest` is set) to rebuild `manifest.json`, upsert plugin metadata into the database, and reload PM2 when available.
 
 **Flags**
 
@@ -132,16 +132,16 @@ sv plugins create companion --framework react --type project --id @acme/companio
 
 `<spec>` can be:
 
-1. A local directory (absolute or relative path).
+1. A local directory (absolute or relative path, or `file://` URL).
 2. A git URL (any format accepted by `git clone`, optional `#ref`).
 
 During installation the CLI:
 
-1. Resolves and clones (if needed) the spec into a temporary directory.
+1. Resolves and clones (if needed) the spec into a temporary directory. Cloning supports per-plugin credentials stored under `.ssh/sovereign-plugins/<namespace>.key` (SSH) or `.ssh/sovereign-plugins/<namespace>.pat` (HTTPS token), or an override directory via `SV_PLUGINS_AUTH_DIR`.
 2. Loads `plugin.json`, ensuring `id`, `version`, `framework`, `type`, and namespace are valid.
 3. Prevents conflicts by comparing against existing plugins (by `id` and namespace).
 4. Copies the plugin into `plugins/<namespace>` while skipping VCS folders (e.g. `.git`).
-5. Rebuilds `manifest.json` by invoking `tools/build-manifest.mjs`.
+5. Synchronizes via `tools/plugins-update.mjs` (manifest rebuild, DB upsert, PM2 reload if present).
 
 **Flags**
 
@@ -159,6 +159,9 @@ sv plugins add ./packages/example-plugin
 
 # Install directly from git
 sv plugins add git+https://github.com/sovereign/example-plugin.git#main
+
+# Install from a file:// URL
+sv plugins add file:///Users/you/dev/my-plugin
 
 # Plan the install only
 sv plugins add ../my-plugin --dry-run --json
@@ -227,14 +230,14 @@ sv plugins disable blog --dry-run
 
 ### `sv plugins remove <namespace>`
 
-Unregisters a plugin entirely. The plugin must already be disabled (`enabled: false` and `devOnly: true`) so that running services are not surprised by the removal. Before touching disk the command verifies the namespace exists and that there are no lingering migrations under `plugins/<namespace>/migrations` or `plugins/<namespace>/prisma/migrations`; if either directory still contains files, removal aborts so you can clean up manually. When the checks pass the plugin directory is deleted (or archived) and `tools/build-manifest.mjs` is invoked to keep `manifest.json` in sync. Use this after you are sure the plugin is no longer needed.
+Unregisters a plugin entirely. The plugin must already be disabled (`enabled: false` and `devOnly: true`) so that running services are not surprised by the removal. Before touching disk the command verifies the namespace exists and that there are no lingering migrations under `plugins/<namespace>/migrations` or `plugins/<namespace>/prisma/migrations`; if either directory still contains files, removal aborts so you can clean up manually. When the checks pass the plugin directory is deleted (or archived), the database record is removed, and `tools/plugins-remove.mjs` rebuilds the manifest plus reloads PM2 when available. Use this after you are sure the plugin is no longer needed.
 
 **Flags**
 
-| Flag           | Effect                                                                                                                 |
-| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `--dry-run`    | Prints the actions that _would_ run (safety checks, archive/delete, manifest rebuild) without touching the filesystem. |
-| `--keep-files` | Moves the plugin into `.sv-plugins-archive/<namespace>-<timestamp>` instead of deleting it outright.                   |
+| Flag           | Effect                                                                                                                             |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--dry-run`    | Prints the actions that _would_ run (safety checks, archive/delete, manifest rebuild, PM2 reload) without touching the filesystem. |
+| `--keep-files` | Moves the plugin into `.sv-plugins-archive/<namespace>-<timestamp>` instead of deleting it outright.                               |
 
 **Example**
 
