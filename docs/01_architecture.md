@@ -44,7 +44,7 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 
 ## Plugin Runtime (`plugins/<namespace>/`)
 
-- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, type (`spa` or `custom`), entry file, exposed routes, capabilities, and optional dev-server metadata.
+- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, type (`js` or `react`), entry file, exposed routes, capabilities, and optional dev-server metadata.
 - **Lifecycle hooks**: Entry modules export `render`, `configure`, and `getRoutes` today, with planned `onInstall/onEnable` hooks for seeding data or migrations.
 - **Asset strategy**: Static assets under `public/` are copied verbatim. Code under `src/` or `routes/` is transpiled but keeps file extensions so dynamic imports remain stable.
 - **Development ergonomics**: SPA plugins can declare a Vite dev server so the platform proxies HMR traffic automatically when `NODE_ENV !== "production"`.

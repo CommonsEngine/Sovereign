@@ -29,7 +29,7 @@ Sovereign Core is a **lean core runtime** with the support for **extended plugin
 
 We have two kinds of plugins based on the behavior. We have project plugins which support for spawns multiple instance of the plugin as needed (Eg. Blog, PaperTrail). The module plugins can be treated as seperate apps/extensions (Eg. Tasks, Splitify).
 
-- Plugins can be SPA or custom server-driven modules.
+- Plugins can be React SPA (planning to support for other frameworks in future) or custom server-driven (JS) modules.
 - Each has its own assets, Prisma extensions, and lifecycle hooks.
 - A shared CSS token system (`platform/src/public/css/sv_base.css`) keeps styling consistent across plugins, with optional dark mode. We are planning to develop Sovereign Design System as a seperate library later.
 

@@ -53,8 +53,8 @@ const CORE_MIGRATIONS_DIR = resolve(__dirname, "../platform/prisma/migrations");
 const MIGRATION_STATE_PATH = resolve(__dirname, "../data/.sv-migrations-state.json");
 const PLUGIN_TEMPLATES_DIR = resolve(__dirname, "../tools/plugin-templates");
 const PLUGIN_TEMPLATE_MAP = {
-  js: resolve(PLUGIN_TEMPLATES_DIR, "custom"),
-  react: resolve(PLUGIN_TEMPLATES_DIR, "spa"),
+  js: resolve(PLUGIN_TEMPLATES_DIR, "js"),
+  react: resolve(PLUGIN_TEMPLATES_DIR, "react"),
 };
 const SUPPORTED_PLUGIN_FRAMEWORKS = Object.keys(PLUGIN_TEMPLATE_MAP);
 const TEMPLATE_TEXT_EXTENSIONS = new Set([

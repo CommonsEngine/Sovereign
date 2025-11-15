@@ -102,12 +102,12 @@ export async function buildPluginRoutes(app, manifest, config) {
       }
 
       if (pluginFramework === "react") {
-        if (pluginKey === "spa::module") {
+        if (pluginKey === "react::module") {
           app.get(`/${ns}`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPAModule(req, res, next, { app, plugin });
           });
         }
-        if (pluginKey === "spa::project") {
+        if (pluginKey === "react::project") {
           app.get(`/${ns}/:id`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPA(req, res, next, { app, plugins });
           });
