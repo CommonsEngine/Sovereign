@@ -19,6 +19,7 @@
     "sv:link": "yarn link --silent || true",
     "prepare:init": "yarn workspace @sovereign/platform prepare:init",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
+    "prepare:plugins": "node tools/plugins-pull.mjs",
     "prepare:manifest": "yarn build:manifest",
     "prepare:all": "yarn prepare:db && yarn prepare:manifest",
     "postprepare:all": "yarn prisma:seed",
@@ -62,6 +63,12 @@
     "prettier": "^3.3.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6"
+  },
+  "plugins": {
+    "@sovereign/blog": "git@github.com:CommonsEngine/sovereign-blog.git",
+    "@sovereign/splitify": "git@github.com:CommonsEngine/sovereign-splitify.git",
+    "@sovereign/tasks": "git@github.com:SophKas/sovereign-tasks.git",
+    "@kasunben/papertrail": "git@github.com:kasunben/PaperTrail.git"
   },
   "engines": {
     "node": ">=20"
