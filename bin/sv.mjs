@@ -42,6 +42,8 @@ if (!aliasLoaded) {
 }
 
 const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
+const PLUGINS_UPDATE_SCRIPT = resolve(__dirname, "../tools/plugins-update.mjs");
+const PLUGINS_REMOVE_SCRIPT = resolve(__dirname, "../tools/plugins-remove.mjs");
 const MANIFEST_PATH = resolve(__dirname, "../manifest.json");
 const PLUGINS_DIR = resolve(__dirname, "../plugins");
 const execFileAsync = promisify(execFile);
@@ -53,9 +55,11 @@ const CORE_MIGRATIONS_DIR = resolve(__dirname, "../platform/prisma/migrations");
 const MIGRATION_STATE_PATH = resolve(__dirname, "../data/.sv-migrations-state.json");
 const PLUGIN_TEMPLATES_DIR = resolve(__dirname, "../tools/plugin-templates");
 const PLUGIN_TEMPLATE_MAP = {
-  custom: resolve(PLUGIN_TEMPLATES_DIR, "custom"),
-  spa: resolve(PLUGIN_TEMPLATES_DIR, "spa"),
+  js: resolve(PLUGIN_TEMPLATES_DIR, "js"),
+  react: resolve(PLUGIN_TEMPLATES_DIR, "react"),
 };
+const SUPPORTED_PLUGIN_FRAMEWORKS = Object.keys(PLUGIN_TEMPLATE_MAP);
+const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
 const TEMPLATE_TEXT_EXTENSIONS = new Set([
   ".json",
   ".js",
@@ -98,7 +102,7 @@ function printUsage() {
 
     Namespaces & commands:
       plugins
-        add <spec>                      Register/install a plugin (path|git|npm)
+        add <spec>                      Register/install a plugin (git url | file path)
         list [--json] [--enabled|--disabled]
         enable <namespace>
         disable <namespace>
@@ -145,6 +149,20 @@ async function runManifestBuild() {
   await import(BUILD_MANIFEST_SCRIPT);
 }
 
+async function runPluginTool(scriptPath, args = []) {
+  const displayArgs = args.length ? ` ${args.join(" ")}` : "";
+  console.log(`[plugins] running: node ${relative(process.cwd(), scriptPath)}${displayArgs}`);
+  await execFileAsync("node", [scriptPath, ...args], { stdio: "inherit" });
+}
+
+async function runPluginsUpdateTool(args = []) {
+  await runPluginTool(PLUGINS_UPDATE_SCRIPT, args);
+}
+
+async function runPluginsRemoveTool(args = []) {
+  await runPluginTool(PLUGINS_REMOVE_SCRIPT, args);
+}
+
 async function readManifestFile() {
   let raw;
   try {
@@ -182,8 +200,8 @@ function printManifestSummary(manifest) {
     console.log("  (none)");
   }
   console.log(
-    `Modules (${modules.length}) / Projects (${projects.length}) | Allowed types: ${
-      (manifest.allowedPluginTypes || []).join(", ") || "(none)"
+    `Modules (${modules.length}) / Projects (${projects.length}) | Allowed frameworks: ${
+      (manifest.allowedPluginFrameworks || []).join(", ") || "(none)"
     }`
   );
   console.log(`Last updated: ${manifest.updatedAt || "(unknown)"}`);
@@ -195,23 +213,6 @@ async function pathExists(target) {
     return true;
   } catch {
     return false;
-  }
-}
-
-async function directoryHasContent(dir) {
-  try {
-    const entries = await fs.readdir(dir, { withFileTypes: true });
-    return entries.some((entry) => {
-      const name = entry.name;
-      if (!name || name === "." || name === "..") return false;
-      if (COPY_SKIP_FILES.has(name)) return false;
-      return true;
-    });
-  } catch (err) {
-    if (err?.code === "ENOENT") {
-      return false;
-    }
-    throw err;
   }
 }
 
@@ -246,22 +247,33 @@ async function execGit(args, options = {}) {
 }
 
 async function resolvePluginSpec(spec) {
-  if (isGitSpec(spec)) {
-    const { path, cleanup } = await cloneGitSpec(spec);
+  let normalizedSpec = spec;
+  if (typeof spec === "string" && spec.startsWith("file://")) {
+    try {
+      normalizedSpec = fileURLToPath(spec);
+    } catch (err) {
+      throw new Error(`Invalid file URL "${spec}": ${err?.message || err}`);
+    }
+  }
+
+  if (isGitSpec(normalizedSpec)) {
+    const { path, cleanup } = await cloneGitSpec(normalizedSpec);
     return { sourcePath: path, cleanup, provenance: spec, sourceType: "git" };
   }
-  const absPath = resolve(process.cwd(), spec);
+  const absPath = resolve(process.cwd(), normalizedSpec);
   let stats;
   try {
     stats = await fs.stat(absPath);
   } catch (err) {
     if (err?.code === "ENOENT") {
-      throw new Error(`Plugin spec "${spec}" does not exist (${absPath}).`);
+      throw new Error(
+        `Plugin spec "${spec}" does not exist (${absPath}). Pass a git URL or a directory path.`
+      );
     }
     throw err;
   }
   if (!stats?.isDirectory?.()) {
-    throw new Error(`Plugin spec must be a directory; received "${spec}".`);
+    throw new Error(`Plugin spec must be a directory when using a path; received "${spec}".`);
   }
   return {
     sourcePath: absPath,
@@ -306,13 +318,16 @@ async function readPluginManifest(sourceDir) {
   } catch (err) {
     throw new Error(`Invalid plugin manifest JSON at ${manifestPath}: ${err?.message || err}`);
   }
-  const requiredFields = ["id", "name", "version", "type"];
+  const requiredFields = ["id", "name", "version", "framework", "type"];
   for (const field of requiredFields) {
     if (!manifest[field] || typeof manifest[field] !== "string") {
       throw new Error(`plugin.json is missing required field "${field}".`);
     }
   }
-  if (!["custom", "spa"].includes(manifest.type)) {
+  if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(manifest.framework)) {
+    throw new Error(`Unsupported plugin framework "${manifest.framework}".`);
+  }
+  if (!SUPPORTED_PLUGIN_TYPES.includes(manifest.type)) {
     throw new Error(`Unsupported plugin type "${manifest.type}".`);
   }
   return { manifest, manifestPath };
@@ -422,12 +437,12 @@ async function hashDirectory(rootDir) {
   return hash.digest("hex");
 }
 
-async function resolvePluginTemplateDir(type) {
-  const normalized = String(type || "").toLowerCase();
+async function resolvePluginTemplateDir(framework) {
+  const normalized = String(framework || "").toLowerCase();
   const templatePath = PLUGIN_TEMPLATE_MAP[normalized];
   if (!templatePath) {
     throw new Error(
-      `Unknown plugin template type "${type}". Expected one of ${Object.keys(PLUGIN_TEMPLATE_MAP).join(", ")}.`
+      `Unknown plugin template framework "${framework}". Expected one of ${SUPPORTED_PLUGIN_FRAMEWORKS.join(", ")}.`
     );
   }
   const exists = await pathExists(templatePath);
@@ -469,8 +484,8 @@ function formatLibraryGlobal(displayName, namespace) {
   return cleaned || "SovereignPlugin";
 }
 
-async function copyPluginTemplate(type, targetDir, replacements) {
-  const templateDir = await resolvePluginTemplateDir(type);
+async function copyPluginTemplate(framework, targetDir, replacements) {
+  const templateDir = await resolvePluginTemplateDir(framework);
   await copyPluginSource(templateDir, targetDir);
   await replaceTemplatePlaceholders(targetDir, replacements);
   return templateDir;
@@ -728,7 +743,7 @@ async function fullBuildCLI() {
       await execFileAsync("yarn", ["install"], { stdio: "inherit" });
     }
   }
-  await runYarnScript("prepare:init");
+  await runYarnScript("prepare:env");
   await runYarnScript("prepare:all");
   await runYarnScript("build");
   await runYarnScript("build:manifest");
@@ -752,7 +767,7 @@ const commands = {
 
       Notes:
         - "serve" without subcommand runs first-run detection:
-          full build on first run (install → prepare:init → prepare:all → build → build:manifest),
+          full build on first run (install → prepare:env → prepare:all → build → build:manifest),
           else fast restart.
         - Uses PM2 if present, else falls back to "npx pm2@latest".
     `,
@@ -810,7 +825,7 @@ const commands = {
   plugins: {
     __help__: `
       Usage:
-        sv plugins create <namespace> [--type custom|spa] [options]
+        sv plugins create <namespace> [--framework js|react] [options]
         sv plugins add <spec>
         sv plugins list [--json] [--enabled|--disabled]
         sv plugins enable <namespace>
@@ -837,12 +852,23 @@ const commands = {
         const dryRun = Boolean(args.flags["dry-run"]);
         const skipManifest = Boolean(args.flags["skip-manifest"]);
         const outputJson = Boolean(args.flags.json);
-        const type = String(args.flags.type || "custom").toLowerCase();
+        const frameworkInput = args.flags.framework || "js";
+        const framework = String(frameworkInput).toLowerCase();
+        if (!SUPPORTED_PLUGIN_FRAMEWORKS.includes(framework)) {
+          exitUsage(
+            `Unknown plugin framework "${framework}". Expected one of ${SUPPORTED_PLUGIN_FRAMEWORKS.join(", ")}.`
+          );
+        }
+        const pluginTypeInput = args.flags.type || args.flags["plugin-type"] || "module";
+        const pluginType = SUPPORTED_PLUGIN_TYPES.includes(String(pluginTypeInput).toLowerCase())
+          ? String(pluginTypeInput).toLowerCase()
+          : "module";
         const version = args.flags.version || "0.1.0";
         const displayName =
           args.flags.name || args.flags["display-name"] || toTitleCase(namespace) || namespace;
         const description =
-          args.flags.description || `Kickstart the ${displayName} ${type} plugin for Sovereign.`;
+          args.flags.description ||
+          `Kickstart the ${displayName} ${framework} plugin for Sovereign.`;
         const author =
           args.flags.author || pkg?.contributors?.[0]?.name || "Sovereign Plugin Author";
         const license = args.flags.license || "AGPL-3.0";
@@ -884,16 +910,17 @@ const commands = {
           DEV_ORIGIN: devOrigin,
           PREVIEW_PORT: String(previewPort),
           LIB_GLOBAL: libraryGlobal,
+          PLUGIN_TYPE: pluginType,
         };
 
         let templateDir;
         if (dryRun) {
-          templateDir = await resolvePluginTemplateDir(type);
+          templateDir = await resolvePluginTemplateDir(framework);
         } else {
           await fs.mkdir(PLUGINS_DIR, { recursive: true });
-          templateDir = await copyPluginTemplate(type, targetDir, replacements);
+          templateDir = await copyPluginTemplate(framework, targetDir, replacements);
           if (!skipManifest) {
-            await runManifestBuild();
+            await runPluginsUpdateTool();
           }
         }
 
@@ -901,7 +928,8 @@ const commands = {
           action: dryRun ? "plan" : "create",
           namespace,
           id: pluginId,
-          type,
+          framework,
+          type: pluginType,
           targetDir,
           templateDir,
           dryRun,
@@ -911,14 +939,14 @@ const commands = {
           console.log(JSON.stringify(result, null, 2));
         } else if (dryRun) {
           console.log(
-            `Would scaffold ${type} plugin "${pluginId}" at ${targetDir} from template ${templateDir}.`
+            `Would scaffold ${framework} plugin "${pluginId}" at ${targetDir} from template ${templateDir}.`
           );
         } else {
           console.log(
-            `Created ${type} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
+            `Created ${framework} plugin "${pluginId}" in ${targetDir} from template ${templateDir}.`
           );
           if (!skipManifest) {
-            console.log(`Manifest updated via tools/build-manifest.mjs.`);
+            console.log(`Plugins synced via tools/plugins-update.mjs.`);
           } else {
             console.log(`--skip-manifest set; run "sv manifest generate" when ready.`);
           }
@@ -927,11 +955,11 @@ const commands = {
     },
 
     add: {
-      desc: "Register/install a plugin from path/git/npm",
+      desc: "Register/install a plugin from a git URL or local directory",
       async run(args) {
         const spec = args._[2];
         if (!spec) {
-          exitUsage(`Missing plugin spec. Usage: sv plugins add <spec>`);
+          exitUsage(`Missing plugin spec. Usage: sv plugins add <git-url|path>`);
         }
 
         const dryRun = Boolean(args.flags["dry-run"]);
@@ -987,7 +1015,7 @@ const commands = {
 
           if (!dryRun) {
             await copyPluginSource(specContext.sourcePath, targetDir);
-            await runManifestBuild();
+            await runPluginsUpdateTool();
           }
 
           const result = {
@@ -1012,7 +1040,7 @@ const commands = {
               console.log(`Checksum verified: ${computedChecksum}`);
             }
             if (!dryRun) {
-              console.log(`Manifest updated via tools/build-manifest.mjs.`);
+              console.log(`Plugins synced via tools/plugins-update.mjs.`);
             } else {
               console.log(`--dry-run enabled; no files were changed.`);
             }
@@ -1054,6 +1082,7 @@ const commands = {
             namespace: ns,
             id: plugin?.id || ns,
             version: plugin?.version || "(unknown)",
+            framework: plugin?.framework || "(unknown)",
             type: plugin?.type || "(unknown)",
             enabled: enabledEntries.has(ns),
           };
@@ -1082,6 +1111,7 @@ const commands = {
           { key: "namespace", label: "Namespace" },
           { key: "id", label: "ID" },
           { key: "version", label: "Version" },
+          { key: "framework", label: "Framework" },
           { key: "type", label: "Type" },
           { key: "enabled", label: "Enabled" },
         ];
@@ -1132,7 +1162,7 @@ const commands = {
 
         const { manifest, manifestPath } = await readPluginManifest(match.dir);
         const updates = {};
-        if (manifest.draft !== false) updates.draft = false;
+        if (manifest.enabled !== true) updates.enabled = true;
         if (manifest.devOnly !== false) updates.devOnly = false;
 
         if (!Object.keys(updates).length) {
@@ -1151,7 +1181,7 @@ const commands = {
 
         await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
         console.log(
-          `Updated ${manifestPath}: draft=false, devOnly=false for ${manifest.id || namespace}.`
+          `Updated ${manifestPath}: enabled=true, devOnly=false for ${manifest.id || namespace}.`
         );
         await runManifestBuild();
         console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
@@ -1176,7 +1206,7 @@ const commands = {
 
         const { manifest, manifestPath } = await readPluginManifest(match.dir);
         const updates = {};
-        if (manifest.draft !== true) updates.draft = true;
+        if (manifest.enabled !== false) updates.enabled = false;
         if (manifest.devOnly !== true) updates.devOnly = true;
 
         if (!Object.keys(updates).length) {
@@ -1195,7 +1225,7 @@ const commands = {
 
         await fs.writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`);
         console.log(
-          `Updated ${manifestPath}: draft=true, devOnly=true for ${manifest.id || namespace}.`
+          `Updated ${manifestPath}: enabled=false, devOnly=true for ${manifest.id || namespace}.`
         );
         await runManifestBuild();
         console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
@@ -1212,65 +1242,10 @@ const commands = {
 
         const dryRun = Boolean(args.flags["dry-run"]);
         const keepFiles = Boolean(args.flags["keep-files"]);
-
-        const installed = await indexInstalledPlugins();
-        const match = installed.byNamespace.get(namespace);
-        if (!match) {
-          console.error(`Plugin namespace "${namespace}" is not installed under ${PLUGINS_DIR}.`);
-          process.exit(1);
-        }
-
-        const { manifest } = await readPluginManifest(match.dir);
-        const pluginId = manifest.id || namespace;
-        const isDisabled = manifest.draft === true && manifest.devOnly === true;
-        if (!isDisabled) {
-          console.error(
-            `${pluginId} is currently enabled. Disable it first via "sv plugins disable ${namespace}".`
-          );
-          process.exit(1);
-        }
-
-        const migrationDirs = [
-          resolve(match.dir, "migrations"),
-          resolve(match.dir, "prisma", "migrations"),
-        ];
-        for (const dir of migrationDirs) {
-          const hasMigrations = await directoryHasContent(dir);
-          if (hasMigrations) {
-            console.error(
-              `${pluginId} has unapplied or historical migrations under ${dir}. Remove those migrations or archive the plugin manually before proceeding.`
-            );
-            process.exit(1);
-          }
-        }
-
-        const archiveRoot = resolve(PLUGINS_DIR, "..", ".sv-plugins-archive");
-        const archiveTarget = resolve(
-          archiveRoot,
-          `${namespace}-${new Date().toISOString().replace(/[:.]/g, "-")}`
-        );
-
-        if (dryRun) {
-          console.log(
-            `[dry-run] Would remove plugin ${pluginId} from ${match.dir} (keepFiles=${
-              keepFiles ? "true" : "false"
-            }).`
-          );
-          console.log("[dry-run] Would rebuild manifest via tools/build-manifest.mjs.");
-          return;
-        }
-
-        if (keepFiles) {
-          await fs.mkdir(archiveRoot, { recursive: true });
-          await fs.rename(match.dir, archiveTarget);
-          console.log(`Archived plugin files to ${archiveTarget}.`);
-        } else {
-          await fs.rm(match.dir, { recursive: true, force: true });
-          console.log(`Removed plugin directory ${match.dir}.`);
-        }
-
-        await runManifestBuild();
-        console.log(`Manifest rebuilt via tools/build-manifest.mjs.`);
+        const toolArgs = [namespace];
+        if (keepFiles) toolArgs.push("--keep-files");
+        if (dryRun) toolArgs.push("--dry-run");
+        await runPluginsRemoveTool(toolArgs);
       },
     },
 
@@ -1306,9 +1281,10 @@ const commands = {
           id: manifest.id,
           name: manifest.name,
           version: manifest.version,
+          framework: manifest.framework,
           type: manifest.type,
           enabled,
-          draft: manifest.draft ?? null,
+          manifestEnabled: manifest.enabled !== false,
           devOnly: manifest.devOnly ?? null,
           directory: match.dir,
           manifestPath,
@@ -1326,9 +1302,12 @@ const commands = {
         console.log(`ID: ${detail.id}`);
         console.log(`Name: ${detail.name}`);
         console.log(`Version: ${detail.version}`);
+        console.log(`Framework: ${detail.framework}`);
         console.log(`Type: ${detail.type}`);
-        console.log(`Enabled: ${detail.enabled ? "yes" : "no"}`);
-        console.log(`draft=${detail.draft}, devOnly=${detail.devOnly}`);
+        console.log(`Enabled (workspace): ${detail.enabled ? "yes" : "no"}`);
+        console.log(
+          `Manifest enabled=${detail.manifestEnabled ? "true" : "false"}, devOnly=${detail.devOnly}`
+        );
         console.log(`Directory: ${detail.directory}`);
         console.log(`Manifest: ${detail.manifestPath}`);
         console.log(`Registered in manifest.json: ${detail.registered ? "yes" : "no"}`);
@@ -1377,10 +1356,10 @@ const commands = {
         let manifest = manifestInfo?.manifest;
         if (manifest) {
           const required = [];
-          if (manifest.type === "custom") {
+          if (manifest.framework === "js") {
             required.push("index.js");
           }
-          if (manifest.type === "spa") {
+          if (manifest.framework === "react") {
             required.push("dist/index.js");
           }
           for (const rel of required) {
@@ -1388,7 +1367,7 @@ const commands = {
 
             const exists = await pathExists(fullPath);
             if (!exists) {
-              diagnostics.push(`Missing required file for ${manifest.type} plugin: ${rel}`);
+              diagnostics.push(`Missing required file for ${manifest.framework} plugin: ${rel}`);
             }
           }
         }

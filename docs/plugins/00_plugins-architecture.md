@@ -8,23 +8,23 @@ Sovereign’s plugin architecture makes the platform fully extensible. Plugins c
 
 Plugins are self-contained modules discovered and mounted automatically at runtime through their `plugin.json` manifest.
 
-## 2. Plugin Types
+## 2. Plugin Frameworks
 
-There are two supported plugin types, defined in `plugin.json` under the `type` field.
+There are two supported plugin frameworks, defined in `plugin.json` under the `framework` field.
 
-| Type         | Description                                                                                                                                                                                                                                    | Typical Use                                 |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| **`custom`** | Server-side plugins written as **Express apps**. They export routers or middleware that Sovereign mounts under `/namespace` and `/api/plugins/namespace`.                                                                                      | APIs, integrations, or background services. |
-| **`spa`**    | Front-end plugins built with **Vite** (or compatible bundlers). Each ships a compiled SPA (`dist/index.html`) and optional dev-server metadata for hot reload. Sovereign proxies them in development and serves them statically in production. | Dashboards, editors, client tools.          |
+| Framework   | Description                                                                                                                                                                                                                                    | Typical Use                                 |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| **`js`**    | Server-side plugins written as **Express apps**. They export routers or middleware that Sovereign mounts under `/namespace` and `/api/plugins/namespace`.                                                                                      | APIs, integrations, or background services. |
+| **`react`** | Front-end plugins built with **Vite** (or compatible bundlers). Each ships a compiled SPA (`dist/index.html`) and optional dev-server metadata for hot reload. Sovereign proxies them in development and serves them statically in production. | Dashboards, editors, client tools.          |
 
-## 3. Plugin Kinds
+## 3. Plugin Types
 
-The _kind_ determines whether a plugin is global or project‑scoped. It is inferred at runtime from the `allowMultipleInstances` flag in `plugin.json`.
+The _type_ determines whether a plugin is global or project‑scoped. Set it explicitly via the top-level `type` field in `plugin.json`.
 
-| Kind               | Key Property                                | Mount Path       | Behavior                                                                                     |
-| ------------------ | ------------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
-| **Module plugin**  | `"allowMultipleInstances": false` (default) | `/namespace`     | Single global instance for the whole workspace. Configuration stored once at platform level. |
-| **Project plugin** | `"allowMultipleInstances": true`            | `/namespace/:id` | Supports multiple instances per tenant or project, with data and config scoped by project.   |
+| Type               | Key Property        | Mount Path       | Behavior                                                                                     |
+| ------------------ | ------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
+| **Module plugin**  | `"type": "module"`  | `/namespace`     | Single global instance for the whole workspace. Configuration stored once at platform level. |
+| **Project plugin** | `"type": "project"` | `/namespace/:id` | Supports multiple instances per tenant or project, with data and config scoped by project.   |
 
 ## 4. Directory Layout
 
@@ -56,9 +56,10 @@ A minimal manifest looks like this:
 {
   "id": "@sovereign/blog",
   "name": "Blog",
-  "type": "spa",
+  "framework": "react",
+  "enabled": true,
+  "type": "project",
   "entry": "dist/index.html",
-  "allowMultipleInstances": true,
   "sovereign": {
     "platformCapabilities": { "database": true },
     "userCapabilities": [{ "key": "user:plugin.blog.post.create", "roles": ["project:editor"] }],
@@ -91,15 +92,14 @@ Plugins may export lifecycle hooks from their entry file:
 
 1. **Scaffold a plugin**
    ```bash
-   sv plugins create <namespace> --type spa|custom
+   sv plugins create <namespace> --framework react|js --type module|project
    ```
 2. **Run the dev server**
    - SPA: Sovereign proxies Vite dev server.
    - Custom: Express routes hot reload automatically.
-3. **Regenerate the manifest**
-   ```bash
-   sv manifest generate
-   ```
+3. **Sync manifest/DB + reload (when adding new plugins)**
+   - External sources: `sv plugins add <git-url|path>` (accepts `file://` URLs, git URLs, or local dirs). This runs the shared sync tool to rebuild `manifest.json`, upsert plugin metadata into the DB, and reload PM2 if present.
+   - Local edits: `sv manifest generate` is still available for manual rebuilds.
 4. **Toggle enable/disable**
    ```bash
    sv plugins enable <namespace>
@@ -125,17 +125,24 @@ Plugins may export lifecycle hooks from their entry file:
 Each plugin can add Prisma models via `prisma/extension.prisma`.  
 The build process composes all plugin schemas into a unified `platform/prisma/schema.prisma`.
 
-## 11. Deployment and Production
+## 11. Operational Tooling
+
+- **Sync/update**: `node tools/plugins-update.mjs` (or indirectly via `sv plugins add/create`) reads plugin manifests, rebuilds `manifest.json`, upserts plugin metadata into the database, and reloads PM2 when available.
+- **Private plugin pulls**: `tools/plugins-pull.mjs` supports per-plugin SSH keys (`.ssh/sovereign-plugins/<namespace>.key`) or HTTPS tokens (`.ssh/sovereign-plugins/<namespace>.pat`), with the base dir overrideable via `SV_PLUGINS_AUTH_DIR`.
+- **Removal**: `node tools/plugins-remove.mjs <namespace> [--keep-files] [--dry-run]` removes a disabled plugin (safety checks + optional archiving), rebuilds the manifest, removes DB entries, and reloads PM2 if present. The CLI `sv plugins remove` delegates to this script.
+- **PM2 optionality**: Both scripts skip reload gracefully if PM2 is not installed.
+
+## 12. Deployment and Production
 
 During manifest generation, **all plugins present under `/plugins/*`** are included — regardless of environment (`development` or `production`).
 
 The only filters applied are based on plugin manifest flags:
 
-- **`devOnly: true`** → Excluded from manifest in all builds except explicitly forced test runs.
-- **`draft: true`** → Excluded from production builds; included in development for testing and previews.
+- **`enabled: false`** → Excluded from all builds until re-enabled.
+- **`devOnly: true`** → Excluded from manifest in all builds except explicitly forced test runs (even if `enabled`).
 
 There is **no environment-based exclusion** beyond these flags.  
-If a plugin exists in the filesystem, it will be included unless marked `devOnly` or `draft`.
+If a plugin exists in the filesystem, it will be included unless marked `devOnly` or `enabled: false`.
 
 ### Repository Whitelisting with `.gitignore`
 
@@ -167,7 +174,8 @@ External or private plugins can be cloned or mounted into `/plugins` before the 
 ## 14. Summary
 
 - Sovereign currently supports:
-  - **Two plugin types** → `spa`, `custom`
+- **Two plugin frameworks** → `react`, `js`
+- **Two plugin kinds** → `project`, `module`
   - **Two plugin kinds** → `module`, `project`
 - The manifest defines all metadata, routes, and capabilities.
 - Plugins integrate with the same RBAC and service layer as the core.

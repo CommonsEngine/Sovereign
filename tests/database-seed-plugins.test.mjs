@@ -6,7 +6,7 @@ import fs from "node:fs/promises";
 
 const rbacPath = new URL("../platform/scripts/data/rbac.json", import.meta.url);
 const rbac = JSON.parse(await fs.readFile(rbacPath, "utf8"));
-import { seedPluginCapabilities } from "../tools/database-seed-plugin-capabilities.mjs";
+import { seedPlugins } from "../tools/database-seed-plugins.mjs";
 
 class MockPrisma {
   constructor(roleCatalog) {
@@ -26,21 +26,29 @@ class MockPrisma {
     this.userRole = {
       findMany: async () => this.roles,
     };
+    this.plugin = {
+      upsert: async (payload) => {
+        this.plugins.push(payload);
+        return payload;
+      },
+    };
     this.capabilities = [];
     this.roleAssignments = [];
+    this.plugins = [];
   }
 }
 
-test("seedPluginCapabilities upserts definitions and writes state", async () => {
+test("seedPlugins upserts plugin metadata and capability definitions", async () => {
   const mock = new MockPrisma(rbac.roles || []);
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "sv-cap-state-"));
   const statePath = path.join(tmpDir, "capabilities.json");
   const logger = { log() {}, warn() {}, error() {} };
 
-  await seedPluginCapabilities({ prisma: mock, logger, statePath });
+  await seedPlugins({ prisma: mock, logger, statePath });
 
   assert.ok(mock.capabilities.length > 0, "captures capability upserts");
   assert.ok(mock.roleAssignments.length > 0, "captures role-capability upserts");
+  assert.ok(mock.plugins.length > 0, "captures plugin upserts");
   const stateRaw = await fs.readFile(statePath, "utf8");
   const state = JSON.parse(stateRaw);
   assert.ok(state.signature && typeof state.signature === "string");

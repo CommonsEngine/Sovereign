@@ -82,9 +82,9 @@ export async function buildPluginRoutes(app, manifest, config) {
   if (plugins && typeof plugins === "object") {
     for (const ns of Object.keys(plugins)) {
       const plugin = plugins[ns];
-      const pluginType = plugin.type; // spa | custom
-      const pluginKind = plugin?.sovereign?.allowMultipleInstances ? "project" : "module";
-      const pluginKey = `${pluginType}::${pluginKind}`;
+      const pluginFramework = plugin.framework; // react | js
+      const pluginType = plugin?.type ?? "module";
+      const pluginKey = `${pluginFramework}::${pluginType}`;
       const pluginAccessGuard = createPluginAccessGuard(plugin);
       const viewMiddlewares = [requireAuth];
       if (pluginAccessGuard) viewMiddlewares.push(pluginAccessGuard);
@@ -101,13 +101,13 @@ export async function buildPluginRoutes(app, manifest, config) {
         continue;
       }
 
-      if (pluginType === "spa") {
-        if (pluginKey === "spa::module") {
+      if (pluginFramework === "react") {
+        if (pluginKey === "react::module") {
           app.get(`/${ns}`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPAModule(req, res, next, { app, plugin });
           });
         }
-        if (pluginKey === "spa::project") {
+        if (pluginKey === "react::project") {
           app.get(`/${ns}/:id`, ...viewMiddlewares, (req, res, next) => {
             return pluginHandler.renderSPA(req, res, next, { app, plugins });
           });
@@ -160,7 +160,7 @@ export async function buildPluginRoutes(app, manifest, config) {
         }
       }
 
-      if (pluginType === "custom") {
+      if (pluginFramework === "js") {
         const kinds = ["web", "api"];
         for (const kind of kinds) {
           const entryPoint = plugin?.entryPoints[kind];

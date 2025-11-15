@@ -13,7 +13,7 @@
     "main": "./src/bootstrap.js"
   },
   "scripts": {
-    "prepare:init": "cp .env.example .env",
+    "prepare:env": "cp .env.example .env",
     "prepare:db": "node ./scripts/database-prepare.mjs",
     "prisma:compose": "node ../tools/database-prisma-compose.mjs",
     "prisma:compose:check": "node ../tools/database-prisma-compose.mjs --check",

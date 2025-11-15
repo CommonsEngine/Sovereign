@@ -52,9 +52,9 @@ The manifest builder normalizes these into `manifest.pluginCapabilities.definiti
 
 ### Seeding Workflow
 
-- `yarn build:manifest` and `yarn prepare:db` now call `node tools/database-seed-plugin-capabilities.mjs` automatically.
+- `yarn build:manifest` and `yarn prepare:db` now call `node tools/database-seed-plugins.mjs` automatically.
 - The seeder validates role keys against `platform/scripts/data/rbac.json`, upserts definitions into the `user_capabilities` table (including metadata), rewires role assignments, and writes a lock file at `data/plugin-capabilities.lock.json` so removals can be audited.
-- To run it manually (e.g., after editing `plugin.json`): `yarn seed:plugin-capabilities`.
+- To run it manually (e.g., after editing `plugin.json`): `node tools/database-seed-plugins.mjs`.
 - If you remove a capability, the next seed logs a warning indicating which role assignments require cleanup.
 
 ### Adding a New Capability Type

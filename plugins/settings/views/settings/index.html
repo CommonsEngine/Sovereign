@@ -161,6 +161,38 @@ A Sovereign application</textarea
       </div>
     </article>
 
+    <!-- Plugin controls -->
+    <article class="sv-card">
+      <div class="sv-card__header"><strong>Plugins</strong></div>
+      <div class="sv-card__body">
+        <p class="sv-card__subtitle">Enable plugins and toggle dev-only access.</p>
+        <div class="sv-table__wrap">
+          <table class="sv-table">
+            <thead>
+              <tr>
+                <th class="text-left">Plugin</th>
+                <th class="text-left">Namespace</th>
+                <th class="text-left">Type</th>
+                <th>Enabled</th>
+                <th>Dev Only</th>
+              </tr>
+            </thead>
+            <tbody id="plugin-table-body">
+              <tr>
+                <td colspan="5" class="text-center">Loading plugins...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="sv-form__actions margin-top-s">
+          <button id="save-plugins" class="button sv-button sv-button--primary" type="button">
+            Save plugins
+          </button>
+          <button id="reset-plugins" class="button sv-button" type="button">Reset</button>
+        </div>
+      </div>
+    </article>
+
     <!-- Email -->
     <article class="sv-card">
       <div class="sv-card__header"><strong>Email Settings</strong></div>
@@ -470,6 +502,144 @@ A Sovereign application</textarea
 
     field.value = value ?? "";
   }
+
+  const pluginTableBody = document.getElementById("plugin-table-body");
+  const savePluginsBtn = document.getElementById("save-plugins");
+  const resetPluginsBtn = document.getElementById("reset-plugins");
+  let pluginState = [];
+  let pluginInitialState = [];
+
+  function clonePlugins(list = []) {
+    return list.map((p) => ({ ...p }));
+  }
+
+  function renderPlugins(list = []) {
+    if (!pluginTableBody) return;
+    pluginTableBody.innerHTML = "";
+    if (!list.length) {
+      const row = document.createElement("tr");
+      row.innerHTML = `<td colspan="5" class="text-center">No plugins found.</td>`;
+      pluginTableBody.appendChild(row);
+      return;
+    }
+
+    for (const plugin of list) {
+      const row = document.createElement("tr");
+      row.dataset.pluginId = plugin.pluginId;
+      row.dataset.namespace = plugin.namespace;
+      row.innerHTML = `
+        <td>
+          <div class="text-strong">${plugin.name || plugin.pluginId}</div>
+          <div class="text-small text-muted">${plugin.pluginId}</div>
+        </td>
+        <td>${plugin.namespace || "—"}</td>
+        <td>${plugin.type || "module"}</td>
+        <td class="text-center">
+          <input
+            type="checkbox"
+            class="sv-checkbox plugin-enabled"
+            ${plugin.enabled ? "checked" : ""}
+            ${plugin.corePlugin ? "disabled" : ""}
+          />
+        </td>
+        <td class="text-center">
+          <input
+            type="checkbox"
+            class="sv-checkbox plugin-devonly"
+            ${plugin.devOnly ? "checked" : ""}
+            ${plugin.corePlugin ? "disabled" : ""}
+          />
+        </td>
+      `;
+      pluginTableBody.appendChild(row);
+    }
+  }
+
+  async function loadPlugins() {
+    if (!pluginTableBody) return;
+    try {
+      const res = await fetch("/api/plugins/settings/plugins");
+      if (!res.ok) {
+        throw new Error(`Failed to load plugins (status ${res.status})`);
+      }
+      const data = await res.json();
+      pluginState = clonePlugins(data?.plugins || []);
+      pluginInitialState = clonePlugins(pluginState);
+      renderPlugins(pluginState);
+    } catch (err) {
+      console.error("Failed to load plugins", err);
+      pluginTableBody.innerHTML = `<tr><td colspan="5" class="text-center">Failed to load plugins.</td></tr>`;
+    }
+  }
+
+  function collectPluginFormState() {
+    const rows = Array.from(pluginTableBody?.querySelectorAll("tr[data-plugin-id]") || []);
+    return rows.map((row) => {
+      const pluginId = row.dataset.pluginId;
+      const namespace = row.dataset.namespace;
+      const enabled = row.querySelector(".plugin-enabled")?.checked ?? false;
+      const devOnly = row.querySelector(".plugin-devonly")?.checked ?? false;
+      const base = pluginState.find((p) => p.pluginId === pluginId) || {};
+      return { ...base, pluginId, namespace, enabled, devOnly };
+    });
+  }
+
+  async function savePlugins() {
+    if (!savePluginsBtn) return;
+    savePluginsBtn.disabled = true;
+    savePluginsBtn.dataset.prevText = savePluginsBtn.textContent;
+    savePluginsBtn.textContent = "Saving...";
+    try {
+      const current = collectPluginFormState();
+      const res = await fetch("/api/plugins/settings/plugins", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plugins: current }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg = data?.error || "Failed to save plugins";
+        const details =
+          Array.isArray(data?.details) && data.details.length ? `\n${data.details.join("\n")}` : "";
+        throw new Error(`${msg}${details}`);
+      }
+      pluginState = clonePlugins(data?.plugins || current);
+      pluginInitialState = clonePlugins(pluginState);
+      renderPlugins(pluginState);
+      alert("Plugins updated.");
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "Failed to update plugins.");
+    } finally {
+      savePluginsBtn.disabled = false;
+      savePluginsBtn.textContent = savePluginsBtn.dataset.prevText || savePluginsBtn.textContent;
+      delete savePluginsBtn.dataset.prevText;
+    }
+  }
+
+  function resetPlugins() {
+    pluginState = clonePlugins(pluginInitialState);
+    renderPlugins(pluginState);
+  }
+
+  if (pluginTableBody) {
+    pluginTableBody.addEventListener("change", (e) => {
+      const row = e.target.closest("tr[data-plugin-id]");
+      if (!row) return;
+      const pluginId = row.dataset.pluginId;
+      const target = pluginState.find((p) => p.pluginId === pluginId);
+      if (!target) return;
+      if (e.target.classList.contains("plugin-enabled")) {
+        target.enabled = e.target.checked;
+      }
+      if (e.target.classList.contains("plugin-devonly")) {
+        target.devOnly = e.target.checked;
+      }
+    });
+  }
+
+  savePluginsBtn?.addEventListener("click", savePlugins);
+  resetPluginsBtn?.addEventListener("click", resetPlugins);
 
   async function loadSettings() {
     try {
@@ -846,6 +1016,7 @@ A Sovereign application</textarea
   });
 
   loadSettings();
+  loadPlugins();
 
   // Reset buttons
   document.getElementById("reset-email").addEventListener("click", () => {

@@ -38,6 +38,7 @@ function formatError(message, options = {}) {
 
 const DEFAULT_ICON_NAME = "default";
 const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
+const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
 
 function normalizeRoleValue(role) {
   if (!role) return null;
@@ -168,7 +169,7 @@ const manifest = {
   projects: [],
   modules: [],
   enabledPlugins: [], // [@<org>/<ns>]
-  allowedPluginTypes: [],
+  allowedPluginFrameworks: [],
   __rootdir,
   __pluginsdir,
   __datadir,
@@ -182,16 +183,27 @@ const manifest = {
 const pluginManifestSchema = {
   $id: "PluginManifest",
   type: "object",
-  required: ["id", "name", "version", "type", "sovereign", "devOnly", "author", "license"],
+  required: [
+    "id",
+    "name",
+    "version",
+    "framework",
+    "type",
+    "sovereign",
+    "devOnly",
+    "author",
+    "license",
+  ],
   additionalProperties: true,
   properties: {
     id: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     version: { type: "string", minLength: 1 },
-    type: { type: "string", enum: ["custom", "spa"] },
+    framework: { type: "string", enum: ["js", "react"] },
+    type: { type: "string", enum: ["module", "project"] },
+    enabled: { type: "boolean" },
     devOnly: { type: "boolean" },
-    draft: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
     ui: {
@@ -243,7 +255,6 @@ const pluginManifestSchema = {
       additionalProperties: true,
       properties: {
         schemaVersion: { type: "integer", minimum: 1 },
-        allowMultipleInstances: { type: "boolean" },
         compat: {
           type: "object",
           additionalProperties: false,
@@ -427,17 +438,26 @@ const buildManifest = async () => {
       continue;
     }
 
+    const manifestEnabled = pluginManifest.enabled !== false;
     const isEnabledPlugin =
       process.env.NODE_ENV !== "production"
-        ? !pluginManifest.draft
-        : !pluginManifest.devOnly && !pluginManifest.draft;
+        ? manifestEnabled
+        : manifestEnabled && !pluginManifest.devOnly;
 
     if (isEnabledPlugin) {
-      if (!manifest.allowedPluginTypes.includes(pluginManifest.type)) {
-        manifest.allowedPluginTypes.push(pluginManifest.type);
+      if (!manifest.allowedPluginFrameworks.includes(pluginManifest.framework)) {
+        manifest.allowedPluginFrameworks.push(pluginManifest.framework);
       }
 
-      if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
+      if (!pluginManifest?.framework || !["react", "js"].includes(pluginManifest.framework)) {
+        console?.warn?.(
+          formatError(`unknown or missing plugin framework: ${pluginManifest?.framework}`, {
+            manifestPath: pluginManifestPath,
+            pluginDir: plugingRoot,
+          })
+        );
+      }
+      if (!pluginManifest?.type || !SUPPORTED_PLUGIN_TYPES.includes(pluginManifest.type)) {
         console?.warn?.(
           formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
             manifestPath: pluginManifestPath,
@@ -464,7 +484,7 @@ const buildManifest = async () => {
 
       let entry = path.join(plugingRoot, "dist", "index.js");
       // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
-      if (pluginManifest.type === "custom") {
+      if (pluginManifest.framework === "js") {
         entry = path.join(plugingRoot, "index.js");
       }
 
@@ -476,7 +496,7 @@ const buildManifest = async () => {
         console?.debug?.(`no public dir: ${publicDir}`);
       }
 
-      if (pluginManifest.type === "spa") {
+      if (pluginManifest.framework === "react") {
         if (await exists(distDir)) {
           manifest.__assets.push({ base: `/plugins/${manifestNamespace}/`, dir: distDir });
         } else if (process.env.DEBUG === "true") {
@@ -484,7 +504,7 @@ const buildManifest = async () => {
         }
       }
 
-      if (pluginManifest.type === "custom") {
+      if (pluginManifest.framework === "js") {
         //__views
         const viewsDir = path.join(plugingRoot, "views");
         if (await exists(viewsDir)) {
@@ -587,11 +607,12 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, ui, featureAccess, corePlugin } = finalPlugins[k];
+    const { id, name, namespace, type, ui, featureAccess, corePlugin } = finalPlugins[k];
     const resolvedUi = ui || normalizeUiConfig(undefined);
     const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
+    const pluginType = type === "project" ? "project" : "module";
 
-    if (sovereign.allowMultipleInstances) {
+    if (pluginType === "project") {
       manifest.projects.push({
         id,
         label: name,
@@ -615,7 +636,7 @@ const buildManifest = async () => {
 
   const outputManifest = {
     ...manifest,
-    allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
+    allowedPluginFrameworks: [...new Set(manifest.allowedPluginFrameworks || [])],
     plugins: finalPlugins,
     pluginCapabilities: {
       signature: capabilitySignature,

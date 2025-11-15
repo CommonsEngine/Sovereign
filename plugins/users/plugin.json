@@ -1,12 +1,13 @@
 {
-  "type": "custom",
   "id": "@sovereign/users",
   "namespace": "users",
   "name": "Users",
   "description": "Manage access, invitations, and roles across your workspace.",
   "version": "0.1.0",
+  "type": "module",
+  "framework": "js",
+  "enabled": true,
   "devOnly": false,
-  "draft": false,
   "entryPoints": {
     "api": "routes/api/index.js",
     "web": "routes/web/index.js"
@@ -27,7 +28,6 @@
   },
   "sovereign": {
     "schemaVersion": 1,
-    "allowMultipleInstances": false,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true

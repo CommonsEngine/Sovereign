@@ -5,7 +5,7 @@ import { execa } from "execa";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { seedPluginCapabilities } from "./database-seed-plugin-capabilities.mjs";
+import { seedPlugins as seedPluginsBase } from "./database-seed-plugins.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..");
@@ -49,7 +49,7 @@ async function runPluginSeeds() {
 
 async function main() {
   await runPlatformSeed();
-  await seedPluginCapabilities({ prisma });
+  await seedPluginsBase({ prisma });
   await runPluginSeeds();
 }
 
