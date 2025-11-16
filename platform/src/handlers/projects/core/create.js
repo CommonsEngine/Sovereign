@@ -15,9 +15,19 @@ const toModelName = (type) =>
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join("");
 
-const buildSubtypeData = ({ type, projectId, name }) => {
+const lowerCamel = (str) => (str ? str.charAt(0).toLowerCase() + str.slice(1) : "");
+
+const findModelForType = (type) => {
+  const base = toModelName(type);
+  const candidates = [base, `${base}Project`, `${base}Board`];
+  const modelName = candidates.find((c) => prismaModels[c]);
+  if (!modelName) return null;
+  return { modelName, delegateName: lowerCamel(modelName) };
+};
+
+const buildSubtypeData = ({ modelName, projectId, name }) => {
   const data = { projectId };
-  const model = prismaModels[toModelName(type)];
+  const model = prismaModels[modelName];
   if (!model) return data;
 
   for (const field of model.fields || []) {
@@ -40,13 +50,21 @@ const buildSubtypeData = ({ type, projectId, name }) => {
 };
 
 const createSubtypeRecord = async ({ type, projectId, name }) => {
-  const delegate = prisma?.[type];
-  if (!delegate?.create) {
-    logger.warn?.(`No Prisma delegate found for project type "${type}", skipping subtype record.`);
+  const mapping = findModelForType(type);
+  if (!mapping) {
+    logger.warn?.(`No Prisma model found for project type "${type}", skipping subtype record.`);
     return;
   }
 
-  const data = buildSubtypeData({ type, projectId, name });
+  const delegate = prisma?.[mapping.delegateName];
+  if (!delegate?.create) {
+    logger.warn?.(
+      `No Prisma delegate found for project type "${type}" (delegate "${mapping.delegateName}"), skipping subtype record.`
+    );
+    return;
+  }
+
+  const data = buildSubtypeData({ modelName: mapping.modelName, projectId, name });
   await delegate.create({ data });
 };
 
