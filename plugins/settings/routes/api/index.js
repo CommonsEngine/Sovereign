@@ -1,6 +1,7 @@
 import express from "express";
 
-import { updatePluginRuntimeState } from "$/ext-host/plugin-state.js";
+// TODO: Fix this propery
+import { updatePluginRuntimeState } from "../../../../platform/src/ext-host/plugin-state.js";
 
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;
