@@ -13,6 +13,15 @@
     <div class="sv-modal__body">
       <form class="sv-modal__form" data-modal-form novalidate>
         <div class="sv-modal__field">
+          <label class="sv-modal__label" for="user-invite-mode">Invite type</label>
+          <select id="user-invite-mode" class="sv-modal__input input" required>
+            <option value="single" selected>Single-use (sends email)</option>
+            <option value="multi">Multi-use code (N times)</option>
+            <option value="unlimited">Unlimited until expiry</option>
+          </select>
+        </div>
+
+        <div class="sv-modal__field">
           <label class="sv-modal__label" for="user-display-name-input">Display Name</label>
           <input
             id="user-display-name-input"
@@ -38,6 +47,49 @@
           />
         </div>
 
+        <div class="sv-modal__field" data-max-uses-field style="display: none">
+          <label class="sv-modal__label" for="user-max-uses">Max uses</label>
+          <input
+            id="user-max-uses"
+            class="sv-modal__input input"
+            type="number"
+            min="1"
+            max="10000"
+            step="1"
+            placeholder="e.g. 25"
+          />
+        </div>
+
+        <div class="sv-modal__field" data-expires-field style="display: none">
+          <label class="sv-modal__label" for="user-expires">Expires (optional)</label>
+          <input id="user-expires" class="sv-modal__input input" type="datetime-local" />
+        </div>
+
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="user-allowed-email">Allowed email (optional)</label>
+          <input
+            id="user-allowed-email"
+            class="sv-modal__input input"
+            type="email"
+            maxlength="254"
+            placeholder="lock to a single email"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="sv-modal__field">
+          <label class="sv-modal__label" for="user-allowed-domain">Allowed domain (optional)</label>
+          <input
+            id="user-allowed-domain"
+            class="sv-modal__input input"
+            type="text"
+            maxlength="120"
+            placeholder="example.org"
+            autocomplete="off"
+            pattern="^[^\\s@]+$"
+          />
+        </div>
+
         <div class="sv-modal__field">
           <label class="sv-modal__label" for="user-role-select">Role</label>
           <select id="user-role-select" class="sv-modal__input input" required>
@@ -57,11 +109,18 @@
 
       <!-- Success state: show invite URL to copy/share -->
       <div class="sv-modal__result" data-modal-result style="display: none">
-        <p>User created. Share this link with the user to complete registration:</p>
+        <p data-result-intro>
+          User created. Share this link with the user to complete registration:
+        </p>
         <div class="copyrow">
-          <input type="url" class="input" data-invite-url readonly />
+          <input type="text" class="input" data-invite-url readonly />
           <button type="button" class="chip" data-copy-invite>Copy</button>
         </div>
+        <div class="copyrow" data-code-row style="display: none">
+          <input type="text" class="input" data-invite-code readonly />
+          <button type="button" class="chip" data-copy-code>Copy code</button>
+        </div>
+        <p class="sv-modal__hint" data-invite-meta style="display: none"></p>
       </div>
     </div>
 
@@ -83,10 +142,22 @@
       const emailEl = root.querySelector("#user-email-input");
       const displayNameEl = root.querySelector("#user-display-name-input");
       const roleEl = root.querySelector("#user-role-select");
+      const modeEl = root.querySelector("#user-invite-mode");
+      const maxUsesField = root.querySelector("[data-max-uses-field]");
+      const expiresField = root.querySelector("[data-expires-field]");
+      const maxUsesEl = root.querySelector("#user-max-uses");
+      const expiresEl = root.querySelector("#user-expires");
+      const allowedEmailEl = root.querySelector("#user-allowed-email");
+      const allowedDomainEl = root.querySelector("#user-allowed-domain");
       const submitBtn = root.querySelector("[data-modal-submit]");
       const resultBox = root.querySelector("[data-modal-result]");
       const inviteInput = root.querySelector("[data-invite-url]");
+      const inviteCodeInput = root.querySelector("[data-invite-code]");
+      const inviteMeta = root.querySelector("[data-invite-meta]");
+      const inviteIntro = root.querySelector("[data-result-intro]");
       const copyBtn = root.querySelector("[data-copy-invite]");
+      const copyCodeBtn = root.querySelector("[data-copy-code]");
+      const codeRow = root.querySelector("[data-code-row]");
 
       function resetForm() {
         if (form) form.reset();
@@ -96,7 +167,36 @@
         }
         if (resultBox) resultBox.style.display = "none";
         if (inviteInput) inviteInput.value = "";
+        if (inviteCodeInput) inviteCodeInput.value = "";
+        if (inviteMeta) {
+          inviteMeta.textContent = "";
+          inviteMeta.style.display = "none";
+        }
+        if (inviteIntro) {
+          inviteIntro.textContent =
+            "User created. Share this link with the user to complete registration:";
+        }
+        if (codeRow) codeRow.style.display = "none";
         submitBtn?.removeAttribute("disabled");
+        updateModeVisibility();
+      }
+
+      function updateModeVisibility() {
+        const mode = modeEl?.value || "single";
+        const isSingle = mode === "single";
+        const nameField = displayNameEl?.closest(".sv-modal__field");
+        const emailField = emailEl?.closest(".sv-modal__field");
+        if (maxUsesField) maxUsesField.style.display = mode === "multi" ? "block" : "none";
+        if (expiresField) expiresField.style.display = mode === "single" ? "none" : "block";
+        if (nameField) nameField.style.display = isSingle ? "block" : "none";
+        if (emailField) emailField.style.display = isSingle ? "block" : "none";
+        if (isSingle) {
+          displayNameEl?.setAttribute("required", "true");
+          emailEl?.setAttribute("required", "true");
+        } else {
+          displayNameEl?.removeAttribute("required");
+          emailEl?.removeAttribute("required");
+        }
       }
 
       // Ensure pressing Enter (form submit) triggers the same flow as clicking the button
@@ -115,42 +215,117 @@
           const email = (emailEl?.value || "").trim();
           const displayName = (displayNameEl?.value || "").trim();
           const role = roleEl?.value || "";
+          const mode = modeEl?.value || "single";
+          const maxUses =
+            mode === "multi" ? Number((maxUsesEl?.value || "").trim() || "0") || null : null;
+          const expiresRaw = (expiresEl?.value || "").trim();
+          const expiresAt = expiresRaw ? new Date(expiresRaw) : null;
+          const allowedEmail = (allowedEmailEl?.value || "").trim();
+          const allowedDomain = (allowedDomainEl?.value || "").trim();
 
           console.debug("create-user: form values", {
             email,
             displayName,
             role,
+            mode,
+            maxUses,
+            allowedEmail,
+            allowedDomain,
           });
 
           // Basic validation
-          if (!displayName) {
-            displayNameEl?.focus();
-            return;
-          }
-          if (!email) {
-            emailEl?.focus();
-            return;
+          if (mode === "single") {
+            if (!displayName) {
+              displayNameEl?.focus();
+              return;
+            }
+            if (!email) {
+              emailEl?.focus();
+              return;
+            }
+          } else if (mode === "multi") {
+            if (!maxUses || maxUses < 1) {
+              maxUsesEl?.focus();
+              return;
+            }
           }
           if (!role) {
             roleEl?.focus();
             return;
           }
 
+          const payload = {
+            roleKey: role,
+            allowedEmail: allowedEmail || undefined,
+            allowedDomain: allowedDomain || undefined,
+          };
+          if (mode === "multi") payload.maxUses = maxUses;
+          if (mode === "unlimited") payload.maxUses = null;
+          if (expiresAt && !Number.isNaN(expiresAt.getTime())) {
+            payload.expiresAt = expiresAt.toISOString();
+          }
+
           submitBtn?.setAttribute("disabled", "true");
 
-          const resp = await fetch("/auth/invite", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({ email, displayName, role }),
-            credentials: "same-origin",
-          });
-          const data = await resp.json().catch(() => ({}));
-          if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+          let resp;
+          let data = {};
 
-          if (inviteInput) inviteInput.value = data?.inviteUrl || "";
+          if (mode === "single") {
+            resp = await fetch("/auth/invite", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify({ email, displayName, role }),
+              credentials: "same-origin",
+            });
+            data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+
+            if (inviteInput) inviteInput.value = data?.inviteUrl || "";
+            if (inviteCodeInput) inviteCodeInput.value = data?.inviteCode || data?.code || "";
+            if (codeRow) codeRow.style.display = data?.inviteCode || data?.code ? "flex" : "none";
+            if (inviteMeta) {
+              inviteMeta.textContent = "Single-use invite; code also shown for fallback.";
+              inviteMeta.style.display = "block";
+            }
+            if (inviteIntro) {
+              inviteIntro.textContent =
+                "Invite sent. You can also copy the link or code for the recipient.";
+            }
+          } else {
+            resp = await fetch("/api/invites", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(payload),
+              credentials: "same-origin",
+            });
+            data = await resp.json().catch(() => ({}));
+            if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
+
+            const code = data?.code || "";
+            const invite = data?.invite || {};
+            if (inviteInput) inviteInput.value = code;
+            if (inviteCodeInput) inviteCodeInput.value = code;
+            if (codeRow) codeRow.style.display = "flex";
+            if (inviteIntro) {
+              inviteIntro.textContent = "Share this invite code with recipients:";
+            }
+            if (inviteMeta) {
+              const limit =
+                invite?.maxUses === null || invite?.maxUses === undefined
+                  ? "unlimited"
+                  : `${invite?.maxUses} max`;
+              const expiresText = invite?.expiresAt ? `; expires ${invite.expiresAt}` : "";
+              inviteMeta.textContent = `Uses: ${invite?.usedCount ?? 0}/${limit}${expiresText}`;
+              inviteMeta.style.display = "block";
+            }
+          }
+
           if (resultBox) resultBox.style.display = "block";
         } catch (ex) {
           console.error("Invite user failed:", ex);
@@ -186,6 +361,18 @@
           setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
         } catch {}
       });
+
+      copyCodeBtn?.addEventListener("click", async () => {
+        const code = inviteCodeInput?.value || "";
+        try {
+          await navigator.clipboard.writeText(code);
+          copyCodeBtn.textContent = "Copied";
+          setTimeout(() => (copyCodeBtn.textContent = "Copy code"), 1200);
+        } catch {}
+      });
+
+      modeEl?.addEventListener("change", updateModeVisibility);
+      updateModeVisibility();
 
       root.addEventListener("click", (e) => {
         const submit = e.target.closest("[data-modal-submit]");
