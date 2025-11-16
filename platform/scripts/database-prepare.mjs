@@ -1,13 +1,20 @@
+import "dotenv/config";
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const isProd = process.env.NODE_ENV === "production";
+const resolvedEnv =
+  (process.env.NODE_ENV && process.env.NODE_ENV.trim()) ||
+  (process.env.APP_ENV && process.env.APP_ENV.trim()) ||
+  "development";
+const isProd = resolvedEnv === "production";
 const schemaArg = "--schema prisma/schema.prisma";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const composeScript = path.resolve(__dirname, "../../tools/database-prisma-compose.mjs");
 const composeCmd = `node ${JSON.stringify(composeScript)}`;
+const seedPluginsScript = path.resolve(__dirname, "../../tools/database-seed-plugins.mjs");
+const seedPluginsCmd = `node ${JSON.stringify(seedPluginsScript)}`;
 
 function run(cmd) {
   console.log(`[prepare:db] ${cmd}`);
@@ -15,6 +22,7 @@ function run(cmd) {
 }
 
 try {
+  console.log(`[prepare:db] Using NODE_ENV=${resolvedEnv}`);
   // 0) Ensure the composed schema is up-to-date
   run(composeCmd);
 
@@ -30,6 +38,9 @@ try {
     //    if (process.env.FORCE_DB_PUSH === "true") { ... }
     run(`prisma db push ${schemaArg}`);
   }
+
+  // 3) Ensure plugin metadata/capabilities are seeded
+  run(seedPluginsCmd);
 
   console.log(`[prepare:db] ✓ Done (${isProd ? "production" : "development"} path)`);
 } catch (err) {

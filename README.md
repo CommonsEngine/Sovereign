@@ -312,6 +312,16 @@ yarn test:watch
 
 ### Deployment
 
+#### Checklist (code + DB without resets)
+
+- Ensure `NODE_ENV=production` (or your prod env) is set in the deploy environment.
+- Keep Prisma schema composed and migrations committed: run `yarn prisma:compose:check` and `yarn prisma:migrate` locally, commit new `prisma/migrations/*`.
+- Build artifacts/manifest before deploying: `yarn build` (runs compose/format) and `yarn build:manifest`.
+- Apply migrations in prod with history, not `db push`: `NODE_ENV=production prisma migrate deploy --schema platform/prisma/schema.prisma` (or `yarn prisma:deploy`).
+- Seed non-destructive metadata after deploy (e.g., plugins/capabilities): `NODE_ENV=production node tools/database-seed-plugins.mjs`.
+- If prod was ever created via `db push`, baseline once (after backup): loop `prisma migrate resolve --applied <migration_folder>` over existing migrations, then use `migrate deploy` thereafter.
+- For drift investigation (don’t reset): `npx prisma migrate diff --from-url <prod_db_url> --to-schema-datamodel platform/prisma/schema.prisma --script > /tmp/reconcile.sql`; create a corrective migration instead of wiping data.
+
 #### PM2 Setup (non-container)
 
 If you prefer a bare-metal deployment without Docker or anything heavy, can use [`pm2`](https://pm2.keymetrics.io/) config defined in `ecosystem.config.cjs`(ecosystem.config.cjs) to serve the app.
