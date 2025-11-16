@@ -124,6 +124,8 @@ const VERSION_CHECK_INTERVAL_MS = 5_000;
 
 const PLATFORM_SCOPE = "platform";
 
+const SKIP_ENV_REFRESH = process.env.SV_SKIP_ENV_REFRESH === "1";
+
 let cachedVersion = null;
 let lastVersionCheckAt = 0;
 let refreshPromise = null;
@@ -390,6 +392,10 @@ const mapRowsByScope = (rows) => {
 };
 
 const refreshSettings = async (force = false) => {
+  if (SKIP_ENV_REFRESH) {
+    settingsLoaded = true;
+    return;
+  }
   const now = Date.now();
   if (!force && settingsLoaded && now - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS) {
     return;
@@ -414,6 +420,8 @@ const refreshSettings = async (force = false) => {
 };
 
 const scheduleRefresh = (force = false) => {
+  if (SKIP_ENV_REFRESH) return;
+
   if (force) {
     if (refreshPromise) {
       refreshPromise = refreshPromise

@@ -9,13 +9,6 @@ import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 import { createRequire } from "module";
 
-import { prisma } from "../platform/src/services/database.js";
-import {
-  createInvite as createInviteRecord,
-  deriveInviteStatus,
-  serializeInvite,
-} from "../platform/src/services/invites.js";
-
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 
@@ -29,6 +22,7 @@ const registerAliasCandidates = [
 ];
 
 process.env.ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, "..");
+process.env.SV_SKIP_ENV_REFRESH = process.env.SV_SKIP_ENV_REFRESH || "1";
 
 let aliasLoaded = false;
 for (const candidate of registerAliasCandidates) {
@@ -49,6 +43,14 @@ if (!aliasLoaded) {
     "⚠️  Could not load register-alias.mjs (checked root and platform). CLI paths may not resolve."
   );
 }
+
+// Now that aliases are registered, import modules that rely on "$/" paths
+const { prisma } = await import("../platform/src/services/database.js");
+const {
+  createInvite: createInviteRecord,
+  deriveInviteStatus,
+  serializeInvite,
+} = await import("../platform/src/services/invites.js");
 
 const BUILD_MANIFEST_SCRIPT = resolve(__dirname, "../tools/build-manifest.mjs");
 const PLUGINS_UPDATE_SCRIPT = resolve(__dirname, "../tools/plugins-update.mjs");
