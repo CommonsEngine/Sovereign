@@ -18,6 +18,8 @@
     "prepare": "husky",
     "postinstall": "node -e \"if (process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
     "sv:link": "yarn link --silent || true",
+    "sv:backup": "node tools/sovereign-backup.mjs",
+    "sv:deploy": "bash tools/sovereign-deploy.sh",
     "prepare:env": "yarn workspace @sovereign/platform prepare:env",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
     "prepare:manifest": "yarn build:manifest",
