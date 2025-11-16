@@ -2,7 +2,7 @@
   "name": "sovereign",
   "description": "Reclaim your digital freedom.",
   "private": true,
-  "version": "3",
+  "version": "4",
   "cliVersion": "1.0.0-alpha.3",
   "license": "AGPL-3.0",
   "bin": {
