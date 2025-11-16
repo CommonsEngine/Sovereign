@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { mkdir, readFile, rm, stat } from "node:fs/promises";
+import { mkdir, readFile, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -93,13 +93,15 @@ function sanitizeNamespace(pluginName) {
 }
 
 async function loadPluginCredential(pluginName) {
-  const keyBase = path.join(authRoot, sanitizeNamespace(pluginName));
+  const sanitized = sanitizeNamespace(pluginName);
+  const keyBase = path.join(authRoot, sanitized);
   const sshKeyPath = `${keyBase}.key`;
   const patPath = `${keyBase}.pat`;
 
-  const [hasSsh, hasPat] = await Promise.all([pathExists(sshKeyPath), pathExists(patPath)]);
+  let sshKey = (await pathExists(sshKeyPath)) ? sshKeyPath : null;
   let pat = null;
-  if (hasPat) {
+
+  if (await pathExists(patPath)) {
     try {
       pat = (await readFile(patPath, "utf8")).trim();
     } catch {
@@ -107,8 +109,36 @@ async function loadPluginCredential(pluginName) {
     }
   }
 
+  // Fallback: scan local .ssh for any usable key/PAT when plugin-specific creds are absent
+  if (!sshKey || !pat) {
+    const localSshDir = path.join(repoRoot, ".ssh");
+    try {
+      const files = await readdir(localSshDir);
+      if (!sshKey) {
+        const keyFile = files.find(
+          (f) => !f.endsWith(".pub") && (f.endsWith(".key") || f.startsWith("id_"))
+        );
+        if (keyFile) {
+          sshKey = path.join(localSshDir, keyFile);
+        }
+      }
+      if (!pat) {
+        const patFile = files.find((f) => f.endsWith(".pat"));
+        if (patFile) {
+          try {
+            pat = (await readFile(path.join(localSshDir, patFile), "utf8")).trim();
+          } catch {
+            pat = null;
+          }
+        }
+      }
+    } catch {
+      // ignore if .ssh not present
+    }
+  }
+
   return {
-    sshKeyPath: hasSsh ? sshKeyPath : null,
+    sshKeyPath: sshKey || null,
     pat: pat || null,
   };
 }
@@ -160,31 +190,34 @@ async function clonePlugin(name, repoUrl) {
   }
 
   await mkdir(path.dirname(destination), { recursive: true });
-  const attempts = [repoUrl];
   const httpsCandidate = sshToHttps(repoUrl);
-  if (httpsCandidate && httpsCandidate !== repoUrl) {
-    attempts.push(httpsCandidate);
-  }
-
   const credentials = await loadPluginCredential(name);
 
-  for (const [index, url] of attempts.entries()) {
+  const attempts = [
+    { url: repoUrl, cred: null, label: "ssh (direct)" }, // 1) original url, no creds
+    httpsCandidate ? { url: httpsCandidate, cred: null, label: "https (public)" } : null, // 2) https public
+    { url: repoUrl, cred: credentials, label: "ssh (with credentials)" }, // 3) ssh with keys/PAT
+    httpsCandidate
+      ? { url: httpsCandidate, cred: credentials, label: "https (with credentials)" }
+      : null,
+  ].filter(Boolean);
+
+  for (const [index, attempt] of attempts.entries()) {
+    const { url, cred, label } = attempt;
     try {
-      const { url: cloneUrl, env } = buildCloneConfig(url, credentials);
-      console.log(`Cloning ${name} from ${url}...`);
+      const { url: cloneUrl, env } = buildCloneConfig(url, cred);
+      console.log(`Cloning ${name} via ${label} from ${url}...`);
       await gitClone(cloneUrl, destination, env);
       return true;
     } catch (error) {
       const isLastAttempt = index === attempts.length - 1;
+      const nextMsg = isLastAttempt ? "No fallbacks left." : "Retrying with fallback...";
+      console.warn(`Clone attempt ${index + 1} for ${name} failed (${error.message}). ${nextMsg}`);
+      await rm(destination, { recursive: true, force: true });
       if (isLastAttempt) {
-        console.error(`Failed to clone ${name} from ${url}: ${error.message}`);
+        console.error(`Failed to clone ${name}: ${error.message}`);
         return false;
       }
-
-      console.warn(
-        `Clone attempt ${index + 1} for ${name} failed (${error.message}). Retrying with fallback...`
-      );
-      await rm(destination, { recursive: true, force: true });
     }
   }
 
