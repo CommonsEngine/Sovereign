@@ -4,11 +4,11 @@
   <nav class="sv-sidebar__nav">
     <!-- Projects -->
     <a
-      class="sv-sidebar__btn{{#if projects_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if (eq activePage 'projects')}} is-active{{/if}}"
       href="/"
       title="Projects"
       aria-label="Projects"
-      aria-current="{{#if projects_active}}page{{/if}}"
+      aria-current="{{#if (eq activePage 'projects')}}page{{/if}}"
     >
       <svg
         width="18"
@@ -29,11 +29,11 @@
     <!-- Users -->
     {{#if (or (eq user.primaryRole.key 'platform:admin') (eq user.primaryRole.key 'tenant:admin'))}}
     <a
-      class="sv-sidebar__btn{{#if users_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if (eq activePage 'users')}} is-active{{/if}}"
       href="/users"
       title="Users"
       aria-label="Users"
-      aria-current="{{#if users_active}}page{{/if}}"
+      aria-current="{{#if (eq activePage 'users')}}page{{/if}}"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -58,7 +58,7 @@
       href="/{{this.value}}"
       title="{{this.label}}"
       aria-label="{{this.label}}"
-      {{#if this.isActive}}aria-current="page"{{/if}}
+      aria-current="{{#if isActive}}page{{/if}}"
     >
       <svg
         width="18"
@@ -80,11 +80,11 @@
     <!-- Settings -->
     {{#if (eq user.primaryRole.key 'platform:admin')}}
     <a
-      class="sv-sidebar__btn{{#if settings_active}} is-active{{/if}}"
+      class="sv-sidebar__btn{{#if (eq activePage 'settings')}} is-active{{/if}}"
       href="/settings"
       title="Settings"
       aria-label="Settings"
-      aria-current="{{#if settings_active}}page{{/if}}"
+      aria-current="{{#if (eq activePage 'settings')}}page{{/if}}"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path

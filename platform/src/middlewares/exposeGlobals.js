@@ -115,6 +115,16 @@ export default function exposeGlobals(req, res, next) {
     isActive: activeModule ? activeModule.value === mod.value : false,
   }));
 
+  let activePage;
+  const originalUrl = req.originalUrl;
+  if (originalUrl === "/") activePage = "projects";
+  const targetPath = originalUrl.split("/")[1];
+  if (targetPath) {
+    activePage = targetPath;
+  }
+
+  res.locals.activePage = activePage;
+
   if (typeof res.locals.showHeader === "undefined") {
     res.locals.showHeader = activeModule ? activeModule?.ui?.layout?.header !== false : true;
   }
