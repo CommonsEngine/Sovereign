@@ -38,6 +38,7 @@ function formatError(message, options = {}) {
 
 const DEFAULT_ICON_NAME = "default";
 const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
+const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
 
 function normalizeRoleValue(role) {
   if (!role) return null;
@@ -168,7 +169,7 @@ const manifest = {
   projects: [],
   modules: [],
   enabledPlugins: [], // [@<org>/<ns>]
-  allowedPluginTypes: [],
+  allowedPluginFrameworks: [],
   __rootdir,
   __pluginsdir,
   __datadir,
@@ -182,16 +183,27 @@ const manifest = {
 const pluginManifestSchema = {
   $id: "PluginManifest",
   type: "object",
-  required: ["id", "name", "version", "type", "sovereign", "devOnly", "author", "license"],
+  required: [
+    "id",
+    "name",
+    "version",
+    "framework",
+    "type",
+    "sovereign",
+    "devOnly",
+    "author",
+    "license",
+  ],
   additionalProperties: true,
   properties: {
     id: { type: "string", minLength: 1 },
     name: { type: "string", minLength: 1 },
     description: { type: "string" },
     version: { type: "string", minLength: 1 },
-    type: { type: "string", enum: ["custom", "spa"] },
+    framework: { type: "string", enum: ["js", "react"] },
+    type: { type: "string", enum: ["module", "project"] },
+    enabled: { type: "boolean" },
     devOnly: { type: "boolean" },
-    draft: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
     ui: {
@@ -243,7 +255,6 @@ const pluginManifestSchema = {
       additionalProperties: true,
       properties: {
         schemaVersion: { type: "integer", minimum: 1 },
-        allowMultipleInstances: { type: "boolean" },
         compat: {
           type: "object",
           additionalProperties: false,
@@ -427,144 +438,153 @@ const buildManifest = async () => {
       continue;
     }
 
+    const manifestEnabled = pluginManifest.enabled !== false;
     const isEnabledPlugin =
       process.env.NODE_ENV !== "production"
-        ? !pluginManifest.draft
-        : !pluginManifest.devOnly && !pluginManifest.draft;
+        ? manifestEnabled
+        : manifestEnabled && !pluginManifest.devOnly;
+
+    if (!manifest.allowedPluginFrameworks.includes(pluginManifest.framework)) {
+      manifest.allowedPluginFrameworks.push(pluginManifest.framework);
+    }
+
+    if (!pluginManifest?.framework || !["react", "js"].includes(pluginManifest.framework)) {
+      console?.warn?.(
+        formatError(`unknown or missing plugin framework: ${pluginManifest?.framework}`, {
+          manifestPath: pluginManifestPath,
+          pluginDir: plugingRoot,
+        })
+      );
+    }
+    if (!pluginManifest?.type || !SUPPORTED_PLUGIN_TYPES.includes(pluginManifest.type)) {
+      console?.warn?.(
+        formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
+          manifestPath: pluginManifestPath,
+          pluginDir: plugingRoot,
+        })
+      );
+    }
+    if (!pluginManifest?.version) {
+      console?.warn?.(
+        formatError(`missing version in plugin.json`, {
+          manifestPath: pluginManifestPath,
+          pluginDir: plugingRoot,
+        })
+      );
+    }
+
+    // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
+    const manifestNamespace = pluginManifest.namespace || plugingDirName;
 
     if (isEnabledPlugin) {
-      if (!manifest.allowedPluginTypes.includes(pluginManifest.type)) {
-        manifest.allowedPluginTypes.push(pluginManifest.type);
-      }
-
-      if (!pluginManifest?.type || !["spa", "custom"].includes(pluginManifest.type)) {
-        console?.warn?.(
-          formatError(`unknown or missing plugin type: ${pluginManifest?.type}`, {
-            manifestPath: pluginManifestPath,
-            pluginDir: plugingRoot,
-          })
-        );
-      }
-      if (!pluginManifest?.version) {
-        console?.warn?.(
-          formatError(`missing version in plugin.json`, {
-            manifestPath: pluginManifestPath,
-            pluginDir: plugingRoot,
-          })
-        );
-      }
-
-      // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
-      const manifestNamespace = pluginManifest.namespace || plugingDirName;
-
       manifest.enabledPlugins.push(`${manifestNamespace}@${pluginManifest.version}`);
-
-      const publicDir = path.join(plugingRoot, "public");
-      const distDir = path.join(plugingRoot, "dist");
-
-      let entry = path.join(plugingRoot, "dist", "index.js");
-      // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
-      if (pluginManifest.type === "custom") {
-        entry = path.join(plugingRoot, "index.js");
-      }
-
-      // publicDir quiet check
-      // TODO: Coinsider scoped the assets URLs
-      if (await exists(publicDir)) {
-        manifest.__assets.push({ base: "/", dir: publicDir });
-      } else if (process.env.DEBUG === "true") {
-        console?.debug?.(`no public dir: ${publicDir}`);
-      }
-
-      if (pluginManifest.type === "spa") {
-        if (await exists(distDir)) {
-          manifest.__assets.push({ base: `/plugins/${manifestNamespace}/`, dir: distDir });
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no dist dir: ${distDir}`);
-        }
-      }
-
-      if (pluginManifest.type === "custom") {
-        //__views
-        const viewsDir = path.join(plugingRoot, "views");
-        if (await exists(viewsDir)) {
-          manifest.__views.push({ base: manifestNamespace, dir: viewsDir });
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no views dir: ${viewsDir}`);
-        }
-
-        // __partials
-        const __partialsdir = path.join(plugingRoot, "views", "_partials");
-        if (await exists(__partialsdir)) {
-          manifest.__partials.push({ base: manifestNamespace, dir: __partialsdir });
-        } else if (process.env.DEBUG === "true") {
-          console?.debug?.(`no partials dir: ${__partialsdir}`);
-        }
-      }
-
-      // Normalize optional top-level entryPoints to absolute paths (relative to plugin root)
-      let normalizedEntryPoints = undefined;
-      if (
-        pluginManifest &&
-        pluginManifest.entryPoints &&
-        typeof pluginManifest.entryPoints === "object"
-      ) {
-        normalizedEntryPoints = {};
-        for (const [k, rel] of Object.entries(pluginManifest.entryPoints)) {
-          if (typeof rel !== "string" || !rel) continue;
-          const absPath = path.join(plugingRoot, rel);
-          if (await exists(absPath)) {
-            normalizedEntryPoints[k] = absPath;
-          } else if (process.env.DEBUG === "true") {
-            console?.debug?.(`entryPoints.${k} not found under plugin root: ${absPath}`);
-          }
-        }
-        // If none validated, keep it undefined to avoid misleading consumers
-        if (Object.keys(normalizedEntryPoints).length === 0) normalizedEntryPoints = undefined;
-      }
-
-      const resolvedPlatformCaps = Object.entries(
-        pluginManifest?.sovereign?.platformCapabilities || {}
-      )
-        .filter(([, enabled]) => !!enabled)
-        .map(([key]) => key)
-        .sort();
-
-      const resolvedUserCaps = Array.isArray(pluginManifest?.sovereign?.userCapabilities)
-        ? pluginManifest.sovereign.userCapabilities
-            .map((cap) => (cap && typeof cap.key === "string" ? cap.key.trim() : ""))
-            .filter(Boolean)
-        : [];
-
-      const normalizedSovereign = {
-        ...(pluginManifest?.sovereign || {}),
-        platformCapabilitiesResolved: resolvedPlatformCaps,
-        userCapabilitiesResolved: resolvedUserCaps,
-      };
-
-      const featureAccess = resolvePluginFeatureAccess(manifestNamespace, pluginManifest);
-
-      let normalizedUi;
-      try {
-        normalizedUi = normalizeUiConfig(pluginManifest?.ui, {
-          pluginDir: plugingRoot,
-          manifestPath: pluginManifestPath,
-        });
-      } catch (err) {
-        console?.error?.(err?.message || err);
-        continue;
-      }
-
-      plugins[manifestNamespace] = {
-        namespace: manifestNamespace,
-        entry,
-        ...pluginManifest,
-        ui: normalizedUi,
-        featureAccess,
-        sovereign: normalizedSovereign,
-        ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
-      };
     }
+
+    const publicDir = path.join(plugingRoot, "public");
+    const distDir = path.join(plugingRoot, "dist");
+
+    let entry = path.join(plugingRoot, "dist", "index.js");
+    // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
+    if (pluginManifest.framework === "js") {
+      entry = path.join(plugingRoot, "index.js");
+    }
+
+    // publicDir quiet check
+    // TODO: Coinsider scoped the assets URLs
+    if (await exists(publicDir)) {
+      manifest.__assets.push({ base: "/", dir: publicDir });
+    } else if (process.env.DEBUG === "true") {
+      console?.debug?.(`no public dir: ${publicDir}`);
+    }
+
+    if (pluginManifest.framework === "react") {
+      if (await exists(distDir)) {
+        manifest.__assets.push({ base: `/plugins/${manifestNamespace}/`, dir: distDir });
+      } else if (process.env.DEBUG === "true") {
+        console?.debug?.(`no dist dir: ${distDir}`);
+      }
+    }
+
+    if (pluginManifest.framework === "js") {
+      //__views
+      const viewsDir = path.join(plugingRoot, "views");
+      if (await exists(viewsDir)) {
+        manifest.__views.push({ base: manifestNamespace, dir: viewsDir });
+      } else if (process.env.DEBUG === "true") {
+        console?.debug?.(`no views dir: ${viewsDir}`);
+      }
+
+      // __partials
+      const __partialsdir = path.join(plugingRoot, "views", "_partials");
+      if (await exists(__partialsdir)) {
+        manifest.__partials.push({ base: manifestNamespace, dir: __partialsdir });
+      } else if (process.env.DEBUG === "true") {
+        console?.debug?.(`no partials dir: ${__partialsdir}`);
+      }
+    }
+
+    // Normalize optional top-level entryPoints to absolute paths (relative to plugin root)
+    let normalizedEntryPoints = undefined;
+    if (
+      pluginManifest &&
+      pluginManifest.entryPoints &&
+      typeof pluginManifest.entryPoints === "object"
+    ) {
+      normalizedEntryPoints = {};
+      for (const [k, rel] of Object.entries(pluginManifest.entryPoints)) {
+        if (typeof rel !== "string" || !rel) continue;
+        const absPath = path.join(plugingRoot, rel);
+        if (await exists(absPath)) {
+          normalizedEntryPoints[k] = absPath;
+        } else if (process.env.DEBUG === "true") {
+          console?.debug?.(`entryPoints.${k} not found under plugin root: ${absPath}`);
+        }
+      }
+      // If none validated, keep it undefined to avoid misleading consumers
+      if (Object.keys(normalizedEntryPoints).length === 0) normalizedEntryPoints = undefined;
+    }
+
+    const resolvedPlatformCaps = Object.entries(
+      pluginManifest?.sovereign?.platformCapabilities || {}
+    )
+      .filter(([, enabled]) => !!enabled)
+      .map(([key]) => key)
+      .sort();
+
+    const resolvedUserCaps = Array.isArray(pluginManifest?.sovereign?.userCapabilities)
+      ? pluginManifest.sovereign.userCapabilities
+          .map((cap) => (cap && typeof cap.key === "string" ? cap.key.trim() : ""))
+          .filter(Boolean)
+      : [];
+
+    const normalizedSovereign = {
+      ...(pluginManifest?.sovereign || {}),
+      platformCapabilitiesResolved: resolvedPlatformCaps,
+      userCapabilitiesResolved: resolvedUserCaps,
+    };
+
+    const featureAccess = resolvePluginFeatureAccess(manifestNamespace, pluginManifest);
+
+    let normalizedUi;
+    try {
+      normalizedUi = normalizeUiConfig(pluginManifest?.ui, {
+        pluginDir: plugingRoot,
+        manifestPath: pluginManifestPath,
+      });
+    } catch (err) {
+      console?.error?.(err?.message || err);
+      continue;
+    }
+
+    plugins[manifestNamespace] = {
+      namespace: manifestNamespace,
+      entry,
+      ...pluginManifest,
+      ui: normalizedUi,
+      featureAccess,
+      sovereign: normalizedSovereign,
+      ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
+    };
   }
 
   const finalPlugins = {
@@ -587,11 +607,12 @@ const buildManifest = async () => {
 
   // Pick projects and mdoules from plugins
   Object.keys(finalPlugins).forEach((k) => {
-    const { id, name, namespace, sovereign, ui, featureAccess, corePlugin } = finalPlugins[k];
+    const { id, name, namespace, type, ui, featureAccess, corePlugin } = finalPlugins[k];
     const resolvedUi = ui || normalizeUiConfig(undefined);
     const iconHidden = resolvedUi?.icon?.sidebarHidden === true;
+    const pluginType = type === "project" ? "project" : "module";
 
-    if (sovereign.allowMultipleInstances) {
+    if (pluginType === "project") {
       manifest.projects.push({
         id,
         label: name,
@@ -615,7 +636,7 @@ const buildManifest = async () => {
 
   const outputManifest = {
     ...manifest,
-    allowedPluginTypes: [...new Set(manifest.allowedPluginTypes || [])],
+    allowedPluginFrameworks: [...new Set(manifest.allowedPluginFrameworks || [])],
     plugins: finalPlugins,
     pluginCapabilities: {
       signature: capabilitySignature,

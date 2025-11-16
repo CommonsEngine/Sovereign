@@ -44,16 +44,16 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 
 ## Plugin Runtime (`plugins/<namespace>/`)
 
-- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, type (`spa` or `custom`), entry file, exposed routes, capabilities, and optional dev-server metadata.
+- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, framework (`js` or `react`), plugin type (`module` or `project`), entry file, exposed routes, capabilities, and optional dev-server metadata.
 - **Lifecycle hooks**: Entry modules export `render`, `configure`, and `getRoutes` today, with planned `onInstall/onEnable` hooks for seeding data or migrations.
 - **Asset strategy**: Static assets under `public/` are copied verbatim. Code under `src/` or `routes/` is transpiled but keeps file extensions so dynamic imports remain stable.
 - **Development ergonomics**: SPA plugins can declare a Vite dev server so the platform proxies HMR traffic automatically when `NODE_ENV !== "production"`.
 
 ### Module vs. Project Plugins
 
-- **Module plugins** (`allowMultipleInstances` omitted/false) behave like global features. They mount once (e.g., `/blog`) and store configuration at the workspace level. They are ideal for dashboard-style utilities or single-instance tools.
-- **Project plugins** (`sovereign.allowMultipleInstances: true`) support many instances per tenant/project. Routes automatically include project identifiers (e.g., `/blog/:id`) and the runtime expects per-project settings plus RBAC scoping.
-- The kind is inferred at runtime (`pluginKind = allowMultipleInstances ? "project" : "module"` in `platform/src/ext-host/build-routes.js`). This influences route wiring: SPA project plugins mount `/namespace/:id` while module variants mount `/namespace`.
+- **Module plugins** (`type: "module"`) behave like global features. They mount once (e.g., `/blog`) and store configuration at the workspace level. They are ideal for dashboard-style utilities or single-instance tools.
+- **Project plugins** (`type: "project"`) support many instances per tenant/project. Routes automatically include project identifiers (e.g., `/blog/:id`) and the runtime expects per-project settings plus RBAC scoping.
+- The kind is taken directly from the manifest’s `type` field (`pluginKind = plugin.type` in `platform/src/ext-host/build-routes.js`). This influences route wiring: SPA project plugins mount `/namespace/:id` while module variants mount `/namespace`.
 - Manifests may also set `featureAccess.roles` to further restrict who can load module/project routes; the platform applies those guards uniformly when wiring routers.
 
 ## Styling System
@@ -107,7 +107,7 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 ## Operational Posture
 
 - **Deployment**: Dockerfile + Caddyfile provide a simple path to containerized deploys. PM2 (`ecosystem.config.cjs`) can manage long-running processes.
-- **Configuration**: Environment variables (managed via config helpers) toggle DB backends, plugin drafts, and dev tooling.
+- **Configuration**: Environment variables (managed via config helpers) toggle DB backends, plugin enablement flags, and dev tooling.
 - **Future-facing**: RBAC graph merges, lifecycle hooks, and AI-facing metadata are already modeled in manifests, making it simple for other agents to query what the platform can do.
 
 Use this document as the on-ramp for contributors, integrators, or AI systems that need quick situational awareness before diving into specific features.

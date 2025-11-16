@@ -14,10 +14,13 @@
     "packages/*"
   ],
   "scripts": {
+    "preinstall": "yarn plugins:pull",
     "prepare": "husky",
     "postinstall": "node -e \"if (process.env.SV_LINK==='1'){try{require('child_process').execSync('yarn sv:link',{stdio:'inherit'})}catch(e){process.exit(0)}}\"",
     "sv:link": "yarn link --silent || true",
-    "prepare:init": "yarn workspace @sovereign/platform prepare:init",
+    "sv:backup": "node tools/sovereign-backup.mjs",
+    "sv:deploy": "bash tools/sovereign-deploy.sh",
+    "prepare:env": "yarn workspace @sovereign/platform prepare:env",
     "prepare:db": "yarn prisma:compose && yarn workspace @sovereign/platform prepare:db",
     "prepare:manifest": "yarn build:manifest",
     "prepare:all": "yarn prepare:db && yarn prepare:manifest",
@@ -34,6 +37,8 @@
     "lint:check": "eslint .",
     "lint": "eslint . --fix",
     "format:all": "yarn format && yarn lint && yarn workspace @sovereign/platform format:all",
+    "plugins:pull": "node tools/plugins-pull.mjs",
+    "plugins:update": "node tools/plugins-update.mjs",
     "prisma:compose": "node tools/database-prisma-compose.mjs",
     "prisma:compose:check": "node tools/database-prisma-compose.mjs --check",
     "prisma:generate": "yarn workspace @sovereign/platform prisma:generate",
@@ -62,6 +67,12 @@
     "prettier": "^3.3.3",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.6"
+  },
+  "plugins": {
+    "@sovereign/blog": "git@github.com:CommonsEngine/sovereign-blog.git",
+    "@sovereign/splitify": "git@github.com:CommonsEngine/sovereign-splitify.git",
+    "@sovereign/tasks": "git@github.com:SophKas/sovereign-tasks.git",
+    "@kasunben/papertrail": "git@github.com:kasunben/PaperTrail.git"
   },
   "engines": {
     "node": ">=20"

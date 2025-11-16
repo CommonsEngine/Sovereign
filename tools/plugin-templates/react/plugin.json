@@ -1,12 +1,13 @@
 {
-  "type": "spa",
   "id": "{{PLUGIN_ID}}",
   "namespace": "{{NAMESPACE}}",
   "name": "{{DISPLAY_NAME}}",
   "description": "{{DESCRIPTION}}",
   "version": "{{VERSION}}",
+  "type": "{{PLUGIN_TYPE}}",
+  "framework": "react",
+  "enabled": true,
   "devOnly": true,
-  "draft": false,
   "entryPoints": {
     "web": "dist/index.js",
     "api": "routes/api/index.js"
@@ -26,7 +27,6 @@
   },
   "sovereign": {
     "schemaVersion": 1,
-    "allowMultipleInstances": true,
     "compat": { "platform": "^0.7.3", "node": ">=20" },
     "platformCapabilities": {
       "database": true

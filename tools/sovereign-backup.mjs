@@ -21,6 +21,7 @@ const ROOT = path.resolve(__dirname, ".."); // repo root (tools/..)
 const DATA_DIR = path.join(ROOT, "data");
 const ENV_FILE = path.join(ROOT, "platform", ".env");
 const MANIFEST_FILE = path.join(ROOT, "manifest.json");
+const SCHEMA_FILE = path.join(ROOT, "platform", "prisma", "schema.prisma");
 const BACKUP_DIR = path.join(ROOT, ".backups");
 
 function tsNow() {
@@ -71,8 +72,9 @@ async function main() {
   const hasData = await exists(DATA_DIR, "dir");
   const hasEnv = await exists(ENV_FILE, "file");
   const hasManifest = await exists(MANIFEST_FILE, "file");
+  const hasSchema = await exists(SCHEMA_FILE, "file");
 
-  if (!hasData && !hasEnv && !hasManifest) {
+  if (!hasData && !hasEnv && !hasManifest && !hasSchema) {
     throw new Error(
       `Nothing to back up. Expected at least one of:\n  - ${DATA_DIR}\n  - ${ENV_FILE}\n  - ${MANIFEST_FILE}`
     );
@@ -86,6 +88,7 @@ async function main() {
   if (hasData) items.push("data");
   if (hasEnv) items.push("platform/.env");
   if (hasManifest) items.push("manifest.json");
+  if (hasSchema) items.push("platform/prisma/schema.prisma");
 
   log(`Creating archive: ${outFile}`);
   log(
