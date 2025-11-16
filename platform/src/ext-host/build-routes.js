@@ -10,6 +10,7 @@ import * as pluginHandler from "$/handlers/plugin.js";
 
 import { resolvePluginCapabilities } from "./capabilities.js";
 import { createPluginCapabilityAPI } from "./plugin-auth.js";
+import { isPluginEnabled } from "./plugin-state.js";
 
 export async function buildPluginRoutes(app, manifest, config) {
   const { plugins } = manifest;
@@ -79,6 +80,21 @@ export async function buildPluginRoutes(app, manifest, config) {
     return pluginContext;
   };
 
+  const createPluginEnabledGuard = (plugin, namespace) => {
+    const ref = namespace || plugin?.namespace || plugin?.pluginId || plugin?.id;
+    return function pluginEnabledGuard(req, res, next) {
+      if (isPluginEnabled(ref)) return next();
+      if (req.path.startsWith("/api/")) {
+        return res.status(404).json({ error: "Plugin is disabled" });
+      }
+      return res.status(404).render("error", {
+        code: 404,
+        message: "Plugin disabled",
+        description: `Plugin "${namespace}" is disabled.`,
+      });
+    };
+  };
+
   if (plugins && typeof plugins === "object") {
     for (const ns of Object.keys(plugins)) {
       const plugin = plugins[ns];
@@ -86,10 +102,11 @@ export async function buildPluginRoutes(app, manifest, config) {
       const pluginType = plugin?.type ?? "module";
       const pluginKey = `${pluginFramework}::${pluginType}`;
       const pluginAccessGuard = createPluginAccessGuard(plugin);
-      const viewMiddlewares = [requireAuth];
+      const pluginEnabledGuard = createPluginEnabledGuard(plugin, ns);
+      const viewMiddlewares = [pluginEnabledGuard, requireAuth];
       if (pluginAccessGuard) viewMiddlewares.push(pluginAccessGuard);
       viewMiddlewares.push(exposeGlobals);
-      const apiMiddlewares = [requireAuth];
+      const apiMiddlewares = [pluginEnabledGuard, requireAuth];
       if (pluginAccessGuard) apiMiddlewares.push(pluginAccessGuard);
       apiMiddlewares.push(exposeGlobals);
 

@@ -1,6 +1,8 @@
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
 
+import { seedPluginRuntimeState } from "./plugin-state.js";
+
 function indexDbPlugins(rows = []) {
   const byNamespace = new Map();
   const byPluginId = new Map();
@@ -44,8 +46,8 @@ export default async function createExtHost(manifest) {
     if (isDevOnly && process.env.NODE_ENV !== "development") {
       continue;
     }
+    normalizedPlugins[ns] = merged;
     if (merged.enabled !== false) {
-      normalizedPlugins[ns] = merged;
       const token = `${ns}@${merged.version || plugin?.version || "0.0.0"}`;
       enabledPlugins.push(token);
     }
@@ -59,6 +61,8 @@ export default async function createExtHost(manifest) {
           return namespace && normalizedPlugins[namespace];
         })
       : enabledPlugins;
+
+  seedPluginRuntimeState(normalizedPlugins);
 
   return {
     ...manifest,

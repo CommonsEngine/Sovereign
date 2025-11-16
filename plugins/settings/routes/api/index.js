@@ -1,5 +1,7 @@
 import express from "express";
 
+import { updatePluginRuntimeState } from "$/ext-host/plugin-state.js";
+
 const DEFAULT_SCOPE = "platform";
 const KEY_MAX_LENGTH = 200;
 
@@ -501,6 +503,8 @@ async function updatePlugins(req, res, _, { prisma, logger }) {
   if (missing.length > 0) {
     return res.status(404).json({ error: "One or more plugins were not found", details: missing });
   }
+
+  updatePluginRuntimeState(updated);
 
   return res.json({ plugins: updated });
 }
