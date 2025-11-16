@@ -129,7 +129,7 @@ export default async function create(req, res) {
         const result = await prisma.$transaction(async (tx) => {
           const projectRecord = await tx.project.create({
             data: {
-              id: uuid("p_"),
+              id: uuid(),
               name,
               desc,
               type,
@@ -180,6 +180,7 @@ export default async function create(req, res) {
     }
 
     try {
+      // TODO: Invoke OnCreate() hook and revise this code later
       await createSubtypeRecord({
         type,
         projectId: createdProject.project.id,

@@ -483,11 +483,7 @@ const buildManifest = async () => {
     const publicDir = path.join(plugingRoot, "public");
     const distDir = path.join(plugingRoot, "dist");
 
-    let entry = path.join(plugingRoot, "dist", "index.js");
-    // TODO: Consider use entry from /dest/ once build process implemented for custom plugins
-    if (pluginManifest.framework === "js") {
-      entry = path.join(plugingRoot, "index.js");
-    }
+    let entry = path.join(plugingRoot, "index.js");
 
     // publicDir quiet check
     // TODO: Coinsider scoped the assets URLs

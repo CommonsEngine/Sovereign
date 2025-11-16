@@ -141,8 +141,7 @@ async function pathExists(targetPath) {
 export async function renderSPAModule(req, res, _, { plugin }) {
   const { namespace } = plugin;
   try {
-    const entryPoint = plugin?.entryPoints?.web;
-
+    const entryPoint = plugin?.entryPoints?.web || null;
     const pluginRoot = path.join(process.env.PLUGINS_DIR, namespace);
 
     // TODO: Override res.locals.head for html document meta
@@ -310,6 +309,7 @@ export async function renderSPA(req, res, _, { plugins }) {
 
     const namespace = project.type;
     const plugin = plugins?.[namespace];
+    const webEntry = plugin?.entryPoints?.web || null;
 
     if (!plugin) {
       return res.status(404).render("error", {
@@ -330,8 +330,8 @@ export async function renderSPA(req, res, _, { plugins }) {
     const pluginsRootDir = process.env.PLUGINS_DIR;
     const pluginRoot =
       (pluginsRootDir && namespace ? path.join(pluginsRootDir, namespace) : null) ||
-      (plugin.entry
-        ? path.resolve(path.dirname(plugin.entry), plugin.framework === "react" ? ".." : ".")
+      (webEntry
+        ? path.resolve(path.dirname(webEntry), plugin.framework === "react" ? ".." : ".")
         : null);
 
     if (!pluginRoot) {
@@ -378,7 +378,15 @@ export async function renderSPA(req, res, _, { plugins }) {
       }
       devScriptTags.push(`<script type="module">import("${entryUrl}");</script>`);
     } else {
-      const entryBasename = path.basename(plugin.entry);
+      if (!webEntry) {
+        return res.status(500).render("error", {
+          code: 500,
+          message: "Plugin Misconfigured",
+          description: `Plugin "${namespace}" is missing a web entry point.`,
+        });
+      }
+
+      const entryBasename = path.basename(webEntry);
       const entryUrl = resolvePluginAsset(namespace, entryBasename);
       shellModel.scripts = unique([...shellModel.scripts, entryUrl]);
 

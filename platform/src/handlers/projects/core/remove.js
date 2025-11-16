@@ -1,3 +1,7 @@
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+import fs from "node:fs/promises";
+
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
 import { ensureProjectAccess, ProjectAccessError } from "$/utils/projectAccess.js";
@@ -21,6 +25,48 @@ export default async function remove(req, res) {
         return res.status(err.status ?? 403).json({ error: err.message });
       }
       throw err;
+    }
+
+    // Invoke plugin onDelete hooks (best-effort; errors bubble)
+    let manifest;
+    // TODO: Simply use __rootdir to resolve this
+    const manifestCandidates = [
+      path.resolve(process.cwd(), "manifest.json"),
+      path.resolve(process.cwd(), "..", "manifest.json"),
+    ];
+    for (const candidate of manifestCandidates) {
+      try {
+        const manifestText = await fs.readFile(candidate, "utf8");
+        manifest = JSON.parse(manifestText);
+        break;
+        // eslint-disable-next-line no-unused-vars
+      } catch (err) {
+        continue;
+      }
+    }
+    if (!manifest) {
+      logger.error?.("[project:remove] failed to read manifest.json from", manifestCandidates);
+      return res.status(500).json({ error: "Failed to load plugins manifest" });
+    }
+
+    const pluginEntries = manifest?.plugins || [];
+    const pluginName = req?.query?.plugin;
+    const plugin = pluginEntries[pluginName];
+
+    if (plugin) {
+      try {
+        const fullPath = path.resolve(plugin?.entry);
+        const mod = await import(pathToFileURL(fullPath));
+        if (mod?.onDelete && typeof mod.onDelete === "function") {
+          await mod.onDelete({ prisma, logger, projectId, user: req.user });
+        }
+      } catch (hookErr) {
+        logger.error?.(`[project:remove] onDelete hook failed for ${plugin?.id}`, {
+          projectId,
+          error: hookErr?.message,
+        });
+        throw hookErr;
+      }
     }
 
     // Cascades will remove subtype records (blog/papertrail/workspace) and related rows as defined in schema
