@@ -71,7 +71,7 @@
   "plugins": {
     "@sovereign/blog": "git@github.com:CommonsEngine/sovereign-blog.git",
     "@sovereign/splitify": "git@github.com:CommonsEngine/sovereign-splitify.git",
-    "@sovereign/tasks": "git@github.com:SophKas/sovereign-tasks.git",
+    "@sovereign/tasks": "git@github.com:CommonsEngine/sovereign-tasks.git",
     "@kasunben/papertrail": "git@github.com:kasunben/PaperTrail.git"
   },
   "engines": {
