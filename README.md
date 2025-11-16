@@ -71,6 +71,8 @@ See [`docs/CLI.md`](docs/CLI.md) for detailed command usage, global flags, and s
    yarn install // or yarn
    ```
 
+   > `SV_LINK=1 yarn install` in you want to enable CLI tool
+
 3. Configure environment
 
    ```bash

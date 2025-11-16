@@ -8,6 +8,7 @@ import { isGuestUser, purgeGuestUserById } from "$/utils/guestCleanup.js";
 import env from "$/config/env.js";
 
 const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
+const PLATFORM_USER_ROLE_ID = 3;
 
 const toAbsoluteUrl = (relativePath = "") => {
   const base = String(APP_URL || "").replace(/\/+$/, "");
@@ -182,6 +183,28 @@ export async function inviteUser(req, res) {
         }
       } catch (e) {
         logger.warn("Failed to assign role during invite", e);
+      }
+    }
+
+    // Always ensure platform:user assignment alongside any role
+    try {
+      await prisma.userRoleAssignment.upsert({
+        where: { userId_roleId: { userId: user.id, roleId: PLATFORM_USER_ROLE_ID } },
+        create: { userId: user.id, roleId: PLATFORM_USER_ROLE_ID },
+        update: {},
+      });
+    } catch {
+      try {
+        const exists = await prisma.userRoleAssignment.findFirst({
+          where: { userId: user.id, roleId: PLATFORM_USER_ROLE_ID },
+        });
+        if (!exists) {
+          await prisma.userRoleAssignment.create({
+            data: { userId: user.id, roleId: PLATFORM_USER_ROLE_ID },
+          });
+        }
+      } catch (e) {
+        logger.warn("Failed to assign platform:user role during invite", e);
       }
     }
 
