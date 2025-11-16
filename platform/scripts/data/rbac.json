@@ -135,6 +135,22 @@
     {
       "key": "user:project.collaborate",
       "description": "In-App collaboration enabled."
+    },
+    {
+      "key": "user:invite.admin.feature",
+      "description": "Enable invite administration features."
+    },
+    {
+      "key": "user:invite.admin",
+      "description": "Create, list, and revoke invite codes."
+    },
+    {
+      "key": "user:invite.code.multi_use.feature",
+      "description": "Enable creation of multi-use invite codes."
+    },
+    {
+      "key": "user:invite.code.multi_use",
+      "description": "Create and redeem multi-use or unlimited invite codes."
     }
   ],
   "roles": [
@@ -176,7 +192,11 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny"
+        "user:project.collaborate": "deny",
+        "user:invite.admin.feature": "allow",
+        "user:invite.admin": "allow",
+        "user:invite.code.multi_use.feature": "allow",
+        "user:invite.code.multi_use": "allow"
       }
     },
     {
@@ -217,7 +237,11 @@
         "user:project.invite": "deny",
         "user:project.export": "deny",
         "user:project.import": "deny",
-        "user:project.collaborate": "deny"
+        "user:project.collaborate": "deny",
+        "user:invite.admin.feature": "allow",
+        "user:invite.admin": "allow",
+        "user:invite.code.multi_use.feature": "allow",
+        "user:invite.code.multi_use": "allow"
       }
     },
     {

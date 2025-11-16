@@ -9,6 +9,13 @@ import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 import { createRequire } from "module";
 
+import { prisma } from "../platform/src/services/database.js";
+import {
+  createInvite as createInviteRecord,
+  deriveInviteStatus,
+  serializeInvite,
+} from "../platform/src/services/invites.js";
+
 const require = createRequire(import.meta.url);
 const pkg = require("../package.json");
 
@@ -20,6 +27,8 @@ const registerAliasCandidates = [
   resolve(__dirname, "../scripts/register-alias.mjs"),
   resolve(__dirname, "../platform/scripts/register-alias.mjs"),
 ];
+
+process.env.ROOT_DIR = process.env.ROOT_DIR || resolve(__dirname, "..");
 
 let aliasLoaded = false;
 for (const candidate of registerAliasCandidates) {
@@ -101,6 +110,11 @@ function printUsage() {
       sv [options] <namespace> <command> [args]
 
     Namespaces & commands:
+      invites
+        create --role <key> [--tenant TID] [--project PID] [--max-uses N] [--mode single|unlimited] [--expires <date>] [--email <addr>] [--domain <domain>]
+        list [--json] [--tenant TID] [--project PID] [--active|--expired|--revoked]
+        revoke <inviteId>
+
       plugins
         add <spec>                      Register/install a plugin (git url | file path)
         list [--json] [--enabled|--disabled]
@@ -134,6 +148,22 @@ function exitUsage(msg) {
   if (msg) console.error(msg);
   printUsage();
   process.exit(2);
+}
+
+function parseInviteMaxUses(input, modeRaw) {
+  const mode = typeof modeRaw === "string" ? modeRaw.toLowerCase() : "";
+  if (mode === "single") return 1;
+  if (mode === "unlimited") return null;
+  if (input === undefined || input === null) return null;
+  const num = Number(input);
+  if (!Number.isFinite(num) || num <= 0) return null;
+  return Math.floor(num);
+}
+
+function parseInviteExpiry(input) {
+  if (!input) return null;
+  const dt = input instanceof Date ? input : new Date(input);
+  return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
 function printNamespaceHelp(ns) {
@@ -820,6 +850,203 @@ const commands = {
       "--config",
       "--cwd",
     ],
+  },
+
+  invites: {
+    __help__: `
+      Usage:
+        sv invites create --role <key> [--tenant TID] [--project PID] [--max-uses N] [--mode single|unlimited] [--expires <date>] [--email <addr>] [--domain <domain>]
+        sv invites list [--json] [--tenant TID] [--project PID] [--active|--expired|--revoked]
+        sv invites revoke <inviteId>
+    `,
+
+    create: {
+      desc: "Create a new invite code",
+      async run(args) {
+        const roleKey = args.flags.role || args.flags.r;
+        if (!roleKey) {
+          exitUsage(`Missing --role. Usage: sv invites create --role <key> [options]`);
+        }
+
+        const tenantId = args.flags.tenant || args.flags.t || null;
+        const projectId = args.flags.project || null;
+        const mode = args.flags.mode;
+        const maxUses = parseInviteMaxUses(args.flags["max-uses"] ?? args.flags.maxUses, mode);
+        const expiresAt = parseInviteExpiry(args.flags.expires || args.flags.expiry);
+        const allowedEmail = args.flags.email || args.flags["allowed-email"] || null;
+        const allowedDomain = args.flags.domain || args.flags["allowed-domain"] || null;
+        const createdByUserId = args.flags["created-by"] || "cli";
+        const outputJson = Boolean(args.flags.json);
+
+        let exitCode = 0;
+        try {
+          const { invite, code } = await createInviteRecord({
+            createdByUserId,
+            roleKey: String(roleKey).trim(),
+            tenantId,
+            projectId,
+            maxUses,
+            expiresAt,
+            allowedEmail,
+            allowedDomain,
+          });
+          const view = serializeInvite(invite);
+
+          if (outputJson) {
+            console.log(JSON.stringify({ code, invite: view }, null, 2));
+            return;
+          }
+
+          console.log("Invite created");
+          console.log(`  id: ${invite.id}`);
+          console.log(`  code: ${code}`);
+          console.log(`  preview: ${invite.codePreview || code.slice(0, 10)}`);
+          console.log(
+            `  scope: tenant=${view.tenantId || "none"} project=${view.projectId || "none"}`
+          );
+          console.log(
+            `  uses: ${view.usedCount}/${view.maxUses === null || view.maxUses === undefined ? "unlimited" : view.maxUses}`
+          );
+          if (view.expiresAt) {
+            console.log(`  expires: ${new Date(view.expiresAt).toISOString()}`);
+          }
+          if (allowedEmail) console.log(`  allowedEmail: ${allowedEmail}`);
+          if (allowedDomain) console.log(`  allowedDomain: ${allowedDomain}`);
+        } catch (err) {
+          console.error(`Failed to create invite: ${err?.message || err}`);
+          exitCode = 1;
+        } finally {
+          await prisma.$disconnect().catch(() => {});
+          if (exitCode) process.exit(exitCode);
+        }
+      },
+    },
+
+    list: {
+      desc: "List invites",
+      async run(args) {
+        const tenantId = args.flags.tenant || args.flags.t || null;
+        const projectId = args.flags.project || null;
+        const outputJson = Boolean(args.flags.json);
+        const statusFlag = args.flags.active
+          ? "active"
+          : args.flags.expired
+            ? "expired"
+            : args.flags.revoked
+              ? "revoked"
+              : args.flags.status
+                ? String(args.flags.status).toLowerCase()
+                : "";
+
+        let exitCode = 0;
+        try {
+          const where = {};
+          if (tenantId) where.tenantId = tenantId;
+          if (projectId) where.projectId = projectId;
+          const rows = await prisma.invite.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+          });
+
+          const invites = rows
+            .map((row) => {
+              const status = deriveInviteStatus(row).status;
+              return { ...serializeInvite(row), status };
+            })
+            .filter((item) => {
+              if (!statusFlag) return true;
+              return item.status === statusFlag;
+            });
+
+          if (outputJson) {
+            console.log(JSON.stringify(invites, null, 2));
+            return;
+          }
+
+          if (!invites.length) {
+            console.log("No invites found.");
+            return;
+          }
+
+          const columns = [
+            { key: "id", label: "ID", format: (row) => row.id },
+            { key: "preview", label: "Preview", format: (row) => row.codePreview || "" },
+            { key: "roleKey", label: "Role", format: (row) => row.roleKey },
+            {
+              key: "scope",
+              label: "Scope",
+              format: (row) => `${row.tenantId || "-"} / ${row.projectId || "-"}`,
+            },
+            {
+              key: "uses",
+              label: "Uses",
+              format: (row) =>
+                `${row.usedCount}/${row.maxUses === null || row.maxUses === undefined ? "∞" : row.maxUses}`,
+            },
+            { key: "status", label: "Status", format: (row) => row.status || "" },
+            {
+              key: "expires",
+              label: "Expires",
+              format: (row) =>
+                row.expiresAt ? new Date(row.expiresAt).toISOString().slice(0, 10) : "-",
+            },
+          ];
+
+          const widths = columns.map((col) =>
+            invites.reduce((max, row) => {
+              const value = col.format(row) || "";
+              return Math.max(max, String(value).length, col.label.length);
+            }, col.label.length)
+          );
+
+          const header = columns.map((col, idx) => col.label.padEnd(widths[idx])).join("  ");
+          console.log(header);
+          console.log(columns.map((_, idx) => "-".repeat(widths[idx])).join("  "));
+
+          for (const row of invites) {
+            const line = columns
+              .map((col, idx) => String(col.format(row) || "").padEnd(widths[idx]))
+              .join("  ");
+            console.log(line);
+          }
+        } catch (err) {
+          console.error(`Failed to list invites: ${err?.message || err}`);
+          exitCode = 1;
+        } finally {
+          await prisma.$disconnect().catch(() => {});
+          if (exitCode) process.exit(exitCode);
+        }
+      },
+    },
+
+    revoke: {
+      desc: "Revoke an invite",
+      async run(args) {
+        const id = args._[2];
+        if (!id) {
+          exitUsage(`Missing invite id. Usage: sv invites revoke <inviteId>`);
+        }
+
+        let exitCode = 0;
+        try {
+          await prisma.invite.update({
+            where: { id },
+            data: { revokedAt: new Date() },
+          });
+          console.log(`Invite ${id} revoked.`);
+        } catch (err) {
+          if (err?.code === "P2025") {
+            console.error(`Invite ${id} not found.`);
+          } else {
+            console.error(`Failed to revoke invite: ${err?.message || err}`);
+          }
+          exitCode = 1;
+        } finally {
+          await prisma.$disconnect().catch(() => {});
+          if (exitCode) process.exit(exitCode);
+        }
+      },
+    },
   },
 
   plugins: {

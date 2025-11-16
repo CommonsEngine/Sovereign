@@ -1,13 +1,12 @@
-import crypto from "crypto";
-
 import { prisma } from "$/services/database.js";
 import { sendMail } from "$/services/mailer.js";
 import logger from "$/services/logger.js";
 import { hashPassword, randomToken } from "$/utils/auth.js";
 import { isGuestUser, purgeGuestUserById } from "$/utils/guestCleanup.js";
+import { createInvite as createInviteRecord } from "$/services/invites.js";
 import env from "$/config/env.js";
 
-const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME } = env();
+const { APP_URL, AUTH_SESSION_COOKIE_NAME, COOKIE_OPTS, APP_NAME, DEFAULT_TENANT_ID } = env();
 const PLATFORM_USER_ROLE_ID = 3;
 
 const toAbsoluteUrl = (relativePath = "") => {
@@ -41,6 +40,7 @@ export async function inviteUser(req, res) {
 
     // Resolve role input: allow numeric id or role name string
     let roleId = null;
+    let roleKeyResolved = null;
     if (typeof role === "number" && Number.isInteger(role)) {
       roleId = role;
     } else if (typeof role === "string" && /^\d+$/.test(role)) {
@@ -60,12 +60,20 @@ export async function inviteUser(req, res) {
       }
       if (!roleRec) return res.status(400).json({ error: "Unknown role" });
       roleId = roleRec.id;
+      roleKeyResolved = roleRec.key;
     } else {
       return res.status(400).json({ error: "Invalid role" });
     }
 
     // ensure roleId is an integer now
     if (!Number.isInteger(roleId)) return res.status(400).json({ error: "Invalid role" });
+    if (!roleKeyResolved && roleId) {
+      const resolved = await prisma.userRole.findUnique({
+        where: { id: roleId },
+        select: { key: true },
+      });
+      roleKeyResolved = resolved?.key || null;
+    }
 
     // Try to find an existing user by email
     const existingEmail = await prisma.userEmail.findUnique({
@@ -208,22 +216,20 @@ export async function inviteUser(req, res) {
       }
     }
 
-    // Generate a one-time token and persist (clean previous invite tokens)
-    const token = crypto.randomUUID().replace(/-/g, "");
-    await prisma.verificationToken.deleteMany({
-      where: { userId: user.id, purpose: "invite" },
-    });
-    await prisma.verificationToken.create({
-      data: {
-        userId: user.id,
-        token,
-        purpose: "invite",
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 48),
-      },
+    // Generate a single-use invite code scoped to this email
+    const inviteExpiry = new Date(Date.now() + 1000 * 60 * 60 * 48);
+    const { invite, code } = await createInviteRecord({
+      createdByUserId: req.user?.id || "platform:invite",
+      roleKey: roleKeyResolved || String(roleId),
+      tenantId: req.user?.tenantId || DEFAULT_TENANT_ID || null,
+      projectId: null,
+      maxUses: 1,
+      expiresAt: inviteExpiry,
+      allowedEmail: emailNorm,
     });
 
     // Build invite URL
-    const inviteUrl = toAbsoluteUrl(`/register?token=${token}`);
+    const inviteUrl = toAbsoluteUrl(`/register?inviteCode=${encodeURIComponent(code)}`);
 
     const safeDisplayName = String(displayName || "").trim() || emailNorm;
     const inviteSubject = `${APP_NAME} invitation`;
@@ -235,6 +241,8 @@ export async function inviteUser(req, res) {
       "",
       inviteUrl,
       "",
+      `Invite code: ${code}`,
+      "",
       "This link expires in 48 hours.",
       "",
       "If you didn't expect this invitation, you can ignore this email.",
@@ -243,6 +251,7 @@ export async function inviteUser(req, res) {
 <p>You've been invited to join <strong>${APP_NAME}</strong>.</p>
 <p>Use the link below to finish setting up your account:</p>
 <p><a href="${inviteUrl}" target="_blank" rel="noopener">Accept your invite</a></p>
+<p>Invite code: <code>${code}</code></p>
 <p>This link expires in 48 hours.</p>
 <p>If you didn't expect this invitation, you can ignore this email.</p>`;
 
@@ -271,6 +280,9 @@ export async function inviteUser(req, res) {
         status: user.status,
       },
       inviteUrl,
+      inviteCode: code,
+      inviteId: invite.id,
+      invitePreview: invite.codePreview,
     });
   } catch (err) {
     logger.error("✗ Invite user failed:", err);

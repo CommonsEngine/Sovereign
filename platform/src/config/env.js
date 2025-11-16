@@ -54,6 +54,7 @@ const baseTemplate = Object.freeze({
   PLUGIN_CAPABILITIES_SIGNATURE: pluginCapabilities.signature || null,
   PLUGIN_CAPABILITIES: pluginCapabilities.definitions || [],
   APP_URL: process.env.APP_URL || "http://localhost:3000",
+  APP_SECRET: process.env.APP_SECRET || "insecure-dev-secret", // used for HMAC/token derivation
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),
   AUTH_ARGON2_MEMORY: Number(process.env.AUTH_ARGON2_MEMORY ?? 19456),
