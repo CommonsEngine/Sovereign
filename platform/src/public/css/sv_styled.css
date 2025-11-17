@@ -250,6 +250,16 @@
     align-items: center;
     background-color: var(--color-bg-primary);
     z-index: 12;
+    gap: var(--space-m);
+    padding: 0 var(--space-m);
+  }
+  .sv-header__plugin {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    height: 100%;
+    margin-right: auto;
   }
   .sv-header__user {
     display: inline-flex;
@@ -314,6 +324,46 @@
   .sv-header__user-menu-item:focus-visible {
     outline: 2px solid color-mix(in oklab, var(--color-accent), white 40%);
     outline-offset: 2px;
+  }
+  .sv-plugin-banner {
+    display: inline-flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 0;
+    min-width: 220px;
+    max-width: 460px;
+  }
+  .sv-plugin-banner__bar {
+    width: 3px;
+    background: color-mix(in oklab, var(--color-accent), #ffffff 10%);
+    border-radius: 999px;
+    align-self: stretch;
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+  .sv-plugin-banner__body {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .sv-plugin-banner__title {
+    font-weight: 700;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+  }
+  .sv-plugin-banner__subtitle {
+    font-size: var(--font-size-s);
+    color: var(--color-text-secondary);
+    line-height: 1.35;
+  }
+  .sv-plugin-banner__meta {
+    font-size: var(--font-size-s);
+    color: var(--color-text-primary);
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

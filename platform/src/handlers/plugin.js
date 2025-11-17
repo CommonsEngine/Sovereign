@@ -6,6 +6,7 @@ import { prisma } from "$/services/database.js";
 import { resolveSpaDevServer } from "$/utils/pluginDevServer.js";
 
 const EXTERNAL_URL_PATTERN = /^(?:[a-z]+:)?\/\//i;
+const pluginHeaderTemplateCache = new Map(); // path -> string|null
 
 // const BLANK_RE = /^\s*$/;
 
@@ -81,6 +82,38 @@ async function collectCssAssets(distDir) {
   return results;
 }
 
+async function loadPluginHeaderTemplate(namespace, pluginRoot) {
+  if (!pluginRoot || !namespace) return null;
+  const partialPath = path.join(pluginRoot, "_partials", `${namespace}-header.html`);
+  if (pluginHeaderTemplateCache.has(partialPath)) {
+    return pluginHeaderTemplateCache.get(partialPath);
+  }
+  try {
+    const contents = await fs.readFile(partialPath, "utf8");
+    pluginHeaderTemplateCache.set(partialPath, contents);
+    return contents;
+  } catch {
+    pluginHeaderTemplateCache.set(partialPath, null);
+    return null;
+  }
+}
+
+function renderPluginHeader(template, context = {}) {
+  if (!template) return null;
+  const replacements = {
+    "project.name": context?.project?.name || "",
+    "project.id": context?.project?.id || "",
+    "plugin.name": context?.plugin?.name || "",
+    "plugin.namespace": context?.plugin?.namespace || "",
+  };
+  let output = template;
+  Object.entries(replacements).forEach(([key, value]) => {
+    const re = new RegExp(`\\{\\{\\s*${key.replace(".", "\\.")}\\s*\\}\\}`, "g");
+    output = output.replace(re, value);
+  });
+  return output;
+}
+
 // TODO: Keep this commented.
 // function extractPluginSections(markup, namespace) {
 //   const headMatch = markup.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
@@ -143,6 +176,8 @@ export async function renderSPAModule(req, res, _, { plugin }) {
   try {
     const entryPoint = plugin?.entryPoints?.web || null;
     const pluginRoot = path.join(process.env.PLUGINS_DIR, namespace);
+    const pluginHeaderTemplate = await loadPluginHeaderTemplate(namespace, pluginRoot);
+    const pluginHeader = renderPluginHeader(pluginHeaderTemplate, { plugin });
 
     // TODO: Override res.locals.head for html document meta
     const baseStyles = [];
@@ -152,6 +187,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
       head: res.locals.head,
       pluginMarkup: "",
       pluginHead: "",
+      pluginHeader,
       styles: baseStyles,
       scripts: [],
       inlineScripts: "",
@@ -333,6 +369,8 @@ export async function renderSPA(req, res, _, { plugins }) {
       (webEntry
         ? path.resolve(path.dirname(webEntry), plugin.framework === "react" ? ".." : ".")
         : null);
+    const pluginHeaderTemplate = await loadPluginHeaderTemplate(namespace, pluginRoot);
+    const pluginHeader = renderPluginHeader(pluginHeaderTemplate, { plugin, project });
 
     if (!pluginRoot) {
       logger.error(`✗ Missing plugin root for namespace "${namespace}"`);
@@ -351,6 +389,7 @@ export async function renderSPA(req, res, _, { plugins }) {
       head: res.locals.head,
       pluginMarkup: "",
       pluginHead: "",
+      pluginHeader,
       styles: baseStyles,
       scripts: [],
       inlineScripts: "",

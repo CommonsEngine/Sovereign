@@ -1,4 +1,7 @@
 <header class="sv-header">
+  {{#if pluginHeader}}
+  <div class="sv-header__plugin" aria-label="Workspace header">{{{pluginHeader}}}</div>
+  {{/if}}
   <div class="sv-header__user" role="navigation" aria-label="User">
     <span class="sv-header__user-greeting">Ayubowan! <strong>{{user.name}}</strong></span>
     <details class="sv-header__user-menu">
