@@ -306,6 +306,8 @@ Run the Node.js built-in test runner:
 yarn test
 ```
 
+- No extra env setup is needed for the test suite; it self-sets `ROOT_DIR`, `SV_SKIP_ENV_REFRESH=1`, and `APP_SECRET=test-secret` when needed.
+
 Keep tests running in watch mode during development:
 
 ```bash

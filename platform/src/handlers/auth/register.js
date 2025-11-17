@@ -3,6 +3,12 @@ import { sendMail } from "$/services/mailer.js";
 import logger from "$/services/logger.js";
 import { hashPassword, randomToken } from "$/utils/auth.js";
 import { syncProjectPrimaryOwner } from "$/utils/projectAccess.js";
+import {
+  redeemInviteForUser,
+  findInvite,
+  validateInviteForEmail,
+  deriveInviteStatus,
+} from "$/services/invites.js";
 import env from "$/config/env.js";
 
 const { SIGNUP_POLICY, APP_URL, APP_NAME } = env();
@@ -27,9 +33,17 @@ export default async function register(req, res) {
 
     // Invite-only: require a valid invite token
     const token = String(req.query?.token || req.body?.token || "");
+    const inviteCodeRaw =
+      typeof req.body?.inviteCode === "string"
+        ? req.body.inviteCode
+        : typeof req.query?.inviteCode === "string"
+          ? req.query.inviteCode
+          : "";
+    const inviteTokenRaw = typeof req.body?.inviteToken === "string" ? req.body.inviteToken : "";
+    const hasNewInvite = Boolean(String(inviteCodeRaw || inviteTokenRaw).trim());
 
     // If invite-only and no token, reject
-    if (SIGNUP_POLICY === "invite" && !token) {
+    if (SIGNUP_POLICY === "invite" && !token && !hasNewInvite) {
       logger.info("Registration is by invitation only.");
       const msg = "Registration is by invitation only.";
       if (isFormContent) {
@@ -173,6 +187,249 @@ export default async function register(req, res) {
       }
       return res.status(201).json({ ok: true });
       // End of invite-only flow
+    }
+
+    if (!token && hasNewInvite) {
+      const firstName = typeof first_name === "string" ? first_name.trim() : "";
+      const lastName = typeof last_name === "string" ? last_name.trim() : "";
+      const name = [firstName, lastName].join("_").toLowerCase();
+      const emailNorm = typeof email === "string" ? email.trim().toLowerCase() : "";
+
+      if (firstName.length < 2 || firstName.length > 80) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: "First Name must be between 2 and 80 characters.",
+            values: { first_name: firstName, last_name: lastName, email: emailNorm },
+          });
+        }
+        return res.status(400).json({ error: "Invalid first name" });
+      }
+
+      if (lastName.length < 2 || lastName.length > 80) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: "Last Name must be between 2 and 80 characters.",
+            values: { first_name: firstName, last_name: lastName, email: emailNorm },
+          });
+        }
+        return res.status(400).json({ error: "Invalid last name" });
+      }
+
+      const usernameOk =
+        typeof name === "string" && /^[A-Za-z][A-Za-z0-9._-]{2,23}$/.test(name || "");
+      if (!usernameOk) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error:
+              "Choose a username (3–24 chars). Start with a letter; use letters, numbers, dot, underscore or hyphen.",
+            values: {
+              first_name: firstName,
+              last_name: lastName,
+              email: emailNorm,
+            },
+          });
+        }
+        return res.status(400).json({ error: "Invalid username", code: "BAD_USERNAME" });
+      }
+
+      if (typeof emailNorm !== "string" || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailNorm)) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: "Please enter a valid email address.",
+            values: {
+              first_name: firstName,
+              last_name: lastName,
+              email: emailNorm,
+            },
+          });
+        }
+        return res.status(400).json({ error: "Invalid email" });
+      }
+
+      const passStr = typeof password === "string" ? password : "";
+      if (passStr.length < 6 || !/[A-Za-z]/.test(passStr) || !/\d/.test(passStr)) {
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: "Password must be at least 6 characters and include a letter and a number.",
+            values: {
+              first_name: firstName,
+              last_name: lastName,
+              email: emailNorm,
+            },
+          });
+        }
+        return res.status(400).json({ error: "Password too weak" });
+      }
+
+      if (isFormContent && typeof confirm_password === "string" && passStr !== confirm_password) {
+        return res.status(400).render("register", {
+          error: "Passwords do not match.",
+          values: {
+            first_name: firstName,
+            last_name: lastName,
+            email: emailNorm,
+          },
+        });
+      }
+
+      const existingEmail = await prisma.userEmail
+        .findUnique({
+          where: { email: emailNorm },
+          include: { user: true },
+        })
+        .catch(() => null);
+      const reusableUser =
+        existingEmail && existingEmail.user && existingEmail.user.status !== "active"
+          ? existingEmail.user
+          : null;
+
+      if (existingEmail && !reusableUser) {
+        if (isFormContent) {
+          return res.status(409).render("register", {
+            error: "That email is already registered.",
+            values: {
+              first_name: firstName,
+              last_name: lastName,
+              email: emailNorm,
+            },
+          });
+        }
+        return res.status(409).json({ error: "Email already registered" });
+      }
+
+      const inviteCodeOrToken = String(inviteCodeRaw || inviteTokenRaw || "").trim();
+      const inviteRecord = await findInvite(inviteCodeOrToken);
+      const inviteValidation = validateInviteForEmail(inviteRecord, emailNorm);
+
+      if (!inviteRecord || !inviteValidation.ok) {
+        const reason = inviteValidation.reason || "invalid_invite";
+        const readable =
+          reason === "expired"
+            ? "Invite has expired."
+            : reason === "revoked"
+              ? "Invite has been revoked."
+              : reason === "exhausted"
+                ? "Invite has already been used."
+                : reason === "email_mismatch"
+                  ? "This invite is restricted to a different email."
+                  : reason === "domain_mismatch"
+                    ? "This invite is restricted to a different email domain."
+                    : "Invalid invite code.";
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: readable,
+            values: { first_name: firstName, last_name: lastName, email: emailNorm },
+          });
+        }
+        return res.status(400).json({ error: readable, code: reason });
+      }
+
+      const passwordHash = await hashPassword(passStr);
+      const now = new Date();
+      const userAgent = req.get("user-agent") || "";
+      const ipAddr = String(
+        req.ip ||
+          (Array.isArray(req.headers["x-forwarded-for"])
+            ? req.headers["x-forwarded-for"][0]
+            : req.headers["x-forwarded-for"]) ||
+          req.connection?.remoteAddress ||
+          req.socket?.remoteAddress ||
+          ""
+      );
+
+      try {
+        await prisma.$transaction(async (tx) => {
+          let userId = reusableUser?.id || null;
+          let emailRecord = existingEmail || null;
+
+          if (reusableUser) {
+            await tx.user.update({
+              where: { id: reusableUser.id },
+              data: {
+                firstName: firstName || reusableUser.firstName,
+                lastName: lastName || reusableUser.lastName,
+                passwordHash,
+                status: "active",
+                emailVerifiedAt: now,
+              },
+            });
+
+            emailRecord = await tx.userEmail.update({
+              where: { id: existingEmail.id },
+              data: {
+                isVerified: true,
+                verifiedAt: now,
+                isPrimary: true,
+              },
+            });
+
+            await tx.user.update({
+              where: { id: reusableUser.id },
+              data: { primaryEmailId: existingEmail.id },
+            });
+
+            userId = reusableUser.id;
+          } else {
+            const user = await tx.user.create({
+              data: {
+                name,
+                firstName,
+                lastName,
+                passwordHash,
+                status: "active",
+                emailVerifiedAt: now,
+              },
+              select: { id: true },
+            });
+
+            emailRecord = await tx.userEmail.create({
+              data: {
+                email: emailNorm,
+                userId: user.id,
+                isVerified: true,
+                verifiedAt: now,
+                isPrimary: true,
+              },
+              select: { id: true },
+            });
+
+            await tx.user.update({
+              where: { id: user.id },
+              data: { primaryEmailId: emailRecord.id },
+            });
+
+            userId = user.id;
+          }
+
+          const redemption = await redeemInviteForUser({
+            invite: inviteRecord,
+            userId,
+            email: emailNorm,
+            ip: ipAddr,
+            userAgent,
+            tx,
+          });
+
+          if (!redemption.ok) {
+            throw new Error(redemption.error || "Invite redemption failed");
+          }
+        });
+      } catch (err) {
+        logger.error("✗ Invite-based registration failed", err);
+        const msg = err?.message || "Registration failed.";
+        if (isFormContent) {
+          return res.status(400).render("register", {
+            error: msg,
+            values: { first_name: firstName, last_name: lastName, email: emailNorm },
+          });
+        }
+        return res.status(400).json({ error: msg });
+      }
+
+      if (isFormContent) {
+        return res.redirect(302, "/login?registered=1");
+      }
+      return res.status(201).json({ ok: true });
     }
 
     // Normalize inputs
@@ -448,19 +705,57 @@ export async function viewRegister(req, res) {
   // if URL param ?token=? is present, show invite registration mode
   // First validate the token, and if valid populate email and display name fields
   const token = typeof req.query.token === "string" ? req.query.token : "";
+  const inviteCodeRaw = typeof req.query.inviteCode === "string" ? req.query.inviteCode : undefined;
+  const inviteTokenRaw =
+    typeof req.query.inviteToken === "string" ? req.query.inviteToken : undefined;
+  const hasNewInvite = Boolean(String(inviteCodeRaw || inviteTokenRaw || "").trim());
 
   if (SIGNUP_POLICY !== "open") {
     logger.info("Registration is by invitation only.");
-    if (!token) {
+    if (!token && !hasNewInvite) {
       return res.redirect(302, "/login?signup_disabled=1");
     }
   }
 
-  if (!token) {
+  if (!token && !hasNewInvite) {
     return res.status(403).render("register", {
       // error: "Registration is by invitation only.",
       values: { first_name: "", last_name: "", email: "" },
     });
+  }
+
+  if (hasNewInvite) {
+    try {
+      const invite = await findInvite(inviteCodeRaw || inviteTokenRaw);
+      const status = deriveInviteStatus(invite);
+      if (!invite || status.status !== "active") {
+        return res.status(400).render("register", {
+          error: "Invalid or expired invite link.",
+          values: { first_name: "", last_name: "", email: "" },
+        });
+      }
+
+      const emailPrefill = invite.allowedEmail || "";
+      return res.render("register", {
+        invite_mode: true,
+        inviteCode: inviteCodeRaw || inviteTokenRaw,
+        success: "Invitation accepted. Please complete your registration.",
+        lockEmail: Boolean(emailPrefill),
+        values: {
+          first_name: "",
+          last_name: "",
+          email: emailPrefill,
+        },
+      });
+    } catch (err) {
+      return res.status(500).render("error", {
+        code: 500,
+        message: "Oops!",
+        description: "Failed to load registration form",
+        error: err?.stack || err?.message || String(err),
+        nodeEnv: process.env.NODE_ENV,
+      });
+    }
   }
 
   try {
@@ -508,6 +803,7 @@ export async function viewRegister(req, res) {
       invite_mode: true,
       token,
       success: "Invitation accepted. Please complete your registration.",
+      lockEmail: true,
       values: {
         first_name: invitedUser.firstName || "",
         last_name: invitedUser.lastName || "",
