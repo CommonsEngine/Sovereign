@@ -1,17 +1,11 @@
 {
   "private": true,
   "name": "@sovereign/platform",
-  "version": "0.9.8",
+  "version": "0.10.0",
   "description": "Core runtime and service framework for the Sovereign platform",
   "license": "AGPL-3.0",
   "main": "./index.cjs",
   "type": "module",
-  "manifest": {
-    "title": "Sovereign",
-    "tagline": "Reclaim your digital freedom.",
-    "description": "Sovereign is a privacy-first, open-source collaboration and productivity suite that empowers individuals and organizations to take control of their digital lives. By providing a decentralized and federated platform, Sovereign enables users to manage their data, communicate securely, and collaborate effectively while prioritizing privacy and self-determination.",
-    "main": "./src/bootstrap.js"
-  },
   "scripts": {
     "prepare:env": "cp .env.example .env",
     "prepare:db": "node ./scripts/database-prepare.mjs",
