@@ -9,8 +9,20 @@
 
     {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
+      {{#if pluginShare.canView}}
+        {{> modal/modal-runtime}}
+        {{> modal/share-project}}
+      {{/if}}
       {{#if showHeader}} {{> header}} {{/if}}
-      <section id="plugin-root" class="sv-container">
+      <section
+        id="plugin-root"
+        class="sv-container"
+        {{#if pluginShare.projectId}}data-project-id="{{pluginShare.projectId}}"{{/if}}
+        {{#if pluginShare.role}}data-share-role="{{pluginShare.role}}"{{/if}}
+        {{#if pluginShare.canView}}data-share-can-view="{{pluginShare.canView}}"{{/if}}
+        {{#if pluginShare.canManage}}data-share-can-manage="{{pluginShare.canManage}}"{{/if}}
+        {{#if pluginShare.apiBase}}data-share-api-base="{{pluginShare.apiBase}}"{{/if}}
+      >
         {{#if pluginMarkup}} {{{pluginMarkup}}} {{else}}
         <section>
           <h3>Loading plugin…</h3>

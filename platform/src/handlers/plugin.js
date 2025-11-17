@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import path from "node:path";
 import fs from "fs/promises";
 
@@ -100,11 +101,15 @@ async function loadPluginHeaderTemplate(namespace, pluginRoot) {
 
 function renderPluginHeader(template, context = {}) {
   if (!template) return null;
+  const shareBtn = context?.share?.canView
+    ? `<button type="button" class="chip button button--primary" data-modal-open="share-project" data-share-trigger>Share</button>`
+    : "";
   const replacements = {
     "project.name": context?.project?.name || "",
     "project.id": context?.project?.id || "",
     "plugin.name": context?.plugin?.name || "",
     "plugin.namespace": context?.plugin?.namespace || "",
+    "share.button": shareBtn,
   };
   let output = template;
   Object.entries(replacements).forEach(([key, value]) => {
@@ -178,6 +183,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
     const pluginRoot = path.join(process.env.PLUGINS_DIR, namespace);
     const pluginHeaderTemplate = await loadPluginHeaderTemplate(namespace, pluginRoot);
     const pluginHeader = renderPluginHeader(pluginHeaderTemplate, { plugin });
+    const pluginShare = null;
 
     // TODO: Override res.locals.head for html document meta
     const baseStyles = [];
@@ -188,6 +194,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
       pluginMarkup: "",
       pluginHead: "",
       pluginHeader,
+      pluginShare,
       styles: baseStyles,
       scripts: [],
       inlineScripts: "",
@@ -274,6 +281,20 @@ export async function renderSPAModule(req, res, _, { plugin }) {
       inlineScriptBlocks.push(...devScriptTags);
     }
 
+    if (pluginShare?.canView) {
+      inlineScriptBlocks.push(
+        `<script>(function(){const scope=document.getElementById("plugin-root");const cfg=${JSON.stringify(
+          {
+            projectId: pluginShare.projectId,
+            canView: pluginShare.canView,
+            canManage: pluginShare.canManage,
+            apiBase: pluginShare.apiBase,
+            role: pluginShare.role,
+          }
+        )}; if(!scope) return; scope.dataset.projectId = cfg.projectId || ""; scope.dataset.shareRole = cfg.role || ""; scope.dataset.shareCanView = String(!!cfg.canView); scope.dataset.shareCanManage = String(!!cfg.canManage); scope.dataset.shareApiBase = cfg.apiBase || ""; if(!cfg.canView) return; import("/js/utils/project-share.js").then(function(mod){var init = mod && mod.initProjectShareModal; if(typeof init !== "function") return; init({ scope: scope, projectId: cfg.projectId, canView: true, canManage: !!cfg.canManage, apiBase: cfg.apiBase, modal: document.querySelector('[data-modal=\"share-project\"]') });}).catch(function(err){console.error("project share init failed", err);});})();</script>`
+      );
+    }
+
     shellModel.inlineScripts = inlineScriptBlocks.join("\n");
     shellModel.styles = unique(shellModel.styles);
     shellModel.scripts = unique(shellModel.scripts);
@@ -346,6 +367,14 @@ export async function renderSPA(req, res, _, { plugins }) {
     const namespace = project.type;
     const plugin = plugins?.[namespace];
     const webEntry = plugin?.entryPoints?.web || null;
+    const role = projectContributions?.role || null;
+    const pluginShare = {
+      projectId,
+      role,
+      canView: ["owner", "editor"].includes(role || ""),
+      canManage: role === "owner",
+      apiBase: `/api/projects/${encodeURIComponent(projectId)}/shares`,
+    };
 
     if (!plugin) {
       return res.status(404).render("error", {
@@ -370,7 +399,11 @@ export async function renderSPA(req, res, _, { plugins }) {
         ? path.resolve(path.dirname(webEntry), plugin.framework === "react" ? ".." : ".")
         : null);
     const pluginHeaderTemplate = await loadPluginHeaderTemplate(namespace, pluginRoot);
-    const pluginHeader = renderPluginHeader(pluginHeaderTemplate, { plugin, project });
+    const pluginHeader = renderPluginHeader(pluginHeaderTemplate, {
+      plugin,
+      project,
+      share: pluginShare,
+    });
 
     if (!pluginRoot) {
       logger.error(`✗ Missing plugin root for namespace "${namespace}"`);
@@ -390,6 +423,7 @@ export async function renderSPA(req, res, _, { plugins }) {
       pluginMarkup: "",
       pluginHead: "",
       pluginHeader,
+      pluginShare,
       styles: baseStyles,
       scripts: [],
       inlineScripts: "",
@@ -477,6 +511,20 @@ export async function renderSPA(req, res, _, { plugins }) {
     );
     if (devScriptTags.length) {
       inlineScriptBlocks.push(...devScriptTags);
+    }
+
+    if (pluginShare?.canView) {
+      inlineScriptBlocks.push(
+        `<script>(function(){const scope=document.getElementById("plugin-root");const cfg=${JSON.stringify(
+          {
+            projectId: pluginShare.projectId,
+            canView: pluginShare.canView,
+            canManage: pluginShare.canManage,
+            apiBase: pluginShare.apiBase,
+            role: pluginShare.role,
+          }
+        )}; if(!scope) return; scope.dataset.projectId = cfg.projectId || ""; scope.dataset.shareRole = cfg.role || ""; scope.dataset.shareCanView = String(!!cfg.canView); scope.dataset.shareCanManage = String(!!cfg.canManage); scope.dataset.shareApiBase = cfg.apiBase || ""; if(!cfg.canView) return; import("/js/utils/project-share.js").then(function(mod){var init = mod && mod.initProjectShareModal; if(typeof init !== "function") return; init({ scope: scope, projectId: cfg.projectId, canView: true, canManage: !!cfg.canManage, apiBase: cfg.apiBase, modal: document.querySelector('[data-modal="share-project"]') });}).catch(function(err){console.error("project share init failed", err);});})();</script>`
+      );
     }
 
     shellModel.inlineScripts = inlineScriptBlocks.join("\n");
