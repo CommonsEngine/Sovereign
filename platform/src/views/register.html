@@ -18,6 +18,7 @@
             {{#if success}}<div class="alert alert--success">{{success}}</div>{{/if}}
             {{#if error}}<div class="alert alert--error">{{error}}</div>{{/if}}
             {{#if token}}<input type="hidden" name="token" value="{{token}}" />{{/if}}
+            {{#if inviteCode}}<input type="hidden" name="inviteCode" value="{{inviteCode}}" />{{/if}}
             <div class="field">
               <label for="first_name">First Name</label>
               <input
@@ -27,7 +28,6 @@
                 value="{{values.first_name}}"
                 class="input"
                 placeholder="eg. John"
-                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>
@@ -40,7 +40,6 @@
                 value="{{values.last_name}}"
                 class="input"
                 placeholder="eg. Doe"
-                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>
@@ -53,7 +52,7 @@
                 value="{{values.email}}"
                 class="input"
                 placeholder="eg. john@example.com"
-                {{#if invite_mode}}readonly aria-readonly="true"{{/if}}
+                {{#if lockEmail}}readonly aria-readonly="true"{{/if}}
                 required
               />
             </div>

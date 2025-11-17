@@ -54,6 +54,7 @@ const baseTemplate = Object.freeze({
   PLUGIN_CAPABILITIES_SIGNATURE: pluginCapabilities.signature || null,
   PLUGIN_CAPABILITIES: pluginCapabilities.definitions || [],
   APP_URL: process.env.APP_URL || "http://localhost:3000",
+  APP_SECRET: process.env.APP_SECRET || "insecure-dev-secret", // used for HMAC/token derivation
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),
   AUTH_ARGON2_MEMORY: Number(process.env.AUTH_ARGON2_MEMORY ?? 19456),
@@ -122,6 +123,8 @@ const VERSION_KEY = "appsettings";
 const VERSION_CHECK_INTERVAL_MS = 5_000;
 
 const PLATFORM_SCOPE = "platform";
+
+const SKIP_ENV_REFRESH = process.env.SV_SKIP_ENV_REFRESH === "1";
 
 let cachedVersion = null;
 let lastVersionCheckAt = 0;
@@ -389,6 +392,10 @@ const mapRowsByScope = (rows) => {
 };
 
 const refreshSettings = async (force = false) => {
+  if (SKIP_ENV_REFRESH) {
+    settingsLoaded = true;
+    return;
+  }
   const now = Date.now();
   if (!force && settingsLoaded && now - lastVersionCheckAt < VERSION_CHECK_INTERVAL_MS) {
     return;
@@ -413,6 +420,8 @@ const refreshSettings = async (force = false) => {
 };
 
 const scheduleRefresh = (force = false) => {
+  if (SKIP_ENV_REFRESH) return;
+
   if (force) {
     if (refreshPromise) {
       refreshPromise = refreshPromise
