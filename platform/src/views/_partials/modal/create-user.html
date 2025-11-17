@@ -114,11 +114,8 @@
         </p>
         <div class="copyrow">
           <input type="text" class="input" data-invite-url readonly />
-          <button type="button" class="chip" data-copy-invite>Copy</button>
-        </div>
-        <div class="copyrow" data-code-row style="display: none">
-          <input type="text" class="input" data-invite-code readonly />
-          <button type="button" class="chip" data-copy-code>Copy code</button>
+          <button type="button" class="chip" data-copy-invite>Copy link</button>
+          <button type="button" class="chip" data-copy-code style="display: none">Copy code</button>
         </div>
         <p class="sv-modal__hint" data-invite-meta style="display: none"></p>
       </div>
@@ -149,6 +146,8 @@
       const expiresEl = root.querySelector("#user-expires");
       const allowedEmailEl = root.querySelector("#user-allowed-email");
       const allowedDomainEl = root.querySelector("#user-allowed-domain");
+      const allowedEmailField = allowedEmailEl?.closest(".sv-modal__field");
+      const allowedDomainField = allowedDomainEl?.closest(".sv-modal__field");
       const submitBtn = root.querySelector("[data-modal-submit]");
       const resultBox = root.querySelector("[data-modal-result]");
       const inviteInput = root.querySelector("[data-invite-url]");
@@ -157,7 +156,6 @@
       const inviteIntro = root.querySelector("[data-result-intro]");
       const copyBtn = root.querySelector("[data-copy-invite]");
       const copyCodeBtn = root.querySelector("[data-copy-code]");
-      const codeRow = root.querySelector("[data-code-row]");
 
       function resetForm() {
         if (form) form.reset();
@@ -176,7 +174,7 @@
           inviteIntro.textContent =
             "User created. Share this link with the user to complete registration:";
         }
-        if (codeRow) codeRow.style.display = "none";
+        if (copyCodeBtn) copyCodeBtn.style.display = "none";
         submitBtn?.removeAttribute("disabled");
         updateModeVisibility();
       }
@@ -188,6 +186,8 @@
         const emailField = emailEl?.closest(".sv-modal__field");
         if (maxUsesField) maxUsesField.style.display = mode === "multi" ? "block" : "none";
         if (expiresField) expiresField.style.display = mode === "single" ? "none" : "block";
+        if (allowedEmailField) allowedEmailField.style.display = isSingle ? "none" : "block";
+        if (allowedDomainField) allowedDomainField.style.display = isSingle ? "none" : "block";
         if (nameField) nameField.style.display = isSingle ? "block" : "none";
         if (emailField) emailField.style.display = isSingle ? "block" : "none";
         if (isSingle) {
@@ -283,9 +283,11 @@
             data = await resp.json().catch(() => ({}));
             if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`);
 
-            if (inviteInput) inviteInput.value = data?.inviteUrl || "";
+            if (inviteInput)
+              inviteInput.value = data?.inviteUrl || data?.inviteCode || data?.code || "";
             if (inviteCodeInput) inviteCodeInput.value = data?.inviteCode || data?.code || "";
-            if (codeRow) codeRow.style.display = data?.inviteCode || data?.code ? "flex" : "none";
+            if (copyCodeBtn)
+              copyCodeBtn.style.display = data?.inviteCode || data?.code ? "inline-flex" : "none";
             if (inviteMeta) {
               inviteMeta.textContent = "Single-use invite; code also shown for fallback.";
               inviteMeta.style.display = "block";
@@ -311,7 +313,7 @@
             const invite = data?.invite || {};
             if (inviteInput) inviteInput.value = code;
             if (inviteCodeInput) inviteCodeInput.value = code;
-            if (codeRow) codeRow.style.display = "flex";
+            if (copyCodeBtn) copyCodeBtn.style.display = code ? "inline-flex" : "none";
             if (inviteIntro) {
               inviteIntro.textContent = "Share this invite code with recipients:";
             }
