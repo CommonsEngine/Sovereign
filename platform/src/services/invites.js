@@ -270,6 +270,11 @@ export async function createInvite({
   allowedEmail = null,
   allowedDomain = null,
 }) {
+  if (!prisma?.invite?.create) {
+    throw new Error(
+      "Invite model unavailable in Prisma client; run prisma:compose and prisma:generate/migrate in this environment."
+    );
+  }
   if (!createdByUserId) {
     throw new Error("createdByUserId is required to create an invite");
   }
