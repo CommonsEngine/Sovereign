@@ -34,7 +34,17 @@ import { cleanupExpiredGuestUsers, GUEST_RETENTION_MS } from "$/utils/guestClean
 import "$/utils/hbsHelpers.js";
 
 const config = env();
-const { __publicdir, __templatedir, __datadir, PORT, NODE_ENV, IS_PROD, APP_VERSION } = config;
+const {
+  __publicdir,
+  __templatedir,
+  __datadir,
+  PORT,
+  NODE_ENV,
+  IS_PROD,
+  APP_VERSION,
+  BODY_PARSER_JSON_LIMIT,
+  BODY_PARSER_URLENCODED_LIMIT,
+} = config;
 const GUEST_CLEANUP_INTERVAL_MS = GUEST_RETENTION_MS;
 
 export default async function createServer(manifest) {
@@ -95,8 +105,11 @@ export default async function createServer(manifest) {
   );
   app.use(compression());
   app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: true }));
+  const jsonBodyLimit = BODY_PARSER_JSON_LIMIT ?? "10mb";
+  const urlencodedBodyLimit = BODY_PARSER_URLENCODED_LIMIT ?? jsonBodyLimit;
+
+  app.use(express.json({ limit: jsonBodyLimit }));
+  app.use(express.urlencoded({ extended: true, limit: urlencodedBodyLimit }));
   app.use(cookieParser());
   app.use(secure);
 

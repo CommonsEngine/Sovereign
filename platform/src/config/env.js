@@ -9,6 +9,10 @@ const pluginCapabilities = manifest.pluginCapabilities || {};
 
 // TODO: Combine with Database values
 
+const DEFAULT_BODY_PARSER_JSON_LIMIT = process.env.BODY_PARSER_JSON_LIMIT || "10mb";
+const DEFAULT_BODY_PARSER_URLENCODED_LIMIT =
+  process.env.BODY_PARSER_URLENCODED_LIMIT || DEFAULT_BODY_PARSER_JSON_LIMIT;
+
 const isProd = (process.env.NODE_ENV || "development") === "production";
 
 const preferDist = isProd || process.env.PREFER_DIST_BUILD === "true";
@@ -104,6 +108,9 @@ const baseTemplate = Object.freeze({
   PORT: Number(process.env.PORT) || 3000,
 
   IS_PROD: isProd,
+
+  BODY_PARSER_JSON_LIMIT: DEFAULT_BODY_PARSER_JSON_LIMIT,
+  BODY_PARSER_URLENCODED_LIMIT: DEFAULT_BODY_PARSER_URLENCODED_LIMIT,
 
   CAPABILITY_FILE_UPLOAD_ENABLED: toBool(process.env.CAPABILITY_FILE_UPLOAD_ENABLED, !isProd),
   REALTIME_ENABLED: toBool(process.env.REALTIME_ENABLED, true),
