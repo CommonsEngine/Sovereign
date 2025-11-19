@@ -14,6 +14,7 @@ import { buildPluginRoutes } from "$/ext-host/build-routes.js";
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
 import createRealtimeHub from "$/ws/server.js";
+import { setRealtimeHubInstance } from "$/ws/registry.js";
 
 import secure from "$/middlewares/secure.js";
 import { requireAuth, disallowIfAuthed } from "$/middlewares/auth.js";
@@ -297,6 +298,7 @@ export default async function createServer(manifest) {
         path: config.REALTIME_WS_PATH,
       });
       if (realtimeHub) {
+        setRealtimeHubInstance(realtimeHub);
         logger.info(`  ➜  Realtime hub listening on ${realtimeHub.path}`);
       }
     }

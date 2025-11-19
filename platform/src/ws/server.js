@@ -69,12 +69,69 @@ export function createRealtimeHub(httpServer, options = {}) {
   const stats = {
     totalConnections: 0,
   };
+  const channelSubscribers = new Map();
+  const messageHandlers = new Map();
 
+  const subscribeChannel = (client, channel) => {
+    if (!channel) return;
+    if (!client.channels) client.channels = new Set();
+    if (client.channels.has(channel)) return;
+    client.channels.add(channel);
+    if (!channelSubscribers.has(channel)) {
+      channelSubscribers.set(channel, new Set());
+    }
+    channelSubscribers.get(channel).add(client);
+  };
+
+  const unsubscribeChannel = (client, channel) => {
+    if (!channel || !channelSubscribers.has(channel)) return;
+    const subscribers = channelSubscribers.get(channel);
+    subscribers.delete(client);
+    if (!subscribers.size) {
+      channelSubscribers.delete(channel);
+    }
+    client.channels?.delete(channel);
+  };
+
+  const cleanupClientChannels = (client) => {
+    if (!client.channels) return;
+    for (const channel of Array.from(client.channels)) {
+      unsubscribeChannel(client, channel);
+    }
+  };
+
+  const broadcastChannel = (channel, payload, options = {}) => {
+    if (!channel) return;
+    const subscribers = channelSubscribers.get(channel);
+    if (!subscribers || !subscribers.size) return;
+    const packet =
+      typeof payload === "string" ? payload : serializePacket("channel", { channel, payload });
+    for (const client of subscribers) {
+      if (options.exclude === client) continue;
+      if (client.ws.readyState === WebSocket.OPEN) {
+        client.ws.send(packet);
+      }
+    }
+  };
+
+  const registerMessageHandler = (type, handler) => {
+    if (!type || typeof handler !== "function") return () => {};
+    messageHandlers.set(type, handler);
+    return () => {
+      messageHandlers.delete(type);
+    };
+  };
   const handleClientMessage = (client, raw) => {
     const data = typeof raw === "string" ? raw : raw.toString();
     const packet = safeJsonParse(data);
     if (!packet) {
       client.ws.send(serializePacket("error", { message: "Invalid JSON payload." }));
+      return;
+    }
+
+    const handler = messageHandlers.get(packet.type);
+    if (handler) {
+      handler(client, packet.payload || {});
       return;
     }
 
@@ -127,6 +184,7 @@ export function createRealtimeHub(httpServer, options = {}) {
           ws.on("message", (data) => handleClientMessage(client, data));
           ws.on("close", () => {
             clients.delete(client);
+            cleanupClientChannels(client);
             log.info(`[ws] client disconnected (${user.id})`);
           });
           ws.on("error", (err) => {
@@ -196,6 +254,10 @@ export function createRealtimeHub(httpServer, options = {}) {
     broadcast,
     publishToUser,
     close,
+    subscribeChannel,
+    unsubscribeChannel,
+    broadcastChannel,
+    registerMessageHandler,
   };
 }
 
