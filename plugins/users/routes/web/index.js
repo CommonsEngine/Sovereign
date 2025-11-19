@@ -125,9 +125,10 @@ async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
           take: 1,
         },
         projectContributions: {
-          where: { status: "active", role: "owner" },
+          where: { status: "active" },
           select: {
             projectId: true,
+            role: true,
             project: {
               select: {
                 tenantId: true,
@@ -192,10 +193,27 @@ async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
         ? formatDateTime(inviteToken.expiresAt)
         : { iso: "", display: "" };
       const inviteExpired = inviteToken ? toDate(inviteToken.expiresAt) < new Date() : false;
-      const projectsOwned = user.projectContributions?.length ?? 0;
+      const contributions = Array.isArray(user.projectContributions)
+        ? user.projectContributions
+        : [];
+      const projectsOwned = contributions.filter((c) => c.role === "owner").length;
+      const projectsCollaborating = contributions.length - projectsOwned;
+      const projectsTotal = contributions.length;
+      const projectSummaryParts = [];
+      if (projectsOwned) {
+        projectSummaryParts.push(`${projectsOwned} owned`);
+      }
+      if (projectsCollaborating) {
+        projectSummaryParts.push(`${projectsCollaborating} shared`);
+      }
+      const projectsSummary =
+        projectsTotal === 0
+          ? "No projects"
+          : `${projectsTotal} ${projectsTotal === 1 ? "project" : "projects"}${
+              projectSummaryParts.length ? ` (${projectSummaryParts.join(", ")})` : ""
+            }`;
       const projectsAssigned = projectsOwned;
-      const projectsSummary = `${projectsOwned} ${projectsOwned === 1 ? "project" : "projects"}`;
-      const tenantIds = tenantIdsFromContributions(user.projectContributions, tenantFallback);
+      const tenantIds = tenantIdsFromContributions(contributions, tenantFallback);
       const roleKeys = roles.map((role) => role.key).filter(Boolean);
 
       return {
