@@ -35,6 +35,8 @@ export async function buildPluginRoutes(app, manifest, config) {
       logger,
       path,
       defaultTenantId: config.DEFAULT_TENANT_ID ?? "tenant-0",
+      dataDir: config.__datadir,
+      rootDir: config.__rootdir,
     };
 
     const { context: capabilityContext, granted } = resolvePluginCapabilities(plugin, {
