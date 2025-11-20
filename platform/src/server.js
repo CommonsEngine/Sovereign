@@ -27,6 +27,7 @@ import * as authHandler from "$/handlers/auth/index.js";
 
 import apiProjects from "$/routes/api/projects.js";
 import apiInvites from "$/routes/api/invites.js";
+import apiAccount from "$/routes/api/account.js";
 
 import env from "$/config/env.js";
 
@@ -225,6 +226,7 @@ export default async function createServer(manifest) {
   // Project Routes
   app.use("/api/projects", apiProjects);
   app.use("/api/invites", apiInvites);
+  app.use("/api/account", apiAccount);
 
   await buildPluginRoutes(app, manifest, config);
 

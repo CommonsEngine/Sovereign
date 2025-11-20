@@ -284,6 +284,18 @@
       color var(--transition-base) var(--transition-easing-standard),
       box-shadow var(--transition-base) var(--transition-easing-standard);
   }
+  .sv-header__user-avatar[data-has-avatar="true"] svg {
+    display: none;
+  }
+  .sv-header__user-avatar[data-has-avatar="false"] .sv-header__user-avatar-img {
+    display: none;
+  }
+  .sv-header__user-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
   .sv-header__user-avatar > img {
     width: 100%;
     height: 100%;
@@ -831,6 +843,52 @@
   .sv-modal__button {
     /* uses your .button styles; this adds spacing consistency */
     --no-op: 0; /* workaround for empty rule */
+  }
+  .account-settings__section {
+    display: grid;
+    gap: var(--space-s, 12px);
+  }
+  .account-settings__picture {
+    display: flex;
+    align-items: center;
+    gap: var(--space-m, 16px);
+    flex-wrap: wrap;
+  }
+  .account-settings__picture-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-round);
+    border: 1px solid var(--color-border-primary);
+    background: var(--color-bg-muted);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .account-settings__picture-preview[data-picture-loaded="true"]
+    .account-settings__picture-placeholder {
+    display: none;
+  }
+  .account-settings__picture-preview[data-picture-loaded="true"] img {
+    display: block;
+  }
+  .account-settings__picture-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+  .account-settings__picture-placeholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    color: var(--color-text-secondary);
+  }
+  .account-settings__picture-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs, 6px);
   }
   /* Responsive */
   @media (max-width: 640px) {

@@ -9,10 +9,11 @@
 
     {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
+      {{> modal/modal-runtime}}
       {{#if pluginShare.canView}}
-        {{> modal/modal-runtime}}
         {{> modal/share-project}}
       {{/if}}
+      {{> modal/account-settings}}
       {{#if showHeader}} {{> header}} {{/if}}
       <section
         id="plugin-root"
@@ -31,6 +32,7 @@
         {{/if}}
       </section>
     </main>
+    {{> account-settings-script}}
     {{#if scripts}} {{#each scripts}}
     <script src="{{this}}" defer></script>
     {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
