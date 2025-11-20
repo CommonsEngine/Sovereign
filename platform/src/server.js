@@ -31,6 +31,7 @@ import apiProjects from "$/routes/api/projects.js";
 import apiInvites from "$/routes/api/invites.js";
 import apiPasskeys from "$/routes/api/passkeys.js";
 import apiTotp from "$/routes/api/totp.js";
+import apiAccount from "$/routes/api/account.js";
 
 import env from "$/config/env.js";
 
@@ -235,6 +236,7 @@ export default async function createServer(manifest) {
   app.use("/api/invites", apiInvites);
   app.use("/api/passkeys", apiPasskeys);
   app.use("/api/totp", apiTotp);
+  app.use("/api/account", apiAccount);
 
   await buildPluginRoutes(app, manifest, config);
 

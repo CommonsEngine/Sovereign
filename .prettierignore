@@ -6,8 +6,10 @@ prisma/reset.sh
 prisma/schema.prisma
 # Ignore Handlebars templates that use conditional attrs
 platform/src/views/layouts/spa/index.html
+platform/src/views/_partials/header.html
 platform/src/views/_partials/layout/head.html
 platform/src/views/_partials/sidebar.html
+platform/src/views/_partials/modal/account-settings.html
 platform/src/views/register.html
 plugins/**
 tools/plugin-templates/

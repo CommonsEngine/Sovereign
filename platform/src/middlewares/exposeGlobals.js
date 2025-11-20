@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import * as fs from "$/utils/fs.js";
+import env from "$/config/env.js";
 
 // TODO: Utilize config/head.js for these
 
@@ -67,6 +68,8 @@ const pluginAccessible = (module, pluginAccess) => {
 };
 
 export default function exposeGlobals(req, res, next) {
+  const config = env();
+
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     return next();
   }
@@ -111,6 +114,12 @@ export default function exposeGlobals(req, res, next) {
 
   res.locals.user = {
     name: req.user?.name || "guest",
+    firstName: req.user?.firstName ?? null,
+    lastName: req.user?.lastName ?? null,
+    email: req.user?.email ?? null,
+    pictureUrl: req.user?.pictureUrl ?? null,
+    locale: req.user?.locale ?? null,
+    timezone: req.user?.timezone ?? null,
     primaryRole: req.user?.role || null,
     roles: Array.isArray(req.user?.roles) ? req.user.roles : [],
   };
@@ -151,6 +160,13 @@ export default function exposeGlobals(req, res, next) {
   if (typeof res.locals.showSidebar === "undefined") {
     res.locals.showSidebar = activeModule ? activeModule?.ui?.layout?.sidebar !== false : true;
   }
+
+  res.locals.accountSettings = {
+    passwordMinLength: config.AUTH_PASSWORD_MIN_LENGTH,
+    supportedLocales: Array.isArray(config.LOCALES_SUPPORTED) ? config.LOCALES_SUPPORTED : [],
+    timezoneDefault: config.TIMEZONE_DEFAULT,
+    profilePictureMaxBytes: Number(config.PROFILE_PICTURE_MAX_BYTES ?? 0),
+  };
 
   next();
 }
