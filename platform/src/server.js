@@ -137,6 +137,10 @@ export default async function createServer(manifest) {
   // Enable template caching in production
   app.set("view cache", IS_PROD);
 
+  // Serve API docs (keeps index.html enabled for this subroute)
+  const apiDocsDir = path.join(__publicdir, "api-docs");
+  app.use("/api-docs", express.static(apiDocsDir));
+
   // Serve everything under /public at the root
   // TODO: Consider moving this into a small utility like utils/cacheHeaders.js
   // since we’ll likely reuse it for plugin assets.
@@ -192,6 +196,11 @@ export default async function createServer(manifest) {
       },
     })
   );
+
+  // Serve generated OpenAPI spec
+  app.get("/openapi.json", (req, res) => {
+    res.sendFile(path.join(manifest.__rootdir, "openapi.json"));
+  });
 
   if (!IS_PROD) {
     // --- Demo routes ---

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sovereign API Docs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0b1021;
+      }
+      .header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 12px 20px;
+        background: #0f172a;
+        color: #e2e8f0;
+        border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: 0.02em;
+      }
+      .header a {
+        color: #38bdf8;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+      }
+      .redoc-container {
+        height: 100%;
+        width: 100%;
+        margin-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Sovereign API</h1>
+      <a href="/openapi.json">Download JSON</a>
+    </div>
+    <div id="redoc-container" class="redoc-container"></div>
+    <script src="/api-docs/redoc.standalone.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.Redoc) {
+          window.Redoc.init("/openapi.json", {}, document.getElementById("redoc-container"));
+        } else {
+          console.error("Redoc failed to load.");
+        }
+      });
+    </script>
+  </body>
+</html>

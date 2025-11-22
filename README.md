@@ -426,6 +426,11 @@ Ensure you are logged in (`docker login ghcr.io`) with a PAT that has `write:pac
 
 See [Managing releases in a repository](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository)
 
+### API docs & mock server
+
+- Docs: generated `openapi.json` is served at `/openapi.json` (app) and a Redoc viewer lives at `/api-docs` once the server is running.
+- Mock server: `yarn mock:api` (uses Prism) → serves the spec on http://127.0.0.1:4010.
+
 ## Contributing
 
 See [Contributing to CommonsEngine/Sovereign](https://github.com/CommonsEngine/.github/blob/main/CONTRIBUTING.md).
