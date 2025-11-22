@@ -32,7 +32,7 @@
     "postbuild": "yarn build:manifest",
     "dev": "yarn workspace @sovereign/platform dev",
     "start": "yarn workspace @sovereign/platform start",
-    "start:mcp": "node ./packages/mcp-server/server.mjs",
+    "start:mcp": "node ./tools/mcp-server/server.mjs",
     "format:check": "prettier --check .",
     "format": "prettier --ignore-path .prettierignore --write .",
     "lint:check": "eslint .",
