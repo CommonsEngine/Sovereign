@@ -7,7 +7,7 @@ FROM ${NODE_IMAGE} AS base
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl git openssh-client tini \
  && rm -rf /var/lib/apt/lists/*
@@ -49,7 +49,7 @@ ENV DATABASE_URL="file:/app/data/sovereign.db"
 
 # Corepack for runtime (keeps Yarn available for scripts)
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN --mount=type=cache,target=/var/cache/apt \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates tini \
  && rm -rf /var/lib/apt/lists/* \
