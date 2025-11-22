@@ -37,3 +37,11 @@ Handlebars.registerHelper("or", function (...args) {
  * Optional: you can export to reuse if needed
  */
 export default Handlebars.helpers;
+
+Handlebars.registerHelper("json", function (value) {
+  try {
+    return new Handlebars.SafeString(JSON.stringify(value ?? {}));
+  } catch {
+    return new Handlebars.SafeString("{}");
+  }
+});

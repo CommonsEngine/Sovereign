@@ -19,7 +19,7 @@
             </div>
           </header>
 
-          {{> modal/modal-runtime}} {{> modal/create-project}}
+          {{> modal/modal-runtime}} {{> modal/create-project}} {{> modal/account-settings}}
           <div id="grid" class="sv-page__grid sv-project__grid">
             <button
               type="button"
@@ -52,5 +52,6 @@
       src="/js/sv_pg_index.js?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}"
       defer
     ></script>
+    {{> account-settings-script}}
   </body>
 </html>

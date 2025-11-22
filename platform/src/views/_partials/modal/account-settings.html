@@ -1,0 +1,189 @@
+<div
+  data-modal="account-settings"
+  class="sv-modal"
+  hidden
+  data-account-settings='{{{json accountSettings}}}'
+>
+  <div class="sv-modal__backdrop" data-modal-close aria-hidden="true"></div>
+  <div
+    class="sv-modal__dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="account-settings-title"
+  >
+    <header class="sv-modal__header">
+      <h3 id="account-settings-title" class="sv-modal__title">Account settings</h3>
+    </header>
+    <div class="sv-modal__body">
+      <section class="account-settings__section" aria-labelledby="account-settings-avatar-title">
+        <div>
+          <h4 id="account-settings-avatar-title" class="sv-modal__label">
+            Profile photo
+          </h4>
+          <p class="sv-form__field-helptext">
+            Upload a picture that represents you across the workspace.
+          </p>
+        </div>
+        <div class="account-settings__picture">
+          <div
+            class="account-settings__picture-preview"
+            data-account-picture-preview
+            data-picture-loaded="{{#if user.pictureUrl}}true{{else}}false{{/if}}"
+          >
+            <span class="account-settings__picture-placeholder" aria-hidden="true">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="2" />
+                <path
+                  d="M4 20c0-4 4-6 8-6s8 2 8 6"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <img
+              alt=""
+              aria-hidden="true"
+              {{#if user.pictureUrl}}src="{{user.pictureUrl}}"{{/if}}
+            />
+          </div>
+          <div class="account-settings__picture-actions">
+            <button type="button" class="chip button" data-account-upload-button>
+              Upload photo
+            </button>
+            <input type="file" accept="image/*" data-account-picture-input hidden />
+            <span class="sv-form__field-helptext" data-account-upload-hint></span>
+          </div>
+        </div>
+        <div class="sv-modal__alert sv-modal__alert--error" data-account-alert="picture-error"></div>
+        <div
+          class="sv-modal__alert sv-modal__alert--success"
+          data-account-alert="picture-success"
+        ></div>
+      </section>
+
+      <section class="account-settings__section" aria-labelledby="account-settings-basic-title">
+        <div>
+          <h4 id="account-settings-basic-title" class="sv-modal__label">Basic details</h4>
+          <p class="sv-form__field-helptext">
+            Keep your profile name, locale, and timezone up to date.
+          </p>
+        </div>
+        <form data-account-basic-form class="sv-form" novalidate>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-first-name">First name</label>
+            <input
+              id="account-first-name"
+              class="sv-modal__input input"
+              type="text"
+              maxlength="64"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-last-name">Last name</label>
+            <input
+              id="account-last-name"
+              class="sv-modal__input input"
+              type="text"
+              maxlength="64"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-locale">Locale</label>
+            <input
+              id="account-locale"
+              class="sv-modal__input input"
+              type="text"
+              placeholder="en-US"
+              list="account-supported-locales"
+              data-account-locale
+            />
+            <datalist id="account-supported-locales">
+              {{#if accountSettings.supportedLocales}}
+                {{#each accountSettings.supportedLocales}}
+                  <option value="{{this}}"></option>
+                {{/each}}
+              {{/if}}
+            </datalist>
+          </div>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-timezone">Time zone</label>
+            <select id="account-timezone" class="sv-modal__input input" data-account-timezone>
+              <option value="">Select time zone</option>
+            </select>
+          </div>
+          <div class="sv-modal__alert sv-modal__alert--error" data-account-alert="basic-error"></div>
+          <div
+            class="sv-modal__alert sv-modal__alert--success"
+            data-account-alert="basic-success"
+          ></div>
+          <div class="sv-form__actions">
+            <button
+              type="submit"
+              class="chip chip--primary button button--primary"
+              data-account-basic-submit
+            >
+              Save changes
+            </button>
+            <button type="button" class="chip button" data-modal-close>
+              Close
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="account-settings__section" aria-labelledby="account-settings-security-title">
+        <div>
+          <h4 id="account-settings-security-title" class="sv-modal__label">Security</h4>
+          <p class="sv-form__field-helptext">Update your password anytime.</p>
+        </div>
+        <form data-account-password-form class="sv-form" novalidate>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-current-password">Current password</label>
+            <input
+              id="account-current-password"
+              class="sv-modal__input input"
+              type="password"
+              autocomplete="current-password"
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-new-password">New password</label>
+            <input
+              id="account-new-password"
+              class="sv-modal__input input"
+              type="password"
+              autocomplete="new-password"
+              data-account-password-new
+            />
+          </div>
+          <div class="sv-form__field">
+            <label class="sv-modal__label" for="account-confirm-password">Confirm new password</label>
+            <input
+              id="account-confirm-password"
+              class="sv-modal__input input"
+              type="password"
+              autocomplete="new-password"
+            />
+          </div>
+          <p class="sv-form__field-helptext" data-account-password-hint></p>
+          <div class="sv-modal__alert sv-modal__alert--error" data-account-alert="password-error"></div>
+          <div
+            class="sv-modal__alert sv-modal__alert--success"
+            data-account-alert="password-success"
+          ></div>
+          <div class="sv-form__actions">
+            <button
+              type="submit"
+              class="chip chip--primary button button--primary"
+              data-account-password-submit
+            >
+              Update password
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </div>
+</div>

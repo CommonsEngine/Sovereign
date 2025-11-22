@@ -66,6 +66,7 @@ const baseTemplate = Object.freeze({
   AUTH_PASSWORD_MIN_LENGTH: Number(process.env.AUTH_PASSWORD_MIN_LENGTH ?? 8),
   AUTH_SESSION_COOKIE_NAME: process.env.AUTH_SESSION_COOKIE_NAME || "svg_session",
   AUTH_SESSION_TTL_HOURS: Number(process.env.AUTH_SESSION_TTL_HOURS ?? 720),
+  PROFILE_PICTURE_MAX_BYTES: Number(process.env.PROFILE_PICTURE_MAX_BYTES ?? 2 * 1024 * 1024),
 
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
