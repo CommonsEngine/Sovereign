@@ -387,24 +387,27 @@ Environment variables come from your shell or an external manager (e.g., `/etc/p
 
 #### Docker Setup
 
-> ⚠️ Docker setup is being revamped to accomodate new architecture changes.
-
-A multi-stage `Dockerfile` is provided to build and run Sovereign from a container. The image bundles the production build and Prisma client; SQLite data is stored under `/app/data`.
+A multi-stage `Dockerfile` is provided. The image runs `yarn prepare:all` during build (migrations + seeds + manifest/openapi) and ships a pre-seeded SQLite DB at `/app/data/sovereign.db`. Port 4000 is the default.
 
 ##### Build & run locally
 
 ```bash
 docker build -t sovereign:local .
 docker rm -f sovereign 2>/dev/null || true
-mkdir -p ./data
-# run with mounted volume for sqlite persistence
-docker run --rm \
+docker volume rm sovereign-data 2>/dev/null || true
+docker volume create sovereign-data
+
+docker run -d --name sovereign \
   -p 4000:4000 \
-  -v $(pwd)/data:/app/data \
-  --env-file .env \
+  -e PORT=4000 \
+  -v sovereign-data:/app/data \
   sovereign:local
+
 docker logs -f sovereign
 ```
+
+- First run populates the volume with the baked DB (includes non-dev test user `heimdallr@sovereign.local / ffp@2025`).
+- If you bind-mount `./data`, ensure it exists and is writable; an empty mount hides the baked DB.
 
 ##### Publish to GHCR
 
