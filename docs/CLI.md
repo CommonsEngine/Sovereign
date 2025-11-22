@@ -55,7 +55,7 @@ Performs **first‑run detection**:
 sv serve --force
 
 # Fast restart with a custom port probe
-sv serve --port 5000
+sv serve --port 4000
 ```
 
 ### `sv serve rebuild [--no-health] [--port &lt;n&gt;] [--ecosystem &lt;path&gt;]`

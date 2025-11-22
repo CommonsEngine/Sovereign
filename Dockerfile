@@ -1,82 +1,86 @@
 # syntax=docker/dockerfile:1.7
 
-# ---------- Base dependencies ----------
-FROM node:22-bookworm-slim AS base
+ARG NODE_IMAGE=node:22-bookworm-slim
 
-# set workdir and install common deps
+# ---------- Base image with tooling ----------
+FROM ${NODE_IMAGE} AS base
+
 WORKDIR /app
+
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update \
- && apt-get install -y --no-install-recommends ca-certificates curl git tini openssl \
+ && apt-get install -y --no-install-recommends ca-certificates curl git openssh-client tini \
  && rm -rf /var/lib/apt/lists/*
 
 # Use Corepack to pin Yarn deterministically
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
-# ---------- Dependencies layer ----------
-FROM base AS deps
+# ---------- Builder ----------
+FROM base AS build
 
-# Copy package manager files
+ARG BUILD_SHA=dev
+ARG BUILD_TAG=local
+
+# Install dependencies (cached). Force dev deps to be present even though we later build for production.
 COPY package.json yarn.lock ./
-
-# IMPORTANT: skip lifecycle scripts here (prevents running prepare/build before sources exist)
-# RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
-#    yarn install --frozen-lockfile --ignore-scripts
-
-# Disable optional deps (argon2 has native build, still install)
-RUN yarn install --frozen-lockfile
-
-# ---------- Build layer ----------
-FROM deps AS build
-
-# Reuse node_modules from deps
-COPY --from=deps /app/node_modules ./node_modules
-# Bring in source (exclude by .dockerignore later)
 COPY . .
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    NODE_ENV=development yarn install --frozen-lockfile
 
-# Generate prisma client & build sources
-RUN yarn prisma generate \
- && yarn build
-
-# ---------- Production runtime ----------
-FROM node:22-bookworm-slim AS runtime
-
-WORKDIR /app
+# Prepare Prisma schema, migrations, seeds (writes sqlite DB under /app/data)
 ENV NODE_ENV=production
-ENV PORT=5000
+ENV DATABASE_URL=file:/app/data/sovereign.db
+RUN mkdir -p /app/data \
+ && yarn prepare:all
+
+# Build workspaces and manifest/openapi (prebuild hook regenerates manifest)
+RUN NODE_ENV=production yarn build
+
+# ---------- Runtime ----------
+FROM ${NODE_IMAGE} AS runtime
+ARG BUILD_SHA=dev
+ARG BUILD_TAG=local
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=4000
 ENV DATABASE_URL="file:/app/data/sovereign.db"
 
-# Corepack for Yarn in runtime too (optional if you don't use yarn here)
+# Corepack for runtime (keeps Yarn available for scripts)
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates tini \
+ && rm -rf /var/lib/apt/lists/* \
+ && corepack enable && corepack prepare yarn@1.22.22 --activate
 
-# Bring built app and prisma **artifacts** (client + engine) from build
-# Copy the platform app since the runtime entry is /platform/index.cjs
-COPY --from=build /app/platform ./platform
-COPY --from=build /app/prisma ./prisma
+LABEL org.opencontainers.image.revision="${BUILD_SHA}" \
+      org.opencontainers.image.version="${BUILD_TAG}"
 
-# Copy Prisma client output generated during build (so we don't need prisma CLI now)
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
-
-# Copy node_modules from build (matches built artifacts and avoids registry lookups)
-COPY --from=build /app/node_modules ./node_modules
-
-# Copy build artifacts and required folders
+# Copy built artifacts and runtime assets
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/yarn.lock ./yarn.lock
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/platform ./platform
+COPY --from=build /app/plugins ./plugins
+COPY --from=build /app/tools ./tools
+COPY --from=build /app/data ./data
+COPY --from=build /app/platform/prisma ./prisma
+COPY --from=build /app/manifest.json ./manifest.json
+COPY --from=build /app/openapi.json ./openapi.json
 
-# Prepare persistent data directory for sqlite
-RUN mkdir -p /app/data \
-    && chown node:node /app/data
+VOLUME ["/app/data"]
 
-# Copy entrypoint script
+# Entry + runtime prep
 COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh \
+ && mkdir -p /app/data \
+ && chown -R node:node /app/data
 
 USER node
 
-EXPOSE 5000
+EXPOSE 4000
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
 CMD ["node", "platform/index.cjs"]
