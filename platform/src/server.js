@@ -24,11 +24,13 @@ import rateLimiters from "$/middlewares/rateLimit.js";
 
 import * as indexHandler from "$/handlers/index.js";
 import * as authHandler from "$/handlers/auth/index.js";
+import { verifyTotpLogin } from "$/handlers/auth/totp.js";
 import * as securityHandler from "$/handlers/security.js";
 
 import apiProjects from "$/routes/api/projects.js";
 import apiInvites from "$/routes/api/invites.js";
 import apiPasskeys from "$/routes/api/passkeys.js";
+import apiTotp from "$/routes/api/totp.js";
 
 import env from "$/config/env.js";
 
@@ -220,6 +222,7 @@ export default async function createServer(manifest) {
   app.get("/", requireAuth, exposeGlobals, indexHandler.viewIndex);
   app.get("/login", disallowIfAuthed, exposeGlobals, authHandler.viewLogin);
   app.post("/login", rateLimiters.public, authHandler.login);
+  app.post("/auth/totp/verify", rateLimiters.public, verifyTotpLogin);
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
   app.post("/register", rateLimiters.public, authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
@@ -229,6 +232,7 @@ export default async function createServer(manifest) {
   app.use("/api/projects", apiProjects);
   app.use("/api/invites", apiInvites);
   app.use("/api/passkeys", apiPasskeys);
+  app.use("/api/totp", apiTotp);
 
   await buildPluginRoutes(app, manifest, config);
 

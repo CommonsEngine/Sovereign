@@ -81,6 +81,13 @@ const baseTemplate = Object.freeze({
   WEBAUTHN_ORIGIN: process.env.WEBAUTHN_ORIGIN || defaultAppUrl,
   WEBAUTHN_TIMEOUT_MS: Number(process.env.WEBAUTHN_TIMEOUT_MS ?? 60_000),
   WEBAUTHN_CHALLENGE_TTL_MS: Number(process.env.WEBAUTHN_CHALLENGE_TTL_MS ?? 300_000),
+  FEATURE_TOTP_ENABLED: toBool(process.env.FEATURE_TOTP_ENABLED, false),
+  TOTP_ISSUER: process.env.TOTP_ISSUER || manifest.platform.title,
+  TOTP_DIGITS: Number(process.env.TOTP_DIGITS ?? 6),
+  TOTP_PERIOD: Number(process.env.TOTP_PERIOD ?? 30),
+  TOTP_DRIFT_STEPS: Number(process.env.TOTP_DRIFT_STEPS ?? 1),
+  TOTP_RECOVERY_CODES: Number(process.env.TOTP_RECOVERY_CODES ?? 8),
+  TOTP_RECOVERY_LENGTH: Number(process.env.TOTP_RECOVERY_LENGTH ?? 10),
 
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 

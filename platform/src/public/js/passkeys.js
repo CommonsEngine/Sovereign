@@ -108,6 +108,11 @@ async function startLogin({ email, returnTo } = {}) {
   if (!verify.ok) {
     throw new Error(verifyPayload.message || "Passkey login failed.");
   }
+  if (verifyPayload.totp_required && verifyPayload.redirect) {
+    // eslint-disable-next-line no-undef
+    window.location.href = verifyPayload.redirect;
+    return verifyPayload;
+  }
   return verifyPayload;
 }
 

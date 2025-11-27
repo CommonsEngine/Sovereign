@@ -1,6 +1,11 @@
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
 import { verifyPassword, createSession, createRandomGuestUser } from "$/utils/auth.js";
+import {
+  isTotpEnabled,
+  createPending as createTotpPending,
+  setPendingCookie,
+} from "$/services/totp.js";
 import env from "$/config/env.js";
 
 const {
@@ -8,6 +13,7 @@ const {
   GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
   SIGNUP_POLICY,
   FEATURE_PASSKEYS_ENABLED,
+  FEATURE_TOTP_ENABLED,
 } = env();
 
 export default async function login(req, res) {
@@ -140,6 +146,16 @@ export default async function login(req, res) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
+    if (FEATURE_TOTP_ENABLED && (await isTotpEnabled(user.id))) {
+      const pending = await createTotpPending(user.id);
+      setPendingCookie(res, pending.token, pending.expiresAt);
+      const dest = typeof return_to === "string" && return_to.startsWith("/") ? return_to : "/";
+      if (isFormContent) {
+        return res.redirect(302, `/login?totp=1&return_to=${encodeURIComponent(dest)}`);
+      }
+      return res.json({ totp_required: true, redirect: "/login?totp=1" });
+    }
+
     await createSession(req, res, {
       ...user,
       sessionEmail: userEmailRec.email,
@@ -191,6 +207,7 @@ export async function viewLogin(req, res) {
   const forgotMode = String(req.query.forgot || "") === "1";
   const token = typeof req.query.token === "string" ? req.query.token : "";
   const resetMode = !!token;
+  const totpMode = String(req.query.totp || "") === "1";
   return res.render("login", {
     success: justRegistered
       ? "Account created. Please sign in."
@@ -204,5 +221,7 @@ export async function viewLogin(req, res) {
     guest_enabled: GUEST_LOGIN_ENABLED && !GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
     allow_signup: SIGNUP_POLICY === "open",
     passkeys_enabled: FEATURE_PASSKEYS_ENABLED,
+    totp_mode: FEATURE_TOTP_ENABLED && totpMode,
+    totp_enabled: FEATURE_TOTP_ENABLED,
   });
 }
