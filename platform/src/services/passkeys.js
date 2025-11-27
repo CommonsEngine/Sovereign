@@ -67,7 +67,7 @@ function toCredentialDescriptor(record) {
 function toAuthenticator(record) {
   return {
     credentialID: isoBase64URL.toBuffer(record.credentialId),
-    credentialPublicKey: isoBase64URL.toBuffer(record.publicKey),
+    publicKey: isoBase64URL.toBuffer(record.publicKey),
     counter: Number(record.counter || 0),
     transports: Array.isArray(record.transports) ? record.transports : [],
   };
@@ -85,6 +85,40 @@ function sanitizeCredential(record) {
     lastUsedAt: record.lastUsedAt || null,
     createdAt: record.createdAt || null,
   };
+}
+
+function normalizeCredentialId(input) {
+  if (!input) return null;
+  try {
+    const buf = isoBase64URL.toBuffer(String(input));
+    return isoBase64URL.fromBuffer(buf);
+  } catch {
+    try {
+      const asBuffer = Buffer.isBuffer(input) ? input : Buffer.from(String(input), "base64");
+      return isoBase64URL.fromBuffer(asBuffer);
+    } catch {
+      return String(input);
+    }
+  }
+}
+
+function credentialIdVariants(input) {
+  const variants = new Set();
+  const base = normalizeCredentialId(input);
+  if (base) variants.add(base);
+  if (typeof input === "string") {
+    variants.add(input);
+    variants.add(input.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""));
+  }
+  try {
+    const buf = Buffer.isBuffer(input)
+      ? input
+      : isoBase64URL.toBuffer(typeof input === "string" ? input : String(input));
+    variants.add(isoBase64URL.fromBuffer(buf));
+  } catch {
+    // ignore
+  }
+  return Array.from(variants).filter(Boolean);
 }
 
 export function writeChallengeCookie(res, challengeId) {
@@ -156,11 +190,12 @@ export async function buildRegistrationOptions(user) {
   });
 
   const { userName, userDisplayName } = deriveUserDisplay(user);
+  const userHandle = Buffer.from(String(user.id), "utf8");
 
   const options = await generateRegistrationOptions({
     rpName: WEBAUTHN_RP_NAME,
     rpID: WEBAUTHN_RP_ID,
-    userID: user.id,
+    userID: userHandle,
     userName,
     userDisplayName,
     timeout: Number(WEBAUTHN_TIMEOUT_MS) || undefined,
@@ -222,45 +257,69 @@ export async function verifyRegistration({ response, challengeId, user }) {
       throw err;
     }
 
-    const {
-      credentialID,
-      credentialPublicKey,
-      counter,
-      credentialDeviceType,
-      credentialBackedUp,
-      aaguid,
-    } = verification.registrationInfo;
+    const { credential, credentialDeviceType, credentialBackedUp, aaguid } =
+      verification.registrationInfo;
 
-    const credentialIdB64 = isoBase64URL.fromBuffer(credentialID);
-    const publicKeyB64 = isoBase64URL.fromBuffer(credentialPublicKey);
+    const credentialID = credential?.id;
+    const credentialPublicKey = credential?.publicKey;
+    const counter = credential?.counter ?? 0;
 
-    const saved = await prisma.passkeyCredential.upsert({
-      where: { credentialId: credentialIdB64 },
-      create: {
-        credentialId: credentialIdB64,
-        publicKey: publicKeyB64,
-        counter: BigInt(counter || 0),
-        deviceType: credentialDeviceType || null,
-        backedUp: !!credentialBackedUp,
-        aaguid: aaguid ? isoBase64URL.fromBuffer(aaguid) : null,
-        userId: user.id,
-        transports: Array.isArray(response.response?.transports)
-          ? response.response.transports
-          : null,
-        lastUsedAt: new Date(),
-      },
-      update: {
-        publicKey: publicKeyB64,
-        counter: BigInt(counter || 0),
-        deviceType: credentialDeviceType || null,
-        backedUp: !!credentialBackedUp,
-        aaguid: aaguid ? isoBase64URL.fromBuffer(aaguid) : null,
-        transports: Array.isArray(response.response?.transports)
-          ? response.response.transports
-          : undefined,
-        lastUsedAt: new Date(),
-      },
+    const clientRawId = response?.rawId || response?.id;
+    const canonicalId =
+      normalizeCredentialId(clientRawId) ||
+      (credentialID ? isoBase64URL.fromBuffer(credentialID) : null);
+    if (!canonicalId) {
+      const err = new Error("Unable to resolve credential id");
+      err.code = "credential_id_missing";
+      throw err;
+    }
+    const publicKeyB64 = credentialPublicKey ? isoBase64URL.fromBuffer(credentialPublicKey) : null;
+    if (!publicKeyB64) {
+      const err = new Error("Missing credential public key");
+      err.code = "public_key_missing";
+      throw err;
+    }
+
+    // If an older record exists under a variant id, update it instead of creating a duplicate.
+    const variantIds = credentialIdVariants(canonicalId);
+    const existing = await prisma.passkeyCredential.findFirst({
+      where: { credentialId: { in: variantIds } },
     });
+
+    let saved;
+    if (existing) {
+      saved = await prisma.passkeyCredential.update({
+        where: { id: existing.id },
+        data: {
+          credentialId: canonicalId,
+          publicKey: publicKeyB64,
+          counter: BigInt(counter || 0),
+          deviceType: credentialDeviceType || null,
+          backedUp: !!credentialBackedUp,
+          aaguid: aaguid ? isoBase64URL.fromBuffer(aaguid) : null,
+          transports: Array.isArray(response.response?.transports)
+            ? response.response.transports
+            : undefined,
+          lastUsedAt: new Date(),
+        },
+      });
+    } else {
+      saved = await prisma.passkeyCredential.create({
+        data: {
+          credentialId: canonicalId,
+          publicKey: publicKeyB64,
+          counter: BigInt(counter || 0),
+          deviceType: credentialDeviceType || null,
+          backedUp: !!credentialBackedUp,
+          aaguid: aaguid ? isoBase64URL.fromBuffer(aaguid) : null,
+          userId: user.id,
+          transports: Array.isArray(response.response?.transports)
+            ? response.response.transports
+            : null,
+          lastUsedAt: new Date(),
+        },
+      });
+    }
 
     await deleteChallenge(challengeId);
 
@@ -332,7 +391,8 @@ export async function verifyAuthentication({ response, challengeId }) {
     throw err;
   }
 
-  const credentialId = response.id || response.rawId;
+  const credentialIdRaw = response.rawId || response.id;
+  const credentialId = normalizeCredentialId(credentialIdRaw);
   if (!credentialId) {
     const err = new Error("Missing credential id");
     err.code = "missing_credential_id";
@@ -341,16 +401,61 @@ export async function verifyAuthentication({ response, challengeId }) {
 
   const emailHint = challenge.emailHint || null;
 
-  const credential = await prisma.passkeyCredential.findUnique({
-    where: { credentialId },
+  const variants = credentialIdVariants(credentialId);
+  let credential = await prisma.passkeyCredential.findFirst({
+    where: { credentialId: { in: variants } },
   });
+  if (!credential) {
+    // Fallback: scan and compare decoded bytes to handle legacy formats
+    const all = await prisma.passkeyCredential.findMany();
+    try {
+      const inputBuf = isoBase64URL.toBuffer(variants[0] || "");
+      credential = all.find((rec) => {
+        try {
+          const recBuf = isoBase64URL.toBuffer(rec.credentialId);
+          return recBuf.equals(inputBuf);
+        } catch {
+          return false;
+        }
+      });
+      if (credential) {
+        await prisma.passkeyCredential.update({
+          where: { id: credential.id },
+          data: { credentialId: variants[0] },
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }
   if (!credential) {
     const err = new Error("Unknown credential");
     err.code = "credential_not_found";
     throw err;
   }
 
-  const authenticator = toAuthenticator(credential);
+  if (!credential.publicKey) {
+    await prisma.passkeyCredential.delete({ where: { id: credential.id } }).catch(() => {});
+    const err = new Error("Stored passkey is missing public key. Please re-add your passkey.");
+    err.code = "credential_public_key_missing";
+    throw err;
+  }
+
+  const authenticator = toAuthenticator({
+    ...credential,
+    credentialId: normalizeCredentialId(credential.credentialId),
+    counter: credential.counter ?? 0,
+  });
+  if (
+    !authenticator ||
+    !authenticator.credentialID ||
+    !authenticator.publicKey ||
+    typeof authenticator.counter !== "number"
+  ) {
+    const err = new Error("Stored passkey is incomplete");
+    err.code = "authenticator_invalid";
+    throw err;
+  }
 
   try {
     const verification = await verifyAuthenticationResponse({
@@ -359,7 +464,7 @@ export async function verifyAuthentication({ response, challengeId }) {
       expectedOrigin: WEBAUTHN_ORIGIN,
       expectedRPID: WEBAUTHN_RP_ID,
       requireUserVerification: true,
-      authenticator,
+      credential: authenticator,
     });
 
     if (!verification.verified || !verification.authenticationInfo) {
