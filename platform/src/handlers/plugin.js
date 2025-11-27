@@ -5,11 +5,19 @@ import fs from "fs/promises";
 import logger from "$/services/logger.js";
 import { prisma } from "$/services/database.js";
 import { resolveSpaDevServer } from "$/utils/pluginDevServer.js";
+import * as fsUtil from "$/utils/fs.js";
 
 const EXTERNAL_URL_PATTERN = /^(?:[a-z]+:)?\/\//i;
 const pluginHeaderTemplateCache = new Map(); // path -> string|null
 
 // const BLANK_RE = /^\s*$/;
+
+// TODO: Improve this logic
+const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
+
+const manifest = fsUtil.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));
+const appVersion = manifest.platform.version;
+const cacheBuster = IS_PROD ? String(appVersion) : String(Date.now());
 
 function isExternalUrl(candidate) {
   if (!candidate) return false;
@@ -202,7 +210,7 @@ export async function renderSPAModule(req, res, _, { plugin }) {
     const inlineScriptBlocks = [];
 
     // Add plugin base stylesheet
-    baseStyles.push(`/${namespace}.css`);
+    baseStyles.push(`/${namespace}.css?v=${cacheBuster}`);
 
     const resolvedNodeEnv = JSON.stringify(process.env.NODE_ENV || "production");
     inlineScriptBlocks.push(

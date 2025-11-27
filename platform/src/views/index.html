@@ -2,7 +2,7 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
-    <link rel="stylesheet" href="/css/sv_pg_index.css" />
+    <link rel="stylesheet" href="/css/sv_pg_index.css?v={{head.cacheBuster}}" />
   </head>
   <body class="sv-page sv-page--index">
     <!-- top loading spinner -->
@@ -48,9 +48,6 @@
       </div>
     </main>
     <script src="/js/sv_startup.js" defer></script>
-    <script
-      src="/js/sv_pg_index.js?v={{#if head.cacheBuster}}{{head.cacheBuster}}{{else}}{{app.version}}{{/if}}"
-      defer
-    ></script>
+    <script src="/js/sv_pg_index.js?v={{head.cacheBuster}}" defer></script>
   </body>
 </html>
