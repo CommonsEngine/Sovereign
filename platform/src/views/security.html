@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="{{head.lang.short}}">
+  <head>
+    {{> layout/head}}
+    <link rel="stylesheet" href="/css/sv_pg_index.css?v={{head.cacheBuster}}" />
+  </head>
+  <body class="sv-page sv-page--index">
+    <div data-startup-spinner class="sv-loading-bar" style="display: none"></div>
+    {{#if showSidebar}} {{> sidebar}} {{/if}}
+    <main>
+      {{#if showHeader}} {{> header}} {{/if}}
+      <div class="sv-container">
+        <div class="sv-page__wrap sv-page__wrap--center">
+          <header class="sv-page__header">
+            <div>
+              <h2 class="sv-page__title">Security</h2>
+              <p class="sv-page__subtitle">Manage passkeys for passwordless sign-in.</p>
+            </div>
+          </header>
+
+          <section class="sv-card" style="padding: 20px; max-width: 720px">
+            {{#if passkeys_enabled}}
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div>
+                <h3 style="margin: 0 0 4px 0">Passkeys</h3>
+                <p style="margin: 0; color: #475569; font-size: 14px">
+                  Use platform-native passkeys to sign in without passwords.
+                </p>
+              </div>
+              <button class="sv-button sv-button--primary" type="button" data-passkey-register>
+                Add a passkey
+              </button>
+            </div>
+
+            <p
+              data-passkey-register-status
+              style="margin: 10px 0 0; color: #475569; font-size: 13px"
+            ></p>
+
+            <div style="margin-top: 16px">
+              {{#if passkeys.length}}
+              <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 12px">
+                {{#each passkeys}}
+                <li
+                  style="
+                    border: 1px solid #e2e8f0;
+                    border-radius: 10px;
+                    padding: 12px 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                  "
+                  data-passkey-id="{{id}}"
+                >
+                  <div>
+                    <div style="font-weight: 600">Passkey ({{deviceType}})</div>
+                    <div style="color: #475569; font-size: 13px">
+                      Added: {{createdAt}} {{#if lastUsedAt}} · Last used: {{lastUsedAt}}{{/if}}
+                    </div>
+                    {{#if transports}}
+                    <div style="color: #475569; font-size: 12px">Transports: {{transports}}</div>
+                    {{/if}}
+                  </div>
+                  <button
+                    class="sv-button sv-button--secondary"
+                    type="button"
+                    data-passkey-delete="{{id}}"
+                  >
+                    Remove
+                  </button>
+                </li>
+                {{/each}}
+              </ul>
+              {{else}}
+              <p style="color: #475569; margin: 12px 0 0">No passkeys yet.</p>
+              {{/if}}
+            </div>
+            {{else}}
+            <div class="alert alert--error">Passkeys are disabled by configuration.</div>
+            {{/if}}
+          </section>
+        </div>
+      </div>
+    </main>
+    {{#if passkeys_enabled}}
+    <script type="module" src="/js/passkeys.js?v={{head.cacheBuster}}" defer></script>
+    <script type="module">
+      const statusEl = document.querySelector("[data-passkey-register-status]");
+      const registerBtn = document.querySelector("[data-passkey-register]");
+      const deleteButtons = document.querySelectorAll("[data-passkey-delete]");
+      const setStatus = (msg, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = msg || "";
+        statusEl.style.color = isError ? "#dc2626" : "#475569";
+      };
+
+      const passkeys = window.SVPasskeys;
+      if (registerBtn && (!passkeys || !passkeys.isSupported())) {
+        registerBtn.disabled = true;
+        setStatus("Passkeys are not supported in this browser.", true);
+      }
+
+      if (registerBtn && passkeys?.isSupported()) {
+        registerBtn.addEventListener("click", async () => {
+          registerBtn.disabled = true;
+          setStatus("Follow your device prompt to add a passkey…");
+          try {
+            await passkeys.startRegistration();
+            window.location.reload();
+          } catch (err) {
+            setStatus(err?.message || "Could not add passkey.", true);
+            registerBtn.disabled = false;
+          }
+        });
+      }
+
+      deleteButtons.forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.passkeyDelete;
+          if (!id) return;
+          btn.disabled = true;
+          setStatus("Removing passkey…");
+          try {
+            const res = await fetch(`/api/passkeys/${id}`, {
+              method: "DELETE",
+              credentials: "include",
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload?.message || "Delete failed");
+            window.location.reload();
+          } catch (err) {
+            setStatus(err?.message || "Could not remove passkey.", true);
+            btn.disabled = false;
+          }
+        });
+      });
+    </script>
+    {{/if}}
+  </body>
+</html>

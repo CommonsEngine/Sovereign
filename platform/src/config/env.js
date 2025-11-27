@@ -50,6 +50,15 @@ const rawGuestTtl = Number(process.env.GUEST_BOARD_TTL_HOURS ?? 24);
 const DEFAULT_GUEST_TTL_HOURS = Number.isFinite(rawGuestTtl) && rawGuestTtl > 0 ? rawGuestTtl : 24;
 const DEFAULT_GUEST_TTL_MS = DEFAULT_GUEST_TTL_HOURS * 60 * 60 * 1000;
 
+const defaultAppUrl = process.env.APP_URL || "http://localhost:3000";
+let defaultWebauthnRpId = "localhost";
+try {
+  const parsed = new URL(defaultAppUrl);
+  defaultWebauthnRpId = parsed.hostname || "localhost";
+} catch {
+  defaultWebauthnRpId = "localhost";
+}
+
 const baseTemplate = Object.freeze({
   APP_NAME: manifest.platform.title,
   APP_TAGLINE: manifest.platform.tagline,
@@ -57,7 +66,7 @@ const baseTemplate = Object.freeze({
   APP_VERSION: manifest.platform.version,
   PLUGIN_CAPABILITIES_SIGNATURE: pluginCapabilities.signature || null,
   PLUGIN_CAPABILITIES: pluginCapabilities.definitions || [],
-  APP_URL: process.env.APP_URL || "http://localhost:3000",
+  APP_URL: defaultAppUrl,
   APP_SECRET: process.env.APP_SECRET || "insecure-dev-secret", // used for HMAC/token derivation
 
   AUTH_ARGON2_ITERATIONS: Number(process.env.AUTH_ARGON2_ITERATIONS ?? 2),
@@ -66,6 +75,12 @@ const baseTemplate = Object.freeze({
   AUTH_PASSWORD_MIN_LENGTH: Number(process.env.AUTH_PASSWORD_MIN_LENGTH ?? 8),
   AUTH_SESSION_COOKIE_NAME: process.env.AUTH_SESSION_COOKIE_NAME || "svg_session",
   AUTH_SESSION_TTL_HOURS: Number(process.env.AUTH_SESSION_TTL_HOURS ?? 720),
+  FEATURE_PASSKEYS_ENABLED: toBool(process.env.FEATURE_PASSKEYS_ENABLED, false),
+  WEBAUTHN_RP_ID: process.env.WEBAUTHN_RP_ID || defaultWebauthnRpId,
+  WEBAUTHN_RP_NAME: process.env.WEBAUTHN_RP_NAME || manifest.platform.title,
+  WEBAUTHN_ORIGIN: process.env.WEBAUTHN_ORIGIN || defaultAppUrl,
+  WEBAUTHN_TIMEOUT_MS: Number(process.env.WEBAUTHN_TIMEOUT_MS ?? 60_000),
+  WEBAUTHN_CHALLENGE_TTL_MS: Number(process.env.WEBAUTHN_CHALLENGE_TTL_MS ?? 300_000),
 
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
