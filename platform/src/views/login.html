@@ -51,6 +51,21 @@
               <a class="sv-link" href="/login?forgot=1">Forgot your password?</a>
               <button class="button sv-button sv-button--primary" type="submit">Sign in</button>
             </div>
+            {{#if passkeys_enabled}}
+            <div class="actions" style="margin-top: 12px; flex-direction: column; gap: 6px">
+              <button
+                class="button sv-button sv-button--secondary"
+                type="button"
+                data-passkey-login
+              >
+                Sign in with passkey
+              </button>
+              <p
+                data-passkey-status
+                style="color: #475569; font-size: 13px; min-height: 18px; margin: 0"
+              ></p>
+            </div>
+            {{/if}}
           </form>
           {{#if allow_signup}}
           <div class="divider"></div>
@@ -129,4 +144,47 @@
       </section>
     </main>
   </body>
+  {{#if passkeys_enabled}}
+  <script type="module" src="/js/passkeys.js?v={{head.cacheBuster}}" defer></script>
+  <script type="module">
+    const supportText = document.querySelector("[data-passkey-status]");
+    const button = document.querySelector("[data-passkey-login]");
+    const returnToInput = document.querySelector('input[name="return_to"]');
+    const emailInput = document.querySelector("#email");
+
+    const setStatus = (msg, isError = false) => {
+      if (!supportText) return;
+      supportText.textContent = msg || "";
+      supportText.style.color = isError ? "#dc2626" : "#475569";
+    };
+
+    const disable = (state) => {
+      if (button) button.disabled = state;
+    };
+
+    const passkeys = window.SVPasskeys;
+    if (!passkeys || !passkeys.isSupported()) {
+      if (button) button.style.display = "none";
+      setStatus("Passkeys not supported in this browser.");
+    } else if (button) {
+      button.addEventListener("click", async () => {
+        disable(true);
+        setStatus("Waiting for your passkey…");
+        try {
+          const email = emailInput?.value?.trim() || "";
+          const returnTo = returnToInput?.value || "/";
+          const result = await passkeys.startLogin({ email, returnTo });
+          if (result?.redirect) {
+            window.location.href = result.redirect;
+          } else {
+            window.location.reload();
+          }
+        } catch (err) {
+          setStatus(err?.message || "Passkey sign-in failed.", true);
+          disable(false);
+        }
+      });
+    }
+  </script>
+  {{/if}}
 </html>

@@ -3,7 +3,12 @@ import logger from "$/services/logger.js";
 import { verifyPassword, createSession, createRandomGuestUser } from "$/utils/auth.js";
 import env from "$/config/env.js";
 
-const { GUEST_LOGIN_ENABLED, GUEST_LOGIN_ENABLED_BYPASS_LOGIN, SIGNUP_POLICY } = env();
+const {
+  GUEST_LOGIN_ENABLED,
+  GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
+  SIGNUP_POLICY,
+  FEATURE_PASSKEYS_ENABLED,
+} = env();
 
 export default async function login(req, res) {
   try {
@@ -198,5 +203,6 @@ export async function viewLogin(req, res) {
     token,
     guest_enabled: GUEST_LOGIN_ENABLED && !GUEST_LOGIN_ENABLED_BYPASS_LOGIN,
     allow_signup: SIGNUP_POLICY === "open",
+    passkeys_enabled: FEATURE_PASSKEYS_ENABLED,
   });
 }

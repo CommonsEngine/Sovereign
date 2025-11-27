@@ -185,6 +185,41 @@ model Session {
   @@map("sessions")
 }
 
+model PasskeyCredential {
+  id          String   @id @default(cuid()) @map("id")
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String  @unique @map("credential_id")
+  publicKey   String   @map("public_key")
+  counter     BigInt   @default(0) @map("counter")
+  deviceType  String?  @map("device_type")
+  backedUp    Boolean  @default(false) @map("backed_up")
+  transports  Json?    @map("transports")
+  aaguid      String?  @map("aaguid")
+  lastUsedAt  DateTime? @map("last_used_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("passkey_credentials")
+}
+
+model PasskeyChallenge {
+  id           String   @id @default(cuid()) @map("id")
+  challenge    String   @map("challenge")
+  type         String   @map("type") // register | login
+  userId       String?  @map("user_id")
+  emailHint    String?  @map("email_hint")
+  requestedUserVerification String? @map("requested_user_verification")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("passkey_challenges")
+}
+
 model VerificationToken {
   id        String   @id @default(cuid()) @map("id")
   userId    String   @map("user_id")

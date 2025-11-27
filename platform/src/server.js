@@ -24,9 +24,11 @@ import rateLimiters from "$/middlewares/rateLimit.js";
 
 import * as indexHandler from "$/handlers/index.js";
 import * as authHandler from "$/handlers/auth/index.js";
+import * as securityHandler from "$/handlers/security.js";
 
 import apiProjects from "$/routes/api/projects.js";
 import apiInvites from "$/routes/api/invites.js";
+import apiPasskeys from "$/routes/api/passkeys.js";
 
 import env from "$/config/env.js";
 
@@ -221,10 +223,12 @@ export default async function createServer(manifest) {
   app.get("/register", disallowIfAuthed, exposeGlobals, authHandler.viewRegister);
   app.post("/register", rateLimiters.public, authHandler.register);
   app.get("/logout", exposeGlobals, authHandler.logout);
+  app.get("/settings/security", requireAuth, exposeGlobals, securityHandler.viewSecurity);
 
   // Project Routes
   app.use("/api/projects", apiProjects);
   app.use("/api/invites", apiInvites);
+  app.use("/api/passkeys", apiPasskeys);
 
   await buildPluginRoutes(app, manifest, config);
 
