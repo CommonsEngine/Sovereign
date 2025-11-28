@@ -1,5 +1,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>{{head.title}}</title>
 
 {{#if head.meta}}
@@ -25,6 +28,7 @@
 {{/if}}
 
 <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg?v=1" />
+<script src="/js/pwa.js" defer></script>
 <link rel="stylesheet" href="/css/sv_layers.css?v={{head.cacheBuster}}" />
 <link rel="stylesheet" href="/css/sv_base.css?v={{head.cacheBuster}}" />
 <link rel="stylesheet" href="/css/sv_styled.css?v={{head.cacheBuster}}" />

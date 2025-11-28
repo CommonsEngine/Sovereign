@@ -103,6 +103,8 @@ export default async function createServer(manifest) {
             directives: {
               "script-src": ["'self'", "'unsafe-inline'"], // replace inline with nonces later
               "img-src": ["'self'", "data:"],
+              "worker-src": ["'self'"],
+              "manifest-src": ["'self'"],
             },
           }
         : false,

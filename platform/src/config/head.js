@@ -10,7 +10,10 @@ const DEFAULTS = Object.freeze({
     { name: "description", content: "Reclaim your digital freedom" },
     { name: "keywords", content: "" },
     { name: "robots", content: "index,follow" },
-    { name: "theme-color", content: "#ffffff" },
+    { name: "theme-color", content: "#0f172a" },
+    { name: "mobile-web-app-capable", content: "yes" },
+    { name: "apple-mobile-web-app-capable", content: "yes" },
+    { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
     // Open Graph
     { name: "og:site_name", content: "Sovereign" },
     { name: "og:type", content: "app" },
@@ -25,7 +28,11 @@ const DEFAULTS = Object.freeze({
     { name: "twitter:image", content: "/assets/og-image.png" },
     { name: "twitter:card", content: "summary_large_image" },
   ]),
-  link: Object.freeze([{ rel: "canonical", href: "/" }]),
+  link: Object.freeze([
+    { rel: "canonical", href: "/" },
+    { rel: "manifest", href: "/manifest.webmanifest" },
+    { rel: "apple-touch-icon", href: "/assets/icons/icon-180.png", sizes: "180x180" },
+  ]),
 });
 
 const isOg = (n) => /^og:/.test(n || "");
