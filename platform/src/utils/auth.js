@@ -5,6 +5,7 @@ import argon2 from "argon2";
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
 import env from "$/config/env.js";
+import { getUserPluginSnapshot } from "$/services/user-plugins.js";
 import { ensureTenantIds, resolveTenantIdsForUserId } from "$/utils/tenants.js";
 
 const {
@@ -23,6 +24,18 @@ const CAPABILITY_PRECEDENCE = {
   anonymized: 2,
   deny: 1,
 };
+
+const EMPTY_PLUGIN_ACCESS = { enabled: [], disabled: [], plugins: [] };
+
+async function resolvePluginAccess(userId) {
+  if (!userId) return EMPTY_PLUGIN_ACCESS;
+  try {
+    return await getUserPluginSnapshot(userId);
+  } catch (err) {
+    logger.warn("Failed to load plugin access for user", err);
+    return EMPTY_PLUGIN_ACCESS;
+  }
+}
 
 async function resolvePrimaryEmailSnapshot(user) {
   if (!user) return null;
@@ -394,6 +407,13 @@ export async function getSessionWithUser(token) {
     }
   }
 
+  let pluginAccess = EMPTY_PLUGIN_ACCESS;
+  try {
+    pluginAccess = await resolvePluginAccess(s.userId);
+  } catch (err) {
+    logger.warn("Failed to resolve plugin access for session", err);
+  }
+
   return {
     id: s.id,
     userId: s.userId,
@@ -406,6 +426,8 @@ export async function getSessionWithUser(token) {
       ...snapshot,
       roles,
       capabilities,
+      plugins: pluginAccess.enabled || [],
+      pluginAccess,
     },
   };
 }

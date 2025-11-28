@@ -204,6 +204,7 @@ const pluginManifestSchema = {
     type: { type: "string", enum: ["module", "project"] },
     enabled: { type: "boolean" },
     devOnly: { type: "boolean" },
+    userDefaultEnabled: { type: "boolean" },
     author: { type: "string" },
     license: { type: "string" },
     ui: {
@@ -476,6 +477,9 @@ const buildManifest = async () => {
     // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
     const manifestNamespace = pluginManifest.namespace || plugingDirName;
 
+    const userDefaultEnabled =
+      pluginManifest.corePlugin === true ? true : pluginManifest.userDefaultEnabled !== false;
+
     if (isEnabledPlugin) {
       manifest.enabledPlugins.push(`${manifestNamespace}@${pluginManifest.version}`);
     }
@@ -576,6 +580,7 @@ const buildManifest = async () => {
       namespace: manifestNamespace,
       entry,
       ...pluginManifest,
+      userDefaultEnabled,
       ui: normalizedUi,
       featureAccess,
       sovereign: normalizedSovereign,

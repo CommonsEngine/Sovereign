@@ -32,6 +32,21 @@
     font-size: var(--font-size-s);
     color: var(--color-text-secondary);
   }
+  .users-table__plugins {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+  .users-table__plugins-summary {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-s);
+  }
+  .users-table__plugins-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4xs);
+    align-items: center;
+  }
   @media (max-width: 960px) {
     .sv-stats {
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -108,6 +123,7 @@
             <tr>
               <th>User</th>
               <th>Roles</th>
+              <th>Plugins</th>
               <th>Status</th>
               <th>Activity</th>
               <th>Projects</th>
@@ -125,6 +141,10 @@
               data-first-name="{{firstName}}"
               data-last-name="{{lastName}}"
               data-status="{{status}}"
+              data-plugins="{{pluginsEnabledNames}}"
+              data-plugins-namespaces="{{pluginsEnabledNamespaces}}"
+              data-plugins-count="{{pluginsEnabledCount}}"
+              data-plugins-total="{{pluginsTotalCount}}"
             >
               <td>
                 <div class="strong">{{displayName}}</div>
@@ -148,6 +168,30 @@
                 {{else}}
                 <span class="subtle">None</span>
                 {{/if}}
+              </td>
+              <td>
+                <div class="users-table__plugins">
+                  <div class="users-table__plugins-summary">
+                    <span class="badge badge--soft badge--tone-neutral">
+                      {{#if pluginsTotalCount}}
+                      {{pluginsEnabledCount}} / {{pluginsTotalCount}}
+                      {{else}}None{{/if}}
+                    </span>
+                  </div>
+                  <div class="users-table__plugins-list">
+                    {{#if pluginsEnabledCount}}
+                    {{#each pluginsPreview}}
+                    <span class="badge badge--soft badge--tone-neutral">{{this}}</span>
+                    {{/each}}
+                    {{/if}}
+                    {{#if pluginsOverflow}}
+                    <span class="badge badge--soft">+{{pluginsOverflow}} more</span>
+                    {{/if}}
+                    {{#unless pluginsEnabledCount}}
+                    <span class="subtle">{{pluginsSummary}}</span>
+                    {{/unless}}
+                  </div>
+                </div>
               </td>
               <td>
                 <span class="badge badge--soft badge--tone-{{statusTone}}"> {{statusLabel}} </span>
@@ -271,7 +315,13 @@
 
       for (const tr of rows) {
         const haystack = normalize(
-          [tr.dataset.name, tr.dataset.email, tr.dataset.roles, tr.dataset.status].join(" ")
+          [
+            tr.dataset.name,
+            tr.dataset.email,
+            tr.dataset.roles,
+            tr.dataset.status,
+            tr.dataset.plugins,
+          ].join(" ")
         );
         const match = !q || haystack.includes(q);
         tr.hidden = !match;
