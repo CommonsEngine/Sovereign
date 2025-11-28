@@ -1,5 +1,7 @@
 # Features
 
+- See `docs/features/graphql.md` for the GraphQL server plan and rollout steps.
+
 ## Guest Sessions & Data Retention
 
 - Guest workspaces act as disposable sandboxes. When a guest signs out, every project they solely own—plus associated boards, uploads, and attachments under `data/upload` and `data/pt`—is deleted immediately.
