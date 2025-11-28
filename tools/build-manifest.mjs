@@ -39,6 +39,27 @@ function formatError(message, options = {}) {
 const DEFAULT_ICON_NAME = "default";
 const DEFAULT_ICON_VIEWBOX = "0 0 24 24";
 const SUPPORTED_PLUGIN_TYPES = ["module", "project"];
+const RESERVED_NAMES = Object.freeze({
+  routes: [
+    "api",
+    "auth",
+    "login",
+    "logout",
+    "register",
+    "ws",
+    "public",
+    "static",
+    "assets",
+    "css",
+    "js",
+    "manifest",
+    "sw",
+    "service-worker",
+    "uploads",
+  ],
+  plugins: ["sovereign", "platform", "core", "admin"],
+  keywords: ["favicon", "robots", "security", "health", "status"],
+});
 
 function normalizeRoleValue(role) {
   if (!role) return null;
@@ -170,6 +191,7 @@ const manifest = {
   modules: [],
   enabledPlugins: [], // [@<org>/<ns>]
   allowedPluginFrameworks: [],
+  reservedNames: RESERVED_NAMES,
   __rootdir,
   __pluginsdir,
   __datadir,
@@ -350,6 +372,10 @@ const exists = async (p) => {
 
 const buildManifest = async () => {
   const plugins = {};
+  const validationErrors = [];
+  const seenNamespaces = new Set();
+  const seenIds = new Set();
+  const reserved = manifest.reservedNames || RESERVED_NAMES;
 
   // Preserve createdAt/instanceId and always update updatedAt
   let existingCreatedAt = null;
@@ -476,6 +502,46 @@ const buildManifest = async () => {
 
     // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
     const manifestNamespace = pluginManifest.namespace || plugingDirName;
+    const manifestId = pluginManifest.id || "";
+
+    const isReserved =
+      (reserved?.routes || []).includes(manifestNamespace) ||
+      (reserved?.plugins || []).includes(manifestNamespace) ||
+      (reserved?.keywords || []).includes(manifestNamespace);
+
+    if (isReserved) {
+      validationErrors.push(
+        formatError(
+          `✗ namespace "${manifestNamespace}" is reserved (routes/plugins/keywords); update the plugin namespace.`,
+          { manifestPath: pluginManifestPath, pluginDir: plugingRoot }
+        )
+      );
+      continue;
+    }
+
+    if (seenNamespaces.has(manifestNamespace)) {
+      validationErrors.push(
+        formatError(`✗ duplicate namespace "${manifestNamespace}" detected`, {
+          manifestPath: pluginManifestPath,
+          pluginDir: plugingRoot,
+        })
+      );
+      continue;
+    }
+    seenNamespaces.add(manifestNamespace);
+
+    if (manifestId) {
+      if (seenIds.has(manifestId)) {
+        validationErrors.push(
+          formatError(`✗ duplicate plugin id "${manifestId}" detected`, {
+            manifestPath: pluginManifestPath,
+            pluginDir: plugingRoot,
+          })
+        );
+        continue;
+      }
+      seenIds.add(manifestId);
+    }
 
     const enrollStrategy =
       pluginManifest.corePlugin === true
@@ -590,6 +656,11 @@ const buildManifest = async () => {
       sovereign: normalizedSovereign,
       ...(normalizedEntryPoints ? { entryPoints: normalizedEntryPoints } : {}),
     };
+  }
+
+  if (validationErrors.length) {
+    validationErrors.forEach((msg) => console.error(msg));
+    throw new Error(`Manifest build failed: ${validationErrors.length} validation error(s).`);
   }
 
   const finalPlugins = {
