@@ -49,6 +49,23 @@ const moduleAccessible = (module, userRoles) => {
   return required.some((role) => userRoles.has(role));
 };
 
+const pluginAccessible = (module, pluginAccess) => {
+  if (!module || !module.value) return true;
+  const namespace = module.value;
+  const enabled = Array.isArray(pluginAccess?.enabled) ? pluginAccess.enabled : [];
+  const disabled = Array.isArray(pluginAccess?.disabled) ? pluginAccess.disabled : [];
+  const enabledSet = new Set(enabled);
+  const disabledSet = new Set(disabled);
+  const pluginList = Array.isArray(pluginAccess?.plugins) ? pluginAccess.plugins : [];
+  const hasAccessData = enabledSet.size > 0 || disabledSet.size > 0 || pluginList.length > 0;
+
+  if (disabledSet.has(namespace)) return false;
+  if (!hasAccessData) return true;
+  const pluginEntry = pluginList.find((item) => item?.namespace === namespace);
+  if (pluginEntry) return !!pluginEntry.enabled;
+  return enabledSet.has(namespace);
+};
+
 export default function exposeGlobals(req, res, next) {
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     return next();
@@ -101,7 +118,9 @@ export default function exposeGlobals(req, res, next) {
   const manifestModules = Array.isArray(manifest.modules) ? manifest.modules : [];
   const pathname = req.path || "/";
   const roleSet = collectUserRoles(req.user);
-  const availableModules = manifestModules.filter((mod) => moduleAccessible(mod, roleSet));
+  const availableModules = manifestModules.filter(
+    (mod) => moduleAccessible(mod, roleSet) && pluginAccessible(mod, req.user?.pluginAccess)
+  );
   const activeModule =
     availableModules.find((mod) => {
       const slug = typeof mod?.value === "string" ? mod.value.trim() : "";

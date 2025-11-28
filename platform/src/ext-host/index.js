@@ -19,6 +19,10 @@ function mergePlugin(manifestPlugin, dbPlugin) {
     ...manifestPlugin,
     type: dbPlugin.type || manifestPlugin.type,
     enabled: dbPlugin.enabled ?? manifestPlugin.enabled,
+    enrollStrategy:
+      dbPlugin.enrollStrategy ||
+      manifestPlugin.enrollStrategy ||
+      (manifestPlugin.corePlugin === true ? "auto" : "auto"),
     corePlugin: dbPlugin.corePlugin ?? manifestPlugin.corePlugin,
     devOnly: dbPlugin.devOnly ?? manifestPlugin.devOnly,
     version: dbPlugin.version || manifestPlugin.version,

@@ -24,6 +24,46 @@ export async function buildPluginRoutes(app, manifest, config) {
     return requireRole(roles);
   };
 
+  const createUserPluginGuard = (plugin, namespace) => {
+    const ns = namespace || plugin?.namespace || plugin?.id;
+    const enrollStrategy =
+      plugin?.corePlugin === true
+        ? "auto"
+        : plugin?.enrollStrategy === "subscribe"
+          ? "subscribe"
+          : "auto";
+    const defaultEnabled = enrollStrategy !== "subscribe";
+    return function userPluginGuard(req, res, next) {
+      const access = req.user?.pluginAccess;
+      const enabled = Array.isArray(access?.enabled) ? new Set(access.enabled) : new Set();
+      const disabled = Array.isArray(access?.disabled) ? new Set(access.disabled) : new Set();
+
+      let allowed = defaultEnabled;
+      if (disabled.has(ns)) {
+        allowed = false;
+      } else if (enabled.size > 0) {
+        allowed = enabled.has(ns);
+      }
+      if (plugin?.corePlugin) {
+        allowed = true;
+      }
+
+      if (allowed) return next();
+
+      if (req.path.startsWith("/api/")) {
+        return res.status(403).json({ error: "Plugin is not enabled for this user" });
+      }
+
+      return res.status(403).render("error", {
+        code: 403,
+        message: "Forbidden",
+        description: "This plugin is not enabled for your account.",
+        error: null,
+        nodeEnv: process.env.NODE_ENV,
+      });
+    };
+  };
+
   const ensurePluginContext = (plugin, namespace) => {
     const cacheKey = namespace || plugin?.namespace || plugin?.id;
     if (cacheKey && pluginContextCache.has(cacheKey)) {
@@ -104,11 +144,14 @@ export async function buildPluginRoutes(app, manifest, config) {
       const pluginType = plugin?.type ?? "module";
       const pluginKey = `${pluginFramework}::${pluginType}`;
       const pluginAccessGuard = createPluginAccessGuard(plugin);
+      const userPluginGuard = createUserPluginGuard(plugin, ns);
       const pluginEnabledGuard = createPluginEnabledGuard(plugin, ns);
       const viewMiddlewares = [pluginEnabledGuard, requireAuth];
+      if (userPluginGuard) viewMiddlewares.push(userPluginGuard);
       if (pluginAccessGuard) viewMiddlewares.push(pluginAccessGuard);
       viewMiddlewares.push(exposeGlobals);
       const apiMiddlewares = [pluginEnabledGuard, requireAuth];
+      if (userPluginGuard) apiMiddlewares.push(userPluginGuard);
       if (pluginAccessGuard) apiMiddlewares.push(pluginAccessGuard);
       apiMiddlewares.push(exposeGlobals);
 

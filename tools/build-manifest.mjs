@@ -204,6 +204,7 @@ const pluginManifestSchema = {
     type: { type: "string", enum: ["module", "project"] },
     enabled: { type: "boolean" },
     devOnly: { type: "boolean" },
+    enrollStrategy: { type: "string", enum: ["auto", "subscribe"] },
     author: { type: "string" },
     license: { type: "string" },
     ui: {
@@ -476,6 +477,13 @@ const buildManifest = async () => {
     // TODO: split `id` field by "/", and take id[1] as one of the fallback namespace value
     const manifestNamespace = pluginManifest.namespace || plugingDirName;
 
+    const enrollStrategy =
+      pluginManifest.corePlugin === true
+        ? "auto"
+        : pluginManifest.enrollStrategy === "subscribe"
+          ? "subscribe"
+          : "auto";
+
     if (isEnabledPlugin) {
       manifest.enabledPlugins.push(`${manifestNamespace}@${pluginManifest.version}`);
     }
@@ -576,6 +584,7 @@ const buildManifest = async () => {
       namespace: manifestNamespace,
       entry,
       ...pluginManifest,
+      enrollStrategy,
       ui: normalizedUi,
       featureAccess,
       sovereign: normalizedSovereign,

@@ -1,4 +1,41 @@
 <div data-modal="edit-user" class="sv-modal" hidden>
+  <style>
+    .sv-plugin-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3xs);
+      max-height: 240px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+    .sv-plugin-toggle {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: flex-start;
+      gap: var(--space-3xs);
+    }
+    .sv-plugin-toggle__content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .sv-plugin-toggle__title {
+      font-weight: var(--font-weight-medium);
+    }
+    .sv-plugin-toggle__desc {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-s);
+      line-height: 1.4;
+    }
+    .sv-plugin-toggle__badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4xs);
+    }
+    .sv-plugin-toggle input[type="checkbox"] {
+      margin-top: 4px;
+    }
+  </style>
   <div class="sv-modal__backdrop" data-modal-close aria-hidden="true"></div>
   <div
     class="sv-modal__dialog"
@@ -57,6 +94,16 @@
           </div>
         </div>
 
+        <div class="sv-modal__field">
+          <div class="sv-modal__label-row">
+            <span class="sv-modal__label">Plugins</span>
+            <span class="sv-modal__hint" data-plugin-summary></span>
+          </div>
+          <div class="sv-plugin-list" data-plugin-list>
+            <span class="subtle">Select a user to load plugins.</span>
+          </div>
+        </div>
+
         <div
           class="sv-modal__alert modal__alert--error"
           data-modal-alert="error"
@@ -95,6 +142,9 @@
       const errorAlert = root.querySelector('[data-modal-alert="error"]');
       const successAlert = root.querySelector('[data-modal-alert="success"]');
       const modalTitle = root.querySelector("#edit-user-modal-title");
+      const pluginList = root.querySelector("[data-plugin-list]");
+      const pluginSummary = root.querySelector("[data-plugin-summary]");
+      let pluginSnapshot = { enabled: [], plugins: [] };
 
       function showAlert(el, message) {
         if (!el) return;
@@ -107,12 +157,120 @@
         el.style.display = "block";
       }
 
+      function setPluginSummary(snapshot = {}) {
+        if (!pluginSummary) return;
+        const enabledCount = Array.isArray(snapshot.enabled) ? snapshot.enabled.length : 0;
+        const totalCount = Array.isArray(snapshot.plugins) ? snapshot.plugins.length : 0;
+        if (!totalCount) {
+          pluginSummary.textContent = "No plugins";
+          return;
+        }
+        pluginSummary.textContent = `${enabledCount} of ${totalCount} enabled`;
+      }
+
+      function renderPluginList(plugins = []) {
+        if (!pluginList) return;
+        pluginList.innerHTML = "";
+        if (!plugins.length) {
+          pluginList.innerHTML = '<span class="subtle">No plugins available.</span>';
+          setPluginSummary({ enabled: [], plugins: [] });
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        const enabled = [];
+        plugins.forEach((plugin) => {
+          const label = document.createElement("label");
+          label.className = "sv-plugin-toggle";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.value = plugin.namespace || plugin.pluginId || plugin.name || "";
+          checkbox.checked = !!plugin.enabled;
+          checkbox.disabled = plugin.corePlugin === true;
+          checkbox.dataset.pluginToggle = "true";
+          checkbox.dataset.pluginNamespace = plugin.namespace || "";
+          checkbox.dataset.pluginId = plugin.pluginId || "";
+
+          const meta = document.createElement("div");
+          meta.className = "sv-plugin-toggle__content";
+
+          const title = document.createElement("div");
+          title.className = "sv-plugin-toggle__title";
+          title.textContent = plugin.name || plugin.namespace || "Plugin";
+
+          const badges = document.createElement("div");
+          badges.className = "sv-plugin-toggle__badges";
+          const badgeLabels = [];
+          if (plugin.corePlugin) badgeLabels.push("Core");
+          if (plugin.defaultEnabled && !plugin.corePlugin) badgeLabels.push("Default");
+          if (!plugin.defaultEnabled) badgeLabels.push("Opt-in");
+          if (plugin.overridden && plugin.defaultEnabled && plugin.overrideEnabled === false) {
+            badgeLabels.push("Disabled for user");
+          }
+          if (plugin.overridden && !plugin.defaultEnabled && plugin.overrideEnabled === true) {
+            badgeLabels.push("Enabled for user");
+          }
+          badgeLabels.forEach((text) => {
+            const badge = document.createElement("span");
+            badge.className = "badge badge--soft badge--tone-neutral";
+            badge.textContent = text;
+            badges.appendChild(badge);
+          });
+
+          meta.appendChild(title);
+          if (badgeLabels.length) meta.appendChild(badges);
+          if (plugin.description) {
+            const desc = document.createElement("div");
+            desc.className = "sv-plugin-toggle__desc";
+            desc.textContent = plugin.description;
+            meta.appendChild(desc);
+          }
+
+          label.appendChild(checkbox);
+          label.appendChild(meta);
+          frag.appendChild(label);
+          if (plugin.enabled) enabled.push(plugin.namespace || plugin.pluginId);
+        });
+        pluginList.appendChild(frag);
+        setPluginSummary({ enabled, plugins });
+      }
+
+      async function loadPluginsForUser(userId) {
+        if (!pluginList) return;
+        pluginList.innerHTML = '<span class="subtle">Loading…</span>';
+        setPluginSummary({ enabled: [], plugins: [] });
+        if (!userId) return;
+        try {
+          const resp = await fetch(`/api/plugins/users/${encodeURIComponent(userId)}/plugins`, {
+            headers: { Accept: "application/json" },
+            credentials: "same-origin",
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok) {
+            throw new Error(data?.error || `HTTP ${resp.status}`);
+          }
+          pluginSnapshot = {
+            enabled: Array.isArray(data.enabled) ? data.enabled : [],
+            plugins: Array.isArray(data.plugins) ? data.plugins : [],
+          };
+          renderPluginList(pluginSnapshot.plugins);
+        } catch (err) {
+          pluginList.innerHTML = `<div class="sv-modal__alert modal__alert--error">${err?.message || "Failed to load plugins."}</div>`;
+          setPluginSummary({ enabled: [], plugins: [] });
+        }
+      }
+
       function resetForm() {
         form?.reset();
         form?.removeAttribute("data-user-id");
         roleCheckboxes.forEach((checkbox) => {
           checkbox.checked = false;
         });
+        pluginSnapshot = { enabled: [], plugins: [] };
+        if (pluginList) {
+          pluginList.innerHTML = '<span class="subtle">Select a user to load plugins.</span>';
+        }
+        if (pluginSummary) pluginSummary.textContent = "";
         showAlert(errorAlert, "");
         showAlert(successAlert, "");
         submitBtn?.removeAttribute("disabled");
@@ -140,6 +298,8 @@
         });
         showAlert(errorAlert, "");
         showAlert(successAlert, "");
+        pluginSnapshot = { enabled: [], plugins: [] };
+        loadPluginsForUser(userId);
       }
 
       async function handleUpdate(event) {
@@ -151,11 +311,19 @@
           .filter((checkbox) => checkbox.checked)
           .map((checkbox) => checkbox.value)
           .filter(Boolean);
+        const pluginUpdates = Array.from(root.querySelectorAll("[data-plugin-toggle]")).map(
+          (input) => ({
+            namespace: input.dataset.pluginNamespace || input.value,
+            pluginId: input.dataset.pluginId || null,
+            enabled: input.checked,
+          })
+        );
 
         const payload = {
           firstName: firstNameEl?.value?.trim() || "",
           lastName: lastNameEl?.value?.trim() || "",
           roles: selectedRoles,
+          plugins: pluginUpdates,
         };
 
         submitBtn?.setAttribute("disabled", "true");

@@ -7,6 +7,7 @@
   "type": "module",
   "framework": "js",
   "enabled": true,
+  "enrollStrategy": "auto",
   "devOnly": false,
   "entryPoints": {
     "api": "routes/api/index.js",

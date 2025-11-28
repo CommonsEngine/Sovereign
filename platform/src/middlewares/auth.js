@@ -1,6 +1,7 @@
 import { getSessionWithUser, getOrCreateSingletonGuestUser, createSession } from "$/utils/auth.js";
 import env from "$/config/env.js";
 import { ensureTenantIds } from "$/utils/tenants.js";
+import { getUserPluginSnapshot } from "$/services/user-plugins.js";
 
 const {
   AUTH_SESSION_COOKIE_NAME,
@@ -10,6 +11,8 @@ const {
   DEFAULT_TENANT_ID,
 } = env();
 
+const EMPTY_PLUGIN_ACCESS = { enabled: [], disabled: [], plugins: [] };
+
 export async function requireAuth(req, res, next) {
   const token = req.cookies?.[AUTH_SESSION_COOKIE_NAME];
   const session = await getSessionWithUser(token);
@@ -17,6 +20,7 @@ export async function requireAuth(req, res, next) {
   const primaryEmail = session?.user?.primaryEmail?.email || null;
   const roles = Array.isArray(session?.user?.roles) ? session.user.roles : [];
   const capabilities = (session && session.user && session.user.capabilities) || {};
+  const pluginAccess = session?.user?.pluginAccess || EMPTY_PLUGIN_ACCESS;
 
   if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) {
     // API Auth Block Starts here
@@ -36,6 +40,8 @@ export async function requireAuth(req, res, next) {
       role: roles[0] || null,
       capabilities,
       tenantIds,
+      plugins: pluginAccess.enabled || [],
+      pluginAccess,
     };
     req.sessionToken = token;
     next();
@@ -53,6 +59,12 @@ export async function requireAuth(req, res, next) {
           ? guest.emails.find((e) => e.isPrimary)?.id || guest.emails[0]?.id
           : null;
         const tenantIds = ensureTenantIds([], DEFAULT_TENANT_ID);
+        let guestPluginAccess = EMPTY_PLUGIN_ACCESS;
+        try {
+          guestPluginAccess = await getUserPluginSnapshot(guest.id);
+        } catch {
+          guestPluginAccess = EMPTY_PLUGIN_ACCESS;
+        }
 
         req.user = {
           id: guest.id,
@@ -63,6 +75,8 @@ export async function requireAuth(req, res, next) {
           role: null,
           capabilities: {},
           tenantIds,
+          plugins: guestPluginAccess.enabled || [],
+          pluginAccess: guestPluginAccess,
         };
         return next();
       }
@@ -83,6 +97,8 @@ export async function requireAuth(req, res, next) {
         role: roles[0] || null,
         capabilities,
         tenantIds,
+        plugins: pluginAccess.enabled || [],
+        pluginAccess,
       };
       req.sessionToken = token;
       next();

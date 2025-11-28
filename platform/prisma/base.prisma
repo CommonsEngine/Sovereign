@@ -352,6 +352,11 @@ enum PluginSource {
   git
 }
 
+enum EnrollmentStrategy {
+  auto
+  subscribe
+}
+
 model Plugin {
   id              String     @id @default(cuid()) @map("id")
   pluginId        String     @unique @map("plugin_id") // @org/ns
@@ -362,6 +367,7 @@ model Plugin {
   type            PluginType @map("type")
   devOnly         Boolean    @default(true) @map("dev_only")
   enabled         Boolean    @default(false) @map("draft")
+  enrollStrategy  EnrollmentStrategy @default(auto) @map("enroll_strategy")
   corePlugin      Boolean    @default(false) @map("core_plugin")
   installedAt     DateTime   @default(now()) @map("installed_at")
   lastValidatedAt DateTime?  @map("last_validated_at")
@@ -372,6 +378,22 @@ model Plugin {
 
   @@index([corePlugin])
   @@map("plugins")
+}
+
+model UserPlugin {
+  id        String  @id @default(cuid()) @map("id")
+  userId    String  @map("user_id")
+  pluginId  String  @map("plugin_id")
+  enabled   Boolean @default(true) @map("enabled")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plugin Plugin @relation(fields: [pluginId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, pluginId])
+  @@index([pluginId])
+  @@map("user_plugins")
 }
 
 enum ProjectScope {

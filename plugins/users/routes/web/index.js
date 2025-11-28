@@ -6,6 +6,7 @@ import {
   tenantIdsFromContributions,
   hasTenantIntersection,
 } from "../../utils/tenants.js";
+import { getUserPluginSnapshots } from "../../services/user-plugins.js";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
@@ -140,6 +141,15 @@ async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
       orderBy: { createdAt: "asc" },
     });
 
+    const userIds = rawUsers.map((u) => u.id);
+    let pluginSnapshots = new Map();
+    try {
+      pluginSnapshots = await getUserPluginSnapshots(userIds, { prisma });
+    } catch (err) {
+      logger.warn("Failed to load user plugin states", err);
+      pluginSnapshots = new Map();
+    }
+
     const users = rawUsers.map((user) => {
       const displayName = buildDisplayName(user);
       const primaryEmail =
@@ -215,6 +225,20 @@ async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
       const projectsAssigned = projectsOwned;
       const tenantIds = tenantIdsFromContributions(contributions, tenantFallback);
       const roleKeys = roles.map((role) => role.key).filter(Boolean);
+      const pluginAccess = pluginSnapshots.get(user.id) || { enabled: [], plugins: [] };
+      const pluginStates = Array.isArray(pluginAccess.plugins) ? pluginAccess.plugins : [];
+      const enabledPluginNames = pluginStates
+        .filter((plugin) => plugin.enabled)
+        .map((plugin) => plugin.name)
+        .filter(Boolean);
+      const pluginPreview = enabledPluginNames.slice(0, 2);
+      const pluginOverflow = Math.max(enabledPluginNames.length - pluginPreview.length, 0);
+      const pluginsSummary =
+        enabledPluginNames.length === 0
+          ? "No plugins"
+          : pluginOverflow
+            ? `${pluginPreview.join(", ")} +${pluginOverflow} more`
+            : pluginPreview.join(", ");
 
       return {
         id: user.id,
@@ -258,6 +282,13 @@ async function viewUsers(req, res, _, { prisma, logger, defaultTenantId }) {
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         tenantIds,
+        pluginsEnabledCount: enabledPluginNames.length,
+        pluginsTotalCount: pluginStates.length,
+        pluginsSummary,
+        pluginsPreview: pluginPreview,
+        pluginsOverflow: pluginOverflow,
+        pluginsEnabledNames: enabledPluginNames.join(", "),
+        pluginsEnabledNamespaces: (pluginAccess.enabled || []).join(","),
       };
     });
 

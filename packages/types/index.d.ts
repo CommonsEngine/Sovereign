@@ -77,6 +77,7 @@ export interface PluginManifest {
   type: "module" | "project";
   enabled?: boolean;
   devOnly: boolean;
+  enrollStrategy?: "auto" | "subscribe";
   author: string;
   license: string;
   entryPoints?: Record<string, string>;
