@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { prisma } from "$/services/database.js";
-import * as shares from "$/platform/handlers/projects/shares.js";
+import * as shares from "$/handlers/projects/shares.js";
 
 function buildRes() {
   return {

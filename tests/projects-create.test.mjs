@@ -1,11 +1,12 @@
+import path from "node:path";
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  slugifyName,
-  buildSlug,
-  MAX_SLUG_ATTEMPTS,
-} from "$/platform/handlers/projects/core/create.js";
+process.env.ROOT_DIR ||= path.resolve(new URL("..", import.meta.url).pathname);
+process.env.SV_SKIP_ENV_REFRESH = "1";
+
+const createModulePromise = import("$/handlers/projects/core/create.js");
+const { slugifyName, buildSlug, MAX_SLUG_ATTEMPTS } = await createModulePromise;
 
 test("slugifyName trims, lowercases and strips invalid characters", () => {
   assert.equal(slugifyName("   Hello World!  "), "hello-world");
