@@ -47,8 +47,12 @@ function normalizePluginDefinition(entryKey, plugin, enabledLookup, logger = con
   const enabled = plugin.enabled === false ? false : enabledFlag || plugin.enabled !== false;
   const typeRaw = typeof plugin.type === "string" ? plugin.type.toLowerCase() : "module";
   const normalizedType = typeRaw === "project" ? "project" : "module";
-  const userDefaultEnabled =
-    plugin.corePlugin === true ? true : plugin.userDefaultEnabled !== false;
+  const enrollStrategy =
+    plugin.corePlugin === true
+      ? "auto"
+      : plugin.enrollStrategy === "subscribe"
+        ? "subscribe"
+        : "auto";
 
   return {
     pluginId: pluginIdRaw,
@@ -65,7 +69,7 @@ function normalizePluginDefinition(entryKey, plugin, enabledLookup, logger = con
     type: normalizedType,
     devOnly: plugin.devOnly === true,
     enabled,
-    userDefaultEnabled,
+    enrollStrategy,
     corePlugin: plugin.corePlugin === true,
   };
 }
@@ -124,7 +128,7 @@ async function seedPluginDefinitions(client, pluginDefinitions, logger) {
       type: definition.type,
       devOnly: definition.devOnly,
       enabled: definition.enabled,
-      userDefaultEnabled: definition.userDefaultEnabled,
+      enrollStrategy: definition.enrollStrategy,
       enabledAt: definition.enabled ? new Date() : null,
       corePlugin: definition.corePlugin,
       lastValidatedAt: new Date(),

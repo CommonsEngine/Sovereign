@@ -1,16 +1,17 @@
 import { prisma } from "./database.js";
 import logger from "./logger.js";
 
-const DEFAULT_USER_PLUGIN_ENABLED = true;
+const DEFAULT_ENROLL_STRATEGY = "auto";
 
-function resolveDefaultEnabled(plugin) {
-  if (!plugin) return DEFAULT_USER_PLUGIN_ENABLED;
-  if (plugin.corePlugin === true) return true;
-  return plugin.userDefaultEnabled !== false;
+function resolveEnrollStrategy(plugin) {
+  if (!plugin) return DEFAULT_ENROLL_STRATEGY;
+  if (plugin.corePlugin === true) return "auto";
+  return plugin.enrollStrategy === "subscribe" ? "subscribe" : "auto";
 }
 
 function evaluatePluginForUser(plugin, override) {
-  const defaultEnabled = resolveDefaultEnabled(plugin);
+  const strategy = resolveEnrollStrategy(plugin);
+  const defaultEnabled = strategy !== "subscribe";
   const overrideEnabled = typeof override?.enabled === "boolean" ? Boolean(override.enabled) : null;
   const enabled =
     plugin.corePlugin === true ? true : overrideEnabled !== null ? overrideEnabled : defaultEnabled;
@@ -20,7 +21,7 @@ function evaluatePluginForUser(plugin, override) {
     source = "core";
   } else if (overrideEnabled !== null) {
     source = overrideEnabled ? "explicit" : "disabled";
-  } else if (!defaultEnabled) {
+  } else if (strategy === "subscribe") {
     source = "opt-in";
   }
 
@@ -29,6 +30,7 @@ function evaluatePluginForUser(plugin, override) {
     defaultEnabled,
     overrideEnabled,
     overridden: overrideEnabled !== null,
+    enrollStrategy: strategy,
     source,
   };
 }
@@ -60,6 +62,7 @@ function buildUserPluginSnapshot(plugins = [], overrides = []) {
       type: plugin.type,
       corePlugin: plugin.corePlugin === true,
       defaultEnabled: state.defaultEnabled,
+      enrollStrategy: state.enrollStrategy,
       enabled: state.enabled,
       overridden: state.overridden,
       overrideEnabled: state.overrideEnabled,
@@ -98,7 +101,7 @@ export async function getUserPluginSnapshots(
       type: true,
       enabled: true,
       corePlugin: true,
-      userDefaultEnabled: true,
+      enrollStrategy: true,
     },
   });
 
@@ -167,7 +170,7 @@ export async function applyUserPluginUpdates(
       namespace: true,
       name: true,
       corePlugin: true,
-      userDefaultEnabled: true,
+      enrollStrategy: true,
     },
   });
 
@@ -198,7 +201,8 @@ export async function applyUserPluginUpdates(
       continue;
     }
 
-    const defaultEnabled = resolveDefaultEnabled(plugin);
+    const strategy = resolveEnrollStrategy(plugin);
+    const defaultEnabled = strategy !== "subscribe";
     const override = overrideByPluginId.get(plugin.id);
 
     if (entry.enabled === defaultEnabled) {

@@ -26,8 +26,13 @@ export async function buildPluginRoutes(app, manifest, config) {
 
   const createUserPluginGuard = (plugin, namespace) => {
     const ns = namespace || plugin?.namespace || plugin?.id;
-    const defaultEnabled =
-      plugin?.corePlugin === true ? true : plugin?.userDefaultEnabled !== false;
+    const enrollStrategy =
+      plugin?.corePlugin === true
+        ? "auto"
+        : plugin?.enrollStrategy === "subscribe"
+          ? "subscribe"
+          : "auto";
+    const defaultEnabled = enrollStrategy !== "subscribe";
     return function userPluginGuard(req, res, next) {
       const access = req.user?.pluginAccess;
       const enabled = Array.isArray(access?.enabled) ? new Set(access.enabled) : new Set();

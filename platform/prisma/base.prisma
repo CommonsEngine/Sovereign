@@ -352,6 +352,11 @@ enum PluginSource {
   git
 }
 
+enum EnrollmentStrategy {
+  auto
+  subscribe
+}
+
 model Plugin {
   id              String     @id @default(cuid()) @map("id")
   pluginId        String     @unique @map("plugin_id") // @org/ns
@@ -362,7 +367,7 @@ model Plugin {
   type            PluginType @map("type")
   devOnly         Boolean    @default(true) @map("dev_only")
   enabled         Boolean    @default(false) @map("draft")
-  userDefaultEnabled Boolean  @default(true) @map("user_default_enabled")
+  enrollStrategy  EnrollmentStrategy @default(auto) @map("enroll_strategy")
   corePlugin      Boolean    @default(false) @map("core_plugin")
   installedAt     DateTime   @default(now()) @map("installed_at")
   lastValidatedAt DateTime?  @map("last_validated_at")

@@ -55,7 +55,7 @@ const samplePlugins = [
     name: "Users",
     enabled: true,
     corePlugin: true,
-    userDefaultEnabled: true,
+    enrollStrategy: "auto",
   },
   {
     id: "optin",
@@ -64,7 +64,7 @@ const samplePlugins = [
     name: "Opt-in",
     enabled: true,
     corePlugin: false,
-    userDefaultEnabled: false,
+    enrollStrategy: "subscribe",
   },
   {
     id: "defaultOn",
@@ -73,7 +73,7 @@ const samplePlugins = [
     name: "Default On",
     enabled: true,
     corePlugin: false,
-    userDefaultEnabled: true,
+    enrollStrategy: "auto",
   },
 ];
 
