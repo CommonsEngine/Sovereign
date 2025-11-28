@@ -89,6 +89,8 @@ const baseTemplate = Object.freeze({
   TOTP_RECOVERY_CODES: Number(process.env.TOTP_RECOVERY_CODES ?? 8),
   TOTP_RECOVERY_LENGTH: Number(process.env.TOTP_RECOVERY_LENGTH ?? 10),
 
+  PROFILE_PICTURE_MAX_BYTES: Number(process.env.PROFILE_PICTURE_MAX_BYTES ?? 2 * 1024 * 1024),
+
   DATABASE_URL: process.env.DATABASE_URL || `file:${defaultDbPath}`,
 
   DEFAULT_USER_ROLE: process.env.DEFAULT_USER_ROLE || "platform:user",

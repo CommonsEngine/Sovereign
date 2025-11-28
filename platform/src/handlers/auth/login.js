@@ -49,9 +49,18 @@ export default async function login(req, res) {
           select: {
             id: true,
             name: true,
+            firstName: true,
+            lastName: true,
+            pictureUrl: true,
             status: true,
             passwordHash: true,
             primaryEmailId: true,
+            profile: {
+              select: {
+                locale: true,
+                timezone: true,
+              },
+            },
             primaryEmail: {
               select: { id: true, email: true, isVerified: true },
             },

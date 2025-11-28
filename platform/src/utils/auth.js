@@ -110,6 +110,8 @@ function buildUserSnapshot(user, primaryEmail, tenantIds = []) {
     firstName: user.firstName ?? null,
     lastName: user.lastName ?? null,
     pictureUrl: user.pictureUrl ?? null,
+    locale: user.profile?.locale ?? null,
+    timezone: user.profile?.timezone ?? null,
     primaryEmail: safePrimary,
     primaryEmailId: safePrimary?.id ?? user.primaryEmailId ?? user.sessionEmailId ?? null,
     tenantIds: normalizedTenants,
@@ -349,6 +351,12 @@ export async function getSessionWithUser(token) {
         lastName: true,
         pictureUrl: true,
         primaryEmailId: true,
+        profile: {
+          select: {
+            locale: true,
+            timezone: true,
+          },
+        },
         primaryEmail: {
           select: { id: true, email: true, isVerified: true },
         },

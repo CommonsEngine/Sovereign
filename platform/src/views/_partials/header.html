@@ -5,14 +5,36 @@
   <div class="sv-header__user" role="navigation" aria-label="User">
     <span class="sv-header__user-greeting">Ayubowan! <strong>{{user.name}}</strong></span>
     <details class="sv-header__user-menu">
-      <summary class="sv-header__user-avatar" title="{{user.name}}">
+      <summary
+        class="sv-header__user-avatar"
+        title="{{user.name}}"
+        data-has-avatar="{{#if user.pictureUrl}}true{{else}}false{{/if}}"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="12" cy="8" r="4" fill="#111" />
           <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#111" />
         </svg>
+        <img
+          class="sv-header__user-avatar-img"
+          data-header-avatar-img
+          {{#if user.pictureUrl}}src="{{user.pictureUrl}}"{{/if}}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          decoding="async"
+        />
       </summary>
       <div class="sv-header__user-menu-panel" role="menu" aria-label="User menu">
         <a class="sv-header__user-menu-item" href="/settings/security" role="menuitem">Security</a>
+        <button
+          class="sv-header__user-menu-item"
+          type="button"
+          data-modal-open="account-settings"
+          role="menuitem"
+          style="background-color: transparent; box-shadow: none; border: none; width: 100%; text-align: left;"
+        >
+          Account settings
+        </button>
         <a class="sv-header__user-menu-item" href="/logout" role="menuitem">Logout</a>
       </div>
     </details>
