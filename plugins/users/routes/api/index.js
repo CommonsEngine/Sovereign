@@ -8,7 +8,7 @@ import {
 import {
   applyUserPluginUpdates,
   getUserPluginSnapshot,
-} from "../../../../platform/src/services/user-plugins.js";
+} from "../../services/user-plugins.js";
 import { USER_ROLE_KEYS } from "../../config/roles.js";
 
 const CONTRIBUTOR_STATUS = {

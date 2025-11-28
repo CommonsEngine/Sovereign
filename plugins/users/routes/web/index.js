@@ -6,7 +6,7 @@ import {
   tenantIdsFromContributions,
   hasTenantIntersection,
 } from "../../utils/tenants.js";
-import { getUserPluginSnapshots } from "../../../../platform/src/services/user-plugins.js";
+import { getUserPluginSnapshots } from "../../services/user-plugins.js";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   dateStyle: "medium",
