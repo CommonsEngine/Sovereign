@@ -35,6 +35,7 @@ export async function viewSecurity(req, res) {
       passkeys_enabled: FEATURE_PASSKEYS_ENABLED,
       totp_enabled: FEATURE_TOTP_ENABLED,
       totp_status: totp ? (totp.verified ? "enabled" : "pending") : "disabled",
+      showSidebar: true,
     });
   } catch (err) {
     logger.error("✗ viewSecurity error", err);
