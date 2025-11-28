@@ -220,6 +220,38 @@ model PasskeyChallenge {
   @@map("passkey_challenges")
 }
 
+model UserTotp {
+  id             String   @id @default(cuid()) @map("id")
+  userId         String   @unique @map("user_id")
+  secret         String   @map("secret")
+  verified       Boolean  @default(false) @map("verified")
+  enabledAt      DateTime? @map("enabled_at")
+  lastUsedAt     DateTime? @map("last_used_at")
+  failedAttempts Int      @default(0) @map("failed_attempts")
+  recoveryCodes  Json?    @map("recovery_codes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_totp")
+}
+
+model TotpPending {
+  id        String   @id @default(cuid()) @map("id")
+  userId    String   @map("user_id")
+  token     String   @unique @map("token")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("totp_pending")
+}
+
 model VerificationToken {
   id        String   @id @default(cuid()) @map("id")
   userId    String   @map("user_id")

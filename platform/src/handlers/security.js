@@ -1,8 +1,9 @@
 import env from "$/config/env.js";
 import { prisma } from "$/services/database.js";
 import logger from "$/services/logger.js";
+import { hasTotp } from "$/services/totp.js";
 
-const { FEATURE_PASSKEYS_ENABLED } = env();
+const { FEATURE_PASSKEYS_ENABLED, FEATURE_TOTP_ENABLED } = env();
 
 export async function viewSecurity(req, res) {
   if (!FEATURE_PASSKEYS_ENABLED) {
@@ -14,10 +15,13 @@ export async function viewSecurity(req, res) {
   }
 
   try {
-    const passkeys = await prisma.passkeyCredential.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
-    });
+    const [passkeys, totp] = await Promise.all([
+      prisma.passkeyCredential.findMany({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: "desc" },
+      }),
+      FEATURE_TOTP_ENABLED ? hasTotp(req.user.id) : null,
+    ]);
 
     return res.render("security", {
       passkeys: passkeys.map((pk) => ({
@@ -29,6 +33,8 @@ export async function viewSecurity(req, res) {
         transports: Array.isArray(pk.transports) ? pk.transports.join(", ") : "",
       })),
       passkeys_enabled: FEATURE_PASSKEYS_ENABLED,
+      totp_enabled: FEATURE_TOTP_ENABLED,
+      totp_status: totp ? (totp.verified ? "enabled" : "pending") : "disabled",
     });
   } catch (err) {
     logger.error("✗ viewSecurity error", err);

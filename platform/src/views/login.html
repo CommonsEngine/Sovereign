@@ -21,7 +21,8 @@
           <div class="alert alert--success">{{success}}</div>
           {{/if}} {{#if error}}
           <div class="alert alert--error">{{error}}</div>
-          {{/if}} {{!-- LOGIN FORM --}} {{#unless forgot_mode}} {{#unless reset_mode}}
+          {{/if}} {{!-- LOGIN FORM --}} {{#unless totp_mode}} {{#unless forgot_mode}} {{#unless
+          reset_mode}}
           <form class="form" method="post" action="/login">
             <input type="hidden" name="return_to" value="{{return_to}}" />
             <div class="field">
@@ -79,7 +80,8 @@
           <div class="actions">
             <a class="sv-link" href="/auth/guest">Continue as guest</a>
           </div>
-          {{/if}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if forgot_mode}}
+          {{/if}} {{/unless}} {{/unless}} {{/unless}} {{!-- FORGOT PASSWORD FORM --}} {{#if
+          forgot_mode}}
           <form class="form" method="post" action="/auth/password/forgot">
             <div class="field">
               <label for="email">Email</label>
@@ -137,6 +139,37 @@
               <button class="button sv-button sv-button--primary" type="submit">
                 Update password
               </button>
+            </div>
+          </form>
+          {{/if}} {{!-- TOTP CHALLENGE FORM --}} {{#if totp_mode}}
+          <form class="form" method="post" action="/auth/totp/verify">
+            <input type="hidden" name="return_to" value="{{return_to}}" />
+            <div class="field">
+              <label for="totp">Two-factor code</label>
+              <input
+                id="totp"
+                name="code"
+                type="text"
+                inputmode="numeric"
+                class="input"
+                placeholder="123456"
+                required
+                autocomplete="one-time-code"
+              />
+            </div>
+            <div class="field">
+              <label for="recovery_code">or recovery code (optional)</label>
+              <input
+                id="recovery_code"
+                name="recovery_code"
+                type="text"
+                class="input"
+                placeholder="RECOVERY-CODE"
+              />
+            </div>
+            <div class="actions">
+              <a class="sv-link" href="/login">Back</a>
+              <button class="button sv-button sv-button--primary" type="submit">Verify</button>
             </div>
           </form>
           {{/if}}

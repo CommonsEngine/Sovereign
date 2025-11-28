@@ -18,8 +18,104 @@
             </div>
           </header>
 
-          <section class="sv-card" style="padding: 20px; max-width: 720px">
-            {{#if passkeys_enabled}}
+          <section
+            class="sv-card"
+            style="padding: 20px; max-width: 720px; display: grid; gap: 24px"
+          >
+            {{#if totp_enabled}}
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div>
+                <h3 style="margin: 0 0 4px 0">Two-factor (TOTP)</h3>
+                <p style="margin: 0; color: #475569; font-size: 14px">
+                  Protect sign-in with authenticator apps (e.g., 1Password, Authy).
+                </p>
+              </div>
+              <div style="display: flex; gap: 8px">
+                <button class="sv-button sv-button--secondary" type="button" data-totp-disable>
+                  Disable
+                </button>
+                <button class="sv-button sv-button--primary" type="button" data-totp-setup>
+                  Enable / Regenerate
+                </button>
+              </div>
+            </div>
+            <div
+              data-totp-setup-panel
+              style="
+                display: none;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 14px;
+                background: #f8fafc;
+              "
+            >
+              <p style="margin: 0 0 6px; color: #475569">
+                Scan QR or enter code manually, then enter a 6-digit code to confirm.
+              </p>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap">
+                <img
+                  data-totp-qr
+                  alt="TOTP QR"
+                  style="
+                    width: 120px;
+                    height: 120px;
+                    object-fit: contain;
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 6px;
+                  "
+                />
+                <div>
+                  <div style="font-size: 13px; color: #0f172a">Secret:</div>
+                  <code
+                    data-totp-secret
+                    style="font-size: 14px; display: inline-block; margin-top: 4px"
+                  ></code>
+                </div>
+              </div>
+              <form data-totp-verify style="margin-top: 12px; display: grid; gap: 10px">
+                <input
+                  name="code"
+                  class="input"
+                  placeholder="Enter 6-digit code"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  required
+                />
+                <button class="sv-button sv-button--primary" type="submit">Verify & save</button>
+              </form>
+              <div data-totp-verify-status style="font-size: 13px; color: #475569"></div>
+            </div>
+            <div
+              data-totp-recovery
+              style="display: none; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 12px"
+            >
+              <div style="font-weight: 600; margin-bottom: 6px">Recovery codes</div>
+              <p style="margin: 0 0 8px; color: #475569; font-size: 13px">
+                Store these codes in a safe place. Each code can be used once if you lose your
+                authenticator app.
+              </p>
+              <div
+                data-totp-recovery-list
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                  gap: 6px;
+                  font-family:
+                    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                    &quot;Liberation Mono&quot;, &quot;Courier New&quot;, monospace;
+                  background: #0f172a;
+                  color: #e2e8f0;
+                  padding: 10px;
+                  border-radius: 8px;
+                "
+              ></div>
+            </div>
+            <div data-totp-status style="font-size: 13px; color: #475569">
+              Status: <strong>{{totp_status}}</strong>
+            </div>
+            {{/if}} {{#if passkeys_enabled}}
             <div style="display: flex; justify-content: space-between; align-items: center">
               <div>
                 <h3 style="margin: 0 0 4px 0">Passkeys</h3>
@@ -134,6 +230,107 @@
           }
         });
       });
+    </script>
+    {{/if}} {{#if totp_enabled}}
+    <script type="module">
+      const totpBtn = document.querySelector("[data-totp-setup]");
+      const disableBtn = document.querySelector("[data-totp-disable]");
+      const panel = document.querySelector("[data-totp-setup-panel]");
+      const secretEl = document.querySelector("[data-totp-secret]");
+      const qrEl = document.querySelector("[data-totp-qr]");
+      const verifyForm = document.querySelector("[data-totp-verify]");
+      const verifyStatus = document.querySelector("[data-totp-verify-status]");
+      const recoveryBox = document.querySelector("[data-totp-recovery]");
+      const recoveryList = document.querySelector("[data-totp-recovery-list]");
+      const statusLabel = document.querySelector("[data-totp-status] strong");
+      const initialStatus = (statusLabel?.textContent || "").trim().toLowerCase();
+      if (disableBtn) disableBtn.disabled = initialStatus === "disabled";
+
+      const setStatus = (msg, isError = false) => {
+        if (!verifyStatus) return;
+        verifyStatus.textContent = msg || "";
+        verifyStatus.style.color = isError ? "#dc2626" : "#475569";
+      };
+
+      const renderRecovery = (codes = []) => {
+        if (!recoveryList || !recoveryBox) return;
+        recoveryList.innerHTML = "";
+        codes.forEach((c) => {
+          const div = document.createElement("div");
+          div.textContent = c;
+          div.style.padding = "4px 6px";
+          div.style.borderRadius = "6px";
+          div.style.background = "#1f2937";
+          recoveryList.appendChild(div);
+        });
+        recoveryBox.style.display = codes.length ? "block" : "none";
+      };
+
+      const startSetup = async () => {
+        if (!panel) return;
+        try {
+          const res = await fetch("/api/totp/setup", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || "Setup failed");
+          secretEl.textContent = data.secret || "";
+          if (qrEl) qrEl.src = data.qrDataUrl || "";
+          panel.style.display = "block";
+          setStatus("Enter a code from your authenticator to finish setup.");
+        } catch (err) {
+          setStatus(err?.message || "Unable to start TOTP setup.", true);
+        }
+      };
+
+      if (totpBtn) {
+        totpBtn.addEventListener("click", () => {
+          setStatus("");
+          renderRecovery([]);
+          startSetup();
+        });
+      }
+
+      if (verifyForm) {
+        verifyForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setStatus("Verifying…");
+          const formData = new FormData(verifyForm);
+          const code = formData.get("code");
+          try {
+            const res = await fetch("/api/totp/verify", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ code }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Verification failed");
+            renderRecovery(data.recoveryCodes || []);
+            setStatus("TOTP enabled. Save your recovery codes!");
+            if (statusLabel) statusLabel.textContent = "enabled";
+          } catch (err) {
+            setStatus(err?.message || "Verification failed", true);
+          }
+        });
+      }
+
+      if (disableBtn) {
+        disableBtn.addEventListener("click", async () => {
+          setStatus("Disabling…");
+          try {
+            const res = await fetch("/api/totp/disable", { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Disable failed");
+            setStatus("TOTP disabled.");
+            panel?.setAttribute("style", "display:none");
+            renderRecovery([]);
+            if (statusLabel) statusLabel.textContent = "disabled";
+          } catch (err) {
+            setStatus(err?.message || "Disable failed", true);
+          }
+        });
+      }
     </script>
     {{/if}}
   </body>

@@ -15,9 +15,14 @@ import {
 } from "$/services/passkeys.js";
 import { prisma } from "$/services/database.js";
 import { createSession } from "$/utils/auth.js";
+import {
+  isTotpEnabled,
+  createPending as createTotpPending,
+  setPendingCookie as setTotpPendingCookie,
+} from "$/services/totp.js";
 
 const router = express.Router();
-const { FEATURE_PASSKEYS_ENABLED } = env();
+const { FEATURE_PASSKEYS_ENABLED, FEATURE_TOTP_ENABLED } = env();
 
 function guardDisabled(res) {
   if (!FEATURE_PASSKEYS_ENABLED) {
@@ -138,18 +143,25 @@ router.post("/login/verify", rateLimiters.public, async (req, res) => {
     const user = verification.user;
     ensureActiveUser(user);
 
-    await createSession(req, res, {
-      ...user,
-      sessionEmail: user.primaryEmail?.email || verification.emailHint || null,
-      sessionEmailId: user.primaryEmail?.id || null,
-    });
+    if (FEATURE_TOTP_ENABLED && (await isTotpEnabled(user.id))) {
+      const pending = await createTotpPending(user.id);
+      setTotpPendingCookie(res, pending.token, pending.expiresAt);
+      clearChallengeCookie(res);
+      return res.json({ totp_required: true, redirect: "/login?totp=1" });
+    } else {
+      await createSession(req, res, {
+        ...user,
+        sessionEmail: user.primaryEmail?.email || verification.emailHint || null,
+        sessionEmailId: user.primaryEmail?.id || null,
+      });
 
-    clearChallengeCookie(res);
-    const dest =
-      typeof req.body?.return_to === "string" && req.body.return_to.startsWith("/")
-        ? req.body.return_to
-        : "/";
-    return res.json({ ok: true, redirect: dest });
+      clearChallengeCookie(res);
+      const dest =
+        typeof req.body?.return_to === "string" && req.body.return_to.startsWith("/")
+          ? req.body.return_to
+          : "/";
+      return res.json({ ok: true, redirect: dest });
+    }
   } catch (err) {
     logger.warn("Passkey login verify failed", err);
     return res.status(err.statusCode || 400).json({
