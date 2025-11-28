@@ -32,7 +32,7 @@
         {{/if}}
       </section>
     </main>
-    {{> account-settings-script}}
+    <script src="/js/account-settings.js" defer></script>
     {{#if scripts}} {{#each scripts}}
     <script src="{{this}}" defer></script>
     {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
