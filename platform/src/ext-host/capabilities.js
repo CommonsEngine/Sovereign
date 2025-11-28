@@ -5,7 +5,75 @@ import * as mailer from "$/services/mailer.js";
 import { uuid } from "$/utils/id.js";
 import { refreshEnvCache } from "$/config/env.js";
 
+import { PluginCapabilityError } from "./plugin-auth.js";
+
 export const DEV_ALLOW_ALL_CAPS = process.env.DEV_ALLOW_ALL_CAPS === "true";
+
+const SENSITIVE_MODELS = new Set([
+  "User",
+  "UserProfile",
+  "UserEmail",
+  "UserRole",
+  "UserRoleAssignment",
+  "UserRoleCapability",
+  "UserCapability",
+  "Session",
+  "PasskeyCredential",
+  "PasskeyChallenge",
+  "VerificationToken",
+  "PasswordResetToken",
+  "Invite",
+  "AuditLog",
+  "Tenant",
+]);
+
+function normalizeNamespace(value) {
+  return String(value || "")
+    .replace(/^@[^/]+\/+/, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isWhitelistedForSensitiveModels(plugin, config = {}) {
+  const configured = Array.isArray(config.SENSITIVE_PLUGIN_ALLOWLIST)
+    ? config.SENSITIVE_PLUGIN_ALLOWLIST
+    : [];
+  const allowlist = new Set(configured.map((item) => normalizeNamespace(item)));
+
+  const ns = normalizeNamespace(plugin?.namespace);
+  const id = normalizeNamespace(plugin?.id);
+  return allowlist.has(ns) || allowlist.has(id);
+}
+
+function getPrismaForPlugin(plugin, config = {}) {
+  const namespace = (plugin?.namespace || plugin?.id || "<unknown>").toString();
+
+  const isWhitelistedCore =
+    plugin?.corePlugin === true && isWhitelistedForSensitiveModels(plugin, config);
+
+  if (isWhitelistedCore) return prisma;
+
+  return prisma.$extends({
+    name: `plugin-guard:${namespace}`,
+    query: {
+      $allModels: {
+        async $allOperations({ model }, next) {
+          if (SENSITIVE_MODELS.has(model)) {
+            throw new PluginCapabilityError(
+              `Plugin "${namespace}" is not allowed to access model "${model}"`,
+              {
+                status: 403,
+                code: "ERR_PLUGIN_DATA_ACCESS",
+                meta: { namespace, model },
+              }
+            );
+          }
+          return next();
+        },
+      },
+    },
+  });
+}
 
 const capabilityRegistry = {
   database: {
@@ -13,7 +81,7 @@ const capabilityRegistry = {
     provides: "prisma",
     description: "Read/write access to the primary database via Prisma client",
     risk: "critical",
-    resolve: () => prisma,
+    resolve: ({ plugin, config }) => getPrismaForPlugin(plugin, config),
   },
   git: {
     key: "git",

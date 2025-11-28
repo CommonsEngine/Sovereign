@@ -125,6 +125,7 @@ const baseTemplate = Object.freeze({
   TIMEZONE_DEFAULT: process.env.DEFAULT_TIMEZONE || "UTC",
   CURRENCY_DEFAULT: process.env.DEFAULT_CURRENCY || "EUR",
   DEFAULT_TENANT_ID: manifest.defaultTenantId || "tenant-0",
+  SENSITIVE_PLUGIN_ALLOWLIST: splitCsv(process.env.SENSITIVE_PLUGIN_ALLOWLIST || "users,settings"),
 
   NODE_ENV: process.env.NODE_ENV || "development",
   PORT: Number(process.env.PORT) || 3000,
