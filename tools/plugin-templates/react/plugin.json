@@ -8,6 +8,7 @@
   "framework": "react",
   "enabled": true,
   "devOnly": true,
+  "enrollStrategy": "auto",
   "entryPoints": {
     "web": "dist/index.js",
     "api": "routes/api/index.js"

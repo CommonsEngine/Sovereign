@@ -1,10 +1,14 @@
 import express from "express";
 
-export default () => {
+export default (ctx) => {
   const router = express.Router();
 
-  router.get("/", (_req, res) => {
-    res.send(`<h1>{{DISPLAY_NAME}}</h1><p>{{DESCRIPTION}}</p>`);
+  router.get("/", (req, res) => {
+    return res.render("{{NAMESPACE}}/index");
+  });
+
+  router.get("/:id", (req, res) => {
+    return res.render("{{NAMESPACE}}/[id]");
   });
 
   return router;
