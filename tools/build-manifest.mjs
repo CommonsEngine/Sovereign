@@ -466,10 +466,8 @@ const buildManifest = async () => {
     }
 
     const manifestEnabled = pluginManifest.enabled !== false;
-    const isEnabledPlugin =
-      process.env.NODE_ENV !== "production"
-        ? manifestEnabled
-        : manifestEnabled && !pluginManifest.devOnly;
+    const isDevEnvironment = process.env.NODE_ENV === "development";
+    const isEnabledPlugin = manifestEnabled && (!pluginManifest.devOnly || isDevEnvironment);
 
     if (!manifest.allowedPluginFrameworks.includes(pluginManifest.framework)) {
       manifest.allowedPluginFrameworks.push(pluginManifest.framework);

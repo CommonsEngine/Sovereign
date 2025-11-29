@@ -139,7 +139,7 @@ During manifest generation, **all plugins present under `/plugins/*`** are inclu
 The only filters applied are based on plugin manifest flags:
 
 - **`enabled: false`** → Excluded from all builds until re-enabled.
-- **`devOnly: true`** → Excluded from manifest in all builds except explicitly forced test runs (even if `enabled`).
+- **`devOnly: true`** → Enabled only when `NODE_ENV=development`; ignored for production, staging, or test builds even if `enabled` is set.
 
 There is **no environment-based exclusion** beyond these flags.  
 If a plugin exists in the filesystem, it will be included unless marked `devOnly` or `enabled: false`.
