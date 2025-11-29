@@ -17,7 +17,9 @@
           in{{/if}}
         </h2>
         <div class="auth__card">
-          {{#if success}}
+          {{#if passkeys_enabled}}
+          <p data-passkey-status class="alert alert--passkey"></p>
+          {{/if}} {{#if success}}
           <div class="alert alert--success">{{success}}</div>
           {{/if}} {{#if error}}
           <div class="alert alert--error">{{error}}</div>
@@ -50,23 +52,19 @@
             </div>
             <div class="actions">
               <a class="sv-link" href="/login?forgot=1">Forgot your password?</a>
-              <button class="button sv-button sv-button--primary" type="submit">Sign in</button>
+              <div class="flex row gap-xs">
+                {{#if passkeys_enabled}}
+                <button
+                  class="button sv-button sv-button--secondary"
+                  type="button"
+                  data-passkey-login
+                >
+                  Sign in with passkey
+                </button>
+                {{/if}}
+                <button class="button sv-button sv-button--primary" type="submit">Sign in</button>
+              </div>
             </div>
-            {{#if passkeys_enabled}}
-            <div class="actions" style="margin-top: 12px; flex-direction: column; gap: 6px">
-              <button
-                class="button sv-button sv-button--secondary"
-                type="button"
-                data-passkey-login
-              >
-                Sign in with passkey
-              </button>
-              <p
-                data-passkey-status
-                style="color: #475569; font-size: 13px; min-height: 18px; margin: 0"
-              ></p>
-            </div>
-            {{/if}}
           </form>
           {{#if allow_signup}}
           <div class="divider"></div>
@@ -187,6 +185,7 @@
 
     const setStatus = (msg, isError = false) => {
       if (!supportText) return;
+      supportText.style.display = "block";
       supportText.textContent = msg || "";
       supportText.style.color = isError ? "#dc2626" : "#475569";
     };

@@ -12,7 +12,7 @@ const pluginHeaderTemplateCache = new Map(); // path -> string|null
 
 // const BLANK_RE = /^\s*$/;
 
-// TODO: Improve this logic
+// TODO: Identify dead code and clean up
 const IS_PROD = (process.env.NODE_ENV || "").trim() === "production";
 
 const manifest = fsUtil.readJson(path.resolve(process.env.ROOT_DIR, "manifest.json"));

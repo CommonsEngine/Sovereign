@@ -90,6 +90,15 @@
     border: 1px solid color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
     color: color-mix(in oklab, var(--color-success), var(--color-text-primary) 40%);
   }
+  .auth__page .alert--passkey {
+    color: #475569;
+    min-height: 18px;
+    margin: 0 0 12px 0;
+    border-radius: var(--radius-m, 10px);
+    background: color-mix(in oklab, #f3f9cc, var(--color-bg-primary) 85%);
+    border: 1px solid color-mix(in oklab, var(--color-success), var(--color-bg-primary) 70%);
+    display: none;
+  }
   @media (max-width: 520px) {
     .auth__page .actions {
       flex-direction: column;
