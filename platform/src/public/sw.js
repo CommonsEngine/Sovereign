@@ -47,6 +47,7 @@ function cacheFirst(request) {
     if (cached) return cached;
     return fetch(request)
       .then((response) => {
+        if (!response || !response.ok) return cached;
         const clone = response.clone();
         caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
         return response;
@@ -58,8 +59,10 @@ function cacheFirst(request) {
 function networkFirstForNavigation(event) {
   return fetch(event.request)
     .then((response) => {
-      const clone = response.clone();
-      caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, clone));
+      if (response && response.ok) {
+        const clone = response.clone();
+        caches.open(RUNTIME_CACHE).then((cache) => cache.put(event.request, clone));
+      }
       return response;
     })
     .catch(async () => {
