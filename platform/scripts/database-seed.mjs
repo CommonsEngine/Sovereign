@@ -8,6 +8,13 @@ import seedAppSettings from "./database-seed-app-settings.mjs";
 
 const prisma = new PrismaClient();
 
+const resolvedEnv =
+  (process.env.NODE_ENV && process.env.NODE_ENV.trim()) ||
+  (process.env.APP_ENV && process.env.APP_ENV.trim()) ||
+  "development";
+const isProd = resolvedEnv === "production";
+const allowDestructiveReset = process.env.FORCE_DB_RESET === "true";
+
 // Helper to clear all data from Sqlite (for dev/testing purposes)
 async function clearSqlite() {
   const tables =
@@ -24,7 +31,14 @@ async function clearSqlite() {
 }
 
 async function main() {
-  await clearSqlite();
+  if (!isProd && allowDestructiveReset) {
+    console.warn("[seed] FORCE_DB_RESET=true → clearing database before seeding");
+    await clearSqlite();
+  } else if (allowDestructiveReset && isProd) {
+    console.warn("[seed] FORCE_DB_RESET ignored in production; skipping destructive reset");
+  } else {
+    console.log("[seed] Skipping destructive reset (safe mode)");
+  }
 
   await seedRBACData(prisma);
   await seedTestUsers(prisma);
