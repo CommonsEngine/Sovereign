@@ -57,7 +57,7 @@ function getPrismaForPlugin(plugin, config = {}) {
     name: `plugin-guard:${namespace}`,
     query: {
       $allModels: {
-        async $allOperations({ model }, next) {
+        async $allOperations({ model, args, query }) {
           if (SENSITIVE_MODELS.has(model)) {
             throw new PluginCapabilityError(
               `Plugin "${namespace}" is not allowed to access model "${model}"`,
@@ -68,7 +68,7 @@ function getPrismaForPlugin(plugin, config = {}) {
               }
             );
           }
-          return next();
+          return query(args);
         },
       },
     },
