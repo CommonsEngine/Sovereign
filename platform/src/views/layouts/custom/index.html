@@ -2,6 +2,154 @@
 <html lang="{{head.lang.short}}">
   <head>
     {{> layout/head}}
+    <style>
+      /* Shared mobile shell for plugin pages */
+      .sv-mobile-topbar,
+      .sv-mobile-launcher,
+      .sv-mobile-drawer,
+      .sv-mobile-drawer__backdrop {
+        display: none;
+      }
+      @media (max-width: 768px) {
+        .sv-page--shell .sv-header,
+        .sv-page--shell .sv-sidebar,
+        .sv-page--shell .sv-sidebar + main > .sv-header {
+          display: none !important;
+        }
+        .sv-page--shell html,
+        .sv-page--shell body {
+          overflow-x: hidden;
+        }
+        .sv-page--shell .sv-container {
+          width: 100vw !important;
+          max-width: 100vw;
+          padding-bottom: 96px;
+          min-height: 100vh;
+          overflow-y: auto;
+          margin: 0;
+        }
+        .sv-page--shell .sv-page__wrap {
+          padding: 12px 16px 20px;
+        }
+        .sv-page--shell .sv-page__header {
+          display: none;
+        }
+        .sv-page--shell .sv-page__title {
+          margin: 0;
+          font-size: clamp(20px, 5vw, 24px);
+        }
+        .sv-page--shell .sv-page__grid {
+          padding-top: 8px;
+        }
+        .sv-page--shell .sv-mobile-topbar {
+          display: flex !important;
+          position: sticky;
+          top: 0;
+          left: 0;
+          z-index: 14;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px 16px;
+          background: var(--color-bg-primary);
+          border-bottom: 1px solid var(--color-border-primary);
+          width: 100vw;
+        }
+        .sv-page--shell .sv-mobile-topbar__title {
+          margin: 0;
+        }
+        .sv-page--shell .sv-mobile-topbar__avatar summary {
+          list-style: none;
+        }
+        .sv-page--shell .sv-mobile-topbar__avatar summary::-webkit-details-marker {
+          display: none;
+        }
+        .sv-page--shell .sv-mobile-topbar__avatar {
+          position: relative;
+        }
+        .sv-page--shell .sv-mobile-topbar__avatar .sv-header__user-menu-panel {
+          right: 0;
+          top: calc(100% + 6px);
+        }
+        .sv-page--shell .sv-mobile-launcher {
+          display: grid !important;
+          position: fixed;
+          left: 50%;
+          bottom: 18px;
+          transform: translateX(-50%);
+          z-index: 22;
+          place-items: center;
+        }
+        .sv-page--shell .sv-mobile-launcher button {
+          width: 50px;
+          height: 50px;
+          border-radius: 14px;
+          border: 1px solid var(--color-border-primary);
+          background: var(--color-bg-primary);
+          box-shadow: var(--shadow-l);
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+        }
+        .sv-page--shell .sv-mobile-launcher.is-hidden,
+        .sv-page--shell .sv-mobile-launcher button.is-hidden {
+          display: none !important;
+        }
+        .sv-page--shell .sv-mobile-launcher button svg {
+          width: 22px;
+          height: 22px;
+        }
+        .sv-page--shell .sv-mobile-drawer__backdrop {
+          display: block !important;
+          position: fixed;
+          inset: 0;
+          background: color-mix(in oklab, var(--color-text-primary), transparent 70%);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 200ms ease;
+          z-index: 20;
+        }
+        .sv-page--shell .sv-mobile-drawer {
+          display: block !important;
+          position: fixed;
+          left: 50%;
+          bottom: -100%;
+          transform: translateX(-50%);
+          width: min(480px, 100%);
+          border-radius: 16px 16px 0 0;
+          background: var(--color-bg-primary);
+          box-shadow: var(--shadow-xl);
+          padding: 14px 16px 20px;
+          z-index: 21;
+          transition: bottom 220ms ease;
+        }
+        .sv-page--shell .sv-mobile-drawer__handle {
+          width: 42px;
+          height: 4px;
+          border-radius: 999px;
+          background: var(--color-border-secondary, #e2e8f0);
+          margin: 0 auto 14px;
+        }
+        .sv-page--shell .sv-mobile-drawer__nav {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+          gap: 8px;
+          justify-items: center;
+        }
+        .sv-page--shell .sv-mobile-drawer__nav .sv-sidebar__btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
+        }
+        .sv-page--shell .sv-mobile-drawer.is-open {
+          bottom: 0;
+        }
+        .sv-page--shell .sv-mobile-drawer.is-open + .sv-mobile-drawer__backdrop {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+    </style>
   </head>
   <body class="sv-page sv-page--shell">
     <!-- top loading spinner -->
@@ -10,10 +158,136 @@
     {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
       {{#if showHeader}} {{> header}} {{/if}}
+      <div class="sv-mobile-topbar" aria-label="Mobile header">
+        <h2 class="sv-page__title sv-mobile-topbar__title"></h2>
+        <details class="sv-header__user-menu sv-mobile-topbar__avatar">
+          <summary
+            class="sv-header__user-avatar"
+            title="{{user.name}}"
+            aria-label="User menu"
+            data-has-avatar="{{#if user.pictureUrl}}true{{else}}false{{/if}}"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" fill="#111" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#111" />
+            </svg>
+            <img
+              class="sv-header__user-avatar-img"
+              data-header-avatar-img
+              {{#if user.pictureUrl}}src="{{user.pictureUrl}}"{{/if}}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+            />
+          </summary>
+          <div class="sv-header__user-menu-panel" role="menu" aria-label="User menu">
+            <a class="sv-header__user-menu-item" href="/settings/security" role="menuitem">Security</a>
+            <button
+              class="sv-header__user-menu-item"
+              type="button"
+              data-modal-open="account-settings"
+              role="menuitem"
+              style="background-color: transparent; box-shadow: none; border: none; width: 100%; text-align: left;"
+            >
+              Account settings
+            </button>
+            <a class="sv-header__user-menu-item" href="/logout" role="menuitem">Logout</a>
+          </div>
+        </details>
+      </div>
       <section id="plugin-root" class="sv-container">{{{body}}}</section>
     </main>
+    <div class="sv-mobile-launcher" aria-hidden="true">
+      <button type="button" data-mobile-launcher aria-label="Open navigation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 5v14m7-7H5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="sv-mobile-drawer" data-mobile-drawer>
+      <div class="sv-mobile-drawer__handle" aria-hidden="true"></div>
+      <nav class="sv-mobile-drawer__nav" aria-label="Mobile navigation" data-mobile-drawer-nav></nav>
+    </div>
+    <div class="sv-mobile-drawer__backdrop" data-mobile-drawer-backdrop></div>
     {{#if scripts}} {{#each scripts}}
     <script src="{{this}}" defer></script>
     {{/each}} {{/if}} {{#if inlineScripts}} {{{inlineScripts}}} {{/if}}
+    <script>
+      (() => {
+        const body = document.body;
+        const html = document.documentElement;
+        body?.classList.add("sv-page--shell");
+        html?.classList.add("sv-page--shell");
+        const launcher = document.querySelector("[data-mobile-launcher]");
+        const drawer = document.querySelector("[data-mobile-drawer]");
+        const backdrop = document.querySelector("[data-mobile-drawer-backdrop]");
+        const topbar = document.querySelector(".sv-mobile-topbar");
+        const topbarTitle = document.querySelector(".sv-mobile-topbar__title");
+        const drawerNav = document.querySelector("[data-mobile-drawer-nav]");
+        const mq = window.matchMedia("(max-width: 768px)");
+
+        const toggleDrawer = (open) => {
+          if (!drawer || !backdrop) return;
+          drawer.classList.toggle("is-open", open);
+          backdrop.classList.toggle("is-open", open);
+          launcher?.classList.toggle("is-hidden", open);
+          launcher?.querySelector("button")?.classList.toggle("is-hidden", open);
+        };
+
+        const ensureMobileVisibility = () => {
+          if (!mq.matches) {
+            topbar?.style.removeProperty("display");
+            launcher?.style.removeProperty("display");
+            drawer?.style.removeProperty("display");
+            backdrop?.style.removeProperty("display");
+            toggleDrawer(false);
+            return;
+          }
+          if (topbar) topbar.style.display = "flex";
+          if (launcher) launcher.style.display = "grid";
+          if (drawer) drawer.style.display = "block";
+          if (backdrop) backdrop.style.display = "block";
+          launcher?.classList.remove("is-hidden");
+          launcher?.querySelector("button")?.classList.remove("is-hidden");
+          drawer?.classList.remove("is-open");
+          backdrop?.classList.remove("is-open");
+        };
+
+        const cloneNav = () => {
+          if (!drawerNav) return;
+          drawerNav.innerHTML = "";
+          const buttons = document.querySelectorAll(
+            ".sv-sidebar__nav .sv-sidebar__btn, .sv-sidebar__bottom .sv-sidebar__btn"
+          );
+          buttons.forEach((btn) => {
+            const clone = btn.cloneNode(true);
+            drawerNav.appendChild(clone);
+          });
+        };
+
+        const setTitle = () => {
+          if (!topbarTitle) return;
+          const pageTitle = document.querySelector(".sv-page__title");
+          topbarTitle.textContent = pageTitle?.textContent?.trim() || "Workspace";
+        };
+
+        launcher?.addEventListener("click", () =>
+          toggleDrawer(!drawer?.classList.contains("is-open"))
+        );
+        backdrop?.addEventListener("click", () => toggleDrawer(false));
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") toggleDrawer(false);
+        });
+
+        // Initialize when DOM ready
+        window.addEventListener("load", () => {
+          setTitle();
+          cloneNav();
+          ensureMobileVisibility();
+        });
+        mq.addEventListener("change", ensureMobileVisibility);
+      })();
+    </script>
   </body>
 </html>

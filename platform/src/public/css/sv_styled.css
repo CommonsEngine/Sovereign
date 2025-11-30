@@ -239,6 +239,11 @@
       border-radius: 8px;
     }
   }
+  @media (max-width: 768px) {
+    .sv-page--users .sv-sidebar {
+      display: none;
+    }
+  }
 }
 
 @layer platform.header {
@@ -383,6 +388,14 @@
   }
   .sv-plugin-banner__actions:empty {
     display: none;
+  }
+  @media (max-width: 768px) {
+    .sv-page--users .sv-header {
+      display: none;
+    }
+    .sv-page--users .sv-header__user-greeting {
+      display: none;
+    }
   }
 }
 

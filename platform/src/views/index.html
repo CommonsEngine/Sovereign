@@ -3,6 +3,152 @@
   <head>
     {{> layout/head}}
     <link rel="stylesheet" href="/css/sv_pg_index.css?v={{head.cacheBuster}}" />
+    <style>
+      /* Page-scoped mobile refinements */
+      .sv-mobile-topbar,
+      .sv-mobile-launcher,
+      .sv-mobile-drawer,
+      .sv-mobile-drawer__backdrop {
+        display: none;
+      }
+      @media (max-width: 768px) {
+        .sv-page--index {
+          flex-direction: column;
+        }
+        .sv-page--index .sv-sidebar {
+          display: none;
+        }
+        .sv-page--index .sv-header {
+          display: none;
+        }
+        .sv-page--index .sv-container {
+          width: 100%;
+          padding-bottom: 96px; /* space for mobile launcher */
+        }
+        .sv-page--index .sv-page__wrap {
+          padding: 12px 16px 20px;
+        }
+        .sv-page--index .sv-page__wrap .sv-page__header {
+          display: none;
+        }
+        .sv-page--index .sv-page__title {
+          margin: 0;
+          font-size: clamp(20px, 5vw, 24px);
+        }
+        .sv-page--index .sv-page__grid {
+          padding-top: 8px;
+        }
+        .sv-page--index .sv-mobile-topbar {
+          display: flex;
+          position: sticky;
+          top: 0;
+          z-index: 14;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 12px 16px;
+          background: var(--color-bg-primary);
+          border-bottom: 1px solid var(--color-border-primary);
+        }
+        .sv-page--index .sv-mobile-topbar__avatar summary {
+          list-style: none;
+        }
+        .sv-page--index .sv-mobile-topbar__avatar summary::-webkit-details-marker {
+          display: none;
+        }
+        .sv-page--index .sv-mobile-topbar__avatar {
+          position: relative;
+        }
+        .sv-page--index .sv-mobile-topbar__avatar .sv-header__user-menu-panel {
+          right: 0;
+          top: calc(100% + 6px);
+        }
+        .sv-page--index .sv-header__user-greeting {
+          display: none;
+        }
+        .sv-page--index .sv-mobile-launcher {
+          display: grid;
+          position: fixed;
+          left: 50%;
+          bottom: 18px;
+          transform: translateX(-50%);
+          z-index: 22;
+          display: grid;
+          place-items: center;
+        }
+        .sv-page--index .sv-mobile-launcher button {
+          width: 50px;
+          height: 50px;
+          border-radius: 14px;
+          border: 1px solid var(--color-border-primary);
+          background: var(--color-bg-primary);
+          box-shadow: var(--shadow-l);
+          display: grid;
+          place-items: center;
+          cursor: pointer;
+        }
+        .sv-page--index .sv-mobile-launcher.is-hidden {
+          display: none;
+        }
+        .sv-page--index .sv-mobile-launcher button.is-hidden {
+          display: none;
+        }
+        .sv-page--index .sv-mobile-launcher button svg {
+          width: 22px;
+          height: 22px;
+        }
+        .sv-page--index .sv-mobile-drawer__backdrop {
+          display: block;
+          position: fixed;
+          inset: 0;
+          background: color-mix(in oklab, var(--color-text-primary), transparent 70%);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 200ms ease;
+          z-index: 20;
+        }
+        .sv-page--index .sv-mobile-drawer {
+          display: block;
+          position: fixed;
+          left: 50%;
+          bottom: -100%;
+          transform: translateX(-50%);
+          width: min(480px, 100%);
+          border-radius: 16px 16px 0 0;
+          background: var(--color-bg-primary);
+          box-shadow: var(--shadow-xl);
+          padding: 14px 16px 20px;
+          z-index: 21;
+          transition: bottom 220ms ease;
+        }
+        .sv-page--index .sv-mobile-drawer__handle {
+          width: 42px;
+          height: 4px;
+          border-radius: 999px;
+          background: var(--color-border-secondary, #e2e8f0);
+          margin: 0 auto 14px;
+        }
+        .sv-page--index .sv-mobile-drawer__nav {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+          gap: 8px;
+          justify-items: center;
+        }
+        .sv-page--index .sv-mobile-drawer__nav .sv-sidebar__btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
+        }
+        .sv-page--index .sv-mobile-drawer.is-open {
+          bottom: 0;
+        }
+        .sv-page--index .sv-mobile-drawer.is-open + .sv-mobile-drawer__backdrop {
+          opacity: 1;
+          pointer-events: auto;
+        }
+      }
+    </style>
   </head>
   <body class="sv-page sv-page--index">
     <!-- top loading spinner -->
@@ -11,6 +157,44 @@
     {{#if showSidebar}} {{> sidebar}} {{/if}}
     <main>
       {{#if showHeader}} {{> header}} {{/if}}
+      <div class="sv-mobile-topbar" aria-label="Mobile header">
+        <h2 class="sv-page__title">Projects</h2>
+        <details class="sv-header__user-menu sv-mobile-topbar__avatar">
+          <summary
+            class="sv-header__user-avatar"
+            title="{{user.name}}"
+            aria-label="User menu"
+            data-has-avatar="{{#if user.pictureUrl}}true{{else}}false{{/if}}"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" fill="#111" />
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6" fill="#111" />
+            </svg>
+            <img
+              class="sv-header__user-avatar-img"
+              data-header-avatar-img
+              {{#if user.pictureUrl}}src="{{user.pictureUrl}}"{{/if}}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+            />
+          </summary>
+          <div class="sv-header__user-menu-panel" role="menu" aria-label="User menu">
+            <a class="sv-header__user-menu-item" href="/settings/security" role="menuitem">Security</a>
+            <button
+              class="sv-header__user-menu-item"
+              type="button"
+              data-modal-open="account-settings"
+              role="menuitem"
+              style="background-color: transparent; box-shadow: none; border: none; width: 100%; text-align: left;"
+            >
+              Account settings
+            </button>
+            <a class="sv-header__user-menu-item" href="/logout" role="menuitem">Logout</a>
+          </div>
+        </details>
+      </div>
       <div class="sv-container">
         <div class="sv-page__wrap sv-page__wrap--center">
           <header class="sv-page__header">
@@ -47,8 +231,131 @@
         </div>
       </div>
     </main>
+    <div class="sv-mobile-launcher" aria-hidden="true">
+      <button type="button" data-mobile-launcher aria-label="Open navigation">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M12 5v14m7-7H5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+    <div class="sv-mobile-drawer" data-mobile-drawer>
+      <div class="sv-mobile-drawer__handle" aria-hidden="true"></div>
+      <nav class="sv-mobile-drawer__nav" aria-label="Mobile navigation">
+        <a
+          class="sv-sidebar__btn{{#if (eq activePage 'projects')}} is-active{{/if}}"
+          href="/"
+          title="Projects"
+          aria-label="Projects"
+          aria-current="{{#if (eq activePage 'projects')}}page{{/if}}"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden="true"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+            />
+          </svg>
+        </a>
+        {{#if (or (eq user.primaryRole.key 'platform:admin') (eq user.primaryRole.key 'tenant:admin'))}}
+        <a
+          class="sv-sidebar__btn{{#if (eq activePage 'users')}} is-active{{/if}}"
+          href="/users"
+          title="Users"
+          aria-label="Users"
+          aria-current="{{#if (eq activePage 'users')}}page{{/if}}"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M15.5 10a3.5 3.5 0 1 0-3.001-5.25M10 10a3.5 3.5 0 1 1-6.999-1.001A3.5 3.5 0 0 1 10 10Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M2 18.5c.8-2.4 3.3-4 6-4s5.2 1.6 6 4M18 14.5c2.3 0 4.3 1.3 5 3.5"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </a>
+        {{/if}} {{#each modules}} {{#unless this.sidebarHidden}}
+        <a
+          class="sv-sidebar__btn{{#if this.isActive}} is-active{{/if}}"
+          href="/{{this.value}}"
+          title="{{this.label}}"
+          aria-label="{{this.label}}"
+          aria-current="{{#if isActive}}page{{/if}}"
+        >
+          <svg
+            width="18"
+            height="18"
+            fill="none"
+            viewBox="{{this.ui.icon.viewBox}}"
+            aria-hidden="true"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            {{{this.ui.icon.body}}}
+          </svg>
+        </a>
+        {{/unless}} {{/each}} {{#if (eq user.primaryRole.key 'platform:admin')}}
+        <a
+          class="sv-sidebar__btn{{#if (eq activePage 'settings')}} is-active{{/if}}"
+          href="/settings"
+          title="Settings"
+          aria-label="Settings"
+          aria-current="{{#if (eq activePage 'settings')}}page{{/if}}"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+            />
+            <path
+              d="M19.4 13.5a7.9 7.9 0 0 0 0-3l2-1.6-2-3.5-2.4.7a8 8 0 0 0-2.6-1.5L14 2h-4l-.4 2.6a8 8 0 0 0-2.6 1.5l-2.4-.7-2 3.5 2 1.6a7.9 7.9 0 0 0 0 3l-2 1.6 2 3.5 2.4-.7a8 8 0 0 0 2.6 1.5l.4 2.6h4l.4-2.6a8 8 0 0 0 2.6-1.5l2.4.7 2-3.5-2-1.6Z"
+              stroke="currentColor"
+              stroke-width="1.6"
+            />
+          </svg>
+        </a>
+        {{/if}}
+      </nav>
+    </div>
+    <div class="sv-mobile-drawer__backdrop" data-mobile-drawer-backdrop></div>
     <script src="/js/sv_startup.js" defer></script>
     <script src="/js/account-settings.js" defer></script>
     <script src="/js/sv_pg_index.js?v={{head.cacheBuster}}" defer></script>
+    <script>
+      (() => {
+        const launcher = document.querySelector("[data-mobile-launcher]");
+        const drawer = document.querySelector("[data-mobile-drawer]");
+        const backdrop = document.querySelector("[data-mobile-drawer-backdrop]");
+        const toggleDrawer = (open) => {
+          if (!drawer || !backdrop) return;
+          drawer.classList.toggle("is-open", open);
+          backdrop.classList.toggle("is-open", open);
+          launcher?.classList.toggle("is-hidden", open);
+        };
+        launcher?.addEventListener("click", () =>
+          toggleDrawer(!drawer?.classList.contains("is-open"))
+        );
+        backdrop?.addEventListener("click", () => toggleDrawer(false));
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") toggleDrawer(false);
+        });
+      })();
+    </script>
   </body>
 </html>
