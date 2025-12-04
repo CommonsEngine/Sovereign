@@ -55,10 +55,32 @@ const baseSDL = await fs.readFile(base, "utf8");
 const pluginParts = await Promise.all(
   extFiles.map(async (file) => {
     const rel = path.relative(root, file);
+    const name = pluginName(file);
+
+    // Check plugin.json for database mode
+    const pluginDir = path.dirname(file); // .../plugins/name/prisma
+    const manifestPath = path.join(pluginDir, "..", "plugin.json");
+    try {
+      const manifestContent = await fs.readFile(manifestPath, "utf8");
+      const manifest = JSON.parse(manifestContent);
+      const dbMode = manifest?.sovereign?.database?.mode || "shared";
+
+      if (dbMode === "dedicated") {
+        console.log(`[prisma:compose] Skipping dedicated database plugin: ${name}`);
+        return null;
+      }
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        console.warn(
+          `[prisma:compose] Warning: Could not read plugin.json for ${name}: ${err.message}`
+        );
+      }
+      // If no plugin.json, assume shared/legacy behavior
+    }
+
     const sdl = await fs.readFile(file, "utf8");
     ensureValidExtension(sdl, rel);
     const body = sdl.trim();
-    const name = pluginName(file);
     const header = [`/// --- Plugin: ${name} ---`, `/// Source: ${rel}`].join("\n");
     const section = body ? `${header}\n\n${body}` : header;
     return { name, rel, section };
@@ -68,7 +90,7 @@ const pluginParts = await Promise.all(
 const pieces = [
   banner.trimEnd(),
   baseSDL.trimEnd(),
-  ...pluginParts.map((part) => part.section.trimEnd()),
+  ...pluginParts.filter(Boolean).map((part) => part.section.trimEnd()),
 ].filter(Boolean);
 const combined = `${pieces.join("\n\n")}\n`;
 

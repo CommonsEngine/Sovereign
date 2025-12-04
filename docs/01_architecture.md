@@ -39,14 +39,15 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 ## Data & Persistence
 
 - **Layered Prisma schemas**: `platform/prisma/base.prisma` defines canonical tables, each plugin contributes to `plugins/<ns>/prisma/extension.prisma`, and the build step composes them into `platform/prisma/schema.prisma`.
+- **Dedicated Databases**: Plugins can opt-out of the shared schema by setting `"sovereign": { "database": { "mode": "dedicated" } }` in `plugin.json`. These plugins manage their own `prisma/schema.prisma` and migrations using `node tools/plugin-db-manage.mjs`.
 - **SQLite-first with upgrade path**: Local deployments default to SQLite for minimal friction. Because Prisma is the boundary, migrating to PostgreSQL (or other SQL backends) only updates datasource configuration.
 - **No manual schema edits**: Developers run `yarn prisma:compose` (root or via workspace) whenever models change; CI enforces the generated schema to avoid drift.
 
 ## Plugin Runtime (`plugins/<namespace>/`)
 
-- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, framework (`js` or `react`), plugin type (`module` or `project`), entry file, exposed routes, capabilities, and optional dev-server metadata.
-- **Lifecycle hooks**: Entry modules export `render`, `configure`, and `getRoutes` today, with planned `onInstall/onEnable` hooks for seeding data or migrations.
-- **Asset strategy**: Static assets under `public/` are copied verbatim. Code under `src/` or `routes/` is transpiled but keeps file extensions so dynamic imports remain stable.
+- **Manifest-driven**: Every plugin ships a `plugin.json` describing ID, engine compatibility, framework (`js` or `react`), plugin type (`module` or `project`), entry points (`web`, `api`), capabilities, and optional UI metadata.
+- **Lifecycle hooks**: The root `index.js` may export lifecycle hooks like `onDelete`. Runtime initialization happens via `entryPoints` defined in `plugin.json`.
+- **Asset strategy**: Static assets under `public/` are copied verbatim (if present). Plugin code is typically organized in `routes/` or `src/`, with entry points explicitly defined in the manifest.
 - **Development ergonomics**: SPA plugins can declare a Vite dev server so the platform proxies HMR traffic automatically when `NODE_ENV !== "production"`.
 
 ### Module vs. Project Plugins
@@ -66,9 +67,11 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 ## Routing Model
 
 - **Core routes**: `platform/src/routes/` hosts first-party HTTP endpoints (home, auth, admin). Each route module is an Express router wired with platform middlewares such as `requireAuth`, `requireRole`, and `exposeGlobals`.
-- **Plugin router builder**: `platform/src/ext-host/build-routes.js` walks the generated `manifest.json`, resolves each plugin’s entry points, and mounts them:
-  - SPA plugins get `/namespace` view routes plus `/api/plugins/namespace` APIs if they expose an API entry.
-  - Custom plugins can expose both `web` and `api` routers; the builder applies auth/layout middlewares and mounts them at `/namespace` and `/api/plugins/namespace`.
+- **Plugin router builder**: `platform/src/ext-host/build-routes.js` iterates over enabled plugins in `manifest.json`. For each plugin, it resolves `entryPoints` (e.g., `web`, `api`) defined in `plugin.json`.
+  - **Entry Exports**: The entry file must export an Express `Router` or a factory function `(context) => Router`.
+  - **Mounting**:
+    - `web` entries are mounted at `/${namespace}` with view middlewares (auth, layout).
+    - `api` entries are mounted at `/api/plugins/${namespace}` with API middlewares.
 - **Context injection**: Before mounting, the builder resolves a plugin context (cacheable per namespace) that contains the env, logger, and granted platform capabilities. Router factories can consume that context to reach Prisma, file helpers, etc.
 - **Auth layering**: Every plugin route automatically receives `requireAuth` and any `featureAccess.roles` guard plus `exposeGlobals`, ensuring consistent user/session state without per-plugin boilerplate.
 
