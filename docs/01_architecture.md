@@ -39,6 +39,7 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 ## Data & Persistence
 
 - **Layered Prisma schemas**: `platform/prisma/base.prisma` defines canonical tables, each plugin contributes to `plugins/<ns>/prisma/extension.prisma`, and the build step composes them into `platform/prisma/schema.prisma`.
+- **Dedicated Databases**: Plugins can opt-out of the shared schema by setting `"sovereign": { "database": { "mode": "dedicated" } }` in `plugin.json`. These plugins manage their own `prisma/schema.prisma` and migrations using `node tools/plugin-db-manage.mjs`.
 - **SQLite-first with upgrade path**: Local deployments default to SQLite for minimal friction. Because Prisma is the boundary, migrating to PostgreSQL (or other SQL backends) only updates datasource configuration.
 - **No manual schema edits**: Developers run `yarn prisma:compose` (root or via workspace) whenever models change; CI enforces the generated schema to avoid drift.
 
