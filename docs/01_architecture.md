@@ -36,11 +36,148 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 4. **Services & libs**: Shared abstractions for storage, messaging, RBAC, and job orchestration reside in `platform/src/services/` and `platform/src/libs/`, keeping plugins thin.
 5. **WebSocket & realtime**: `platform/src/ws/` (plus helpers in `platform/src/utils/`) hosts websocket gateways for collaborative experiences.
 
+## Bootstrap Flow & Initialization
+
+The platform startup follows a strict sequence to ensure services are available before routes are mounted:
+
+1. **`bootstrap.js` entry**: Loads `manifest.json` from root, sets up global error handlers (`unhandledRejection`, `uncaughtException`), and attaches logger to `global.sovereign.logger`.
+2. **Database connection**: `connectPrismaWithRetry()` establishes Prisma connection with exponential backoff, ensuring DB is ready before proceeding.
+3. **Extension host creation**: `createExtHost(manifest, { pluginsDir })` discovers enabled plugins, validates manifests, and prepares plugin contexts with capability injection.
+4. **Server initialization**: `createServer(extHost)` configures Express app, mounts middleware stack, registers core routes, and dynamically mounts plugin routes via `buildPluginRoutes()`.
+5. **Server start**: Binds to configured port, initializes WebSocket server, starts background jobs (guest user cleanup), and logs active handles for debugging.
+6. **Graceful shutdown**: Registers `SIGINT`/`SIGTERM` handlers that call `gracefulShutdown()` to close DB connections, stop HTTP server, and clean up resources.
+
+**Key implementation notes:**
+
+- Manifest is read synchronously at boot; changes require restart or manifest rebuild.
+- Plugin contexts are cached per namespace to avoid redundant capability resolution.
+- Active handle tracking (`process._getActiveHandles()`) helps diagnose resource leaks in development.
+
+## Authentication & Session Management
+
+Sovereign uses **cookie-based sessions** backed by the database for stateful authentication:
+
+- **Session storage**: Sessions are persisted in the `Session` table via Prisma, with `sessionToken`, `userId`, and `expiresAt` fields. The platform uses `express-session` (or equivalent) with a Prisma session store adapter.
+- **Authentication methods**:
+  - **Password + Email**: Traditional username/password flow with bcrypt hashing.
+  - **Passkeys (WebAuthn)**: FIDO2-compliant passwordless authentication via `platform/src/services/passkeys.js`. Credentials stored in `PasskeyCredential` table.
+  - **TOTP (Time-based OTP)**: Two-factor authentication via `platform/src/services/totp.js`. Secrets stored in user records, challenges tracked in database.
+- **Guest users**: Temporary accounts created for unauthenticated access (e.g., demos, trials). A background job (`cleanupExpiredGuestUsers`) runs periodically to purge expired guests based on `GUEST_RETENTION_MS` (default: 24 hours).
+- **Session lifecycle**:
+  - Sessions are created on successful login and attached to `req.session`.
+  - `requireAuth` middleware (in `platform/src/middlewares/auth.js`) validates session and hydrates `req.user` with user object, roles, and capabilities.
+  - Sessions expire based on `expiresAt`; expired sessions are rejected and cleared.
+- **Token management**: Password reset tokens (`PasswordResetToken`), email verification tokens (`VerificationToken`), and passkey challenges (`PasskeyChallenge`) are stored in dedicated tables with expiration logic.
+
+**Security considerations:**
+
+- Cookies are `httpOnly`, `secure` (in production), and `sameSite: 'lax'` to prevent XSS/CSRF.
+- Session tokens are cryptographically random (via `crypto.randomBytes`).
+- Sensitive models (User, Session, etc.) are protected from plugin access via Prisma guards (see Capability Model).
+
+## Plugin Guards & Middleware Chain
+
+Plugin routes are protected by a layered middleware stack that enforces enablement, authentication, and access control:
+
+1. **`pluginEnabledGuard`**: Checks if the plugin is enabled in the manifest. If disabled, returns 404 or redirects to error page.
+2. **`requireAuth`**: Validates session and hydrates `req.user`. Redirects to login if unauthenticated.
+3. **`userPluginGuard`**: For project-scoped plugins, verifies the user has access to the specific project instance (e.g., via `UserPlugin` table or project membership).
+4. **`pluginAccessGuard`**: Enforces role-based access from `featureAccess.roles` in the plugin manifest. Uses `requireRole` or `requireAuthz` to check if user has required roles/capabilities.
+5. **`exposeGlobals`**: Injects global variables (user, config, manifest metadata) into `res.locals` for templates and views.
+
+**Middleware ordering:**
+
+- **View routes**: `[pluginEnabledGuard, requireAuth, userPluginGuard?, pluginAccessGuard?, exposeGlobals, ensurePluginLayout]`
+- **API routes**: `[pluginEnabledGuard, requireAuth, userPluginGuard?, pluginAccessGuard?]`
+
+**Implementation details:**
+
+- Guards are created dynamically per plugin in `platform/src/ext-host/build-routes.js` via factory functions (`createPluginEnabledGuard`, `createUserPluginGuard`, `createPluginAccessGuard`).
+- Guards short-circuit on failure (return 403/404) to prevent unauthorized access.
+- Plugin contexts are resolved once and cached, avoiding repeated capability checks.
+
+## WebSocket & Realtime Architecture
+
+The platform provides a **channel-based pub/sub system** for real-time features:
+
+- **Server**: `platform/src/ws/server.js` creates a WebSocket server (via `ws` library) that upgrades HTTP connections on `/ws` endpoint.
+- **Authentication**: Clients authenticate via session cookies; the server validates `req.session` before accepting connections.
+- **Channels**: Clients subscribe to named channels (e.g., `project:123`, `chat:456`). Messages are broadcast to all subscribers of a channel.
+- **Heartbeat**: Server sends ping frames every 30 seconds; clients must respond with pong to maintain connection. Stale connections are terminated.
+- **Message handlers**: Plugins can register message handlers via the realtime hub registry (`platform/src/ws/registry.js`). Handlers receive `{ type, payload, userId, channelId }` and can broadcast responses.
+- **Broadcasting**: `realtimeHub.broadcast(channelId, message)` sends messages to all connected clients subscribed to the channel.
+
+**Use cases:**
+
+- Collaborative editing (live cursors, document updates)
+- Notifications and alerts
+- Chat and messaging
+- Real-time dashboards
+
+**Security:**
+
+- WebSocket connections inherit session authentication; unauthenticated clients are rejected.
+- Channel subscriptions can be gated by plugin-specific logic (e.g., project membership).
+
+## Development Tooling & Hot Module Replacement
+
+In development (`NODE_ENV !== "production"`), the platform integrates **Vite middleware** for fast JSX/TSX rendering and HMR:
+
+- **Vite middleware mode**: `platform/src/server.js` creates a Vite dev server in middleware mode, allowing Express to serve Vite-transformed modules.
+- **HMR configuration**: Vite's HMR client is configured to use `sovereign.test` domain and `wss://` protocol for WebSocket connections (compatible with Caddy reverse proxy).
+- **JSX/TSX SSR**: The `useJSX` middleware (`platform/src/middlewares/useJSX.js`) intercepts `.jsx`/`.tsx` imports and uses Vite to transform them on-the-fly.
+- **Plugin dev servers**: SPA plugins can declare a `devServer` in their manifest (e.g., `{ "url": "http://localhost:5173" }`). The platform proxies requests to the plugin's Vite dev server, enabling HMR for plugin frontends.
+- **Allowed hosts**: Vite is configured to accept requests from `sovereign.test`, `localhost`, and `127.0.0.1` to support local development with custom domains.
+
+**Production behavior:**
+
+- Vite is not loaded in production; JSX/TSX files are pre-built and served as static assets.
+- Plugin dev servers are ignored; only production builds are served.
+
+## Security Headers & Content Security Policy
+
+The platform enforces security best practices via HTTP headers:
+
+- **Helmet**: Configured in `platform/src/server.js` to set secure defaults (X-DNS-Prefetch-Control, X-Download-Options, etc.).
+- **Custom headers** (via `platform/src/middlewares/secure.js`):
+  - `X-Content-Type-Options: nosniff` – Prevents MIME sniffing.
+  - `X-Frame-Options: SAMEORIGIN` – Prevents clickjacking.
+  - `Referrer-Policy: no-referrer-when-downgrade` – Limits referrer leakage.
+  - **Content-Security-Policy**: Currently relaxed to allow inline scripts/styles (`'unsafe-inline'`). **TODO**: Implement nonce-based CSP by generating a per-request nonce (`res.locals.cspNonce`) and injecting it into script tags.
+- **CSRF protection**: Planned but not yet implemented. Future versions will use CSRF tokens for state-changing requests.
+
+**Production vs. Development:**
+
+- CSP is stricter in production (`IS_PROD` flag).
+- Development allows `'unsafe-eval'` for Vite HMR.
+
+## Rate Limiting
+
+The platform includes rate limiting middleware (`platform/src/middlewares/rateLimit.js`) to prevent abuse:
+
+- **Per-route limits**: Different endpoints have different rate limits (e.g., login: 5 req/min, API: 100 req/min).
+- **Strategy**: Uses `express-rate-limit` with in-memory or Redis-backed store (configurable).
+- **Bypass**: Authenticated admin users may bypass rate limits (configurable).
+
+## Error Handling & Observability
+
+- **Request IDs**: Every request is assigned a unique ID (`req.id = randomUUID()`) and returned in the `x-request-id` header for tracing.
+- **Global logger**: `platform/src/services/logger.js` provides structured logging (Winston or Pino). Logger is attached to `global.sovereign.logger` for access in Prisma hooks and background jobs.
+- **Error handlers**: Unhandled promise rejections and uncaught exceptions are logged and optionally reported to error tracking services (Sentry, etc.).
+- **Active handle tracking**: In development, the platform logs active Node.js handles (`process._getActiveHandles()`) to help diagnose resource leaks (open sockets, timers, etc.).
+
 ## Data & Persistence
 
 - **Layered Prisma schemas**: `platform/prisma/base.prisma` defines canonical tables, each plugin contributes to `plugins/<ns>/prisma/extension.prisma`, and the build step composes them into `platform/prisma/schema.prisma`.
 - **SQLite-first with upgrade path**: Local deployments default to SQLite for minimal friction. Because Prisma is the boundary, migrating to PostgreSQL (or other SQL backends) only updates datasource configuration.
 - **No manual schema edits**: Developers run `yarn prisma:compose` (root or via workspace) whenever models change; CI enforces the generated schema to avoid drift.
+- **Core data models**:
+  - **User & Identity**: `User`, `UserProfile`, `UserEmail`, `UserRole`, `UserRoleAssignment`, `UserCapability` – Stores user accounts, profiles, roles, and capability grants.
+  - **Authentication**: `Session`, `PasskeyCredential`, `PasskeyChallenge`, `VerificationToken`, `PasswordResetToken` – Manages sessions, WebAuthn credentials, and token-based flows.
+  - **Authorization**: `UserRoleCapability` – Maps roles to capabilities for fine-grained access control.
+  - **Multi-tenancy**: `Tenant`, `Project`, `UserPlugin` – Supports workspace/project isolation and per-user plugin enablement.
+  - **Audit & Compliance**: `AuditLog`, `Invite` – Tracks security events and invitation flows.
+- **Sensitive model protection**: Plugins cannot directly access sensitive models (User, Session, etc.) unless explicitly whitelisted via `SENSITIVE_PLUGIN_ALLOWLIST` config. The capability system wraps Prisma clients with guards that throw `PluginCapabilityError` on unauthorized access.
 
 ## Plugin Runtime (`plugins/<namespace>/`)
 
@@ -78,6 +215,9 @@ Sovereign is a privacy-first collaboration platform that gives communities and o
 - **User capabilities**: Authenticated users carry a capability map on `req.user.capabilities`. Helpers in `platform/src/ext-host/plugin-auth.js` expose `assertUserCapability` plus `requireAuthz` so routers can enforce per-action consent levels (allow, consent, compliance, scoped, anonymized, deny).
 - **Guard rails**: If a plugin tries to call a service it didn’t declare, `assertPlatformCapability` throws immediately. This keeps plugin boundaries explicit and lets future security tooling audit exactly which plugins can touch what.
 - **Role bridge**: `requireAuthz` internally wraps `requireRole`, allowing plugins to gate routes with classic roles (`admin`) or synthetic `cap:<key>` markers, unifying RBAC with the newer capability graph.
+- **Development mode**: When `DEV_ALLOW_ALL_CAPS=true` and `NODE_ENV !== "production"`, all capabilities are granted to all plugins automatically. This simplifies local development but is disabled in production.
+- **Sensitive model allowlist**: Core plugins (e.g., Users, Settings) can be whitelisted via `SENSITIVE_PLUGIN_ALLOWLIST` env var to access sensitive Prisma models. Non-whitelisted plugins receive a Prisma client wrapped with guards that block queries to `User`, `Session`, `PasskeyCredential`, etc.
+- **Production-only capabilities**: Some capabilities (e.g., `fileUpload`) are disabled in production unless explicitly enabled via feature flags (e.g., `CAPABILITY_FILE_UPLOAD_ENABLED=true`).
 
 | Key          | Provides          | Description                                    | Risk     | Notes                                                           |
 | ------------ | ----------------- | ---------------------------------------------- | -------- | --------------------------------------------------------------- |
