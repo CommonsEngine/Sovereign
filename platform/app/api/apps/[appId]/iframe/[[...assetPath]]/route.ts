@@ -26,7 +26,7 @@ export async function GET(_request: Request, { params }: IframeAssetRouteProps) 
   const { appId, assetPath = [] } = await params;
   const app = resolveApp(appId);
 
-  if (!app || app.runtime !== "iframe") {
+  if (!app || !app.runtimeConfig?.entrypoint) {
     notFound();
   }
 

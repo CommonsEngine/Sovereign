@@ -3,16 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sovereign Iframe Demo</title>
+    <title>Sovereign Standalone Html Demo</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
     <main>
       <p class="eyebrow">iframe-local</p>
-      <h1>Sovereign sandbox runtime</h1>
+      <h1>Sovereign Standalone Html Demo</h1>
       <p>
-        This app is served from a local plugin entrypoint and rendered inside a
-        platform-controlled iframe sandbox.
+        This plugin to serve html + js app directly via Sovereign.
       </p>
       <nav aria-label="Demo routes">
         <button data-route="/" type="button">Home</button>
@@ -23,7 +22,7 @@
         Current route:
         <strong id="route"></strong>
       </p>
-      <button id="ping" type="button">Ping runtime</button>
+      <button id="ping" type="button">Ping</button>
       <output id="result" aria-live="polite"></output>
     </main>
   </body>

@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.internal-react",
+  "id": "com.sovereign-demo.standalone-react",
   "name": "Next.js + React Demo",
   "version": "0.1.0",
-  "runtime": "internal",
+  "runtime": "standalone",
   "runtimeConfig": {
     "engine": "react"
   },
   "permissions": ["auth:read"],
   "launch": {
-    "path": "/apps/com.sovereign-demo.internal-react"
+    "path": "/apps/com.sovereign-demo.standalone-react"
   },
   "extensionPoints": {
     "launcher": true,

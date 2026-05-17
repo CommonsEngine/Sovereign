@@ -20,7 +20,7 @@
     "version": { "type": "string" },
     "runtime": {
       "type": "string",
-      "enum": ["internal", "vite", "iframe"]
+      "enum": ["standalone", "dom", "iframe"]
     },
     "permissions": {
       "type": "array",
@@ -102,7 +102,7 @@
     {
       "if": {
         "properties": {
-          "runtime": { "const": "internal" }
+          "runtime": { "const": "standalone" }
         },
         "required": ["runtime"]
       },
@@ -111,7 +111,12 @@
         "properties": {
           "runtimeConfig": {
             "type": "object",
-            "required": ["engine"]
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "enum": ["react", "html"]
+              }
+            }
           }
         }
       }
@@ -119,7 +124,7 @@
     {
       "if": {
         "properties": {
-          "runtime": { "const": "vite" }
+          "runtime": { "const": "dom" }
         },
         "required": ["runtime"]
       },
@@ -136,6 +141,29 @@
     {
       "if": {
         "properties": {
+          "runtime": { "const": "standalone" },
+          "runtimeConfig": {
+            "type": "object",
+            "properties": {
+              "engine": { "const": "html" }
+            },
+            "required": ["engine"]
+          }
+        },
+        "required": ["runtime", "runtimeConfig"]
+      },
+      "then": {
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["entrypoint"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
           "runtime": { "const": "iframe" },
           "runtimeConfig": {
             "type": "object",
@@ -144,7 +172,14 @@
         },
         "required": ["runtime", "runtimeConfig"]
       },
-      "then": true,
+      "then": {
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["engine"]
+          }
+        }
+      },
       "else": {
         "if": {
           "properties": {

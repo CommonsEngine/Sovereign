@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "com.sovereign-demo.iframe-remote",
   "name": "Remote Remote Demo",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "runtime": "iframe",
   "runtimeConfig": {
     "engine": "*",

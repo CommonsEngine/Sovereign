@@ -15,9 +15,9 @@ const PERMISSIONS_OUTPUT_FILE = path.join(
   OUTPUT_DIR,
   "permissions.generated.ts"
 );
-const INTERNAL_APPS_OUTPUT_FILE = path.join(
+const STANDALONE_APPS_OUTPUT_FILE = path.join(
   OUTPUT_DIR,
-  "internal-apps.generated.tsx"
+  "standalone-apps.generated.tsx"
 );
 
 interface InstalledAppEntry {
@@ -90,8 +90,11 @@ function serializeInstalledApp(entry: InstalledAppEntry) {
   };
   const manifestJson = JSON.stringify(app, null, 2);
 
-  if (entry.manifest.runtime === "internal") {
-    return `${manifestJson.slice(0, -1)},\n  module: () => import("./internal-apps.generated").then((module) => ({ default: module.${toComponentName(entry.manifest.id)} }))\n}`;
+  if (
+    entry.manifest.runtime === "standalone" &&
+    entry.manifest.runtimeConfig?.engine === "react"
+  ) {
+    return `${manifestJson.slice(0, -1)},\n  module: () => import("./standalone-apps.generated").then((module) => ({ default: module.${toComponentName(entry.manifest.id)} }))\n}`;
   }
 
   return manifestJson;
@@ -124,22 +127,24 @@ function generatePermissionsFile(installedApps: InstalledAppEntry[]) {
   fs.writeFileSync(PERMISSIONS_OUTPUT_FILE, content, "utf-8");
 }
 
-function generateInternalAppsFile(installedApps: InstalledAppEntry[]) {
-  const internalApps = installedApps.filter(
-    ({ manifest }) => manifest.runtime === "internal"
+function generateStandaloneAppsFile(installedApps: InstalledAppEntry[]) {
+  const standaloneApps = installedApps.filter(
+    ({ manifest }) =>
+      manifest.runtime === "standalone" &&
+      manifest.runtimeConfig?.engine === "react"
   );
 
-  const imports = internalApps
+  const imports = standaloneApps
     .map(
       ({ pluginDirectory }, index) =>
-        `import InternalApp${index} from "../../plugins/${pluginDirectory}/src";`
+        `import StandaloneApp${index} from "../../plugins/${pluginDirectory}/src";`
     )
     .join("\n");
 
-  const components = internalApps
+  const components = standaloneApps
     .map(
       ({ manifest }, index) =>
-        `export function ${toComponentName(manifest.id)}() {\n  const sdk = createAppSdk({ appId: "${manifest.id}" });\n\n  return <InternalApp${index} sdk={sdk} />;\n}`
+        `export function ${toComponentName(manifest.id)}() {\n  const sdk = createAppSdk({ appId: "${manifest.id}" });\n\n  return <StandaloneApp${index} sdk={sdk} />;\n}`
     )
     .join("\n\n");
 
@@ -147,7 +152,7 @@ function generateInternalAppsFile(installedApps: InstalledAppEntry[]) {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  fs.writeFileSync(INTERNAL_APPS_OUTPUT_FILE, content, "utf-8");
+  fs.writeFileSync(STANDALONE_APPS_OUTPUT_FILE, content, "utf-8");
 }
 
 function toComponentName(appId: string) {
@@ -155,7 +160,7 @@ function toComponentName(appId: string) {
     .split(/[^a-zA-Z0-9]/)
     .filter(Boolean)
     .map((segment) => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
-    .join("")}InternalApp`;
+    .join("")}StandaloneApp`;
 }
 
 function main() {
@@ -165,7 +170,7 @@ function main() {
 
   generateRegistryFile(installedApps);
   generatePermissionsFile(installedApps);
-  generateInternalAppsFile(installedApps);
+  generateStandaloneAppsFile(installedApps);
 
   console.log(
     `Generated platform/generated metadata with ${installedApps.length} app(s)`

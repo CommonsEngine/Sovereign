@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.internal-html",
-  "name": "Html Demo",
+  "id": "com.sovereign-demo.standalone-html",
+  "name": "Standalone Html Demo",
   "version": "0.1.0",
-  "runtime": "internal",
+  "runtime": "standalone",
   "runtimeConfig": {
     "engine": "html",
     "entrypoint": "index.html"
@@ -15,7 +15,7 @@
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign-demo.internal-html"
+    "path": "/apps/com.sovereign-demo.standalone-html"
   },
   "extensionPoints": {
     "launcher": true,

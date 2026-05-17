@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.vite-react",
+  "id": "com.sovereign-demo.dom-react",
   "name": "Vite + React Demo",
   "version": "0.1.0",
-  "runtime": "vite",
+  "runtime": "dom",
   "runtimeConfig": {
     "engine": "react",
     "host": "localhost",
@@ -16,7 +16,7 @@
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign-demo.vite-react"
+    "path": "/apps/com.sovereign-demo.dom-react"
   },
   "extensionPoints": {
     "launcher": true,

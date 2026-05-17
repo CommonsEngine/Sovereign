@@ -13,7 +13,11 @@ export async function RenderAppRuntime({
   appPath = [],
 }: RenderAppRuntimeProps) {
   switch (app.runtime) {
-    case "internal": {
+    case "standalone": {
+      if (app.runtimeConfig?.engine === "html") {
+        return <IframeLocalRuntime app={app} appPath={appPath} />;
+      }
+
       if (!app.module) {
         return <p>App module not found.</p>;
       }
@@ -28,7 +32,7 @@ export async function RenderAppRuntime({
       );
     }
 
-    case "vite":
+    case "dom":
     case "iframe":
       return <IframeLocalRuntime app={app} appPath={appPath} />;
 

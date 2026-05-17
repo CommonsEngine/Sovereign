@@ -4,8 +4,8 @@ export * from "./validate";
 export * from "./permissions";
 
 export type SovereignRuntime =
-  | "internal"
-  | "vite"
+  | "standalone"
+  | "dom"
   | "iframe";
 
 export type SovereignRuntimeEngine =

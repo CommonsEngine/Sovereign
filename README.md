@@ -165,11 +165,19 @@ Example:
   "schemaVersion": 1,
   "id": "com.example.notes",
   "name": "Notes",
-  "version": "0.0.0",
-  "runtime": "route-source",
-  "permissions": [
-    "storage:readWrite"
-  ],
+  "version": "0.1.0",
+  "runtime": "standalone",
+  "runtimeConfig": {
+    "engine": "react"
+  },
+  "permissions": ["storage:readWrite"],
+  "launch": {
+    "path": "/apps/com.example.notes"
+  },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  },
   "compatibility": {
     "minPlatformVersion": "0.1.0"
   }
@@ -183,21 +191,106 @@ Example:
 Current runtime types:
 
 ```txt
-route-source
-iframe-local
-iframe-remote
-external
+standalone
+dom
+iframe
 ```
 
-Initial versions of Sovereign focus on:
+## `standalone`
+
+Apps loaded directly by the Sovereign platform.
+
+Use this for trusted plugins that should be served or bundled by the platform itself.
+
+Supported engines:
 
 ```txt
-route-source
+react
+html
 ```
 
-apps built directly into the platform runtime.
+Example:
 
-Sandboxed runtimes will be introduced later.
+```json
+{
+  "runtime": "standalone",
+  "runtimeConfig": {
+    "engine": "react"
+  }
+}
+```
+
+Standalone HTML apps use a plugin-local entrypoint:
+
+```json
+{
+  "runtime": "standalone",
+  "runtimeConfig": {
+    "engine": "html",
+    "entrypoint": "index.html"
+  }
+}
+```
+
+## `dom`
+
+Apps served by a DOM application server and embedded by Sovereign.
+
+Use this for Vite, React, or other DOM app development servers.
+
+Example:
+
+```json
+{
+  "runtime": "dom",
+  "runtimeConfig": {
+    "engine": "react",
+    "host": "localhost",
+    "port": "4000"
+  }
+}
+```
+
+## `iframe`
+
+Apps hosted in an iframe. The iframe can point at a local plugin entrypoint, a local dev server, or a remote host.
+
+Local HTML entrypoint:
+
+```json
+{
+  "runtime": "iframe",
+  "runtimeConfig": {
+    "engine": "html",
+    "entrypoint": "iframe/index.html"
+  }
+}
+```
+
+Local or remote host:
+
+```json
+{
+  "runtime": "iframe",
+  "runtimeConfig": {
+    "engine": "*",
+    "host": "example.com",
+    "https": true,
+    "uri": "/#test"
+  }
+}
+```
+
+The current manifest schema uses flat `runtimeConfig` fields:
+
+```txt
+engine
+entrypoint
+host
+port
+https
+uri
+```
 
 ---
 
@@ -209,10 +302,16 @@ Examples:
 
 ```txt
 auth:profile
-storage:readWrite
+auth:read
+auth:write
+storage:read
+storage:write
 notifications:send
-files:pick
+notifications:recieve
+fs:read
+fs:write
 events:publish
+events:subscribe
 ```
 
 Apps interact with platform features through the Sovereign SDK.
@@ -249,7 +348,7 @@ yarn generate
 ## Validate App Manifest
 
 ```bash
-yarn validate:manifest plugins/com.sovereign.launcher/manifest.json
+yarn validate:manifest plugins/com.sovereign-demo.iframe-html/manifest.json
 ```
 
 ---
