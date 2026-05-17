@@ -1,0 +1,22 @@
+{
+  "name": "@commonsengine/sovereign",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "yarn@4.9.1",
+  "workspaces": [
+    "platform",
+    "packages/*",
+    "plugins/*",
+    "templates/*"
+  ],
+  "scripts": {
+    "dev": "yarn workspace @sovereign/platform dev",
+    "build": "yarn workspace @sovereign/platform build",
+    "lint": "yarn workspaces foreach -A run lint",
+    "test": "yarn workspaces foreach -A run test",
+    "typecheck": "yarn workspaces foreach -A run typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
