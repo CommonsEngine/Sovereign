@@ -1,3 +1,5 @@
+import type { SovereignPermission } from "./permissions";
+
 export * from "./validate";
 export * from "./permissions";
 
@@ -13,7 +15,7 @@ export interface SovereignAppManifest {
   name: string;
   version: string;
   runtime: SovereignRuntime;
-  permissions: string[];
+  permissions: SovereignPermission[];
   launch: {
     path: string;
   };

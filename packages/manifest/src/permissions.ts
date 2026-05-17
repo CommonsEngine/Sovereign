@@ -8,4 +8,15 @@ export const SovereignPermissions = {
 
 export type SovereignPermission =
   (typeof SovereignPermissions)[keyof typeof SovereignPermissions];
-  
+
+export const SovereignPermissionValues = Object.values(
+  SovereignPermissions
+) as SovereignPermission[];
+
+export function isSovereignPermission(
+  permission: string
+): permission is SovereignPermission {
+  return SovereignPermissionValues.includes(
+    permission as SovereignPermission
+  );
+}

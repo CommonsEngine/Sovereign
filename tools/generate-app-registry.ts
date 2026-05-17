@@ -1,5 +1,3 @@
-
-
 import fs from "node:fs";
 import path from "node:path";
 
@@ -9,9 +7,13 @@ import type { SovereignAppManifest } from "../packages/manifest/src";
 const ROOT_DIR = process.cwd();
 const PLUGINS_DIR = path.join(ROOT_DIR, "plugins");
 const OUTPUT_DIR = path.join(ROOT_DIR, "platform/generated");
-const OUTPUT_FILE = path.join(
+const APPS_OUTPUT_FILE = path.join(
   OUTPUT_DIR,
   "apps.generated.ts"
+);
+const PERMISSIONS_OUTPUT_FILE = path.join(
+  OUTPUT_DIR,
+  "permissions.generated.ts"
 );
 
 interface InstalledAppEntry {
@@ -92,7 +94,22 @@ function generateRegistryFile(installedApps: InstalledAppEntry[]) {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  fs.writeFileSync(OUTPUT_FILE, content, "utf-8");
+  fs.writeFileSync(APPS_OUTPUT_FILE, content, "utf-8");
+}
+
+function generatePermissionsFile(installedApps: InstalledAppEntry[]) {
+  const permissionMap = Object.fromEntries(
+    installedApps.map(({ manifest }) => [
+      manifest.id,
+      [...manifest.permissions].sort(),
+    ])
+  );
+
+  const content = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nimport type { SovereignPermission } from "../../packages/manifest/src";\n\nexport const appPermissions: Readonly<Record<string, readonly SovereignPermission[]>> = ${JSON.stringify(permissionMap, null, 2)};\n`;
+
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+
+  fs.writeFileSync(PERMISSIONS_OUTPUT_FILE, content, "utf-8");
 }
 
 function main() {
@@ -101,9 +118,10 @@ function main() {
   const installedApps = readInstalledApps();
 
   generateRegistryFile(installedApps);
+  generatePermissionsFile(installedApps);
 
   console.log(
-    `Generated platform/generated/apps.generated.ts with ${installedApps.length} app(s)`
+    `Generated platform/generated metadata with ${installedApps.length} app(s)`
   );
 }
 
