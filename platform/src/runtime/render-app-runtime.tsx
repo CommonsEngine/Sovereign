@@ -19,7 +19,6 @@ export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
 
       const sdk = createAppSdk({
         appId: app.id,
-        permissions: app.permissions,
       });
 
       return (
