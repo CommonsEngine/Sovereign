@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 
+import { createAppSdk } from "../sdk";
+
 interface RenderAppRuntimeProps {
   app: {
     name: string;
@@ -20,9 +22,13 @@ export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
       const AppModule = await app.module();
       const AppComponent = AppModule.default;
 
+      const sdk = createAppSdk({
+        appId: app.id,
+      });
+
       return (
         <Suspense fallback={<p>Loading app...</p>}>
-          <AppComponent />
+          <AppComponent sdk={sdk} />
         </Suspense>
       );
     }
