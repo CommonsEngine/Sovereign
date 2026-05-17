@@ -8,9 +8,13 @@ import type { InstalledSovereignApp } from "./types";
 
 interface RenderAppRuntimeProps {
   app: InstalledSovereignApp;
+  appPath?: readonly string[];
 }
 
-export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
+export async function RenderAppRuntime({
+  app,
+  appPath = [],
+}: RenderAppRuntimeProps) {
   switch (app.runtime) {
     case "route-source": {
       if (!app.module) {
@@ -32,7 +36,7 @@ export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
     }
 
     case "iframe-local":
-      return <IframeLocalRuntime app={app} />;
+      return <IframeLocalRuntime app={app} appPath={appPath} />;
 
     case "iframe-remote":
       return <IframeRemoteRuntime app={app} />;

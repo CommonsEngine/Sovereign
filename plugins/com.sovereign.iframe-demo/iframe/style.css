@@ -46,6 +46,13 @@ p {
   line-height: 1.6;
 }
 
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0 12px;
+}
+
 button {
   min-height: 40px;
   padding: 0 14px;
