@@ -7,6 +7,7 @@ export * from "./auth";
 export * from "./events";
 export * from "./notifications";
 export * from "./storage";
+export * from "./types";
 
 export const sovereign = {
   auth,

@@ -1,10 +1,6 @@
-import type { sovereign } from "../../../packages/sdk/src";
+import type { SovereignAppProps } from "../../../packages/sdk/src";
 
-interface LauncherAppProps {
-  sdk: typeof sovereign;
-}
-
-export default function LauncherApp({ sdk }: LauncherAppProps) {
+export default function LauncherApp({ sdk }: SovereignAppProps) {
   const user = sdk.auth.currentUser();
 
   return (
