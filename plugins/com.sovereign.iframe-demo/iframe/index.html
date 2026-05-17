@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sovereign Iframe Demo</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">iframe-local</p>
+      <h1>Sovereign sandbox runtime</h1>
+      <p>
+        This app is served from a local plugin entrypoint and rendered inside a
+        platform-controlled iframe sandbox.
+      </p>
+      <button id="ping" type="button">Ping runtime</button>
+      <output id="result" aria-live="polite"></output>
+    </main>
+    <script src="./runtime.js"></script>
+  </body>
+</html>

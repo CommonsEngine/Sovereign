@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { createAppSdk } from "../sdk";
+import { IframeLocalRuntime } from "./iframe-local-runtime";
 import type { InstalledSovereignApp } from "./types";
 
 interface RenderAppRuntimeProps {
@@ -29,6 +30,8 @@ export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
     }
 
     case "iframe-local":
+      return <IframeLocalRuntime app={app} />;
+
     case "iframe-remote":
       return <p>{app.name} will run inside an iframe sandbox.</p>;
 

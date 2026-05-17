@@ -80,7 +80,15 @@ function readInstalledApps(): InstalledAppEntry[] {
 }
 
 function serializeInstalledApp(entry: InstalledAppEntry) {
-  const manifestJson = JSON.stringify(entry.manifest, null, 2);
+  const app = {
+    ...entry.manifest,
+    pluginDirectory: entry.pluginDirectory,
+  };
+  const manifestJson = JSON.stringify(app, null, 2);
+
+  if (entry.manifest.runtime !== "route-source") {
+    return manifestJson;
+  }
 
   return `${manifestJson.slice(0, -1)},\n  module: () => import("../../plugins/${entry.pluginDirectory}/src")\n}`;
 }

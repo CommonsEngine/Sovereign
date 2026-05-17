@@ -19,6 +19,11 @@ export interface SovereignAppManifest {
   launch: {
     path: string;
   };
+  runtimeConfig?: {
+    iframeLocal?: {
+      entrypoint: string;
+    };
+  };
   extensionPoints?: {
     launcher?: boolean;
     sidebar?: boolean;
