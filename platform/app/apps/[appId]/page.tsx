@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { resolveApp } from "../../../src/launcher";
+import { RenderAppRuntime } from "../../../src/runtime";
 
 interface AppPageProps {
   params: Promise<{
@@ -17,17 +18,6 @@ export default async function AppPage({ params }: AppPageProps) {
   }
 
   return (
-    <main>
-      <a href="/">← Back to Launcher</a>
-
-      <h1>{app.name}</h1>
-      <p>{app.id}</p>
-      <p>Runtime: {app.runtime}</p>
-
-      <section>
-        <h2>App Runtime Placeholder</h2>
-        <p>This is where the Sovereign App runtime will mount.</p>
-      </section>
-    </main>
+    <RenderAppRuntime app={app} />
   );
 }
