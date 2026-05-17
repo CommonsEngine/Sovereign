@@ -1,7 +1,7 @@
-import { getInstalledApps } from "../src/launcher";
+import { getLauncherApps } from "../src/launcher";
 
 export default function HomePage() {
-  const apps = getInstalledApps();
+  const apps = getLauncherApps();
 
   return (
     <main>
