@@ -94,11 +94,7 @@ function serializeInstalledApp(entry: InstalledAppEntry) {
     return `${manifestJson.slice(0, -1)},\n  module: () => import("./internal-apps.generated").then((module) => ({ default: module.${toComponentName(entry.manifest.id)} }))\n}`;
   }
 
-  if (entry.manifest.runtime !== "route-source") {
-    return manifestJson;
-  }
-
-  return `${manifestJson.slice(0, -1)},\n  module: () => import("../../plugins/${entry.pluginDirectory}/src")\n}`;
+  return manifestJson;
 }
 
 function generateRegistryFile(installedApps: InstalledAppEntry[]) {
@@ -136,7 +132,7 @@ function generateInternalAppsFile(installedApps: InstalledAppEntry[]) {
   const imports = internalApps
     .map(
       ({ pluginDirectory }, index) =>
-        `import InternalApp${index} from "../../plugins/${pluginDirectory}/src/App";`
+        `import InternalApp${index} from "../../plugins/${pluginDirectory}/src";`
     )
     .join("\n");
 

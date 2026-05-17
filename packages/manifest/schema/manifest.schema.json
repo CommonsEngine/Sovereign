@@ -20,7 +20,7 @@
     "version": { "type": "string" },
     "runtime": {
       "type": "string",
-      "enum": ["internal", "route-source", "iframe-local", "iframe-remote", "external"]
+      "enum": ["internal", "vite", "iframe"]
     },
     "permissions": {
       "type": "array",
@@ -42,40 +42,35 @@
       "properties": {
         "engine": {
           "type": "string",
-          "enum": ["vite:react-ts"]
+          "enum": ["react", "html", "*"]
         },
-        "iframeLocal": {
-          "type": "object",
-          "required": ["entrypoint"],
-          "properties": {
-            "entrypoint": {
-              "type": "string",
-              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-            }
-          },
-          "additionalProperties": false
+        "host": {
+          "type": "string",
+          "minLength": 1
         },
-        "iframeRemote": {
-          "type": "object",
-          "required": ["url"],
-          "properties": {
-            "url": {
+        "port": {
+          "oneOf": [
+            {
               "type": "string",
-              "pattern": "^https://.+"
+              "pattern": "^[0-9]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        "external": {
-          "type": "object",
-          "required": ["url"],
-          "properties": {
-            "url": {
-              "type": "string",
-              "pattern": "^https://.+"
-            }
-          },
-          "additionalProperties": false
+        "https": {
+          "type": "boolean"
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "entrypoint": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
         }
       },
       "additionalProperties": false
@@ -124,7 +119,7 @@
     {
       "if": {
         "properties": {
-          "runtime": { "const": "iframe-local" }
+          "runtime": { "const": "vite" }
         },
         "required": ["runtime"]
       },
@@ -133,7 +128,7 @@
         "properties": {
           "runtimeConfig": {
             "type": "object",
-            "required": ["iframeLocal"]
+            "required": ["engine", "host", "port"]
           }
         }
       }
@@ -141,33 +136,29 @@
     {
       "if": {
         "properties": {
-          "runtime": { "const": "iframe-remote" }
-        },
-        "required": ["runtime"]
-      },
-      "then": {
-        "required": ["runtimeConfig"],
-        "properties": {
+          "runtime": { "const": "iframe" },
           "runtimeConfig": {
             "type": "object",
-            "required": ["iframeRemote"]
+            "required": ["entrypoint"]
           }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "runtime": { "const": "external" }
         },
-        "required": ["runtime"]
+        "required": ["runtime", "runtimeConfig"]
       },
-      "then": {
-        "required": ["runtimeConfig"],
-        "properties": {
-          "runtimeConfig": {
-            "type": "object",
-            "required": ["external"]
+      "then": true,
+      "else": {
+        "if": {
+          "properties": {
+            "runtime": { "const": "iframe" }
+          },
+          "required": ["runtime"]
+        },
+        "then": {
+          "required": ["runtimeConfig"],
+          "properties": {
+            "runtimeConfig": {
+              "type": "object",
+              "required": ["engine", "host"]
+            }
           }
         }
       }

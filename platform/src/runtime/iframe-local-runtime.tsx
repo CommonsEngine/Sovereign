@@ -7,13 +7,31 @@ interface IframeLocalRuntimeProps {
 }
 
 export function IframeLocalRuntime({ app, appPath }: IframeLocalRuntimeProps) {
-  const iframeLocal = app.runtimeConfig?.iframeLocal;
+  const entrypoint = app.runtimeConfig?.entrypoint;
 
-  if (!iframeLocal) {
-    return <p>Iframe runtime entrypoint not configured.</p>;
+  if (!entrypoint) {
+    const remoteUrl = getRemoteIframeUrl(app);
+
+    if (!remoteUrl) {
+      return <p>Iframe runtime URL not configured.</p>;
+    }
+
+    return (
+      <iframe
+        title={app.name}
+        src={remoteUrl}
+        referrerPolicy="no-referrer"
+        sandbox="allow-forms allow-scripts"
+        style={{
+          width: "100%",
+          minHeight: "720px",
+          border: 0,
+        }}
+      />
+    );
   }
 
-  const entrypointFileName = iframeLocal.entrypoint.split("/").at(-1);
+  const entrypointFileName = entrypoint.split("/").at(-1);
 
   if (!entrypointFileName) {
     return <p>Iframe runtime entrypoint not configured.</p>;
@@ -29,6 +47,27 @@ export function IframeLocalRuntime({ app, appPath }: IframeLocalRuntimeProps) {
   );
 }
 
+function getRemoteIframeUrl(app: InstalledSovereignApp) {
+  const config = app.runtimeConfig;
+
+  if (!config) {
+    return null;
+  }
+
+  if (!config.host) {
+    return null;
+  }
+
+  const protocol = config.https ? "https:" : "http:";
+  const baseUrl = `${protocol}//${config.host}`;
+  const url = new URL(config.uri ?? "/", baseUrl);
+
+  if (config.port !== undefined) {
+    url.port = String(config.port);
+  }
+
+  return url.toString();
+}
 function toAppPath(appPath: readonly string[]) {
   if (appPath.length === 0) {
     return "/";

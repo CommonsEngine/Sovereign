@@ -5,10 +5,13 @@ export * from "./permissions";
 
 export type SovereignRuntime =
   | "internal"
-  | "route-source"
-  | "iframe-local"
-  | "iframe-remote"
-  | "external";
+  | "vite"
+  | "iframe";
+
+export type SovereignRuntimeEngine =
+  | "react"
+  | "html"
+  | "*";
 
 export interface SovereignAppManifest {
   schemaVersion: 1;
@@ -21,16 +24,12 @@ export interface SovereignAppManifest {
     path: string;
   };
   runtimeConfig?: {
-    engine?: "vite:react-ts";
-    iframeLocal?: {
-      entrypoint: string;
-    };
-    iframeRemote?: {
-      url: string;
-    };
-    external?: {
-      url: string;
-    };
+    engine?: SovereignRuntimeEngine;
+    host?: string;
+    port?: string | number;
+    https?: boolean;
+    uri?: string;
+    entrypoint?: string;
   };
   extensionPoints?: {
     launcher?: boolean;

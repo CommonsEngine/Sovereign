@@ -1,5 +1,7 @@
 export const SovereignPermissions = {
   AuthProfile: "auth:profile",
+  AuthRead: "auth:read",
+  AuthWrite: "auth:write",
   StorageReadWrite: "storage:readWrite",
   EventsPublish: "events:publish",
   NotificationsSend: "notifications:send",

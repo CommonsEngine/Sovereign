@@ -1,14 +1,12 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.iframe-remote",
-  "name": "Remote Remote Demo",
-  "version": "0.0.0",
-  "runtime": "iframe",
+  "id": "com.sovereign-demo.internal-html",
+  "name": "Html Demo",
+  "version": "0.1.0",
+  "runtime": "internal",
   "runtimeConfig": {
-    "engine": "*",
-    "host": "example.com",
-    "https": true,
-    "uri": "/#test"
+    "engine": "html",
+    "entrypoint": "index.html"
   },
   "permissions": [],
   "author": "Sovereign Core Team",
@@ -17,7 +15,7 @@
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign-demo.iframe-remote"
+    "path": "/apps/com.sovereign-demo.internal-html"
   },
   "extensionPoints": {
     "launcher": true,

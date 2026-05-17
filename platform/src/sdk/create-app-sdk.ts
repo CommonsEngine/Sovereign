@@ -11,7 +11,11 @@ export function createAppSdk(input: CreateAppSdkInput) {
   const permissions = getAppPermissions(input.appId);
 
   return {
-    auth: hasPermission(permissions, SovereignPermissions.AuthProfile)
+    auth: hasAnyPermission(permissions, [
+      SovereignPermissions.AuthProfile,
+      SovereignPermissions.AuthRead,
+      SovereignPermissions.AuthWrite,
+    ])
       ? sovereign.auth
       : undefined,
 
@@ -27,4 +31,13 @@ export function createAppSdk(input: CreateAppSdkInput) {
       ? sovereign.notifications
       : undefined,
   };
+}
+
+function hasAnyPermission(
+  permissions: readonly string[],
+  allowed: readonly string[]
+) {
+  return allowed.some((permission) =>
+    hasPermission(permissions, permission)
+  );
 }

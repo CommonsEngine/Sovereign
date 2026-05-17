@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "com.sovereign-demo.internal-react",
-  "name": "Launcher",
+  "name": "Next.js + React Demo",
   "version": "0.1.0",
   "runtime": "internal",
   "runtimeConfig": {

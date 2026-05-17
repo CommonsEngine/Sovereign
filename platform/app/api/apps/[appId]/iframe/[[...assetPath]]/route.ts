@@ -26,11 +26,11 @@ export async function GET(_request: Request, { params }: IframeAssetRouteProps) 
   const { appId, assetPath = [] } = await params;
   const app = resolveApp(appId);
 
-  if (app?.runtime !== "iframe-local") {
+  if (!app || app.runtime !== "iframe") {
     notFound();
   }
 
-  const entrypoint = app.runtimeConfig?.iframeLocal?.entrypoint;
+  const entrypoint = app.runtimeConfig?.entrypoint;
 
   if (!entrypoint || !isSafeRelativePath(entrypoint)) {
     notFound();
