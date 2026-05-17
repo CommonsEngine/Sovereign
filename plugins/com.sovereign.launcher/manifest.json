@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.launcher",
+  "name": "Launcher",
+  "version": "0.0.0",
+  "runtime": "route-source",
+  "permissions": ["auth:profile"],
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  }
+}
