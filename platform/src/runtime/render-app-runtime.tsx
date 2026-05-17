@@ -1,35 +1,38 @@
-import type { SovereignAppManifest } from "../../../packages/manifest/src";
+import { Suspense } from "react";
 
 interface RenderAppRuntimeProps {
-  app: SovereignAppManifest;
+  app: {
+    name: string;
+    runtime: string;
+    module?: () => Promise<{
+      default: React.ComponentType;
+    }>;
+  };
 }
 
-export function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
+export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
   switch (app.runtime) {
-    case "route-source":
+    case "route-source": {
+      if (!app.module) {
+        return <p>App module not found.</p>;
+      }
+
+      const AppModule = await app.module();
+      const AppComponent = AppModule.default;
+
       return (
-        <section>
-          <h2>Route Source Runtime</h2>
-          <p>{app.name} will be mounted here.</p>
-        </section>
+        <Suspense fallback={<p>Loading app...</p>}>
+          <AppComponent />
+        </Suspense>
       );
+    }
 
     case "iframe-local":
     case "iframe-remote":
-      return (
-        <section>
-          <h2>Sandbox Runtime</h2>
-          <p>{app.name} will run inside an iframe sandbox.</p>
-        </section>
-      );
+      return <p>{app.name} will run inside an iframe sandbox.</p>;
 
     case "external":
-      return (
-        <section>
-          <h2>External Runtime</h2>
-          <p>{app.name} opens as an external app.</p>
-        </section>
-      );
+      return <p>{app.name} opens as an external app.</p>;
 
     default:
       return null;
