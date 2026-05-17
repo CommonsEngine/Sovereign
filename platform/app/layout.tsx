@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+
+import { getSidebarApps } from "../src/launcher";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,9 +25,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const sidebarApps = getSidebarApps();
+
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <aside>
+          <strong>Sovereign</strong>
+
+          <nav>
+            {sidebarApps.map((app) => (
+              <a key={app.id} href={app.launch.path}>
+                {app.name}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        {children}
+      </body>
     </html>
   );
 }

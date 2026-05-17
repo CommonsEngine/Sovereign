@@ -9,3 +9,9 @@ export function getLauncherApps() {
     (app) => app.extensionPoints?.launcher === true
   );
 }
+
+export function getSidebarApps() {
+  return installedApps.filter(
+    (app) => app.extensionPoints?.sidebar === true
+  );
+}
