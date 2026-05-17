@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { getInstalledApps } from "../../../src/launcher";
+import { resolveApp } from "../../../src/launcher";
 
 interface AppPageProps {
   params: Promise<{
@@ -10,8 +10,7 @@ interface AppPageProps {
 
 export default async function AppPage({ params }: AppPageProps) {
   const { appId } = await params;
-  const apps = getInstalledApps();
-  const app = apps.find((item) => item.id === appId);
+  const app = resolveApp(appId);
 
   if (!app) {
     notFound();
