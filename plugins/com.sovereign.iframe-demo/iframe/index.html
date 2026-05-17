@@ -14,6 +14,15 @@
         This app is served from a local plugin entrypoint and rendered inside a
         platform-controlled iframe sandbox.
       </p>
+      <nav aria-label="Demo routes">
+        <button data-route="/" type="button">Home</button>
+        <button data-route="/settings" type="button">Settings</button>
+        <button data-route="/projects/demo" type="button">Project</button>
+      </nav>
+      <p>
+        Current route:
+        <strong id="route"></strong>
+      </p>
       <button id="ping" type="button">Ping runtime</button>
       <output id="result" aria-live="polite"></output>
     </main>
