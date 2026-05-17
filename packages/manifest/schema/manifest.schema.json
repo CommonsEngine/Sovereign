@@ -20,7 +20,7 @@
     "version": { "type": "string" },
     "runtime": {
       "type": "string",
-      "enum": ["route-source", "iframe-local", "iframe-remote", "external"]
+      "enum": ["internal", "route-source", "iframe-local", "iframe-remote", "external"]
     },
     "permissions": {
       "type": "array",
@@ -40,6 +40,10 @@
     "runtimeConfig": {
       "type": "object",
       "properties": {
+        "engine": {
+          "type": "string",
+          "enum": ["vite:react-ts"]
+        },
         "iframeLocal": {
           "type": "object",
           "required": ["entrypoint"],
@@ -100,6 +104,23 @@
   },
   "additionalProperties": true,
   "allOf": [
+    {
+      "if": {
+        "properties": {
+          "runtime": { "const": "internal" }
+        },
+        "required": ["runtime"]
+      },
+      "then": {
+        "required": ["runtimeConfig"],
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["engine"]
+          }
+        }
+      }
+    },
     {
       "if": {
         "properties": {
