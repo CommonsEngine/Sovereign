@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { resolveApp } from "../../../src/launcher";
-import { RenderAppRuntime } from "../../../src/runtime";
+import { AppRuntimeShell, RenderAppRuntime } from "../../../src/runtime";
 
 interface AppPageProps {
   params: Promise<{
@@ -18,6 +18,8 @@ export default async function AppPage({ params }: AppPageProps) {
   }
 
   return (
-    <RenderAppRuntime app={app} />
+    <AppRuntimeShell app={app}>
+      <RenderAppRuntime app={app} />
+    </AppRuntimeShell>
   );
 }

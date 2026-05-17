@@ -4,7 +4,7 @@ export default function HomePage() {
   const apps = getLauncherApps();
 
   return (
-    <main>
+    <div>
       <h1>Sovereign</h1>
       <p>Personal platform runtime</p>
 
@@ -29,6 +29,6 @@ export default function HomePage() {
           </ul>
         )}
       </section>
-    </main>
+    </div>
   );
 }
