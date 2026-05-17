@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { createAppSdk } from "../sdk";
+import { ExternalAppRuntime } from "./external-app-runtime";
 import { IframeLocalRuntime } from "./iframe-local-runtime";
 import { IframeRemoteRuntime } from "./iframe-remote-runtime";
 import type { InstalledSovereignApp } from "./types";
@@ -37,7 +38,7 @@ export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {
       return <IframeRemoteRuntime app={app} />;
 
     case "external":
-      return <p>{app.name} opens as an external app.</p>;
+      return <ExternalAppRuntime app={app} />;
 
     default:
       return null;
