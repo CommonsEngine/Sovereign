@@ -1,12 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign.launcher",
+  "id": "com.sovereign-demo.internal-react",
   "name": "Launcher",
-  "version": "0.0.0",
-  "runtime": "route-source",
-  "permissions": ["auth:profile"],
+  "version": "0.1.0",
+  "runtime": "internal",
+  "runtimeConfig": {
+    "engine": "react"
+  },
+  "permissions": ["auth:read"],
   "launch": {
-    "path": "/apps/com.sovereign.launcher"
+    "path": "/apps/com.sovereign-demo.internal-react"
   },
   "extensionPoints": {
     "launcher": true,
