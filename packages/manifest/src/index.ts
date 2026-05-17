@@ -23,6 +23,9 @@ export interface SovereignAppManifest {
     iframeLocal?: {
       entrypoint: string;
     };
+    iframeRemote?: {
+      url: string;
+    };
   };
   extensionPoints?: {
     launcher?: boolean;
