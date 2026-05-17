@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.tasks",
+  "name": "Tasks",
+  "description": "Core Sovereign tasks app.",
+  "source": {
+    "type": "bundled",
+    "path": "plugins/com.sovereign.tasks"
+  }
+}

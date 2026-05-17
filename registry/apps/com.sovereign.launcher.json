@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.launcher",
+  "name": "Launcher",
+  "description": "Core Sovereign app launcher.",
+  "source": {
+    "type": "bundled",
+    "path": "plugins/com.sovereign.launcher"
+  }
+}
