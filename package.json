@@ -15,7 +15,8 @@
     "lint": "yarn workspaces foreach -A run lint",
     "test": "yarn workspaces foreach -A run test",
     "typecheck": "yarn workspaces foreach -A run typecheck",
-    "validate:manifest": "tsx tools/validate-manifest.ts"
+    "validate:manifest": "tsx tools/validate-manifest.ts",
+    "generate": "tsx tools/generate-app-registry.ts"
   },
   "devDependencies": {
     "ajv": "^8.20.0",
