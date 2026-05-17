@@ -13,6 +13,9 @@ export interface SovereignAppManifest {
   version: string;
   runtime: SovereignRuntime;
   permissions: string[];
+  launch: {
+    path: string;
+  };
   author?: string;
   license?: string;
   compatibility: {

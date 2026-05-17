@@ -10,7 +10,8 @@
     "version",
     "runtime",
     "permissions",
-    "compatibility"
+    "compatibility",
+    "launch"
   ],
   "properties": {
     "schemaVersion": { "type": "integer", "const": 1 },
@@ -25,6 +26,15 @@
       "type": "array",
       "items": { "type": "string" },
       "uniqueItems": true
+    },
+    "launch": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
     },
     "author": { "type": "string" },
     "license": { "type": "string" },

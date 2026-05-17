@@ -5,6 +5,9 @@
   "version": "0.0.0",
   "runtime": "route-source",
   "permissions": ["auth:profile"],
+  "launch": {
+    "path": "/apps/com.sovereign.launcher"
+  },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "compatibility": {
