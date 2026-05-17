@@ -17,7 +17,9 @@ export default function HomePage() {
           <ul>
             {apps.map((app) => (
               <li key={app.id}>
-                <strong>{app.name}</strong>
+                <a href={`/apps/${app.id}`}>
+                  <strong>{app.name}</strong>
+                </a>
                 <br />
                 <span>{app.id}</span>
                 <br />
