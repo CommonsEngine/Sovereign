@@ -8,6 +8,10 @@
   "launch": {
     "path": "/apps/com.sovereign.launcher"
   },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  },
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "compatibility": {

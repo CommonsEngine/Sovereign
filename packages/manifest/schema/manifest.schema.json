@@ -36,6 +36,18 @@
         }
       }
     },
+    "extensionPoints": {
+      "type": "object",
+      "properties": {
+        "launcher": {
+          "type": "boolean"
+        },
+        "sidebar": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "author": { "type": "string" },
     "license": { "type": "string" },
     "compatibility": {

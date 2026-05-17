@@ -16,6 +16,10 @@ export interface SovereignAppManifest {
   launch: {
     path: string;
   };
+  extensionPoints?: {
+    launcher?: boolean;
+    sidebar?: boolean;
+  };
   author?: string;
   license?: string;
   compatibility: {
