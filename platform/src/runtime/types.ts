@@ -8,5 +8,6 @@ export type RouteSourceAppModule = () => Promise<{
 }>;
 
 export type InstalledSovereignApp = SovereignAppManifest & {
+  pluginDirectory: string;
   module?: RouteSourceAppModule;
 };

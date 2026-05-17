@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.iframe-demo",
+  "name": "Iframe Demo",
+  "version": "0.0.0",
+  "runtime": "iframe-local",
+  "permissions": [],
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  },
+  "launch": {
+    "path": "/apps/com.sovereign.iframe-demo"
+  },
+  "runtimeConfig": {
+    "iframeLocal": {
+      "entrypoint": "iframe/index.html"
+    }
+  },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  }
+}
