@@ -20,7 +20,7 @@
     "version": { "type": "string" },
     "runtime": {
       "type": "string",
-      "enum": ["internal", "route-source", "iframe-local", "iframe-remote", "external"]
+      "enum": ["standalone", "dom", "iframe"]
     },
     "permissions": {
       "type": "array",
@@ -42,40 +42,35 @@
       "properties": {
         "engine": {
           "type": "string",
-          "enum": ["vite:react-ts"]
+          "enum": ["react", "html", "*"]
         },
-        "iframeLocal": {
-          "type": "object",
-          "required": ["entrypoint"],
-          "properties": {
-            "entrypoint": {
-              "type": "string",
-              "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-            }
-          },
-          "additionalProperties": false
+        "host": {
+          "type": "string",
+          "minLength": 1
         },
-        "iframeRemote": {
-          "type": "object",
-          "required": ["url"],
-          "properties": {
-            "url": {
+        "port": {
+          "oneOf": [
+            {
               "type": "string",
-              "pattern": "^https://.+"
+              "pattern": "^[0-9]+$"
+            },
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
             }
-          },
-          "additionalProperties": false
+          ]
         },
-        "external": {
-          "type": "object",
-          "required": ["url"],
-          "properties": {
-            "url": {
-              "type": "string",
-              "pattern": "^https://.+"
-            }
-          },
-          "additionalProperties": false
+        "https": {
+          "type": "boolean"
+        },
+        "uri": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "entrypoint": {
+          "type": "string",
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
         }
       },
       "additionalProperties": false
@@ -107,67 +102,98 @@
     {
       "if": {
         "properties": {
-          "runtime": { "const": "internal" }
+          "runtime": { "const": "standalone" }
         },
         "required": ["runtime"]
       },
       "then": {
         "required": ["runtimeConfig"],
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["engine"],
+            "properties": {
+              "engine": {
+                "enum": ["react", "html"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "runtime": { "const": "dom" }
+        },
+        "required": ["runtime"]
+      },
+      "then": {
+        "required": ["runtimeConfig"],
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["engine", "host", "port"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "runtime": { "const": "standalone" },
+          "runtimeConfig": {
+            "type": "object",
+            "properties": {
+              "engine": { "const": "html" }
+            },
+            "required": ["engine"]
+          }
+        },
+        "required": ["runtime", "runtimeConfig"]
+      },
+      "then": {
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["entrypoint"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "runtime": { "const": "iframe" },
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["entrypoint"]
+          }
+        },
+        "required": ["runtime", "runtimeConfig"]
+      },
+      "then": {
         "properties": {
           "runtimeConfig": {
             "type": "object",
             "required": ["engine"]
           }
         }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "runtime": { "const": "iframe-local" }
-        },
-        "required": ["runtime"]
       },
-      "then": {
-        "required": ["runtimeConfig"],
-        "properties": {
-          "runtimeConfig": {
-            "type": "object",
-            "required": ["iframeLocal"]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "runtime": { "const": "iframe-remote" }
+      "else": {
+        "if": {
+          "properties": {
+            "runtime": { "const": "iframe" }
+          },
+          "required": ["runtime"]
         },
-        "required": ["runtime"]
-      },
-      "then": {
-        "required": ["runtimeConfig"],
-        "properties": {
-          "runtimeConfig": {
-            "type": "object",
-            "required": ["iframeRemote"]
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "runtime": { "const": "external" }
-        },
-        "required": ["runtime"]
-      },
-      "then": {
-        "required": ["runtimeConfig"],
-        "properties": {
-          "runtimeConfig": {
-            "type": "object",
-            "required": ["external"]
+        "then": {
+          "required": ["runtimeConfig"],
+          "properties": {
+            "runtimeConfig": {
+              "type": "object",
+              "required": ["engine", "host"]
+            }
           }
         }
       }

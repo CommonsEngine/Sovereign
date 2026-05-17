@@ -1,6 +1,7 @@
 import { installedApps } from "../../generated/apps.generated";
+import type { InstalledSovereignApp } from "../runtime";
 
-export function getInstalledApps() {
+export function getInstalledApps(): readonly InstalledSovereignApp[] {
   return installedApps;
 }
 

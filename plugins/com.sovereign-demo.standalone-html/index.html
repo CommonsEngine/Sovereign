@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sovereign Standalone Html Demo</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">iframe-local</p>
+      <h1>Sovereign Standalone Html Demo</h1>
+      <p>
+        This plugin to serve html + js app directly via Sovereign.
+      </p>
+      <nav aria-label="Demo routes">
+        <button data-route="/" type="button">Home</button>
+        <button data-route="/settings" type="button">Settings</button>
+        <button data-route="/projects/demo" type="button">Project</button>
+      </nav>
+      <p>
+        Current route:
+        <strong id="route"></strong>
+      </p>
+      <button id="ping" type="button">Ping</button>
+      <output id="result" aria-live="polite"></output>
+    </main>
+  </body>
+</html>

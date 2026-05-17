@@ -1,9 +1,13 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.external",
-  "name": "External Demo",
-  "version": "0.0.0",
-  "runtime": "external",
+  "id": "com.sovereign-demo.iframe-html",
+  "name": "iframe Html Demo",
+  "version": "0.1.0",
+  "runtime": "iframe",
+  "runtimeConfig": {
+    "engine": "html",
+    "entrypoint": "iframe/index.html"
+  },
   "permissions": [],
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
@@ -11,12 +15,7 @@
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign.external-demo"
-  },
-  "runtimeConfig": {
-    "external": {
-      "url": "https://example.com/"
-    }
+    "path": "/apps/com.sovereign-demo.iframe-html"
   },
   "extensionPoints": {
     "launcher": true,

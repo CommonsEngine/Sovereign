@@ -1,23 +1,22 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign-demo.iframe-remote",
-  "name": "Remote Remote Demo",
+  "id": "com.sovereign-demo.dom-react",
+  "name": "Vite + React Demo",
   "version": "0.1.0",
-  "runtime": "iframe",
+  "runtime": "dom",
   "runtimeConfig": {
-    "engine": "*",
-    "host": "example.com",
-    "https": true,
-    "uri": "/#test"
+    "engine": "react",
+    "host": "localhost",
+    "port": "4000"
   },
-  "permissions": [],
+  "permissions": ["auth:read", "auth:write"],
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
   "compatibility": {
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign-demo.iframe-remote"
+    "path": "/apps/com.sovereign-demo.dom-react"
   },
   "extensionPoints": {
     "launcher": true,

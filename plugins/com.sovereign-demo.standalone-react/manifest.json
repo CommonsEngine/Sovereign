@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign-demo.standalone-react",
+  "name": "Next.js + React Demo",
+  "version": "0.1.0",
+  "runtime": "standalone",
+  "runtimeConfig": {
+    "engine": "react"
+  },
+  "permissions": ["auth:read"],
+  "launch": {
+    "path": "/apps/com.sovereign-demo.standalone-react"
+  },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  },
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  }
+}
