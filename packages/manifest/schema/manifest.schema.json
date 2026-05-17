@@ -50,6 +50,17 @@
             }
           },
           "additionalProperties": false
+        },
+        "iframeRemote": {
+          "type": "object",
+          "required": ["url"],
+          "properties": {
+            "url": {
+              "type": "string",
+              "pattern": "^https://.+"
+            }
+          },
+          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -91,6 +102,23 @@
           "runtimeConfig": {
             "type": "object",
             "required": ["iframeLocal"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "runtime": { "const": "iframe-remote" }
+        },
+        "required": ["runtime"]
+      },
+      "then": {
+        "required": ["runtimeConfig"],
+        "properties": {
+          "runtimeConfig": {
+            "type": "object",
+            "required": ["iframeRemote"]
           }
         }
       }
