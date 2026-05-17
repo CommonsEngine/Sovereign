@@ -1,0 +1,12 @@
+import type { ComponentType } from "react";
+
+import type { SovereignAppManifest } from "../../../packages/manifest/src";
+import type { SovereignAppProps } from "../../../packages/sdk/src";
+
+export type RouteSourceAppModule = () => Promise<{
+  default: ComponentType<SovereignAppProps>;
+}>;
+
+export type InstalledSovereignApp = SovereignAppManifest & {
+  module?: RouteSourceAppModule;
+};

@@ -88,7 +88,7 @@ function generateRegistryFile(installedApps: InstalledAppEntry[]) {
     .map((entry) => serializeInstalledApp(entry))
     .join(",\n  ");
 
-  const content = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nexport const installedApps = [\n  ${serializedApps}\n] as const;\n`;
+  const content = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nimport type { InstalledSovereignApp } from "../src/runtime";\n\nexport const installedApps = [\n  ${serializedApps}\n] as const satisfies readonly InstalledSovereignApp[];\n`;
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 

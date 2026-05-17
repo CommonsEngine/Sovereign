@@ -1,15 +1,10 @@
 import { Suspense } from "react";
 
 import { createAppSdk } from "../sdk";
+import type { InstalledSovereignApp } from "./types";
 
 interface RenderAppRuntimeProps {
-  app: {
-    name: string;
-    runtime: string;
-    module?: () => Promise<{
-      default: React.ComponentType;
-    }>;
-  };
+  app: InstalledSovereignApp;
 }
 
 export async function RenderAppRuntime({ app }: RenderAppRuntimeProps) {

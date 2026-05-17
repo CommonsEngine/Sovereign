@@ -11,10 +11,11 @@
   ],
   "scripts": {
     "dev": "yarn workspace @sovereign/platform dev",
-    "build": "yarn workspace @sovereign/platform build",
+    "start": "yarn workspace @sovereign/platform start",
+    "build": "yarn generate && yarn workspace @sovereign/platform build",
     "lint": "yarn workspaces foreach -A run lint",
     "test": "yarn workspaces foreach -A run test",
-    "typecheck": "yarn workspaces foreach -A run typecheck",
+    "typecheck": "yarn generate && yarn workspaces foreach -A run typecheck",
     "validate:manifest": "tsx tools/validate-manifest.ts",
     "generate": "tsx tools/generate-app-registry.ts"
   },
