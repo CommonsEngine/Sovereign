@@ -1,6 +1,8 @@
-import { installedApps } from "../generated/apps.generated";
+import { getInstalledApps } from "../src/launcher";
 
 export default function HomePage() {
+  const apps = getInstalledApps();
+
   return (
     <main>
       <h1>Sovereign</h1>
@@ -9,11 +11,11 @@ export default function HomePage() {
       <section>
         <h2>Installed Apps</h2>
 
-        {installedApps.length === 0 ? (
+        {apps.length === 0 ? (
           <p>No apps installed.</p>
         ) : (
           <ul>
-            {installedApps.map((app) => (
+            {apps.map((app) => (
               <li key={app.id}>
                 <strong>{app.name}</strong>
                 <br />
