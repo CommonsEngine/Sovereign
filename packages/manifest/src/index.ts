@@ -1,4 +1,5 @@
 export * from "./validate";
+export * from "./permissions";
 
 export type SovereignRuntime =
   | "route-source"

@@ -1,4 +1,6 @@
 import { sovereign } from "../../../packages/sdk/src";
+import { SovereignPermissions } from "../../../packages/manifest/src";
+
 import { hasPermission } from "../permissions";
 
 interface CreateAppSdkInput {
@@ -8,19 +10,19 @@ interface CreateAppSdkInput {
 
 export function createAppSdk(input: CreateAppSdkInput) {
   return {
-    auth: hasPermission(input.permissions, "auth:profile")
+    auth: hasPermission(input.permissions, SovereignPermissions.AuthProfile)
       ? sovereign.auth
       : undefined,
 
-    storage: hasPermission(input.permissions, "storage:readWrite")
+    storage: hasPermission(input.permissions, SovereignPermissions.StorageReadWrite)
       ? sovereign.storage
       : undefined,
 
-    events: hasPermission(input.permissions, "events:publish")
+    events: hasPermission(input.permissions, SovereignPermissions.EventsPublish)
       ? sovereign.events
       : undefined,
 
-    notifications: hasPermission(input.permissions, "notifications:send")
+    notifications: hasPermission(input.permissions, SovereignPermissions.NotificationsSend)
       ? sovereign.notifications
       : undefined,
   };
