@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.external-demo",
+  "name": "External Demo",
+  "version": "0.0.0",
+  "runtime": "external",
+  "permissions": [],
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  },
+  "launch": {
+    "path": "/apps/com.sovereign.external-demo"
+  },
+  "runtimeConfig": {
+    "external": {
+      "url": "https://example.com/"
+    }
+  },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  }
+}
