@@ -14,7 +14,12 @@ const OUTPUT_FILE = path.join(
   "apps.generated.ts"
 );
 
-function readPluginManifests(): SovereignAppManifest[] {
+interface InstalledAppEntry {
+  manifest: SovereignAppManifest;
+  pluginDirectory: string;
+}
+
+function readInstalledApps(): InstalledAppEntry[] {
   if (!fs.existsSync(PLUGINS_DIR)) {
     return [];
   }
@@ -27,7 +32,7 @@ function readPluginManifests(): SovereignAppManifest[] {
       return fs.statSync(fullPath).isDirectory();
     });
 
-  const manifests: SovereignAppManifest[] = [];
+  const installedApps: InstalledAppEntry[] = [];
 
   for (const pluginDirectory of pluginDirectories) {
     const manifestPath = path.join(
@@ -63,20 +68,27 @@ function readPluginManifests(): SovereignAppManifest[] {
       process.exit(1);
     }
 
-    manifests.push(manifest as SovereignAppManifest);
+    installedApps.push({
+      manifest: manifest as SovereignAppManifest,
+      pluginDirectory,
+    });
   }
 
-  return manifests;
+  return installedApps;
 }
 
-function generateRegistryFile(
-  manifests: SovereignAppManifest[]
-) {
-  const content = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nexport const installedApps = ${JSON.stringify(
-    manifests,
-    null,
-    2
-  )} as const;\n`;
+function serializeInstalledApp(entry: InstalledAppEntry) {
+  const manifestJson = JSON.stringify(entry.manifest, null, 2);
+
+  return `${manifestJson.slice(0, -1)},\n  module: () => import("../../plugins/${entry.pluginDirectory}/src")\n}`;
+}
+
+function generateRegistryFile(installedApps: InstalledAppEntry[]) {
+  const serializedApps = installedApps
+    .map((entry) => serializeInstalledApp(entry))
+    .join(",\n  ");
+
+  const content = `// AUTO-GENERATED FILE. DO NOT EDIT.\n\nexport const installedApps = [\n  ${serializedApps}\n] as const;\n`;
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
@@ -86,12 +98,12 @@ function generateRegistryFile(
 function main() {
   console.log("Generating Sovereign app registry...");
 
-  const manifests = readPluginManifests();
+  const installedApps = readInstalledApps();
 
-  generateRegistryFile(manifests);
+  generateRegistryFile(installedApps);
 
   console.log(
-    `Generated platform/generated/apps.generated.ts with ${manifests.length} app(s)`
+    `Generated platform/generated/apps.generated.ts with ${installedApps.length} app(s)`
   );
 }
 
