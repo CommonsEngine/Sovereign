@@ -15,6 +15,10 @@ const PERMISSIONS_OUTPUT_FILE = path.join(
   OUTPUT_DIR,
   "permissions.generated.ts"
 );
+const INTERNAL_APPS_OUTPUT_FILE = path.join(
+  OUTPUT_DIR,
+  "internal-apps.generated.tsx"
+);
 
 interface InstalledAppEntry {
   manifest: SovereignAppManifest;
@@ -86,6 +90,10 @@ function serializeInstalledApp(entry: InstalledAppEntry) {
   };
   const manifestJson = JSON.stringify(app, null, 2);
 
+  if (entry.manifest.runtime === "internal") {
+    return `${manifestJson.slice(0, -1)},\n  module: () => import("./internal-apps.generated").then((module) => ({ default: module.${toComponentName(entry.manifest.id)} }))\n}`;
+  }
+
   if (entry.manifest.runtime !== "route-source") {
     return manifestJson;
   }
@@ -120,6 +128,40 @@ function generatePermissionsFile(installedApps: InstalledAppEntry[]) {
   fs.writeFileSync(PERMISSIONS_OUTPUT_FILE, content, "utf-8");
 }
 
+function generateInternalAppsFile(installedApps: InstalledAppEntry[]) {
+  const internalApps = installedApps.filter(
+    ({ manifest }) => manifest.runtime === "internal"
+  );
+
+  const imports = internalApps
+    .map(
+      ({ pluginDirectory }, index) =>
+        `import InternalApp${index} from "../../plugins/${pluginDirectory}/src/App";`
+    )
+    .join("\n");
+
+  const components = internalApps
+    .map(
+      ({ manifest }, index) =>
+        `export function ${toComponentName(manifest.id)}() {\n  const sdk = createAppSdk({ appId: "${manifest.id}" });\n\n  return <InternalApp${index} sdk={sdk} />;\n}`
+    )
+    .join("\n\n");
+
+  const content = `"use client";\n\nimport { createAppSdk } from "../src/sdk";\n${imports ? `\n${imports}\n` : ""}${components}\n`;
+
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+
+  fs.writeFileSync(INTERNAL_APPS_OUTPUT_FILE, content, "utf-8");
+}
+
+function toComponentName(appId: string) {
+  return `${appId
+    .split(/[^a-zA-Z0-9]/)
+    .filter(Boolean)
+    .map((segment) => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
+    .join("")}InternalApp`;
+}
+
 function main() {
   console.log("Generating Sovereign app registry...");
 
@@ -127,6 +169,7 @@ function main() {
 
   generateRegistryFile(installedApps);
   generatePermissionsFile(installedApps);
+  generateInternalAppsFile(installedApps);
 
   console.log(
     `Generated platform/generated metadata with ${installedApps.length} app(s)`

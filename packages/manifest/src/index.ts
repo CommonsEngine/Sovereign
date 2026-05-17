@@ -4,6 +4,7 @@ export * from "./validate";
 export * from "./permissions";
 
 export type SovereignRuntime =
+  | "internal"
   | "route-source"
   | "iframe-local"
   | "iframe-remote"
@@ -20,6 +21,7 @@ export interface SovereignAppManifest {
     path: string;
   };
   runtimeConfig?: {
+    engine?: "vite:react-ts";
     iframeLocal?: {
       entrypoint: string;
     };

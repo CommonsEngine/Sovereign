@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, type ComponentType } from "react";
 
 import { createAppSdk } from "../sdk";
 import { ExternalAppRuntime } from "./external-app-runtime";
@@ -16,6 +16,21 @@ export async function RenderAppRuntime({
   appPath = [],
 }: RenderAppRuntimeProps) {
   switch (app.runtime) {
+    case "internal": {
+      if (!app.module) {
+        return <p>App module not found.</p>;
+      }
+
+      const AppModule = await app.module();
+      const AppComponent = AppModule.default as ComponentType;
+
+      return (
+        <Suspense fallback={<p>Loading app...</p>}>
+          <AppComponent />
+        </Suspense>
+      );
+    }
+
     case "route-source": {
       if (!app.module) {
         return <p>App module not found.</p>;

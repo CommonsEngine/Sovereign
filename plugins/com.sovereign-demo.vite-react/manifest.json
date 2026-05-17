@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign-demo.vite-react",
+  "name": "Vite + React Demo",
+  "version": "0.0.0",
+  "runtime": "internal",
+  "permissions": ["auth:profile"],
+  "author": "Sovereign Core Team",
+  "license": "AGPL-3.0",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  },
+  "launch": {
+    "path": "/apps/com.sovereign-demo.vite-react"
+  },
+  "runtimeConfig": {
+    "engine": "vite:react-ts"
+  },
+  "extensionPoints": {
+    "launcher": true,
+    "sidebar": true
+  }
+}
