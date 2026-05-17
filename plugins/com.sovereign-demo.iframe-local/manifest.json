@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign.iframe-demo",
+  "id": "com.sovereign-demo.iframe-local",
   "name": "Iframe Demo",
   "version": "0.0.0",
   "runtime": "iframe-local",

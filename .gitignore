@@ -50,11 +50,8 @@ platform/generated/*
 
 # plugins
 /plugins/*
-!/plugins/com.sovereign.external-demo/
-!/plugins/com.sovereign.iframe-demo/
-!/plugins/com.sovereign.launcher/
-!/plugins/com.sovereign.remote-demo/
-!/plugins/com.sovereign.tasks/
+!/plugins/com.sovereign-demo.*
+!/plugins/com.sovereign.launcher
 
 # logs
 *.log

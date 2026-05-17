@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "com.sovereign.remote-demo",
-  "name": "Remote Demo",
+  "id": "com.sovereign-demo.external",
+  "name": "External Demo",
   "version": "0.0.0",
-  "runtime": "iframe-remote",
+  "runtime": "external",
   "permissions": [],
   "author": "Sovereign Core Team",
   "license": "AGPL-3.0",
@@ -11,10 +11,10 @@
     "minPlatformVersion": "0.1.0"
   },
   "launch": {
-    "path": "/apps/com.sovereign.remote-demo"
+    "path": "/apps/com.sovereign.external-demo"
   },
   "runtimeConfig": {
-    "iframeRemote": {
+    "external": {
       "url": "https://example.com/"
     }
   },
