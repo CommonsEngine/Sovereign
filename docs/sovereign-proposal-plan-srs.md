@@ -1,0 +1,702 @@
+# Sovereign
+## Project Concept · Project Plan · Software Requirements Specification
+
+**Version:** 0.2
+**Date:** June 2026
+**Status:** Signed Off
+
+---
+
+## Table of Contents
+
+1. [Project Concept](#1-project-concept)
+   - 1.1 [Overview](#11-overview)
+   - 1.2 [Problem Statement](#12-problem-statement)
+   - 1.3 [Solution](#13-solution)
+   - 1.4 [Goals and Non-Goals](#14-goals-and-non-goals)
+   - 1.5 [Target Users](#15-target-users)
+   - 1.6 [Positioning](#16-positioning)
+   - 1.7 [Guiding Principles](#17-guiding-principles)
+
+2. [Project Plan](#2-project-plan)
+   - 2.1 [Iteration History](#21-iteration-history)
+   - 2.2 [Tech Stack](#22-tech-stack)
+   - 2.3 [Monorepo Structure](#23-monorepo-structure)
+   - 2.4 [Phased Roadmap](#24-phased-roadmap)
+   - 2.5 [Reference Plugins Roadmap](#25-reference-plugins-roadmap)
+   - 2.6 [MVP Scope](#26-mvp-scope)
+   - 2.7 [Open Source Strategy](#27-open-source-strategy)
+
+3. [Architecture](#3-architecture)
+   - 3.1 [Deployment Model](#31-deployment-model)
+   - 3.2 [Layer Overview](#32-layer-overview)
+   - 3.3 [Auth Layer](#33-auth-layer)
+   - 3.4 [Runtime Layer](#34-runtime-layer)
+   - 3.5 [Plugin System](#35-plugin-system)
+   - 3.6 [SDK](#36-sdk)
+   - 3.7 [Database Layer](#37-database-layer)
+   - 3.8 [Manifest System](#38-manifest-system)
+   - 3.9 [Plugin Loading Model](#39-plugin-loading-model)
+   - 3.10 [Shared Login State](#310-shared-login-state)
+   - 3.11 [PWA](#311-pwa)
+
+4. [Software Requirements Specification](#4-software-requirements-specification)
+   - 4.1 [User Roles and Capabilities](#41-user-roles-and-capabilities)
+   - 4.2 [Functional Requirements — Platform](#42-functional-requirements--platform)
+   - 4.3 [Functional Requirements — Auth](#43-functional-requirements--auth)
+   - 4.4 [Functional Requirements — Console Plugin](#44-functional-requirements--console-plugin)
+   - 4.5 [Non-Functional Requirements](#45-non-functional-requirements)
+   - 4.6 [Out of Scope (v1)](#46-out-of-scope-v1)
+
+5. [Plugin Manifest Reference](#5-plugin-manifest-reference)
+
+6. [Decision Log](#6-decision-log)
+
+---
+
+## 1. Project Concept
+
+### 1.1 Overview
+
+Sovereign is a modular, self-hostable workspace runtime. It provides a shared platform foundation — authentication, data access, email, shared UI — on top of which installable plugins run as first-class applications. The runtime acts as a launcher and host for these plugins, eliminating the need to rebuild common infrastructure every time a new tool is needed.
+
+Sovereign is open source, privacy-first, and designed to be owned entirely by the person or organisation running it.
+
+### 1.2 Problem Statement
+
+**For individuals and small teams:**
+- Productivity tools are scattered across many services, most of them owned by large companies with no meaningful privacy commitment.
+- Paid licenses accumulate quickly. Closed-source tools offer no auditability.
+- Developers who want to build personal tools face the same bootstrapping cost every time: auth, user management, database setup, email, deployment.
+
+**For developers specifically:**
+- Building a new app from scratch requires repeating the same platform layer — auth, sessions, storage abstractions, mailer — for every project.
+- Deploying independent tools separately leads to fragmented infrastructure with no shared identity or unified interface.
+
+### 1.3 Solution
+
+Sovereign provides a self-hosted workspace runtime with:
+
+- A single auth server handling identity for all plugins
+- A shared runtime (Next.js, App Router) that hosts plugins as route segments under a unified shell
+- A plugin SDK abstracting platform services so plugins never re-implement infrastructure
+- A manifest-driven plugin system that defines capabilities, permissions, and routing
+- A core plugin set covering the most common personal workspace needs, extensible by the community
+
+### 1.4 Goals and Non-Goals
+
+**Goals (v1):**
+- Working self-hostable runtime with auth, plugin loading, and SDK
+- Three core plugins: Console (admin), Tasks, Splitify
+- SQLite by default, Postgres-ready
+- PWA installable from the browser
+- Clean plugin developer experience with manifest schema and SDK types
+
+**Non-Goals (v1):**
+- Multi-tenancy (multiple independent workspaces on one deployment)
+- Plugin sandboxing or process isolation
+- Mobile native apps
+- Real-time collaboration
+- Federated identity or multi-instance linking
+- Public plugin marketplace
+
+### 1.5 Target Users
+
+**Primary (v1):** The developer themselves and a small circle of trusted users sharing one deployed instance.
+
+**Secondary:** Technically capable individuals who want to self-host their own workspace and are comfortable with a Docker or Node deployment.
+
+**Future:** Anyone who wants to host their own apps, Organisations wanting a self-hosted internal tooling platform; developers wanting to build and distribute Sovereign plugins.
+
+### 1.6 Positioning
+
+Sovereign is not a Notion alternative, not a homelab dashboard (Homarr, Dashy), and not a no-code platform builder. It sits closest to a self-hosted OS-like runtime for web applications — the analogy is closer to a personal cloud OS than a productivity suite.
+
+The distinguishing characteristic is that Sovereign is a platform for running apps, not an app that has been extended with plugins. The plugin system is the product.
+
+### 1.7 Guiding Principles
+
+- **Self-hostability is non-negotiable.** No cloud dependency for core functionality.
+- **Vendor lock-in is a defect.** Every infrastructure choice must have a clear self-hosted path.
+- **The SDK is the contract.** Plugins interact with the platform through the SDK only, never through internal imports.
+- **Simplicity over premature flexibility.** Defer complexity until there is a concrete reason to add it.
+- **Open source core.** The runtime and all core plugins are AGPL-3.0. Third-party plugins may use any license.
+
+---
+
+## 2. Project Plan
+
+### 2.1 Iteration History
+
+Sovereign v3 is a clean rewrite. Two prior iterations existed:
+
+**Sovereign Legacy (v1):** Node.js / Express / Handlebars monolith, SQLite, Prisma. Technology-agnostic plugin aspiration. Reached meaningful maturity (481 commits, Docker, PM2, CLI, migrations) but the architecture ceiling was low and the stack made a capable plugin system difficult to build.
+
+**Sovereign v2:** Clean architectural reset. Next.js App Router, manifest system, capability-based permissions, multiple runtime types (`route-source`, `iframe-local`, `iframe-remote`, `external`). Better conceptual clarity but stalled at ~47 commits due to overly ambitious architecture relative to available bandwidth.
+
+**v3 decision:** Retain the best ideas from v2 (manifest system, capability model, Next.js runtime, SDK contract) while making pragmatic choices that allow the project to actually ship. Build-time plugin composition instead of runtime dynamic loading. Drizzle instead of Prisma. better-auth for the auth layer. Turborepo for monorepo orchestration.
+
+### 2.2 Tech Stack
+
+| Layer | Choice | Rationale |
+|---|---|---|
+| Runtime framework | Next.js 15 (App Router) | SSR, server actions, API routes, PWA support — single framework for the whole runtime |
+| Language | TypeScript | Type safety across monorepo; SDK types are the plugin contract |
+| Monorepo tooling | Turborepo + pnpm workspaces | Task orchestration, build caching, clean package boundaries. pnpm enforces strict dependency declarations — no phantom dependencies across plugins. |
+| Auth | better-auth (wrapped in `apps/auth`) | Comprehensive, self-hostable, actively maintained |
+| Database ORM | Drizzle | Supports SQLite and Postgres with the same API; lightweight; good migration story |
+| Database default | SQLite (better-sqlite3) | Zero config for self-hosters; adequate for personal/small-team use |
+| Database production | PostgreSQL | Config change, not a code change |
+| Email | Custom `packages/mailer` (SMTP) | Self-hostable, no third-party email dependency |
+| UI components | `packages/ui` (shared component library) | Consistent design system across runtime and plugins |
+| PWA | @ducanh2912/next-pwa | Service worker, installable shell |
+| Containerisation | Docker + Docker Compose | Standard self-hosting deployment path |
+
+### 2.3 Monorepo Structure
+
+```
+sovereign/
+├── apps/
+│   └── auth/                   # better-auth wrapper — the only separate Next.js app
+│
+├── packages/
+│   ├── sdk/                    # Plugin ↔ platform contract (types + implementations)
+│   ├── ui/                     # Shared component library
+│   ├── mailer/                 # SMTP email abstraction
+│   ├── db/                     # Drizzle client factory + migration runner
+│   └── manifest/               # Manifest schema, validation, types
+│
+├── runtime/                    # Sovereign Core (Next.js, App Router)
+│   ├── app/                    # App Router surface
+│   │   ├── (platform)/         # Shell, launcher, navigation
+│   │   └── plugins/            # Plugin route segments (generated/symlinked)
+│   ├── src/                    # Platform internals (middleware, registry, permissions)
+│   ├── generated/              # Built from manifests — never edited by hand
+│   │   ├── registry.ts         # Aggregated plugin registry
+│   │   └── routes.ts           # Route map
+│   ├── next.config.ts
+│   └── package.json
+│
+├── plugins/                    # All plugins — source or cloned by install script
+│   └── console/                # Core: admin, user management, settings, system health
+│                               # tasks/ and splitify/ are cloned here by install script
+│                               # from their respective external repositories
+│
+├── registry/
+│   └── plugins.json            # Canonical list of known community plugins
+│
+├── scripts/
+│   ├── install-plugins.ts      # Clones external plugins defined in config
+│   ├── generate-registry.ts    # Reads manifests → writes runtime/generated/
+│   └── dev.ts                  # Orchestrates local dev (runtime + auth)
+│
+├── bin/
+│   └── sv                      # CLI entry point
+│
+├── docs/                       # Architecture docs, plugin developer guide, ADRs
+├── data/                       # SQLite database files (gitignored)
+├── docker-compose.yml
+├── turbo.json
+└── package.json
+```
+
+**Plugin internal structure:**
+```
+plugins/tasks/
+├── manifest.json               # Plugin identity, permissions, routing
+├── app/                        # Next.js route segment
+│   ├── page.tsx
+│   └── [...slug]/
+├── db/
+│   └── schema.ts               # Drizzle schema (tasks_* prefix)
+├── migrations/                 # Drizzle migration files
+├── components/                 # Plugin-scoped UI components
+├── lib/                        # Plugin business logic
+└── package.json
+```
+
+### 2.4 Phased Roadmap
+
+> This roadmap covers the Sovereign platform and runtime only. Reference plugin roadmaps (Tasks, Splitify) are maintained separately — see [2.5 Reference Plugins Roadmap](#25-reference-plugins-roadmap).
+
+**v0.3 — Foundation**
+- Monorepo scaffolding (Turborepo, packages, apps)
+- Auth server (`apps/auth`) with better-auth: login, logout, register, session
+- Runtime shell: layout, navigation, plugin launcher page
+- SDK skeleton: `auth`, `db`, `mailer` interfaces defined and typed
+- Manifest schema and validation (`packages/manifest`)
+- Pre-build script: manifest aggregation → `runtime/generated/`
+- Plugin route injection mechanism
+- Docker Compose for local dev
+
+**v0.4 — Console plugin**
+- User management (list, invite, role assignment, deactivate)
+- Plugin management (installed plugins, enable/disable)
+- Workspace settings (name, branding basics)
+- System health dashboard
+
+**v0.5 — Polish and self-hosting**
+- PWA shell
+- Docker production image
+- Self-hosting documentation
+- Postgres validation (switch DATABASE_URL, run migrations, confirm parity)
+- `sv` CLI: `install`, `build`, `serve`, `plugin add/remove`
+
+**v1.0 — Public release**
+- Full documentation
+- Plugin developer guide
+- `registry/plugins.json` structure and contribution process
+- Stable SDK API with semver commitment
+
+### 2.5 Reference Plugins Roadmap
+
+Tasks and Splitify are maintained in separate repositories under CommonsEngine. They are the primary reference implementations demonstrating how third-party plugins integrate with the Sovereign SDK. Their development tracks loosely alongside the platform but on independent timelines.
+
+**sovereign-plugin-tasks**
+- v0.1 — Task CRUD, list management, basic assignment; validates SDK `auth` and `db`
+- v0.2 — Due dates, filtering (all / active / completed)
+- v1.0 — Stable, documented reference plugin
+
+**sovereign-plugin-splitify**
+- v0.1 — Groups, expense entry, equal split, balance calculation; validates SDK `mailer`
+- v0.2 — Split by amount and percentage, settlement tracking, settlement summary email
+- v0.3 — Multi-currency entry (conversion deferred)
+- v1.0 — Stable, documented reference plugin
+
+Both plugins target SDK compatibility with Sovereign v0.4+ (once Console ships and the SDK `db` implementation is stable).
+
+### 2.6 MVP Scope
+
+The platform MVP is v0.3 through v0.5 — a working, self-hostable Sovereign instance with the console core plugin, a stable SDK, and production deployment tooling.
+
+A complete reference deployment (platform + Tasks + Splitify) requires both the platform reaching v0.5 and the reference plugins reaching their respective v0.1 milestones. These can be developed in parallel once the SDK `db` interface is stable at v0.4.
+
+### 2.7 Open Source Strategy
+
+- **Runtime and core plugins:** AGPL-3.0
+- **SDK and shared packages:** MIT (lower barrier for plugin developers)
+- **Third-party plugins:** Any license, declared in `manifest.json`
+- **Contributor License Agreement:** Required before merging PRs (as per v1 precedent)
+- **Dual licensing:** Commercial license available for organisations needing to operate the runtime privately without AGPL obligations (contact maintainer)
+
+---
+
+## 3. Architecture
+
+### 3.1 Deployment Model
+
+**v1: Single-tenant, multi-user.**
+
+One deployment = one tenant. All users of that deployment share one identity pool, one database, and one set of installed plugins. There is no concept of separate tenants within a single instance.
+
+Multi-tenancy is a future concern. The auth and data layers must not actively prevent it — user records should carry a `tenant_id` foreign key from day one even if only one tenant ever exists — but no multi-tenant logic is built in v1.
+
+### 3.2 Layer Overview
+
+```
+┌─────────────────────────────────────────────────┐
+│                   Browser / PWA                  │
+└──────────────────────┬──────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────┐
+│              Sovereign Runtime                   │
+│         (Next.js App Router shell)               │
+│   Navigation · Launcher · Middleware · Layout    │
+├──────────────────────────────────────────────────┤
+│                  Plugin Routes                   │
+│    /console    /tasks    /splitify    /...       │
+├──────────────────────────────────────────────────┤
+│                  Sovereign SDK                   │
+│         sdk.auth · sdk.db · sdk.mailer          │
+├──────────────┬───────────────┬───────────────────┤
+│  Auth Server │   Drizzle DB  │  Mailer (SMTP)   │
+│ (apps/auth)  │ SQLite/Postgres│  packages/mailer │
+└──────────────┴───────────────┴───────────────────┘
+```
+
+### 3.3 Auth Layer
+
+A thin Next.js application (`apps/auth`) wrapping better-auth. It is the only process besides the runtime that runs in production.
+
+**Responsibilities:**
+- User login, logout, registration (with invite-only toggle)
+- Session management via httpOnly cookies
+- Session verification endpoint consumed by the runtime
+- JWT issuance signed with a shared secret
+
+**What it is not:**
+- An OAuth provider (future consideration)
+- A user directory (user records live in the platform database, not the auth server)
+
+The auth server and runtime share a `SOVEREIGN_AUTH_SECRET` environment variable.
+
+**Session verification strategy (phased):**
+- **v0.3:** The runtime middleware calls the auth server's `/api/verify` endpoint on each request. Simpler to implement and easier to reason about during early development.
+- **v0.5 target:** Local JWT verification using the shared secret — the runtime verifies tokens without a round-trip to the auth server. This is the correct long-term approach for performance and resilience.
+
+AUTH-05 describes the v0.5 target state. The `/api/verify` endpoint (AUTH-06) remains available for explicit verification scenarios after the local strategy is implemented.
+
+**First-user role assignment:** better-auth handles authentication only. When a new user registers, the auth server writes the user record to the platform database via `packages/db`, then checks if this is the first user in the `users` table. If so, it assigns `platform:admin`; otherwise `platform:user`. This logic lives in the auth server's registration handler, not in better-auth itself.
+
+### 3.4 Runtime Layer
+
+The runtime is the Sovereign Core — a Next.js 15 application using the App Router.
+
+**Responsibilities:**
+- Platform shell: navigation, launcher, layout
+- Request middleware: session verification, permission enforcement, plugin route protection
+- Plugin registry: reads `runtime/generated/registry.ts` to know which plugins are installed
+- SDK bridge: implements the SDK interfaces consumed by plugins
+- PWA shell
+
+The runtime never contains plugin business logic. It knows plugins exist and where to route them, but plugins are self-contained.
+
+### 3.5 Plugin System
+
+Plugins are the primary unit of functionality in Sovereign. Everything beyond the shell — including admin tooling — is a plugin.
+
+**Plugin types:**
+
+| Type | Meaning | Location | `type` value |
+|---|---|---|---|
+| Platform | Ships in the monorepo, maintained by CommonsEngine | `/plugins/[id]/` (in repo) | `"platform"` |
+| Sovereign | Separate repo, maintained by CommonsEngine (e.g. Tasks, Splitify) | `/plugins/[id]/` (cloned by install script) | `"sovereign"` |
+| Community | Third-party, any maintainer, any source | `/plugins/[id]/` (cloned or manually placed) | `"community"` |
+
+**Plugin activation:**
+A plugin is active if its directory exists under `/plugins`, its manifest validates successfully, and it appears in the generated registry. Adding a plugin requires running the install script (or manual placement) followed by a rebuild. Removing a plugin means removing its directory and rebuilding.
+
+There is no hot-swap or dynamic loading in v1. This is an intentional simplicity choice.
+
+### 3.6 SDK
+
+The SDK (`packages/sdk`) is the only permitted interface between a plugin and the platform. Plugins must not import from `runtime/src` directly. This boundary is enforced by ESLint import rules.
+
+**v1 SDK surface:**
+
+```typescript
+// Auth
+sdk.auth.getSession(): Promise<Session | null>
+sdk.auth.requireSession(): Promise<Session>  // throws if unauthenticated
+
+// Database
+sdk.db.getClient(): DrizzleClient  // scoped Drizzle instance
+
+// Mailer
+sdk.mailer.send(options: MailOptions): Promise<void>
+
+// Platform config
+sdk.platform.getConfig(): PlatformConfig
+```
+
+**Declared but unimplemented in v1 (stub throws NotImplementedError):**
+
+```typescript
+sdk.storage.put(key: string, value: Buffer): Promise<void>
+sdk.storage.get(key: string): Promise<Buffer | null>
+sdk.notifications.send(userId: string, message: string): Promise<void>
+sdk.events.publish(event: string, payload: unknown): Promise<void>
+sdk.events.subscribe(event: string, handler: Function): void
+```
+
+Plugins declare which SDK capabilities they use in their manifest under `"permissions"`. This serves as documentation and forward-compatibility signalling, not runtime enforcement in v1.
+
+### 3.7 Database Layer
+
+**Default:** SQLite via better-sqlite3, file stored at `data/sovereign.db`.
+
+**Production:** PostgreSQL. Switching requires only changing `DATABASE_URL` in environment config and a dialect flag. No application code changes.
+
+**Plugin schema isolation:** Each plugin prefixes all its table names with its slug (e.g. `tasks_lists`, `tasks_items`, `splitify_groups`, `splitify_expenses`). There are no Postgres schemas or separate databases per plugin — a single schema with namespaced tables.
+
+**Migrations:** Each plugin maintains its own migration files under `plugins/[id]/migrations/`. The `packages/db` migration runner aggregates and applies all plugin migrations in deterministic order at startup. Platform migrations (users, tenants, sessions) run first, then plugins in alphabetical order.
+
+**Future-proofing for multi-tenancy:** The `users` and `tenants` tables include a `tenant_id` column from day one. Plugin tables that contain user-scoped data include `tenant_id` as well, even if only one tenant exists. No multi-tenant query logic is implemented.
+
+### 3.8 Manifest System
+
+Every plugin contains a `manifest.json` at its root. The `packages/manifest` package provides the schema, TypeScript types, and validation utilities.
+
+**Full manifest schema:**
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "com.sovereign.tasks",
+  "name": "Tasks",
+  "version": "1.0.0",
+  "description": "Task and list management for Sovereign.",
+  "type": "sovereign",
+  "runtime": "native",
+  "routePrefix": "/tasks",
+  "permissions": [
+    "auth:session",
+    "db:readWrite"
+  ],
+  "adminOnly": false,
+  "database": "shared",
+  "shell": "default",
+  "compatibility": {
+    "minPlatformVersion": "0.1.0"
+  },
+  "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks"
+}
+```
+
+For `sovereign` and `community` plugins, `"repository"` is required. The install script uses it to clone the plugin. For `platform` plugins the field is omitted.
+
+**Community plugin registry** (`registry/plugins.json`) is a flat list of known plugin manifests. Adding a plugin to the registry requires a pull request. Self-hosters may modify this file freely on their own deployments.
+
+**Shell layout control:** Plugins can customise the runtime shell via the `shell` field. The shell consists of a sidebar and content area on desktop, collapsing to a header, content area, and footer launcher on mobile. Two modes are supported:
+
+- `"default"` — full shell chrome visible. Applied when the field is omitted.
+- `"minimal"` — all shell chrome hidden. Content area fills the full viewport. Useful for immersive plugins, dashboards, or full-bleed layouts.
+
+The runtime reads the active plugin's `shell` value from the registry on each navigation and applies the appropriate layout. The shell mode is per-plugin — navigating between plugins transitions the layout accordingly.
+
+### 3.9 Plugin Loading Model
+
+**v1: Build-time composition.**
+
+Plugins are Next.js route segments. A pre-build script (`scripts/generate-registry.ts`) reads all manifest files under `/plugins`, validates them, and:
+
+1. Writes `runtime/generated/registry.ts` — the runtime's source of truth for installed plugins
+2. Injects each `plugins/[id]/app/` directory into `runtime/app/plugins/[id]/` so the App Router picks them up
+
+**Injection strategy varies by environment:**
+
+| Environment | Strategy | Rationale |
+|---|---|---|
+| Development (`NODE_ENV=development`) | Symlinks | Fast, no file duplication, changes in `/plugins` reflect immediately |
+| Production / CI (`NODE_ENV=production`) | Full copy | Hermetic, Docker-safe, no symlink resolution issues |
+
+The generate script reads `NODE_ENV` and applies the appropriate strategy automatically. The Turborepo build pipeline always runs in production mode, so Docker builds always use copies.
+
+`runtime/app/plugins/` is entirely generated — both symlinks and copies are artifacts. The directory is gitignored. The source of truth is always `plugins/[id]/app/`. A `.gitignore` file is placed inside `runtime/app/plugins/` and the contributor guide explicitly notes that generated files must never be committed.
+
+**CI validation:** a dedicated CI step runs `pnpm generate --mode=prod` and validates the output before the Docker build stage. This catches any divergence between the dev (symlink) and production (copy) paths early.
+
+Adding a plugin: place or clone directory → run `pnpm generate` → run `pnpm build` (or `pnpm dev`).
+Removing a plugin: remove directory → run `pnpm generate` → run `pnpm build` (or `pnpm dev`).
+
+There is no hot-swap or dynamic loading in v1. This is an intentional simplicity choice.
+
+**Runtime types** (only `native` implemented in v1):
+
+| Type | Description | SDK Access |
+|---|---|---|
+| `native` | Next.js route segment, build-time composed into the runtime | Full SDK package |
+| `static` | Pre-built SPA bundle (Vite, Vue, Angular, etc), served as static assets by the runtime, iframe-mounted in the shell | REST API |
+| `iframe-local` | Separate local server process, iframe-mounted in the shell | `postMessage` |
+| `iframe-remote` | Remotely hosted app, iframe-mounted in the shell | `postMessage` |
+| `external` | Deep link only, no embedding. Sovereign acts purely as a launcher entry point | None |
+
+> **Note:** `native` is the only runtime type implemented in v1. All other runtime types are declared for forward-compatibility and architectural planning purposes. Their specifications, behaviour, and SDK access mechanisms are subject to change before implementation.
+
+### 3.10 Shared Login State
+
+Because the runtime and all plugins are built into a single Next.js application (build-time composition), they share the same origin. better-auth sets an httpOnly session cookie on that origin. All plugin routes inherit the session automatically — no per-plugin authentication, no token passing, no SSO configuration required.
+
+The runtime's middleware reads the session cookie and injects user context into the request. Plugins access this context via `sdk.auth.getSession()` which reads from request context, not from a remote call.
+
+### 3.11 PWA
+
+`@ducanh2912/next-pwa` is added to the runtime. The PWA shell is installable from the browser. The service worker caches the shell and static assets for offline availability. Plugin data is not cached offline in v1.
+
+Native app wrappers (Tauri, Capacitor) are explicitly deferred. Next.js does not currently have a native bundling path. This is reviewed when a concrete need arises.
+
+---
+
+## 4. Software Requirements Specification
+
+### 4.1 User Roles and Capabilities
+
+**Roles** follow a namespaced pattern: `platform:` prefix for platform-level roles. This scales to plugin-level roles in the future (`tasks:admin`, `splitify:owner` etc.) without naming conflicts.
+
+| Role | Description |
+|---|---|
+| `platform:user` | Assigned to every user by default on registration. Access to installed plugins and own profile. |
+| `platform:admin` | Full platform access. Manages users, plugins, and tenant configuration. |
+
+The first user to register on a fresh instance is automatically assigned `platform:admin`. All subsequent users receive `platform:user` by default and can be promoted by an admin via Console.
+
+**Capability matrix:**
+
+Capabilities are hardcoded per role in v1 — defined in the runtime, not stored in the database. The data model is designed to support database-driven capability assignment in a future version without requiring a schema change.
+
+| Capability | `platform:user` | `platform:admin` |
+|---|---|---|
+| `plugin:access` — access installed and enabled plugins | ✓ | ✓ |
+| `profile:manage` — manage own profile and credentials | ✓ | ✓ |
+| `console:access` — access the Console plugin | ✗ | ✓ |
+| `user:manage` — invite, deactivate, and assign roles to users | ✗ | ✓ |
+| `plugin:manage` — install, remove, enable, disable plugins | ✗ | ✓ |
+| `tenant:configure` — configure tenant settings | ✗ | ✓ |
+
+Capabilities use the same namespaced pattern as roles and connect directly to the manifest system — a plugin declaring `"adminOnly": true` in its manifest maps to requiring `console:access` capability at the middleware level.
+
+Granular per-user capability overrides and per-plugin role assignments are explicitly deferred to a future version.
+
+### 4.2 Functional Requirements — Platform
+
+| ID | Requirement |
+|---|---|
+| PLT-01 | The runtime must render a launcher/home page listing all installed and enabled plugins the current user has access to. |
+| PLT-02 | The runtime must enforce session authentication on all plugin routes. Unauthenticated requests redirect to the login page. |
+| PLT-03 | The runtime must enforce `platform:admin` role on all Console routes. Non-admin authenticated requests receive a 403. |
+| PLT-04 | The runtime must read installed plugins from `runtime/generated/registry.ts` at startup. |
+| PLT-05 | The runtime must apply all pending database migrations (platform + plugins) on startup before accepting requests. |
+| PLT-06 | The runtime must expose platform config (tenant name, feature flags) via `sdk.platform.getConfig()`. |
+| PLT-07 | The pre-build generate script must validate all plugin manifests and fail the build if any manifest is invalid. |
+| PLT-08 | The platform shell must include a consistent navigation component showing the active plugin and links to all accessible plugins. |
+| PLT-09 | The runtime must be installable as a PWA from a supported browser. |
+| PLT-10 | Plugin SDK boundary violations (direct imports from `runtime/src`) must be caught by ESLint at CI. |
+
+### 4.3 Functional Requirements — Auth
+
+| ID | Requirement |
+|---|---|
+| AUTH-01 | Users must be able to log in with email and password. |
+| AUTH-02 | Users must be able to log out, invalidating their session. |
+| AUTH-03 | Registration must support an invite-only toggle. When enabled, only users with a valid invite token can register. When disabled, open registration is permitted. |
+| AUTH-04 | Sessions must be persisted via httpOnly cookies. |
+| AUTH-05 | The runtime middleware must call `/api/verify` on the auth server for session verification in v0.3. From v0.5, the runtime must verify session tokens locally using the shared secret without a round-trip to the auth server on every request. |
+| AUTH-06 | The auth server must expose a `/api/verify` endpoint for explicit token verification when needed. |
+| AUTH-07 | Password reset via email must be supported. |
+| AUTH-08 | The first user to register on a fresh instance must receive the `platform:admin` role automatically. All subsequent users receive `platform:user` by default. |
+
+### 4.4 Functional Requirements — Console Plugin
+
+| ID | Requirement |
+|---|---|
+| CON-01 | Console is accessible only to users with the `platform:admin` role (`console:access` capability). |
+| CON-02 | Admin must be able to view a list of all registered users with their role, status, and join date. |
+| CON-03 | Admin must be able to invite new users by email (generates an invite token, sends invite email). |
+| CON-04 | Admin must be able to deactivate and reactivate user accounts. |
+| CON-05 | Admin must be able to change a user's role between `platform:admin` and `platform:user`. |
+| CON-06 | Admin must be able to view all installed plugins, their version, and their enabled/disabled status. |
+| CON-07 | Admin must be able to enable or disable an installed plugin (disabling hides it from the launcher and blocks its routes). |
+| CON-08 | Admin must be able to configure tenant settings: tenant name. |
+| CON-09 | Console must display a system health summary: runtime version, database type and connection status, auth server status, disk usage (SQLite file size or Postgres connection). |
+| CON-10 | Admin must be able to toggle invite-only registration from Console without editing environment config. |
+
+### 4.5 Non-Functional Requirements
+
+| ID | Requirement |
+|---|---|
+| NFR-01 | The full stack must be self-hostable on a single machine with Docker Compose. |
+| NFR-02 | No external service dependency for core functionality. Email is optional (SMTP config). |
+| NFR-03 | Database must be switchable between SQLite and PostgreSQL via environment configuration with no code changes. |
+| NFR-04 | The SDK public API must be stable across patch versions. Breaking changes require a minor version bump and a migration note. |
+| NFR-05 | All plugin manifests must be validated at build time. An invalid manifest must fail the build. |
+| NFR-06 | Plugin code must not import from `runtime/src` directly. ESLint enforces this. |
+| NFR-07 | The runtime must start and be ready to serve requests within 10 seconds on modest hardware (2-core VPS, 1GB RAM). |
+| NFR-08 | Authentication tokens must use signed JWTs. Secrets must be configurable via environment variables and must not have default values. |
+| NFR-09 | All user passwords must be hashed with a strong adaptive algorithm (bcrypt or argon2, as provided by better-auth). |
+| NFR-10 | The project must include a documented upgrade path between versions (migration guide in docs). |
+
+### 4.6 Out of Scope (v1)
+
+- Multi-tenancy
+- Plugin sandboxing or process isolation
+- Runtime dynamic plugin loading (module federation, iframes)
+- OAuth provider functionality (Sovereign as an IdP)
+- Per-plugin isolated database (`"database": "isolated"` declared in manifest but not implemented)
+- End-to-end encryption
+- Native mobile apps or desktop wrappers
+- Real-time features (WebSockets, live collaboration)
+- Per-plugin permission assignment for individual users
+- Public-facing plugin marketplace or install UI
+- Federated instances
+
+---
+
+## 5. Plugin Manifest Reference
+
+```typescript
+interface SovereignManifest {
+  // Schema version for forward compatibility
+  schemaVersion: number;
+
+  // Reverse-domain unique identifier
+  // Core plugins: com.sovereign.*
+  // Third-party: com.yourorg.*
+  id: string;
+
+  // Display name
+  name: string;
+
+  // Semver
+  version: string;
+
+  // Optional human-readable description
+  description?: string;
+
+  // Database isolation preference
+  // "shared"   — uses the platform database (default, v1 behaviour)
+  // "isolated" — requests a separate database instance (declared but not implemented in v1)
+  database?: "shared" | "isolated";
+
+  // Plugin type — determines origin and trust level
+  // "platform"  — ships in the monorepo, maintained by CommonsEngine
+  // "sovereign" — separate repo, maintained by CommonsEngine (e.g. Tasks, Splitify)
+  // "community" — third-party, any maintainer, any source
+  type: "platform" | "sovereign" | "community";
+
+  // How the plugin is rendered (only "native" implemented in v1)
+  // All types except "native" are subject to change before implementation
+  runtime: "native" | "static" | "iframe-local" | "iframe-remote" | "external";
+
+  // URL prefix for the plugin under the runtime
+  routePrefix: string;
+
+  // SDK capabilities the plugin uses
+  permissions: Permission[];
+
+  // Shell layout preference
+  // "default" — full shell (sidebar on desktop, header + footer on mobile). Applied when field is omitted.
+  // "minimal" — shell chrome hidden entirely, content area only. Useful for immersive or full-bleed plugins.
+  shell?: "default" | "minimal";
+
+  // If true, plugin requires platform:admin role (console:access capability)
+  adminOnly?: boolean;
+
+  // Minimum Sovereign platform version required
+  compatibility: {
+    minPlatformVersion: string;
+  };
+
+  // Required when type is "sovereign" or "community"
+  repository?: string;
+}
+
+type Permission =
+  | "auth:session"
+  | "db:readWrite"
+  | "db:readOnly"
+  | "mailer:send"
+  | "storage:readWrite"       // not implemented v1
+  | "notifications:send"      // not implemented v1
+  | "events:publish"          // not implemented v1
+  | "events:subscribe"        // not implemented v1
+  | "admin:*";                // grants admin-only routes. Equivalent to declaring adminOnly: true in the manifest — the middleware maps adminOnly to this capability check. Prefer adminOnly in the manifest; admin:* in permissions is for future fine-grained plugin-level admin scopes.
+```
+
+---
+
+## 6. Decision Log
+
+| Date | Decision | Rationale |
+|---|---|---|
+| Jun 2026 | Plugin type field renamed from `source` to `type`; values changed to `platform`, `sovereign`, `community` | `source` described origin mechanics, not plugin classification. `type` is semantically cleaner. `sovereign` distinguishes CommonsEngine-maintained external plugins from true third-party community plugins. `workspace` reserved as a future user-facing concept — likely an organisational layer within a tenant (one tenant may have multiple workspaces), distinct from the deployment/tenant boundary. |
+| Jun 2026 | Drizzle ORM over Prisma | Lighter, supports SQLite and Postgres with same API, better fit for Next.js server actions. |
+| Jun 2026 | Single-tenant per deployment in v1 | Target use case is personal/small-group. Multi-tenancy adds complexity with no near-term benefit. `tenant_id` included in schema for future path. |
+| Jun 2026 | Console as core plugin, not a separate app | Consistent with plugin architecture. Avoids running a third Next.js process. Admin scope enforced by middleware. |
+| Jun 2026 | SQLite default, Postgres optional | Zero-config for self-hosters. Postgres switch is an environment config change only. |
+| Jun 2026 | SDK packages under MIT, runtime under AGPL-3.0 | Lowers barrier for plugin developers while protecting the core runtime. |
+| Jun 2026 | No native app wrapper in v1 | Next.js has no native bundling path. PWA covers the install-from-browser use case. Revisit when concrete need arises. |
+| Jun 2026 | Plugin schema isolation via table name prefix | Simpler than Postgres schemas. One migration runner, one connection, no cross-plugin query complexity. |
+
+---
+
+*Version 0.2 — Signed off June 2026. Further revisions require a new version.*
