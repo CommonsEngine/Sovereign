@@ -1,0 +1,24 @@
+{
+  "name": "sovereign",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Sovereign — a modular, self-hostable workspace runtime.",
+  "license": "AGPL-3.0",
+  "packageManager": "pnpm@11.5.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "install:plugins": "tsx scripts/install-plugins.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

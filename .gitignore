@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+.turbo/
+
+# Generated plugin routes — symlinks in dev, copies in prod. Never commit.
+# Source of truth is always plugins/[id]/app/.
+runtime/app/plugins/
+
+# Database files (SQLite)
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
