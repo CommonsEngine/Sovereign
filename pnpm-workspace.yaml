@@ -4,6 +4,14 @@ packages:
   - 'plugins/*'
   - 'runtime'
 
+# Single source of truth for shared dev tooling versions. Packages reference
+# these with `"typescript": "catalog:"` etc. so a `pnpm add` can never float one
+# package onto a different major. Add a dep here when it is used by more than one
+# package (the toolchain), not for package-specific deps (zod, drizzle, …).
+catalog:
+  typescript: ^5.9.3
+  tsup: ^8.5.1
+
 # Transitive deps allowed to run install scripts (pnpm blocks them by default).
 # esbuild (via tsx) needs its postinstall to link the platform binary.
 # better-sqlite3 needs its postinstall to fetch/compile the native binding.

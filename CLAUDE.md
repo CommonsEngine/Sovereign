@@ -311,9 +311,16 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 ## Environment notes
 
 - Node ≥20 (dev on 24.x), pnpm 11.5.2 (pinned via `packageManager`).
-- pnpm 11 blocks dependency build scripts by default. `esbuild` (via `tsx`) is
-  allowlisted in `pnpm-workspace.yaml` under `allowBuilds` — required, or `tsx`
-  has no native binary and pnpm's pre-script check fails.
+- pnpm 11 blocks dependency build scripts by default. `esbuild` (via `tsx`) and
+  `better-sqlite3` are allowlisted in `pnpm-workspace.yaml` under `allowBuilds`
+  — required for their native bindings. `simple-git-hooks` is set to `false`
+  there (the root `prepare` script installs the hooks instead).
+- **Shared dev tooling is pinned via the pnpm `catalog:`** in
+  `pnpm-workspace.yaml` (`typescript`, `tsup`). Every package references them as
+  `"typescript": "catalog:"` / `"tsup": "catalog:"` — never a literal version.
+  This stops `pnpm add` from floating one package onto a different major (it
+  once pulled TS 6 into a single package). When adding `typescript`/`tsup` to a
+  new package, use `catalog:`; to bump the version, edit the catalog once.
 
 ## Status
 
