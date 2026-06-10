@@ -100,6 +100,9 @@ Established in Task 0.3.03. Every package and PR must comply — no exceptions.
 
 - **Never disable ESLint rules inline** (`// eslint-disable`) without a comment
   explaining why, and never disable the SDK boundary rule.
+- **Prefix intentionally-unused identifiers with `_`** (e.g. required-by-signature
+  stub params, ignored destructured fields). `no-unused-vars` ignores `^_`; this
+  is the only sanctioned way to keep an unused binding.
 - **Never add per-package Prettier overrides.** One config, entire monorepo.
 - `pnpm format:check` and `pnpm lint` must pass before every PR. The pre-commit
   hook enforces this locally; CI enforces it on every push.
