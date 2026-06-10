@@ -253,7 +253,7 @@ by the runtime shell.
     handles CSS Modules natively. Changes to components are picked up by HMR
     instantly without any watch build.
   - `exports`: `{ ".": "./src/index.ts" }` for workspace; tsup overwrites with
-    `dist/` paths at build time. Published to npm as `@sovereign/ui`.
+    `dist/` paths at build time. Published to npm as `@commonsengine/sovereign-ui`.
   - `files` field must include `dist/` and any CSS files for the npm package
 
 **SRS reference:** 2.2 Tech Stack (`packages/ui`)
@@ -290,8 +290,8 @@ not here. By the time this task runs it is already active. This task only
 verifies it catches a violation.
 
 **Build:** `tsup` — ESM only, TypeScript declarations. Published to npm as
-`@sovereign/sdk`; `package.json` must include `exports`, `main`, `types`,
-and `files` fields pointing to `dist/`.
+`@commonsengine/sovereign-sdk`; `package.json` must include `exports`, `main`,
+`types`, and `files` fields pointing to `dist/`.
 - `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
   clean: true
 - `package.json`:
@@ -352,10 +352,12 @@ and `files` fields pointing to `dist/`.
   - `generated/registry.ts` — placeholder empty registry
   - `app/login/page.tsx` — login page pointing to `apps/auth`
 - `runtime/next.config.ts` — must include:
-  - `transpilePackages: ['@sovereign/sdk', '@sovereign/ui', '@sovereign/db',
-    '@sovereign/manifest', '@sovereign/mailer']` — compiles all workspace
-    package TypeScript sources directly during dev. Changes to any package
-    file trigger HMR in the runtime without a separate watch build.
+  - `transpilePackages: ['@commonsengine/sovereign-sdk',
+    '@commonsengine/sovereign-ui', '@sovereign/db', '@sovereign/manifest',
+    '@sovereign/mailer']` — compiles all workspace package TypeScript sources
+    directly during dev. Changes to any package file trigger HMR in the runtime
+    without a separate watch build. (Published packages use the `@commonsengine`
+    scope; internal packages keep the private `@sovereign/*` scope.)
   - `webpack: (config) => { config.resolve.symlinks = false; return config; }`
     — required for plugin HMR. Without this, webpack resolves symlinks to
     their real path before watching, breaking hot reload for plugin source
@@ -426,17 +428,24 @@ and `files` fields pointing to `dist/`.
 **Goal:** Docker Compose setup orchestrating runtime and auth server for local development.
 
 **Deliverables:**
-- `docker-compose.yml` — services: `runtime` (port 3000), `auth` (port 3001)
-- `docker-compose.prod.yml` — production overrides
-- `.env.example` at repo root with all required env vars documented
+- `docker-compose.yml` — two services on a shared network:
+  - `runtime` — host-mapped `${RUNTIME_PORT:-3000}:3000`
+  - `auth` — internal only; `expose: ["3001"]`, no host `ports` mapping. The
+    runtime reaches it at `http://auth:3001` via `SOVEREIGN_AUTH_URL`.
+- `docker-compose.prod.yml` — production overrides: runtime host port defaults
+  to `${RUNTIME_PORT:-4000}:3000`; auth remains internal-only; both services
+  get `restart: unless-stopped`.
+- `.env.example` at repo root with all required env vars documented, including
+  `RUNTIME_PORT`, `AUTH_PORT`, `SOVEREIGN_AUTH_URL`
 - `docs/self-hosting.md` — getting started guide: clone, configure env, `docker compose up`
 
-**SRS reference:** NFR-01, 2.4 Phased Roadmap v0.3
+**SRS reference:** NFR-01, 2.4 Phased Roadmap v0.3, 3.1 Deployment Model (topology, ports)
 
 **Review checklist:**
 - `docker compose up` starts both services without errors
-- Runtime is reachable at `localhost:3000`
-- Auth server is reachable at `localhost:3001`
+- Runtime is reachable at `localhost:3000` (dev)
+- Auth server is **not** reachable from the host — only from the runtime
+  container on the internal network
 - `.env.example` covers every env var used across all packages
 
 ---
@@ -570,21 +579,36 @@ and `files` fields pointing to `dist/`.
 
 ### Task 0.5.02 — Production Docker image
 
-**Goal:** Single production Docker image for the runtime. Auth server gets its own image.
+**Goal:** Separate production Docker images for runtime and auth, each built
+from Next.js standalone output.
 
 **Deliverables:**
-- `Dockerfile` (runtime) — multi-stage: deps → build → production
-- `apps/auth/Dockerfile` — multi-stage for auth server
-- `docker-compose.prod.yml` updated to use built images
-- Images build cleanly and pass a smoke test (login flow works end-to-end)
+- `Dockerfile` (runtime) — three-stage:
+  - `deps` — `node:<pinned>-alpine` + corepack pnpm; install with
+    `--frozen-lockfile`
+  - `builder` — copy source; `NODE_ENV=production`; run `pnpm generate`
+    (copies plugins, not symlinks) then `pnpm build` (tsup packages → next
+    build, producing `.next/standalone`)
+  - `runner` — minimal image, non-root user, `NODE_ENV=production`; copy only
+    `.next/standalone` + `.next/static` + `public`; `EXPOSE 3000`;
+    `HEALTHCHECK` hitting the runtime health endpoint; `CMD ["node", "server.js"]`
+- `apps/auth/Dockerfile` — same three-stage pattern for the auth server;
+  `EXPOSE 3001`; auth-specific healthcheck
+- Both apps set `output: 'standalone'` in their `next.config.ts` (prerequisite)
+- `docker-compose.prod.yml` updated to build/use these images; runtime
+  host-mapped (default 4000), auth internal-only, both `restart: unless-stopped`
+- No secrets baked into images — all config injected at runtime via env
 
-**SRS reference:** NFR-01, 2.4 Phased Roadmap v0.5
+**SRS reference:** NFR-01, 2.4 Phased Roadmap v0.5, 3.1 Deployment Model
 
 **Review checklist:**
 - Images build without errors
-- Combined image size is reasonable (< 500MB)
-- Login → session cookie → authenticated request works end-to-end in production image
-- No dev dependencies in production image
+- Each image is reasonably small (standalone output keeps them lean; target
+  < 250MB per image)
+- Login → session cookie → authenticated request works end-to-end across the
+  two production containers (runtime → auth over the internal network)
+- Auth container is not reachable from the host
+- No dev dependencies and no secrets in the production images
 
 ---
 
@@ -684,10 +708,11 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ### Task 0.5.07 — CI pipeline
 
-**Goal:** GitHub Actions CI pipeline covering lint, typecheck, build, and generate validation.
+**Goal:** GitHub Actions pipelines for continuous validation and npm publishing.
 
 **Deliverables:**
-- `.github/workflows/ci.yml` with jobs:
+- `.github/workflows/ci.yml` — validation, triggers on push to `main` and all
+  pull requests:
   - `format` — runs `prettier --check .` across the repo; fails on any
     unformatted file
   - `lint` — runs ESLint across all packages including the SDK import boundary
@@ -696,20 +721,33 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
   - `generate-validate` — runs `pnpm generate --mode=prod` and verifies
     `runtime/generated/registry.ts` is valid TypeScript
   - `build` — runs `turbo build` in production mode
-- CI triggers on: push to `main`, all pull requests
-- All jobs use pnpm cache for speed
-- `publish` job — triggers on version tags (`v*.*.*`) only; publishes
-  `packages/sdk` and `packages/ui` to npm using `NODE_AUTH_TOKEN` secret.
-  No other packages are published. Runs after `build` job succeeds.
+  - All jobs use pnpm cache for speed
+- `.github/workflows/publish.yml` — npm publishing, **separate workflow**
+  triggered on per-package version tags (the two packages have independent
+  release cycles):
+  - Tag pattern `sdk-v*.*.*` → builds and publishes
+    `@commonsengine/sovereign-sdk`
+  - Tag pattern `ui-v*.*.*` → builds and publishes
+    `@commonsengine/sovereign-ui`
+  - Steps: `pnpm install` → `pnpm --filter <pkg> build` (tsup → `dist/`) →
+    `pnpm --filter <pkg> publish --no-git-checks --access public` using the
+    `NODE_AUTH_TOKEN` repository secret
+  - No other packages are ever published (internal `@sovereign/*` packages are
+    workspace-only)
+  - Publish runs only after the validation jobs pass on the tagged commit
 
-**SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06
+**SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06, NFR-04
 
 **Review checklist:**
-- All five jobs pass on a clean checkout
+- All five validation jobs pass on a clean checkout
 - Unformatted file causes `format` job to fail
 - Import boundary violation in a plugin causes `lint` job to fail
 - Invalid manifest in `plugins/` causes `generate-validate` job to fail
 - pnpm cache is correctly restored between runs
+- Pushing an `sdk-v*` tag publishes only `@commonsengine/sovereign-sdk`;
+  pushing a `ui-v*` tag publishes only `@commonsengine/sovereign-ui`
+- A tag without a corresponding version bump in the package's `package.json`
+  fails the publish (version already exists on npm)
 
 ### Task 1.0.01 — Registry contribution process
 
@@ -748,4 +786,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-*Version 0.6 — June 2026. Changes from v0.5: Dev DX strategy locked — packages export TypeScript source for workspace consumption; no tsup --watch in dev pipeline; transpilePackages in both Next.js apps; resolve.symlinks:false in runtime webpack config for plugin HMR; generate script gains --watch flag; runtime dev script runs generate before starting next dev. Tasks 0.3.09, 0.3.10, 0.3.11 updated accordingly. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
+*Version 0.7 — June 2026. Changes from v0.6: Deployment + publishing locked — published packages renamed to `@commonsengine/sovereign-sdk` / `@commonsengine/sovereign-ui` (internal packages keep `@sovereign/*`); Task 0.3.12 (Docker dev) updated for two-container topology with auth internal-only; Task 0.5.02 (prod image) rewritten for three-stage standalone builds; Task 0.5.07 split into ci.yml (validation) and publish.yml (per-package tag-triggered npm publish). Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*

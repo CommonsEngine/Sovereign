@@ -297,6 +297,38 @@ One deployment = one tenant. All users of that deployment share one identity poo
 
 Multi-tenancy is a future concern. The auth and data layers must not actively prevent it — user records should carry a `tenant_id` foreign key from day one even if only one tenant ever exists — but no multi-tenant logic is built in v1.
 
+**Deployment topology.**
+
+Two long-running Node processes: the **runtime** (`runtime`) and the **auth
+server** (`apps/auth`). Both are Next.js applications built with
+`output: 'standalone'` and run as plain `node server.js` — no in-container
+process manager. Canonical deployment is **Docker Compose** orchestrating both
+as separate containers on a shared internal network.
+
+- The **runtime** is the only externally exposed service. It faces the
+  reverse proxy / public internet.
+- The **auth server** is **not** published on a host port. It is reachable only
+  on the internal Docker network at `http://auth:<port>`; the runtime reaches it
+  via the `SOVEREIGN_AUTH_URL` env var. This keeps the auth surface off the
+  public network entirely.
+
+Containers always listen on fixed **internal** ports; the **host** mapping
+differs by environment and is overridable via env. Defaults:
+
+| Service | Internal (container) | Dev (host) | Prod (host) | Env override |
+|---|---|---|---|---|
+| Runtime | 3000 | 3000 | 4000 | `RUNTIME_PORT` |
+| Auth | 3001 | 3001 | not exposed | `AUTH_PORT` |
+
+In dev, `next dev` runs the two apps directly on 3000/3001. In production, the
+containers listen on 3000/3001 internally and the runtime is mapped to host
+4000 (auth is internal-only, never host-mapped). All ports are configurable;
+the table lists defaults only.
+
+Process supervision is delegated to Docker (`restart: unless-stopped`); no PM2
+or other in-container manager is used. Docker is the sole supported deployment
+path in v1.
+
 ### 3.2 Layer Overview
 
 ```
@@ -749,13 +781,18 @@ type Permission =
 | Jun 2026 | `sv` CLI built with `citty` + `consola`, TypeScript via `tsx`; monorepo-internal in v1 | `citty` is lightweight, TypeScript-first, and maps cleanly to the `sv plugin add/remove` nested command structure. `consola` is the natural pairing for consistent terminal output (info/success/warn/error). Running via `tsx` keeps the CLI consistent with `scripts/` and avoids a separate compile step. CLI is not distributed as a standalone npm package in v1 — self-hosters run it from their cloned repo. Global install deferred. |
 | Jun 2026 | Three-tier build model: tsup for packages, `next build` for apps, generate script for plugin composition | Packages (db, manifest, mailer, ui, sdk) are compiled with `tsup` — fast, consistent, ESM output with TypeScript declarations. Apps (runtime, auth) use `next build`. Plugins are not compiled independently — the generate script source-composes them into the runtime, and they are compiled as part of the runtime's `next build`. Turborepo orchestrates the correct order. |
 | Jun 2026 | ESM only for all package output | Next.js 15, Vite, and current tooling handle ESM natively. CJS compat shims add complexity with no benefit for this stack. All packages output ESM. |
-| Jun 2026 | npm-published packages: `@sovereign/sdk` and `@sovereign/ui` only | `sdk` is the plugin↔platform contract — external plugin developers must install it. `ui` is the design system — plugin developers install it to use components and tokens. All other packages (db, manifest, mailer, tsconfig) are workspace-internal infrastructure; publishing them would expose platform internals with no benefit. |
+| Jun 2026 | npm-published packages: `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` only | `sdk` is the plugin↔platform contract — external plugin developers must install it. `ui` is the design system — plugin developers install it to use components and tokens. All other packages (db, manifest, mailer, tsconfig) are workspace-internal infrastructure; publishing them would expose platform internals with no benefit. |
+| Jun 2026 | Published packages use the `@commonsengine` npm scope with a `sovereign-` name prefix; internal packages keep a private `@sovereign/*` scope | `@sovereign` was unavailable on npm and the dispute outcome is uncertain. `@commonsengine` is owned and available today. Published packages are named `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` — the `sovereign-` prefix keeps the product identity visible on every import and namespaces it within the org for future CommonsEngine products. Internal packages (db, manifest, mailer) are never published, so they keep the short `@sovereign/*` scope as a workspace-only alias — no npm conflict applies. The two scopes also signal intent: `@sovereign/*` = internal, `@commonsengine/*` = public contract. |
 | Jun 2026 | `packages/ui` CSS strategy: CSS Modules marked external in tsup; token CSS shipped as plain files | tsup (esbuild) does not process CSS Modules — class name scoping requires the consuming bundler. All consumers of `packages/ui` are Next.js apps (the runtime and plugin route segments compiled by the runtime), so Next.js handles CSS Modules natively. Token CSS files (`.css`, not `.module.css`) are plain CSS and are shipped as-is; the runtime shell imports them globally so tokens are available everywhere without a per-plugin import. |
-| Jun 2026 | Plugin developers install `@sovereign/sdk` and `@sovereign/ui` from npm; all other packages are unreachable | Plugin developers add `@sovereign/sdk` and `@sovereign/ui` as dependencies in their plugin's `package.json`. They never interact with db, mailer, manifest, or tsconfig directly. This enforces the plugin contract boundary at the package level, complementing the ESLint `no-restricted-imports` rule. |
+| Jun 2026 | Plugin developers install `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` from npm; all other packages are unreachable | Plugin developers add `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` as dependencies in their plugin's `package.json`. They never interact with db, mailer, manifest, or tsconfig directly. This enforces the plugin contract boundary at the package level, complementing the ESLint `no-restricted-imports` rule. |
 | Jun 2026 | Dev DX: `transpilePackages` replaces `tsup --watch`; packages export TypeScript source for workspace consumption | In dev, all workspace packages expose their TypeScript source via `exports: { ".": "./src/index.ts" }`. The consuming Next.js apps (runtime and apps/auth) list all workspace packages in `transpilePackages` in their `next.config.ts`. Next.js/SWC compiles package source directly as part of its own compilation pass — no intermediate `dist/` build, no watch process. Changes to any package trigger HMR in the consuming app instantly. tsup is production-only (generates `dist/` for npm publish and Docker builds). |
 | Jun 2026 | `resolve.symlinks: false` in runtime webpack config for plugin HMR | In dev, plugins are symlinked into `runtime/app/plugins/[id]/` by the generate script. Webpack's default behaviour resolves symlinks to their real filesystem path before setting up file watchers, which breaks HMR — changes to `plugins/[id]/app/` are not detected. Setting `config.resolve.symlinks = false` makes webpack use the symlink path as-is; file changes in the plugin source directory propagate through the symlink and trigger HMR correctly. |
 | Jun 2026 | Generate script runs once on dev startup (sync) then enters watch mode; no manual `pnpm generate` needed | The runtime's `dev` script runs `tsx scripts/generate-registry.ts` synchronously on startup to create/update plugin symlinks, then starts the Next.js dev server. The generate script also supports a `--watch` flag for ongoing plugin directory monitoring. Developers never need to run `pnpm generate` manually during a dev session — the startup sequence handles it. Adding a new plugin directory during a running dev session triggers automatic re-linking. |
+| Jun 2026 | Docker Compose is the sole supported deployment path; PM2 dropped | Two containers (runtime + auth) on one Compose file. Docker's own restart policy supervises processes — no in-container PM2. PM2 as a bare-Node alternative was considered and dropped to keep the supported surface small; it can be reintroduced post-v1 if there is demand. Next.js `output: 'standalone'` makes each app a self-contained `node server.js`. |
+| Jun 2026 | Auth server is internal-only; runtime is the only externally exposed service | The auth container is never host-mapped — it is reachable only on the internal Docker network via `SOVEREIGN_AUTH_URL` (`http://auth:3001`). The runtime is the single public entry point, facing the reverse proxy. This removes the auth surface from the public network. |
+| Jun 2026 | Fixed internal ports (3000 runtime / 3001 auth); host ports differ by env (4000/4001 default in prod) | Containers always listen on 3000/3001 internally; the dev-vs-prod distinction is a host port mapping concern, not an app config change. Production host defaults are 4000 (runtime) and 4001 (auth, though auth is not host-mapped). Overridable via `RUNTIME_PORT` / `AUTH_PORT`. |
+| Jun 2026 | npm publishing: per-package version tags trigger a CI publish job | `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` have independent release cycles (SDK changes can be breaking; UI is mostly additive), so they are released on per-package tags (`sdk-v*`, `ui-v*`) rather than a single repo-wide tag. A GitHub Actions job builds the tagged package with tsup and runs `pnpm publish` using a `NODE_AUTH_TOKEN` secret. No other packages are published. |
 
 ---
 
-*Version 0.8 — June 2026. Changes from v0.7: Dev DX strategy locked — transpilePackages replaces tsup --watch in dev; packages export TypeScript source for workspace; resolve.symlinks:false for plugin HMR; generate script auto-runs on dev startup. Decision log updated.*
+*Version 0.9 — June 2026. Changes from v0.8: Deployment strategy locked — Docker-only (PM2 dropped); two-container topology with auth internal-only and runtime as sole public service; fixed internal ports with env-overridable host mapping (§3.1). npm publishing scope finalised: published packages move to `@commonsengine/sovereign-sdk` / `@commonsengine/sovereign-ui`, internal packages keep private `@sovereign/*` scope; per-package tag-triggered publish pipeline. Decision log updated.*

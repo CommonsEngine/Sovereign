@@ -64,8 +64,8 @@ they are authoritative over assumptions:
   additional constraint per NFR-04: patch releases must never contain breaking
   changes; breaking changes require at minimum a minor bump and a migration
   note, regardless of branch type. Both packages are published to npm as
-  `@sovereign/sdk` and `@sovereign/ui` — they are public contracts for plugin
-  developers.
+  `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` — they are
+  public contracts for plugin developers.
 
   The **platform version** in the root `package.json` tracks the roadmap
   milestones (v0.3.x → v0.4.x → v0.5.x → v1.0.x). Bump it when a phase
@@ -179,7 +179,7 @@ unambiguous. **Never abbreviate after the prefix** — use full descriptive name
 
 ```ts
 // Components — typed React components
-import { Button, Card, Input, Badge } from '@sovereign/ui'
+import { Button, Card, Input, Badge } from '@commonsengine/sovereign-ui'
 
 // Tokens — already injected globally by the runtime shell.
 // Reference directly in plugin CSS without any import:
@@ -249,6 +249,20 @@ plugins/console/    core admin plugin (platform type)
 scripts/            install-plugins.ts, generate-registry.ts, dev.ts
 bin/sv              CLI (v0.5)
 ```
+
+### Package naming and scope
+
+Two npm scopes, by intent:
+
+- **`@commonsengine/sovereign-*`** — published to npm; public contracts for
+  plugin developers. Only `packages/sdk` → `@commonsengine/sovereign-sdk` and
+  `packages/ui` → `@commonsengine/sovereign-ui`.
+- **`@sovereign/*`** — workspace-internal alias, never published. `packages/db`
+  → `@sovereign/db`, `packages/manifest` → `@sovereign/manifest`,
+  `packages/mailer` → `@sovereign/mailer`. (`@sovereign` is taken on npm by a
+  third party; since these are never published, the conflict is irrelevant.)
+
+`packages/tsconfig` is consumed by path, not by package name.
 
 ## Commands
 
