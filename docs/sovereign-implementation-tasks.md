@@ -1,6 +1,6 @@
-# Sovereign v3 — Implementation Task Breakdown
+# Sovereign — Implementation Task Breakdown
 
-**Version:** 0.2
+**Version:** 0.4
 **Date:** June 2026
 **Purpose:** Session-by-session task guide for Claude Code. Each task is a single PR. Reference `sovereign-proposal-plan-srs.md` for architectural decisions and rationale.
 
@@ -15,9 +15,11 @@ Each task maps to one Claude Code session and one PR. Before starting a session:
 
 Tasks are sequenced — each depends on the previous unless marked **[parallel]**.
 
-**TypeScript config dependency:** All packages and apps created from Task 0.3.03 onwards must extend from `packages/tsconfig`. Remind Claude Code of this at the start of each package creation session — it is a foundational dependency established in 0.3.02 and easy to miss.
+**TypeScript config dependency:** All packages and apps created from Task 0.3.04 onwards must extend from `packages/tsconfig`. Remind Claude Code of this at the start of each package creation session — it is a foundational dependency established in 0.3.02 and easy to miss.
 
-**Docker Compose scope:** Task 0.3.11 creates a basic dev-only Compose setup. Task 0.5.02 makes it production-complete. These are intentionally split — do not flag 0.5.02 as duplication.
+**Code quality dependency:** ESLint and Prettier are established in Task 0.3.03. All packages created from 0.3.04 onwards must comply with the root ESLint and Prettier config. Do not introduce per-package formatting overrides.
+
+**Docker Compose scope:** Task 0.3.12 creates a basic dev-only Compose setup. Task 0.5.02 makes it production-complete. These are intentionally split — do not flag 0.5.02 as duplication.
 
 ---
 
@@ -64,7 +66,54 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.03 — `packages/db` — Drizzle client factory
+### Task 0.3.03 — Code quality tooling
+
+**Goal:** Establish consistent code formatting and linting across the entire
+monorepo before any application code is written. All subsequent tasks inherit
+this baseline — nothing is merged without passing it.
+
+**Deliverables:**
+- `.editorconfig` at repo root — indent style (spaces, 2), line endings (LF),
+  charset (UTF-8), trailing newline, trim trailing whitespace
+- `prettier.config.ts` at repo root — single quotes, semicolons, trailing
+  commas (`all`), print width 100, tab width 2
+- `eslint.config.ts` at repo root — ESLint 9 flat config:
+  - `typescript-eslint` recommended + strict rules
+  - `eslint-config-prettier` to disable formatting rules that conflict with
+    Prettier
+  - `no-restricted-imports` rule scoped to `plugins/**` — blocks any import
+    matching `*/runtime/src/*`. This is the SDK boundary rule (NFR-06); wiring
+    it here means it is active from the first line of plugin code, not
+    retroactively added in the SDK task
+- `package.json` additions:
+  - `simple-git-hooks` — pre-commit hook running lint-staged
+  - `lint-staged` — runs `prettier --write` then `eslint --fix` on staged
+    `.ts`/`.tsx`/`.css`/`.json` files
+  - Scripts: `"format": "prettier --write ."`, `"format:check": "prettier
+    --check ."`, `"lint:fix": "eslint --fix ."`
+- `turbo.json` — confirm `lint` task is correctly wired across packages
+- Run `pnpm format` on all existing files (`.gitignore`, `README.md`,
+  `package.json`, `pnpm-workspace.yaml`, `turbo.json`,
+  `scripts/install-plugins.ts`) and commit formatted output as part of this PR
+
+**Technology:** ESLint 9 (flat config) + `typescript-eslint` + Prettier +
+`eslint-config-prettier` + `simple-git-hooks` + `lint-staged`. See CLAUDE.md —
+Code quality section. No Biome — ESLint is required for the custom
+`no-restricted-imports` SDK boundary rule; running both would be redundant.
+
+**SRS reference:** NFR-06, PLT-10, SRS §2.2 Tech Stack
+
+**Review checklist:**
+- `pnpm format:check` passes on all files in the repo
+- `pnpm lint` passes with zero errors or warnings
+- Attempting to commit a file with formatting errors is blocked by the
+  pre-commit hook
+- A test import of `runtime/src/anything` inside `plugins/` causes ESLint to
+  error — boundary rule is live
+
+---
+
+### Task 0.3.04 — `packages/db` — Drizzle client factory
 
 **Goal:** Shared database package providing a Drizzle client factory that supports both SQLite and PostgreSQL via a dialect flag.
 
@@ -87,7 +136,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.04 — `packages/manifest` — schema and validation
+### Task 0.3.05 — `packages/manifest` — schema and validation
 
 **Goal:** Manifest schema package providing TypeScript types and a validation function.
 
@@ -107,7 +156,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.05 — `packages/mailer` — SMTP abstraction
+### Task 0.3.06 — `packages/mailer` — SMTP abstraction
 
 **Goal:** Thin mailer package wrapping nodemailer with a simple `send()` interface.
 
@@ -128,26 +177,64 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.06 — `packages/ui` — component library scaffold
+### Task 0.3.07 — `packages/ui` — Sovereign Design System scaffold
 
-**Goal:** Shared UI package scaffold. No components yet — just the package structure, design token foundation, and one primitive component to validate the setup.
+**Goal:** Sovereign Design System scaffold — two-tier CSS custom property token
+architecture and one primitive component to validate the setup. This package is
+a public contract for plugin developers; token names and component APIs must be
+treated with the same versioning discipline as the SDK.
 
 **Deliverables:**
 - `packages/ui/` with:
-  - Tailwind config extending a base token set (colours, spacing, typography)
-  - `src/components/Button.tsx` — single primitive component to validate the setup
+  - `src/tokens/primitives.css` — raw scale tokens with `--sv-` prefix:
+    colour palette (`--sv-grey-50` … `--sv-grey-950`), spacing scale
+    (`--sv-space-1` … `--sv-space-16`), font sizes (`--sv-font-size-sm` …
+    `--sv-font-size-2xl`), border radii (`--sv-radius-sm/md/lg`)
+  - `src/tokens/semantic.css` — contextual tokens mapped from primitives:
+    `--sv-color-surface`, `--sv-color-text-primary`, `--sv-color-text-muted`,
+    `--sv-color-border`, `--sv-color-accent`, `--sv-shadow-card` etc. These are
+    what plugin developers reference. Tenant theming overrides this layer only.
+  - `src/components/Button/Button.tsx` — single primitive component using CSS
+    Modules to validate the setup
+  - `src/components/Button/Button.module.css` — styles referencing `--sv-*`
+    tokens only; no hardcoded values
   - `src/index.ts` — barrel export
+- Extends `packages/tsconfig` (`library.json`)
 - Builds cleanly and is importable by the runtime
+- `docs/design-system.md` — foundational design system doc covering:
+  - Design principles (what Sovereign UI should feel and look like)
+  - Token architecture (two-tier model, `--sv-*` convention, primitive vs
+    semantic, theming surface)
+  - Full primitive and semantic token reference (all tokens defined in this task)
+  - Component contribution guide (how to build a new component correctly —
+    CSS Modules, token-only values, accessibility expectations)
+  - Theming guide (how tenant overrides work by swapping semantic tokens at
+    `:root`; what primitives are and why plugins must not reference them)
+
+  Note: the plugin developer consumption guide (how to use components and tokens
+  in a plugin) lives in `docs/plugin-development.md` (Task 0.5.06), not here.
+  This doc is for contributors and system-level understanding.
+
+**Technology:** CSS custom properties for tokens (plain `.css` files) + React +
+CSS Modules for components. No Tailwind. No runtime CSS-in-JS. No third-party
+component framework. See CLAUDE.md — Design System section for full rationale
+and token conventions.
 
 **SRS reference:** 2.2 Tech Stack (`packages/ui`)
 
 **Review checklist:**
 - `Button` renders without errors when imported into a test file
-- Tailwind tokens are defined, not hardcoded values in components
+- No hardcoded colour, spacing, or radius values in any component CSS — only
+  `--sv-*` token references
+- All semantic tokens map to primitive tokens — no semantic token has a
+  hardcoded value
+- `tokens/primitives.css` and `tokens/semantic.css` are valid, importable CSS
+  files
+- `docs/design-system.md` exists and covers all sections listed above
 
 ---
 
-### Task 0.3.07 — `packages/sdk` — interface definitions
+### Task 0.3.08 — `packages/sdk` — interface definitions
 
 **Goal:** SDK package with full interface definitions for v1 surface. Implementations are stubs at this stage — real implementations come in later tasks.
 
@@ -160,18 +247,23 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
   - `src/platform.ts` — `getConfig()` — stub
   - `src/unimplemented.ts` — `storage`, `notifications`, `events` stubs throwing `NotImplementedError` with message indicating v1 non-implementation
   - `src/index.ts` — barrel export as `sdk.*`
-- ESLint rule configured at root: no imports from `runtime/src` in `plugins/*`
+
+Note: the `no-restricted-imports` ESLint boundary rule blocking `runtime/src`
+imports in `plugins/*` is configured in Task 0.3.03 (code quality tooling),
+not here. By the time this task runs it is already active. This task only
+verifies it catches a violation.
 
 **SRS reference:** 3.6 SDK, NFR-06
 
 **Review checklist:**
 - All SDK methods from SRS 3.6 present
 - Unimplemented stubs throw `NotImplementedError` with a clear message
-- ESLint import boundary rule is active and catches a violation in a test case
+- ESLint import boundary rule catches a `runtime/src` import in a test plugin
+  file (rule was established in Task 0.3.03)
 
 ---
 
-### Task 0.3.08 — `apps/auth` — better-auth server **[parallel with 0.3.09]**
+### Task 0.3.09 — `apps/auth` — better-auth server **[parallel with 0.3.10]**
 
 **Goal:** Auth server wrapping better-auth. Handles login, logout, registration, and session verification.
 
@@ -197,7 +289,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.09 — Runtime scaffold **[parallel with 0.3.08]**
+### Task 0.3.10 — Runtime scaffold **[parallel with 0.3.09]**
 
 **Goal:** Sovereign Core Next.js app scaffold with shell layout, middleware, and plugin launcher page. No plugins wired yet.
 
@@ -222,7 +314,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.10 — Generate script
+### Task 0.3.11 — Generate script
 
 **Goal:** Pre-build script that reads plugin manifests, validates them, and injects plugin routes into the runtime.
 
@@ -248,7 +340,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-### Task 0.3.11 — Docker Compose for local dev
+### Task 0.3.12 — Docker Compose for local dev
 
 **Goal:** Docker Compose setup orchestrating runtime and auth server for local development.
 
@@ -439,23 +531,33 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **Goal:** `sv` CLI with essential commands for managing a Sovereign deployment.
 
 **Deliverables:**
-- `bin/sv` entry point
+- `bin/sv` — TypeScript entry point, executed via `tsx` (no separate compile
+  step; consistent with the `scripts/` pattern)
 - Commands:
   - `sv install` — runs install script, clones sovereign/community plugins defined in config
   - `sv generate` — runs generate script
   - `sv build` — runs generate then pnpm build
   - `sv dev` — starts runtime and auth server in dev mode
-  - `sv serve` — starts production server via direct node. PM2 is supported as an optional non-Docker deployment path — documented in `docs/self-hosting.md` but not the canonical production approach. Docker is canonical.
+  - `sv serve` — starts production server via direct node. PM2 is supported as
+    an optional non-Docker deployment path — documented in `docs/self-hosting.md`
+    but not the canonical production approach. Docker is canonical.
   - `sv plugin add <repository>` — clones a plugin, runs generate
   - `sv plugin remove <id>` — removes plugin directory, runs generate
 
-**SRS reference:** 2.4 Phased Roadmap v0.5
+**Technology:** `citty` (command framework) + `consola` (terminal output) —
+both TypeScript-first, lightweight, from the UnJS ecosystem. `citty` handles
+nested subcommands (`sv plugin add/remove`) cleanly. `consola` provides
+consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
+— no global npm install path. See SRS §2.2 and decision log.
+
+**SRS reference:** 2.4 Phased Roadmap v0.5, 2.2 Tech Stack
 
 **Review checklist:**
 - `sv dev` starts both services correctly
 - `sv plugin add` clones and wires a plugin end-to-end
 - `sv plugin remove` cleans up symlinks/copies and updates registry
-- CLI help text is accurate
+- `sv --help` and `sv plugin --help` output accurate, well-formatted help text
+- No compiled output — CLI runs directly via `tsx`
 
 ---
 
@@ -505,9 +607,13 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 **Deliverables:**
 - `.github/workflows/ci.yml` with jobs:
-  - `lint` — runs ESLint across all packages including import boundary rule (NFR-06)
+  - `format` — runs `prettier --check .` across the repo; fails on any
+    unformatted file
+  - `lint` — runs ESLint across all packages including the SDK import boundary
+    rule (NFR-06)
   - `typecheck` — runs `tsc --noEmit` across all packages
-  - `generate-validate` — runs `pnpm generate --mode=prod` and verifies `runtime/generated/registry.ts` is valid TypeScript
+  - `generate-validate` — runs `pnpm generate --mode=prod` and verifies
+    `runtime/generated/registry.ts` is valid TypeScript
   - `build` — runs `turbo build` in production mode
 - CI triggers on: push to `main`, all pull requests
 - All jobs use pnpm cache for speed
@@ -515,7 +621,8 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06
 
 **Review checklist:**
-- All four jobs pass on a clean checkout
+- All five jobs pass on a clean checkout
+- Unformatted file causes `format` job to fail
 - Import boundary violation in a plugin causes `lint` job to fail
 - Invalid manifest in `plugins/` causes `generate-validate` job to fail
 - pnpm cache is correctly restored between runs
@@ -557,4 +664,4 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 
 ---
 
-*Version 0.2 — June 2026. Updated to address review findings: middleware contradiction resolved, SDK split clarified, install-plugins and CI tasks added, PM2 scoped, parallel tasks tagged. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
+*Version 0.4 — June 2026. Changes from v0.3: New Task 0.3.03 (code quality tooling — ESLint 9 flat config, Prettier, simple-git-hooks, lint-staged, .editorconfig) inserted; all subsequent v0.3 tasks renumbered 0.3.04–0.3.12. SDK boundary rule ownership moved to Task 0.3.03. CI task updated with format-check job. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
