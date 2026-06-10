@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@sovereignfs/tsconfig':
+        specifier: workspace:*
+        version: link:packages/tsconfig
       '@types/node':
         specifier: ^22.10.2
         version: 22.19.20
@@ -20,6 +23,8 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
+
+  packages/tsconfig: {}
 
 packages:
 

@@ -261,7 +261,10 @@ One owned npm scope for everything: **`@sovereignfs/*`**. The `fs` denotes
 - `packages/db` → `@sovereignfs/db` — internal, `"private": true`.
 - `packages/manifest` → `@sovereignfs/manifest` — internal, `"private": true`.
 - `packages/mailer` → `@sovereignfs/mailer` — internal, `"private": true`.
-- `packages/tsconfig` is consumed by path, not by package name.
+- `packages/tsconfig` → `@sovereignfs/tsconfig`. Not published and not imported
+  in code; consumed only via TypeScript `extends`
+  (`@sovereignfs/tsconfig/base.json` etc.), declared as a `workspace:*`
+  devDependency by each consumer.
 
 The "do not publish" signal is `"private": true` in the package's
 `package.json` — **not** the scope. A single scope we own avoids the
@@ -310,8 +313,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 ## Status
 
 - ✅ Task 0.3.01 — Monorepo scaffold (merged to `main`).
-- ▶️ Next: Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`).
-- ⏳ Then: Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks).
+- ✅ Docs — Build, dev DX, deployment, and npm publishing strategy (merged to `main`).
+- ▶️ In review: Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`).
+- ⏳ Next: Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.
