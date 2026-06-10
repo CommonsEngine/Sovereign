@@ -1,0 +1,95 @@
+name: Bug report
+description: Something isn't working as expected.
+labels: ["bug", "needs-triage"]
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues before filing to avoid duplicates.
+        For security vulnerabilities, use [GitHub Security Advisories](https://github.com/CommonsEngine/Sovereign/security/advisories/new) — do not open a public issue.
+
+  - type: input
+    id: version
+    attributes:
+      label: Sovereign version
+      placeholder: "e.g. 0.3.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment method
+      options:
+        - Docker Compose
+        - Bare Node.js
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: database
+    attributes:
+      label: Database
+      options:
+        - SQLite
+        - PostgreSQL
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected component
+      description: Where does the issue occur?
+      options:
+        - Platform / Runtime
+        - Auth server
+        - Console plugin
+        - SDK (packages/sdk)
+        - CLI (sv)
+        - Design system (packages/ui)
+        - Other plugin
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      description: Paste any relevant logs. Automatically formatted as code.
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Screenshots, config snippets, anything else relevant.
