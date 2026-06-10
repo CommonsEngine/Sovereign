@@ -253,7 +253,7 @@ by the runtime shell.
     handles CSS Modules natively. Changes to components are picked up by HMR
     instantly without any watch build.
   - `exports`: `{ ".": "./src/index.ts" }` for workspace; tsup overwrites with
-    `dist/` paths at build time. Published to npm as `@commonsengine/sovereign-ui`.
+    `dist/` paths at build time. Published to npm as `@sovereignfs/ui`.
   - `files` field must include `dist/` and any CSS files for the npm package
 
 **SRS reference:** 2.2 Tech Stack (`packages/ui`)
@@ -290,8 +290,8 @@ not here. By the time this task runs it is already active. This task only
 verifies it catches a violation.
 
 **Build:** `tsup` — ESM only, TypeScript declarations. Published to npm as
-`@commonsengine/sovereign-sdk`; `package.json` must include `exports`, `main`,
-`types`, and `files` fields pointing to `dist/`.
+`@sovereignfs/sdk`; `package.json` must include `exports`, `main`, `types`,
+and `files` fields pointing to `dist/`.
 - `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
   clean: true
 - `package.json`:
@@ -324,7 +324,7 @@ verifies it catches a violation.
   - First user auto-assigned `platform:admin`, subsequent users `platform:user`
   - Environment: `AUTH_SECRET`, `DATABASE_URL`, `AUTH_INVITE_ONLY`
 - `apps/auth/next.config.ts` — must include:
-  - `transpilePackages: ['@sovereign/db', '@sovereign/mailer']` — compiles
+  - `transpilePackages: ['@sovereignfs/db', '@sovereignfs/mailer']` — compiles
     workspace package TypeScript source directly; no watch build needed in dev
 
 **SRS reference:** 3.3 Auth Layer, 4.3 Functional Requirements — Auth
@@ -352,12 +352,12 @@ verifies it catches a violation.
   - `generated/registry.ts` — placeholder empty registry
   - `app/login/page.tsx` — login page pointing to `apps/auth`
 - `runtime/next.config.ts` — must include:
-  - `transpilePackages: ['@commonsengine/sovereign-sdk',
-    '@commonsengine/sovereign-ui', '@sovereign/db', '@sovereign/manifest',
-    '@sovereign/mailer']` — compiles all workspace package TypeScript sources
-    directly during dev. Changes to any package file trigger HMR in the runtime
-    without a separate watch build. (Published packages use the `@commonsengine`
-    scope; internal packages keep the private `@sovereign/*` scope.)
+  - `transpilePackages: ['@sovereignfs/sdk', '@sovereignfs/ui',
+    '@sovereignfs/db', '@sovereignfs/manifest', '@sovereignfs/mailer']` —
+    compiles all workspace package TypeScript sources directly during dev.
+    Changes to any package file trigger HMR in the runtime without a separate
+    watch build. (All packages share the single `@sovereignfs/*` scope; only
+    `sdk` and `ui` are published, the rest are `private`.)
   - `webpack: (config) => { config.resolve.symlinks = false; return config; }`
     — required for plugin HMR. Without this, webpack resolves symlinks to
     their real path before watching, breaking hot reload for plugin source
@@ -725,15 +725,13 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - `.github/workflows/publish.yml` — npm publishing, **separate workflow**
   triggered on per-package version tags (the two packages have independent
   release cycles):
-  - Tag pattern `sdk-v*.*.*` → builds and publishes
-    `@commonsengine/sovereign-sdk`
-  - Tag pattern `ui-v*.*.*` → builds and publishes
-    `@commonsengine/sovereign-ui`
+  - Tag pattern `sdk-v*.*.*` → builds and publishes `@sovereignfs/sdk`
+  - Tag pattern `ui-v*.*.*` → builds and publishes `@sovereignfs/ui`
   - Steps: `pnpm install` → `pnpm --filter <pkg> build` (tsup → `dist/`) →
     `pnpm --filter <pkg> publish --no-git-checks --access public` using the
     `NODE_AUTH_TOKEN` repository secret
-  - No other packages are ever published (internal `@sovereign/*` packages are
-    workspace-only)
+  - No other packages are ever published (internal `@sovereignfs/*` packages
+    are `private` and workspace-only)
   - Publish runs only after the validation jobs pass on the tagged commit
 
 **SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06, NFR-04
@@ -744,8 +742,8 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - Import boundary violation in a plugin causes `lint` job to fail
 - Invalid manifest in `plugins/` causes `generate-validate` job to fail
 - pnpm cache is correctly restored between runs
-- Pushing an `sdk-v*` tag publishes only `@commonsengine/sovereign-sdk`;
-  pushing a `ui-v*` tag publishes only `@commonsengine/sovereign-ui`
+- Pushing an `sdk-v*` tag publishes only `@sovereignfs/sdk`;
+  pushing a `ui-v*` tag publishes only `@sovereignfs/ui`
 - A tag without a corresponding version bump in the package's `package.json`
   fails the publish (version already exists on npm)
 
@@ -786,4 +784,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-*Version 0.7 — June 2026. Changes from v0.6: Deployment + publishing locked — published packages renamed to `@commonsengine/sovereign-sdk` / `@commonsengine/sovereign-ui` (internal packages keep `@sovereign/*`); Task 0.3.12 (Docker dev) updated for two-container topology with auth internal-only; Task 0.5.02 (prod image) rewritten for three-stage standalone builds; Task 0.5.07 split into ci.yml (validation) and publish.yml (per-package tag-triggered npm publish). Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
+*Version 0.8 — June 2026. Changes from v0.7: npm scope unified to a single owned scope `@sovereignfs/*` for all packages (was split `@commonsengine/sovereign-*` + `@sovereign/*`); transpilePackages lists, package build/publish notes, and publish.yml updated accordingly; internal packages marked `private`. Earlier v0.7 changes (Docker two-container topology, three-stage prod images, ci.yml/publish.yml split) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
