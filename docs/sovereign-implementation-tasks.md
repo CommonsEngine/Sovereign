@@ -197,8 +197,17 @@ Code quality section. No Biome — ESLint is required for the custom
   - `build` script: `tsup`
   - No `dev` script — compiled by consuming apps via `transpilePackages`
   - `exports`: `{ ".": "./src/index.ts" }` for workspace; overwritten at publish
+- **Dev email capture (Mailpit):** ships alongside the package so email flows are
+  testable from day one (SRS decision log, June 2026):
+  - `docker-compose.yml` — a `mailpit` service (SMTP `1025`, web inbox `8025`)
+    for Docker-based dev. Task 0.3.12 adds the `runtime`/`auth` services to this
+    same file once they exist.
+  - `.env.example` — DB + SMTP vars with Mailpit-aware comments (Docker host
+    `mailpit`, native host `localhost`, or unset to disable email).
+  - `CONTRIBUTING.md` — an "Email in development" section covering the Docker
+    service, the native `mailpit` binary, and the Ethereal no-install fallback.
 
-**SRS reference:** NFR-02 (email optional), SDK surface `sdk.mailer.send()`
+**SRS reference:** NFR-02 (email optional), SDK surface `sdk.mailer.send()`, decision log (dev email capture)
 
 **Review checklist:**
 
@@ -454,15 +463,17 @@ and `files` fields pointing to `dist/`.
 
 **Deliverables:**
 
-- `docker-compose.yml` — two services on a shared network:
+- `docker-compose.yml` — extend the existing dev file (which already carries the
+  `mailpit` service from Task 0.3.06) with two app services on the shared network:
   - `runtime` — host-mapped `${RUNTIME_PORT:-3000}:3000`
   - `auth` — internal only; `expose: ["3001"]`, no host `ports` mapping. The
     runtime reaches it at `http://auth:3001` via `SOVEREIGN_AUTH_URL`.
 - `docker-compose.prod.yml` — production overrides: runtime host port defaults
   to `${RUNTIME_PORT:-4000}:3000`; auth remains internal-only; both services
-  get `restart: unless-stopped`.
-- `.env.example` at repo root with all required env vars documented, including
-  `RUNTIME_PORT`, `AUTH_PORT`, `SOVEREIGN_AUTH_URL`
+  get `restart: unless-stopped`. (Mailpit is dev-only — not in the prod file.)
+- `.env.example` — extend the existing file (DB + SMTP from Task 0.3.06) with the
+  remaining required vars: `RUNTIME_PORT`, `AUTH_PORT`, `SOVEREIGN_AUTH_URL`,
+  `AUTH_SECRET`, `SOVEREIGN_AUTH_SECRET`, etc.
 - `docs/self-hosting.md` — getting started guide: clone, configure env, `docker compose up`
 
 **SRS reference:** NFR-01, 2.4 Phased Roadmap v0.3, 3.1 Deployment Model (topology, ports)
@@ -845,4 +856,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-_Version 0.8 — June 2026. Changes from v0.7: npm scope unified to a single owned scope `@sovereignfs/_`for all packages (was split`@commonsengine/sovereign-_`+`@sovereign/_`); transpilePackages lists, package build/publish notes, and publish.yml updated accordingly; internal packages marked `private`. Earlier v0.7 changes (Docker two-container topology, three-stage prod images, ci.yml/publish.yml split) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.\*
+_Version 0.9 — June 2026. Changes from v0.8: Task 0.3.06 (mailer) now also delivers dev email capture (Mailpit `docker-compose.yml` service, `.env.example`, CONTRIBUTING "Email in development"); Task 0.3.12 updated to extend the existing dev compose + `.env.example` rather than create them. Earlier v0.8 changes (uniform `@sovereignfs/*` scope) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories._
