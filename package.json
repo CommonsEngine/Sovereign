@@ -2,6 +2,7 @@
   "name": "sovereign",
   "version": "0.3.0",
   "private": true,
+  "type": "module",
   "description": "Sovereign — a modular, self-hostable workspace runtime.",
   "license": "AGPL-3.0",
   "packageManager": "pnpm@11.5.2",
@@ -11,15 +12,40 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "typecheck": "turbo typecheck",
-    "install:plugins": "tsx scripts/install-plugins.ts"
+    "install:plugins": "tsx scripts/install-plugins.ts",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.{js,mjs,cjs,json,jsonc,css,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^9.18.0",
     "@sovereignfs/tsconfig": "workspace:*",
     "@types/node": "^22.10.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.0",
+    "globals": "^15.14.0",
+    "jiti": "^2.4.2",
+    "lint-staged": "^15.3.0",
+    "prettier": "^3.5.0",
+    "simple-git-hooks": "^2.11.1",
     "tsx": "^4.19.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.20.0"
   }
 }

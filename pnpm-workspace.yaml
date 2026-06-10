@@ -1,10 +1,13 @@
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "plugins/*"
-  - "runtime"
+  - 'apps/*'
+  - 'packages/*'
+  - 'plugins/*'
+  - 'runtime'
 
 # Transitive deps allowed to run install scripts (pnpm blocks them by default).
 # esbuild (via tsx) needs its postinstall to link the platform binary.
+# simple-git-hooks: declined — the root `prepare` script installs the git hooks
+# explicitly, so the dependency's own postinstall is redundant.
 allowBuilds:
   esbuild: true
+  simple-git-hooks: false
