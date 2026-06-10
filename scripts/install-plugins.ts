@@ -10,18 +10,18 @@
  *
  * See: docs/sovereign-implementation-tasks.md — Task 0.5.00
  */
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 
-const CONFIG_PATH = resolve(process.cwd(), "sovereign.plugins.json");
+const CONFIG_PATH = resolve(process.cwd(), 'sovereign.plugins.json');
 
 function main(): void {
   if (existsSync(CONFIG_PATH)) {
     console.log(`[install-plugins] Found config at ${CONFIG_PATH}`);
   } else {
-    console.log("[install-plugins] No sovereign.plugins.json found at repo root.");
+    console.log('[install-plugins] No sovereign.plugins.json found at repo root.');
   }
-  console.log("[install-plugins] not yet implemented (see Task 0.5.00).");
+  console.log('[install-plugins] not yet implemented (see Task 0.5.00).');
 }
 
 main();

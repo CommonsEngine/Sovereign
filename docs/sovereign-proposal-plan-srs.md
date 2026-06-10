@@ -1,4 +1,5 @@
 # Sovereign
+
 ## Project Concept · Project Plan · Software Requirements Specification
 
 **Version:** 0.6
@@ -66,11 +67,13 @@ Sovereign is open source, privacy-first, and designed to be owned entirely by th
 ### 1.2 Problem Statement
 
 **For individuals and small teams:**
+
 - Productivity tools are scattered across many services, most of them owned by large companies with no meaningful privacy commitment.
 - Paid licenses accumulate quickly. Closed-source tools offer no auditability.
 - Developers who want to build personal tools face the same bootstrapping cost every time: auth, user management, database setup, email, deployment.
 
 **For developers specifically:**
+
 - Building a new app from scratch requires repeating the same platform layer — auth, sessions, storage abstractions, mailer — for every project.
 - Deploying independent tools separately leads to fragmented infrastructure with no shared identity or unified interface.
 
@@ -87,6 +90,7 @@ Sovereign provides a self-hosted workspace runtime with:
 ### 1.4 Goals and Non-Goals
 
 **Goals (v1):**
+
 - Working self-hostable runtime with auth, plugin loading, and SDK
 - Three core plugins: Console (admin), Tasks, Splitify
 - SQLite by default, Postgres-ready
@@ -94,6 +98,7 @@ Sovereign provides a self-hosted workspace runtime with:
 - Clean plugin developer experience with manifest schema and SDK types
 
 **Non-Goals (v1):**
+
 - Multi-tenancy (multiple independent workspaces on one deployment)
 - Plugin sandboxing or process isolation
 - Native mobile app — deferred to post-v1. Planned as a universal Capacitor
@@ -141,22 +146,22 @@ Sovereign v3 is a clean rewrite. Two prior iterations existed:
 
 ### 2.2 Tech Stack
 
-| Layer | Choice | Rationale |
-|---|---|---|
-| Runtime framework | Next.js 15 (App Router) | SSR, server actions, API routes, PWA support — single framework for the whole runtime |
-| Language | TypeScript | Type safety across monorepo; SDK types are the plugin contract |
-| Monorepo tooling | Turborepo + pnpm workspaces | Task orchestration, build caching, clean package boundaries. pnpm enforces strict dependency declarations — no phantom dependencies across plugins. |
-| Auth | better-auth (wrapped in `apps/auth`) | Comprehensive, self-hostable, actively maintained |
-| Database ORM | Drizzle | Supports SQLite and Postgres with the same API; lightweight; good migration story |
-| Database default | SQLite (better-sqlite3) | Zero config for self-hosters; adequate for personal/small-team use |
-| Database production | PostgreSQL | Config change, not a code change |
-| Email | Custom `packages/mailer` (SMTP) | Self-hostable, no third-party email dependency |
-| UI components | `packages/ui` (shared component library) | Consistent design system across runtime and plugins |
-| CLI | `citty` + `consola`, TypeScript via `tsx` | `citty` is lightweight, TypeScript-first, handles nested subcommands cleanly. `consola` pairs naturally for consistent terminal output. `tsx` avoids a separate CLI compile step. Monorepo-internal in v1. |
-| Code quality | ESLint 9 (flat config) + `typescript-eslint` + Prettier + `simple-git-hooks` + `lint-staged` | ESLint for lint rules including the SDK import boundary; Prettier for formatting (separate concerns). `simple-git-hooks` + `lint-staged` enforce both on staged files at commit time. No Biome — ESLint is required for the custom boundary rule. |
-| Package bundler | `tsup` (esbuild-based) | Consistent build tool across all TypeScript packages. ESM output only. TypeScript declarations included. CSS files treated as external in `packages/ui` so the consuming Next.js app processes them. |
-| PWA | @ducanh2912/next-pwa | Service worker, installable shell |
-| Containerisation | Docker + Docker Compose | Standard self-hosting deployment path |
+| Layer               | Choice                                                                                       | Rationale                                                                                                                                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Runtime framework   | Next.js 15 (App Router)                                                                      | SSR, server actions, API routes, PWA support — single framework for the whole runtime                                                                                                                                                             |
+| Language            | TypeScript                                                                                   | Type safety across monorepo; SDK types are the plugin contract                                                                                                                                                                                    |
+| Monorepo tooling    | Turborepo + pnpm workspaces                                                                  | Task orchestration, build caching, clean package boundaries. pnpm enforces strict dependency declarations — no phantom dependencies across plugins.                                                                                               |
+| Auth                | better-auth (wrapped in `apps/auth`)                                                         | Comprehensive, self-hostable, actively maintained                                                                                                                                                                                                 |
+| Database ORM        | Drizzle                                                                                      | Supports SQLite and Postgres with the same API; lightweight; good migration story                                                                                                                                                                 |
+| Database default    | SQLite (better-sqlite3)                                                                      | Zero config for self-hosters; adequate for personal/small-team use                                                                                                                                                                                |
+| Database production | PostgreSQL                                                                                   | Config change, not a code change                                                                                                                                                                                                                  |
+| Email               | Custom `packages/mailer` (SMTP)                                                              | Self-hostable, no third-party email dependency                                                                                                                                                                                                    |
+| UI components       | `packages/ui` (shared component library)                                                     | Consistent design system across runtime and plugins                                                                                                                                                                                               |
+| CLI                 | `citty` + `consola`, TypeScript via `tsx`                                                    | `citty` is lightweight, TypeScript-first, handles nested subcommands cleanly. `consola` pairs naturally for consistent terminal output. `tsx` avoids a separate CLI compile step. Monorepo-internal in v1.                                        |
+| Code quality        | ESLint 9 (flat config) + `typescript-eslint` + Prettier + `simple-git-hooks` + `lint-staged` | ESLint for lint rules including the SDK import boundary; Prettier for formatting (separate concerns). `simple-git-hooks` + `lint-staged` enforce both on staged files at commit time. No Biome — ESLint is required for the custom boundary rule. |
+| Package bundler     | `tsup` (esbuild-based)                                                                       | Consistent build tool across all TypeScript packages. ESM output only. TypeScript declarations included. CSS files treated as external in `packages/ui` so the consuming Next.js app processes them.                                              |
+| PWA                 | @ducanh2912/next-pwa                                                                         | Service worker, installable shell                                                                                                                                                                                                                 |
+| Containerisation    | Docker + Docker Compose                                                                      | Standard self-hosting deployment path                                                                                                                                                                                                             |
 
 ### 2.3 Monorepo Structure
 
@@ -207,6 +212,7 @@ sovereign/
 ```
 
 **Plugin internal structure:**
+
 ```
 plugins/tasks/
 ├── manifest.json               # Plugin identity, permissions, routing
@@ -226,6 +232,7 @@ plugins/tasks/
 > This roadmap covers the Sovereign platform and runtime only. Reference plugin roadmaps (Tasks, Splitify) are maintained separately — see [2.5 Reference Plugins Roadmap](#25-reference-plugins-roadmap).
 
 **v0.3 — Foundation**
+
 - Monorepo scaffolding (Turborepo, packages, apps)
 - Auth server (`apps/auth`) with better-auth: login, logout, register, session
 - Runtime shell: layout, navigation, plugin launcher page
@@ -236,12 +243,14 @@ plugins/tasks/
 - Docker Compose for local dev
 
 **v0.4 — Console plugin**
+
 - User management (list, invite, role assignment, deactivate)
 - Plugin management (installed plugins, enable/disable)
 - Workspace settings (name, branding basics)
 - System health dashboard
 
 **v0.5 — Polish and self-hosting**
+
 - PWA shell
 - Docker production image
 - Self-hosting documentation
@@ -249,6 +258,7 @@ plugins/tasks/
 - `sv` CLI: `install`, `build`, `serve`, `plugin add/remove`
 
 **v1.0 — Public release**
+
 - Full documentation
 - Plugin developer guide
 - `registry/plugins.json` structure and contribution process
@@ -259,11 +269,13 @@ plugins/tasks/
 Tasks and Splitify are maintained in separate repositories under the Sovereign project. They are the primary reference implementations demonstrating how third-party plugins integrate with the Sovereign SDK. Their development tracks loosely alongside the platform but on independent timelines.
 
 **sovereign-plugin-tasks**
+
 - v0.1 — Task CRUD, list management, basic assignment; validates SDK `auth` and `db`
 - v0.2 — Due dates, filtering (all / active / completed)
 - v1.0 — Stable, documented reference plugin
 
 **sovereign-plugin-splitify**
+
 - v0.1 — Groups, expense entry, equal split, balance calculation; validates SDK `mailer`
 - v0.2 — Split by amount and percentage, settlement tracking, settlement summary email
 - v0.3 — Multi-currency entry (conversion deferred)
@@ -315,10 +327,10 @@ as separate containers on a shared internal network.
 Containers always listen on fixed **internal** ports; the **host** mapping
 differs by environment and is overridable via env. Defaults:
 
-| Service | Internal (container) | Dev (host) | Prod (host) | Env override |
-|---|---|---|---|---|
-| Runtime | 3000 | 3000 | 4000 | `RUNTIME_PORT` |
-| Auth | 3001 | 3001 | not exposed | `AUTH_PORT` |
+| Service | Internal (container) | Dev (host) | Prod (host) | Env override   |
+| ------- | -------------------- | ---------- | ----------- | -------------- |
+| Runtime | 3000                 | 3000       | 4000        | `RUNTIME_PORT` |
+| Auth    | 3001                 | 3001       | not exposed | `AUTH_PORT`    |
 
 In dev, `next dev` runs the two apps directly on 3000/3001. In production, the
 containers listen on 3000/3001 internally and the runtime is mapped to host
@@ -357,18 +369,21 @@ path in v1.
 A thin Next.js application (`apps/auth`) wrapping better-auth. It is the only process besides the runtime that runs in production.
 
 **Responsibilities:**
+
 - User login, logout, registration (with invite-only toggle)
 - Session management via httpOnly cookies
 - Session verification endpoint consumed by the runtime
 - JWT issuance signed with a shared secret
 
 **What it is not:**
+
 - An OAuth provider (future consideration)
 - A user directory (user records live in the platform database, not the auth server)
 
 The auth server and runtime share a `SOVEREIGN_AUTH_SECRET` environment variable.
 
 **Session verification strategy (phased):**
+
 - **v0.3:** The runtime middleware calls the auth server's `/api/verify` endpoint on each request. Simpler to implement and easier to reason about during early development.
 - **v0.5 target:** Local JWT verification using the shared secret — the runtime verifies tokens without a round-trip to the auth server. This is the correct long-term approach for performance and resilience.
 
@@ -381,6 +396,7 @@ AUTH-05 describes the v0.5 target state. The `/api/verify` endpoint (AUTH-06) re
 The runtime is the Sovereign Core — a Next.js 15 application using the App Router.
 
 **Responsibilities:**
+
 - Platform shell: navigation, launcher, layout
 - Request middleware: session verification, permission enforcement, plugin route protection
 - Plugin registry: reads `runtime/generated/registry.ts` to know which plugins are installed
@@ -395,11 +411,11 @@ Plugins are the primary unit of functionality in Sovereign. Everything beyond th
 
 **Plugin types:**
 
-| Type | Meaning | Location | `type` value |
-|---|---|---|---|
-| Platform | Ships in the monorepo, maintained by the Sovereign team | `/plugins/[id]/` (in repo) | `"platform"` |
-| Sovereign | Separate repo, maintained by the Sovereign team (e.g. Tasks, Splitify) | `/plugins/[id]/` (cloned by install script) | `"sovereign"` |
-| Community | Third-party, any maintainer, any source | `/plugins/[id]/` (cloned or manually placed) | `"community"` |
+| Type      | Meaning                                                                | Location                                     | `type` value  |
+| --------- | ---------------------------------------------------------------------- | -------------------------------------------- | ------------- |
+| Platform  | Ships in the monorepo, maintained by the Sovereign team                | `/plugins/[id]/` (in repo)                   | `"platform"`  |
+| Sovereign | Separate repo, maintained by the Sovereign team (e.g. Tasks, Splitify) | `/plugins/[id]/` (cloned by install script)  | `"sovereign"` |
+| Community | Third-party, any maintainer, any source                                | `/plugins/[id]/` (cloned or manually placed) | `"community"` |
 
 **Plugin activation:**
 A plugin is active if its directory exists under `/plugins`, its manifest validates successfully, and it appears in the generated registry. Adding a plugin requires running the install script (or manual placement) followed by a rebuild. Removing a plugin means removing its directory and rebuilding.
@@ -467,10 +483,7 @@ Every plugin contains a `manifest.json` at its root. The `packages/manifest` pac
   "type": "sovereign",
   "runtime": "native",
   "routePrefix": "/tasks",
-  "permissions": [
-    "auth:session",
-    "db:readWrite"
-  ],
+  "permissions": ["auth:session", "db:readWrite"],
   "adminOnly": false,
   "database": "shared",
   "shell": "default",
@@ -503,10 +516,10 @@ Plugins are Next.js route segments. A pre-build script (`scripts/generate-regist
 
 **Injection strategy varies by environment:**
 
-| Environment | Strategy | Rationale |
-|---|---|---|
-| Development (`NODE_ENV=development`) | Symlinks | Fast, no file duplication, changes in `/plugins` reflect immediately |
-| Production / CI (`NODE_ENV=production`) | Full copy | Hermetic, Docker-safe, no symlink resolution issues |
+| Environment                             | Strategy  | Rationale                                                            |
+| --------------------------------------- | --------- | -------------------------------------------------------------------- |
+| Development (`NODE_ENV=development`)    | Symlinks  | Fast, no file duplication, changes in `/plugins` reflect immediately |
+| Production / CI (`NODE_ENV=production`) | Full copy | Hermetic, Docker-safe, no symlink resolution issues                  |
 
 The generate script reads `NODE_ENV` and applies the appropriate strategy automatically. The Turborepo build pipeline always runs in production mode, so Docker builds always use copies.
 
@@ -521,13 +534,13 @@ There is no hot-swap or dynamic loading in v1. This is an intentional simplicity
 
 **Runtime types** (only `native` implemented in v1):
 
-| Type | Description | SDK Access |
-|---|---|---|
-| `native` | Next.js route segment, build-time composed into the runtime | Full SDK package |
-| `static` | Pre-built SPA bundle (Vite, Vue, Angular, etc), served as static assets by the runtime, iframe-mounted in the shell | REST API |
-| `iframe-local` | Separate local server process, iframe-mounted in the shell | `postMessage` |
-| `iframe-remote` | Remotely hosted app, iframe-mounted in the shell | `postMessage` |
-| `external` | Deep link only, no embedding. Sovereign acts purely as a launcher entry point | None |
+| Type            | Description                                                                                                         | SDK Access       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `native`        | Next.js route segment, build-time composed into the runtime                                                         | Full SDK package |
+| `static`        | Pre-built SPA bundle (Vite, Vue, Angular, etc), served as static assets by the runtime, iframe-mounted in the shell | REST API         |
+| `iframe-local`  | Separate local server process, iframe-mounted in the shell                                                          | `postMessage`    |
+| `iframe-remote` | Remotely hosted app, iframe-mounted in the shell                                                                    | `postMessage`    |
+| `external`      | Deep link only, no embedding. Sovereign acts purely as a launcher entry point                                       | None             |
 
 > **Note:** `native` is the only runtime type implemented in v1. All other runtime types are declared for forward-compatibility and architectural planning purposes. Their specifications, behaviour, and SDK access mechanisms are subject to change before implementation.
 
@@ -559,6 +572,7 @@ A single TypeScript codebase for both iOS and Android. The shell's logic is
 minimal: instance URL configuration on first launch, persistent URL storage,
 WebView loading, and native permission declarations. Capacitor is chosen over
 Hotwire Native (Swift + Kotlin) because:
+
 - Single codebase — no native language required from contributors
 - Rich plugin ecosystem (`@capacitor/camera`, `@capacitor/push-notifications`,
   `@capacitor/biometric-auth` etc.) covering device APIs beyond Web standards
@@ -568,11 +582,11 @@ Hotwire Native (Swift + Kotlin) because:
 
 **Device API strategy — three tiers:**
 
-| Tier | Technology | Examples | Works in browser too? |
-|---|---|---|---|
-| Web APIs | Standard browser APIs, work natively in WebView | GPS (`navigator.geolocation`), camera/mic (`getUserMedia`), accelerometer, Web Push | ✅ |
-| Capacitor plugins | JS bridge to native code, richer access and better UX | Native photo picker, APNs/FCM push, Face ID / fingerprint, background location, haptics | ❌ (native shell only) |
-| SDK abstraction | `sdk.device.*` detects environment, routes to correct tier | `sdk.device.getLocation()`, `sdk.device.capturePhoto()` | ✅ (falls back to Web API) |
+| Tier              | Technology                                                 | Examples                                                                                | Works in browser too?      |
+| ----------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------- |
+| Web APIs          | Standard browser APIs, work natively in WebView            | GPS (`navigator.geolocation`), camera/mic (`getUserMedia`), accelerometer, Web Push     | ✅                         |
+| Capacitor plugins | JS bridge to native code, richer access and better UX      | Native photo picker, APNs/FCM push, Face ID / fingerprint, background location, haptics | ❌ (native shell only)     |
+| SDK abstraction   | `sdk.device.*` detects environment, routes to correct tier | `sdk.device.getLocation()`, `sdk.device.capturePhoto()`                                 | ✅ (falls back to Web API) |
 
 Plugin developers use `sdk.device.*` only — they never call Web APIs or
 Capacitor plugins directly. The SDK implementation picks the right tier based
@@ -591,10 +605,10 @@ independently of the platform.
 
 **Roles** follow a namespaced pattern: `platform:` prefix for platform-level roles. This scales to plugin-level roles in the future (`tasks:admin`, `splitify:owner` etc.) without naming conflicts.
 
-| Role | Description |
-|---|---|
-| `platform:user` | Assigned to every user by default on registration. Access to installed plugins and own profile. |
-| `platform:admin` | Full platform access. Manages users, plugins, and tenant configuration. |
+| Role             | Description                                                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------- |
+| `platform:user`  | Assigned to every user by default on registration. Access to installed plugins and own profile. |
+| `platform:admin` | Full platform access. Manages users, plugins, and tenant configuration.                         |
 
 The first user to register on a fresh instance is automatically assigned `platform:admin`. All subsequent users receive `platform:user` by default and can be promoted by an admin via Console.
 
@@ -602,14 +616,14 @@ The first user to register on a fresh instance is automatically assigned `platfo
 
 Capabilities are hardcoded per role in v1 — defined in the runtime, not stored in the database. The data model is designed to support database-driven capability assignment in a future version without requiring a schema change.
 
-| Capability | `platform:user` | `platform:admin` |
-|---|---|---|
-| `plugin:access` — access installed and enabled plugins | ✓ | ✓ |
-| `profile:manage` — manage own profile and credentials | ✓ | ✓ |
-| `console:access` — access the Console plugin | ✗ | ✓ |
-| `user:manage` — invite, deactivate, and assign roles to users | ✗ | ✓ |
-| `plugin:manage` — install, remove, enable, disable plugins | ✗ | ✓ |
-| `tenant:configure` — configure tenant settings | ✗ | ✓ |
+| Capability                                                    | `platform:user` | `platform:admin` |
+| ------------------------------------------------------------- | --------------- | ---------------- |
+| `plugin:access` — access installed and enabled plugins        | ✓               | ✓                |
+| `profile:manage` — manage own profile and credentials         | ✓               | ✓                |
+| `console:access` — access the Console plugin                  | ✗               | ✓                |
+| `user:manage` — invite, deactivate, and assign roles to users | ✗               | ✓                |
+| `plugin:manage` — install, remove, enable, disable plugins    | ✗               | ✓                |
+| `tenant:configure` — configure tenant settings                | ✗               | ✓                |
 
 Capabilities use the same namespaced pattern as roles and connect directly to the manifest system — a plugin declaring `"adminOnly": true` in its manifest maps to requiring `console:access` capability at the middleware level.
 
@@ -617,61 +631,61 @@ Granular per-user capability overrides and per-plugin role assignments are expli
 
 ### 4.2 Functional Requirements — Platform
 
-| ID | Requirement |
-|---|---|
-| PLT-01 | The runtime must render a launcher/home page listing all installed and enabled plugins the current user has access to. |
-| PLT-02 | The runtime must enforce session authentication on all plugin routes. Unauthenticated requests redirect to the login page. |
-| PLT-03 | The runtime must enforce `platform:admin` role on all Console routes. Non-admin authenticated requests receive a 403. |
-| PLT-04 | The runtime must read installed plugins from `runtime/generated/registry.ts` at startup. |
-| PLT-05 | The runtime must apply all pending database migrations (platform + plugins) on startup before accepting requests. |
-| PLT-06 | The runtime must expose platform config (tenant name, feature flags) via `sdk.platform.getConfig()`. |
-| PLT-07 | The pre-build generate script must validate all plugin manifests and fail the build if any manifest is invalid. |
+| ID     | Requirement                                                                                                                      |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| PLT-01 | The runtime must render a launcher/home page listing all installed and enabled plugins the current user has access to.           |
+| PLT-02 | The runtime must enforce session authentication on all plugin routes. Unauthenticated requests redirect to the login page.       |
+| PLT-03 | The runtime must enforce `platform:admin` role on all Console routes. Non-admin authenticated requests receive a 403.            |
+| PLT-04 | The runtime must read installed plugins from `runtime/generated/registry.ts` at startup.                                         |
+| PLT-05 | The runtime must apply all pending database migrations (platform + plugins) on startup before accepting requests.                |
+| PLT-06 | The runtime must expose platform config (tenant name, feature flags) via `sdk.platform.getConfig()`.                             |
+| PLT-07 | The pre-build generate script must validate all plugin manifests and fail the build if any manifest is invalid.                  |
 | PLT-08 | The platform shell must include a consistent navigation component showing the active plugin and links to all accessible plugins. |
-| PLT-09 | The runtime must be installable as a PWA from a supported browser. |
-| PLT-10 | Plugin SDK boundary violations (direct imports from `runtime/src`) must be caught by ESLint at CI. |
+| PLT-09 | The runtime must be installable as a PWA from a supported browser.                                                               |
+| PLT-10 | Plugin SDK boundary violations (direct imports from `runtime/src`) must be caught by ESLint at CI.                               |
 
 ### 4.3 Functional Requirements — Auth
 
-| ID | Requirement |
-|---|---|
-| AUTH-01 | Users must be able to log in with email and password. |
-| AUTH-02 | Users must be able to log out, invalidating their session. |
-| AUTH-03 | Registration must support an invite-only toggle. When enabled, only users with a valid invite token can register. When disabled, open registration is permitted. |
-| AUTH-04 | Sessions must be persisted via httpOnly cookies. |
+| ID      | Requirement                                                                                                                                                                                                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AUTH-01 | Users must be able to log in with email and password.                                                                                                                                                                                           |
+| AUTH-02 | Users must be able to log out, invalidating their session.                                                                                                                                                                                      |
+| AUTH-03 | Registration must support an invite-only toggle. When enabled, only users with a valid invite token can register. When disabled, open registration is permitted.                                                                                |
+| AUTH-04 | Sessions must be persisted via httpOnly cookies.                                                                                                                                                                                                |
 | AUTH-05 | The runtime middleware must call `/api/verify` on the auth server for session verification in v0.3. From v0.5, the runtime must verify session tokens locally using the shared secret without a round-trip to the auth server on every request. |
-| AUTH-06 | The auth server must expose a `/api/verify` endpoint for explicit token verification when needed. |
-| AUTH-07 | Password reset via email must be supported. |
-| AUTH-08 | The first user to register on a fresh instance must receive the `platform:admin` role automatically. All subsequent users receive `platform:user` by default. |
+| AUTH-06 | The auth server must expose a `/api/verify` endpoint for explicit token verification when needed.                                                                                                                                               |
+| AUTH-07 | Password reset via email must be supported.                                                                                                                                                                                                     |
+| AUTH-08 | The first user to register on a fresh instance must receive the `platform:admin` role automatically. All subsequent users receive `platform:user` by default.                                                                                   |
 
 ### 4.4 Functional Requirements — Console Plugin
 
-| ID | Requirement |
-|---|---|
-| CON-01 | Console is accessible only to users with the `platform:admin` role (`console:access` capability). |
-| CON-02 | Admin must be able to view a list of all registered users with their role, status, and join date. |
-| CON-03 | Admin must be able to invite new users by email (generates an invite token, sends invite email). |
-| CON-04 | Admin must be able to deactivate and reactivate user accounts. |
-| CON-05 | Admin must be able to change a user's role between `platform:admin` and `platform:user`. |
-| CON-06 | Admin must be able to view all installed plugins, their version, and their enabled/disabled status. |
-| CON-07 | Admin must be able to enable or disable an installed plugin (disabling hides it from the launcher and blocks its routes). |
-| CON-08 | Admin must be able to configure tenant settings: tenant name. |
+| ID     | Requirement                                                                                                                                                                   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CON-01 | Console is accessible only to users with the `platform:admin` role (`console:access` capability).                                                                             |
+| CON-02 | Admin must be able to view a list of all registered users with their role, status, and join date.                                                                             |
+| CON-03 | Admin must be able to invite new users by email (generates an invite token, sends invite email).                                                                              |
+| CON-04 | Admin must be able to deactivate and reactivate user accounts.                                                                                                                |
+| CON-05 | Admin must be able to change a user's role between `platform:admin` and `platform:user`.                                                                                      |
+| CON-06 | Admin must be able to view all installed plugins, their version, and their enabled/disabled status.                                                                           |
+| CON-07 | Admin must be able to enable or disable an installed plugin (disabling hides it from the launcher and blocks its routes).                                                     |
+| CON-08 | Admin must be able to configure tenant settings: tenant name.                                                                                                                 |
 | CON-09 | Console must display a system health summary: runtime version, database type and connection status, auth server status, disk usage (SQLite file size or Postgres connection). |
-| CON-10 | Admin must be able to toggle invite-only registration from Console without editing environment config. |
+| CON-10 | Admin must be able to toggle invite-only registration from Console without editing environment config.                                                                        |
 
 ### 4.5 Non-Functional Requirements
 
-| ID | Requirement |
-|---|---|
-| NFR-01 | The full stack must be self-hostable on a single machine with Docker Compose. |
-| NFR-02 | No external service dependency for core functionality. Email is optional (SMTP config). |
-| NFR-03 | Database must be switchable between SQLite and PostgreSQL via environment configuration with no code changes. |
-| NFR-04 | The SDK public API must be stable across patch versions. Breaking changes require a minor version bump and a migration note. |
-| NFR-05 | All plugin manifests must be validated at build time. An invalid manifest must fail the build. |
-| NFR-06 | Plugin code must not import from `runtime/src` directly. ESLint enforces this. |
-| NFR-07 | The runtime must start and be ready to serve requests within 10 seconds on modest hardware (2-core VPS, 1GB RAM). |
+| ID     | Requirement                                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| NFR-01 | The full stack must be self-hostable on a single machine with Docker Compose.                                                        |
+| NFR-02 | No external service dependency for core functionality. Email is optional (SMTP config).                                              |
+| NFR-03 | Database must be switchable between SQLite and PostgreSQL via environment configuration with no code changes.                        |
+| NFR-04 | The SDK public API must be stable across patch versions. Breaking changes require a minor version bump and a migration note.         |
+| NFR-05 | All plugin manifests must be validated at build time. An invalid manifest must fail the build.                                       |
+| NFR-06 | Plugin code must not import from `runtime/src` directly. ESLint enforces this.                                                       |
+| NFR-07 | The runtime must start and be ready to serve requests within 10 seconds on modest hardware (2-core VPS, 1GB RAM).                    |
 | NFR-08 | Authentication tokens must use signed JWTs. Secrets must be configurable via environment variables and must not have default values. |
-| NFR-09 | All user passwords must be hashed with a strong adaptive algorithm (bcrypt or argon2, as provided by better-auth). |
-| NFR-10 | The project must include a documented upgrade path between versions (migration guide in docs). |
+| NFR-09 | All user passwords must be hashed with a strong adaptive algorithm (bcrypt or argon2, as provided by better-auth).                   |
+| NFR-10 | The project must include a documented upgrade path between versions (migration guide in docs).                                       |
 
 ### 4.6 Out of Scope (v1)
 
@@ -713,17 +727,17 @@ interface SovereignManifest {
   // Database isolation preference
   // "shared"   — uses the platform database (default, v1 behaviour)
   // "isolated" — requests a separate database instance (declared but not implemented in v1)
-  database?: "shared" | "isolated";
+  database?: 'shared' | 'isolated';
 
   // Plugin type — determines origin and trust level
   // "platform"  — ships in the monorepo, maintained by the Sovereign team
   // "sovereign" — separate repo, maintained by the Sovereign team (e.g. Tasks, Splitify)
   // "community" — third-party, any maintainer, any source
-  type: "platform" | "sovereign" | "community";
+  type: 'platform' | 'sovereign' | 'community';
 
   // How the plugin is rendered (only "native" implemented in v1)
   // All types except "native" are subject to change before implementation
-  runtime: "native" | "static" | "iframe-local" | "iframe-remote" | "external";
+  runtime: 'native' | 'static' | 'iframe-local' | 'iframe-remote' | 'external';
 
   // URL prefix for the plugin under the runtime
   routePrefix: string;
@@ -734,7 +748,7 @@ interface SovereignManifest {
   // Shell layout preference
   // "default" — full shell (sidebar on desktop, header + footer on mobile). Applied when field is omitted.
   // "minimal" — shell chrome hidden entirely, content area only. Useful for immersive or full-bleed plugins.
-  shell?: "default" | "minimal";
+  shell?: 'default' | 'minimal';
 
   // If true, plugin requires platform:admin role (console:access capability)
   adminOnly?: boolean;
@@ -749,50 +763,50 @@ interface SovereignManifest {
 }
 
 type Permission =
-  | "auth:session"
-  | "db:readWrite"
-  | "db:readOnly"
-  | "mailer:send"
-  | "storage:readWrite"       // not implemented v1
-  | "notifications:send"      // not implemented v1
-  | "events:publish"          // not implemented v1
-  | "events:subscribe"        // not implemented v1
-  | "admin:*";                // grants admin-only routes. Equivalent to declaring adminOnly: true in the manifest — the middleware maps adminOnly to this capability check. Prefer adminOnly in the manifest; admin:* in permissions is for future fine-grained plugin-level admin scopes.
+  | 'auth:session'
+  | 'db:readWrite'
+  | 'db:readOnly'
+  | 'mailer:send'
+  | 'storage:readWrite' // not implemented v1
+  | 'notifications:send' // not implemented v1
+  | 'events:publish' // not implemented v1
+  | 'events:subscribe' // not implemented v1
+  | 'admin:*'; // grants admin-only routes. Equivalent to declaring adminOnly: true in the manifest — the middleware maps adminOnly to this capability check. Prefer adminOnly in the manifest; admin:* in permissions is for future fine-grained plugin-level admin scopes.
 ```
 
 ---
 
 ## 6. Decision Log
 
-| Date | Decision | Rationale |
-|---|---|---|
-| Jun 2026 | Plugin type field renamed from `source` to `type`; values changed to `platform`, `sovereign`, `community` | `source` described origin mechanics, not plugin classification. `type` is semantically cleaner. `sovereign` distinguishes Sovereign-maintained external plugins from true third-party community plugins. `workspace` reserved as a future user-facing concept — likely an organisational layer within a tenant (one tenant may have multiple workspaces), distinct from the deployment/tenant boundary. |
-| Jun 2026 | Drizzle ORM over Prisma | Lighter, supports SQLite and Postgres with same API, better fit for Next.js server actions. |
-| Jun 2026 | Single-tenant per deployment in v1 | Target use case is personal/small-group. Multi-tenancy adds complexity with no near-term benefit. `tenant_id` included in schema for future path. |
-| Jun 2026 | Console as core plugin, not a separate app | Consistent with plugin architecture. Avoids running a third Next.js process. Admin scope enforced by middleware. |
-| Jun 2026 | SQLite default, Postgres optional | Zero-config for self-hosters. Postgres switch is an environment config change only. |
-| Jun 2026 | SDK packages under MIT, runtime under AGPL-3.0 | Lowers barrier for plugin developers while protecting the core runtime. |
-| Jun 2026 | Code formatting: Prettier; linting: ESLint 9 flat config + typescript-eslint; pre-commit: simple-git-hooks + lint-staged | ESLint is required for the custom `no-restricted-imports` SDK boundary rule — Biome has no equivalent plugin system yet, making a hybrid setup necessary. Prettier and ESLint handle separate concerns (formatting vs correctness); `eslint-config-prettier` resolves conflicts. `simple-git-hooks` is chosen over Husky — no install script, no shell files, single `package.json` entry. `lint-staged` scopes hooks to staged files only for speed. `.editorconfig` provides editor-level baseline independent of tooling. |
-| Jun 2026 | Native mobile app deferred to post-v1; approach decided | PWA covers the install-from-browser use case for v1. Native app is planned post-v1 as a universal Capacitor shell — one App Store binary, user enters their instance URL on first launch. Same pattern as Nextcloud, Bitwarden, Element. Deferred due to scope, not technical dead end. |
-| Jun 2026 | Capacitor chosen over Hotwire Native for mobile shell | Capacitor provides a single TypeScript codebase for iOS + Android, a rich plugin ecosystem for device APIs, and a standardised bridge pattern that integrates cleanly with the SDK. Hotwire Native gives a better raw native feel but requires Swift + Kotlin, no plugin ecosystem, and every device API integration is a custom bridge. For a minimal shell (URL config + WebView) the cross-platform and ecosystem benefits of Capacitor outweigh the native-feel advantage of Hotwire Native. |
-| Jun 2026 | Device APIs exposed via `sdk.device.*`; three-tier implementation strategy | Web APIs (geolocation, getUserMedia etc.) work natively in WebViews and cover most cases. Capacitor plugins cover the remainder (native photo picker, APNs/FCM push, biometric auth, haptics). Plugin developers use `sdk.device.*` only — the SDK detects the environment and routes to the correct tier. Plugins are portable across browser, PWA, and native shell without changes. |
-| Jun 2026 | Plugin schema isolation via table name prefix | Simpler than Postgres schemas. One migration runner, one connection, no cross-plugin query complexity. |
-| Jun 2026 | `packages/ui` uses CSS custom properties + CSS Modules; no Tailwind | Tailwind creates ongoing content-scan config maintenance across all plugins, cannot ship pre-built CSS from a shared library, and fights component abstraction. CSS custom properties (plain `.css` files) are universally consumable — plugin developers reference tokens from any CSS without a JS import. CSS Modules are built into Next.js with no extra deps, RSC-safe, and familiar. Two-tier token architecture: primitives (raw scale) + semantic (contextual meaning, `--sv-color-surface` etc.). All tokens prefixed `--sv-*` — consistent with `sv` CLI identity, short, unambiguous. Semantic layer is the tenant-theming surface (CON-08); primitives stay fixed. |
-| Jun 2026 | `sv` CLI built with `citty` + `consola`, TypeScript via `tsx`; monorepo-internal in v1 | `citty` is lightweight, TypeScript-first, and maps cleanly to the `sv plugin add/remove` nested command structure. `consola` is the natural pairing for consistent terminal output (info/success/warn/error). Running via `tsx` keeps the CLI consistent with `scripts/` and avoids a separate compile step. CLI is not distributed as a standalone npm package in v1 — self-hosters run it from their cloned repo. Global install deferred. |
-| Jun 2026 | Three-tier build model: tsup for packages, `next build` for apps, generate script for plugin composition | Packages (db, manifest, mailer, ui, sdk) are compiled with `tsup` — fast, consistent, ESM output with TypeScript declarations. Apps (runtime, auth) use `next build`. Plugins are not compiled independently — the generate script source-composes them into the runtime, and they are compiled as part of the runtime's `next build`. Turborepo orchestrates the correct order. |
-| Jun 2026 | ESM only for all package output | Next.js 15, Vite, and current tooling handle ESM natively. CJS compat shims add complexity with no benefit for this stack. All packages output ESM. |
-| Jun 2026 | npm-published packages: `@sovereignfs/sdk` and `@sovereignfs/ui` only | `sdk` is the plugin↔platform contract — external plugin developers must install it. `ui` is the design system — plugin developers install it to use components and tokens. All other packages (db, manifest, mailer, tsconfig) are workspace-internal infrastructure; publishing them would expose platform internals with no benefit. They are marked `"private": true`. |
-| Jun 2026 | Single owned npm scope `@sovereignfs/*` for all packages | A split scope was considered (public `@commonsengine/sovereign-*` + internal `@sovereign/*`) and rejected: the internal `@sovereign/*` alias references an npm scope owned by a third party, which is a latent dependency-confusion footgun (safe only while every internal dependency stays `workspace:*` and `private`). Owning one scope and using it everywhere closes that gap. `@sovereign` is taken on npm and `@sovereignos`/`-stack`/`-core` collide with existing products, so `@sovereignfs` is the owned scope (`fs` = *federated systems*, signalling the project's long-term federated direction; federation itself remains a post-v1 non-goal per §1.4). One scope means one mental model, simpler tooling globs, and no rename if an internal package is ever published. The publish/no-publish boundary is enforced by `"private": true` in each package's `package.json`, not by the scope name. |
-| Jun 2026 | `packages/ui` CSS strategy: CSS Modules marked external in tsup; token CSS shipped as plain files | tsup (esbuild) does not process CSS Modules — class name scoping requires the consuming bundler. All consumers of `packages/ui` are Next.js apps (the runtime and plugin route segments compiled by the runtime), so Next.js handles CSS Modules natively. Token CSS files (`.css`, not `.module.css`) are plain CSS and are shipped as-is; the runtime shell imports them globally so tokens are available everywhere without a per-plugin import. |
-| Jun 2026 | Plugin developers install `@sovereignfs/sdk` and `@sovereignfs/ui` from npm; all other packages are unreachable | Plugin developers add `@sovereignfs/sdk` and `@sovereignfs/ui` as dependencies in their plugin's `package.json`. They never interact with db, mailer, manifest, or tsconfig directly (those are `private`). This enforces the plugin contract boundary at the package level, complementing the ESLint `no-restricted-imports` rule. |
-| Jun 2026 | Dev DX: `transpilePackages` replaces `tsup --watch`; packages export TypeScript source for workspace consumption | In dev, all workspace packages expose their TypeScript source via `exports: { ".": "./src/index.ts" }`. The consuming Next.js apps (runtime and apps/auth) list all workspace packages in `transpilePackages` in their `next.config.ts`. Next.js/SWC compiles package source directly as part of its own compilation pass — no intermediate `dist/` build, no watch process. Changes to any package trigger HMR in the consuming app instantly. tsup is production-only (generates `dist/` for npm publish and Docker builds). |
-| Jun 2026 | `resolve.symlinks: false` in runtime webpack config for plugin HMR | In dev, plugins are symlinked into `runtime/app/plugins/[id]/` by the generate script. Webpack's default behaviour resolves symlinks to their real filesystem path before setting up file watchers, which breaks HMR — changes to `plugins/[id]/app/` are not detected. Setting `config.resolve.symlinks = false` makes webpack use the symlink path as-is; file changes in the plugin source directory propagate through the symlink and trigger HMR correctly. |
-| Jun 2026 | Generate script runs once on dev startup (sync) then enters watch mode; no manual `pnpm generate` needed | The runtime's `dev` script runs `tsx scripts/generate-registry.ts` synchronously on startup to create/update plugin symlinks, then starts the Next.js dev server. The generate script also supports a `--watch` flag for ongoing plugin directory monitoring. Developers never need to run `pnpm generate` manually during a dev session — the startup sequence handles it. Adding a new plugin directory during a running dev session triggers automatic re-linking. |
-| Jun 2026 | Docker Compose is the sole supported deployment path; PM2 dropped | Two containers (runtime + auth) on one Compose file. Docker's own restart policy supervises processes — no in-container PM2. PM2 as a bare-Node alternative was considered and dropped to keep the supported surface small; it can be reintroduced post-v1 if there is demand. Next.js `output: 'standalone'` makes each app a self-contained `node server.js`. |
-| Jun 2026 | Auth server is internal-only; runtime is the only externally exposed service | The auth container is never host-mapped — it is reachable only on the internal Docker network via `SOVEREIGN_AUTH_URL` (`http://auth:3001`). The runtime is the single public entry point, facing the reverse proxy. This removes the auth surface from the public network. |
-| Jun 2026 | Fixed internal ports (3000 runtime / 3001 auth); host ports differ by env (4000/4001 default in prod) | Containers always listen on 3000/3001 internally; the dev-vs-prod distinction is a host port mapping concern, not an app config change. Production host defaults are 4000 (runtime) and 4001 (auth, though auth is not host-mapped). Overridable via `RUNTIME_PORT` / `AUTH_PORT`. |
-| Jun 2026 | npm publishing: per-package version tags trigger a CI publish job | `@sovereignfs/sdk` and `@sovereignfs/ui` have independent release cycles (SDK changes can be breaking; UI is mostly additive), so they are released on per-package tags (`sdk-v*`, `ui-v*`) rather than a single repo-wide tag. A GitHub Actions job builds the tagged package with tsup and runs `pnpm publish` using a `NODE_AUTH_TOKEN` secret. No other packages are published. |
+| Date     | Decision                                                                                                                 | Rationale                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Jun 2026 | Plugin type field renamed from `source` to `type`; values changed to `platform`, `sovereign`, `community`                | `source` described origin mechanics, not plugin classification. `type` is semantically cleaner. `sovereign` distinguishes Sovereign-maintained external plugins from true third-party community plugins. `workspace` reserved as a future user-facing concept — likely an organisational layer within a tenant (one tenant may have multiple workspaces), distinct from the deployment/tenant boundary.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Jun 2026 | Drizzle ORM over Prisma                                                                                                  | Lighter, supports SQLite and Postgres with same API, better fit for Next.js server actions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Jun 2026 | Single-tenant per deployment in v1                                                                                       | Target use case is personal/small-group. Multi-tenancy adds complexity with no near-term benefit. `tenant_id` included in schema for future path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Jun 2026 | Console as core plugin, not a separate app                                                                               | Consistent with plugin architecture. Avoids running a third Next.js process. Admin scope enforced by middleware.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Jun 2026 | SQLite default, Postgres optional                                                                                        | Zero-config for self-hosters. Postgres switch is an environment config change only.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Jun 2026 | SDK packages under MIT, runtime under AGPL-3.0                                                                           | Lowers barrier for plugin developers while protecting the core runtime.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Jun 2026 | Code formatting: Prettier; linting: ESLint 9 flat config + typescript-eslint; pre-commit: simple-git-hooks + lint-staged | ESLint is required for the custom `no-restricted-imports` SDK boundary rule — Biome has no equivalent plugin system yet, making a hybrid setup necessary. Prettier and ESLint handle separate concerns (formatting vs correctness); `eslint-config-prettier` resolves conflicts. `simple-git-hooks` is chosen over Husky — no install script, no shell files, single `package.json` entry. `lint-staged` scopes hooks to staged files only for speed. `.editorconfig` provides editor-level baseline independent of tooling.                                                                                                                                                                                                                                                                                                                                                                                       |
+| Jun 2026 | Native mobile app deferred to post-v1; approach decided                                                                  | PWA covers the install-from-browser use case for v1. Native app is planned post-v1 as a universal Capacitor shell — one App Store binary, user enters their instance URL on first launch. Same pattern as Nextcloud, Bitwarden, Element. Deferred due to scope, not technical dead end.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Jun 2026 | Capacitor chosen over Hotwire Native for mobile shell                                                                    | Capacitor provides a single TypeScript codebase for iOS + Android, a rich plugin ecosystem for device APIs, and a standardised bridge pattern that integrates cleanly with the SDK. Hotwire Native gives a better raw native feel but requires Swift + Kotlin, no plugin ecosystem, and every device API integration is a custom bridge. For a minimal shell (URL config + WebView) the cross-platform and ecosystem benefits of Capacitor outweigh the native-feel advantage of Hotwire Native.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Jun 2026 | Device APIs exposed via `sdk.device.*`; three-tier implementation strategy                                               | Web APIs (geolocation, getUserMedia etc.) work natively in WebViews and cover most cases. Capacitor plugins cover the remainder (native photo picker, APNs/FCM push, biometric auth, haptics). Plugin developers use `sdk.device.*` only — the SDK detects the environment and routes to the correct tier. Plugins are portable across browser, PWA, and native shell without changes.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Jun 2026 | Plugin schema isolation via table name prefix                                                                            | Simpler than Postgres schemas. One migration runner, one connection, no cross-plugin query complexity.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| Jun 2026 | `packages/ui` uses CSS custom properties + CSS Modules; no Tailwind                                                      | Tailwind creates ongoing content-scan config maintenance across all plugins, cannot ship pre-built CSS from a shared library, and fights component abstraction. CSS custom properties (plain `.css` files) are universally consumable — plugin developers reference tokens from any CSS without a JS import. CSS Modules are built into Next.js with no extra deps, RSC-safe, and familiar. Two-tier token architecture: primitives (raw scale) + semantic (contextual meaning, `--sv-color-surface` etc.). All tokens prefixed `--sv-*` — consistent with `sv` CLI identity, short, unambiguous. Semantic layer is the tenant-theming surface (CON-08); primitives stay fixed.                                                                                                                                                                                                                                    |
+| Jun 2026 | `sv` CLI built with `citty` + `consola`, TypeScript via `tsx`; monorepo-internal in v1                                   | `citty` is lightweight, TypeScript-first, and maps cleanly to the `sv plugin add/remove` nested command structure. `consola` is the natural pairing for consistent terminal output (info/success/warn/error). Running via `tsx` keeps the CLI consistent with `scripts/` and avoids a separate compile step. CLI is not distributed as a standalone npm package in v1 — self-hosters run it from their cloned repo. Global install deferred.                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Jun 2026 | Three-tier build model: tsup for packages, `next build` for apps, generate script for plugin composition                 | Packages (db, manifest, mailer, ui, sdk) are compiled with `tsup` — fast, consistent, ESM output with TypeScript declarations. Apps (runtime, auth) use `next build`. Plugins are not compiled independently — the generate script source-composes them into the runtime, and they are compiled as part of the runtime's `next build`. Turborepo orchestrates the correct order.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Jun 2026 | ESM only for all package output                                                                                          | Next.js 15, Vite, and current tooling handle ESM natively. CJS compat shims add complexity with no benefit for this stack. All packages output ESM.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Jun 2026 | npm-published packages: `@sovereignfs/sdk` and `@sovereignfs/ui` only                                                    | `sdk` is the plugin↔platform contract — external plugin developers must install it. `ui` is the design system — plugin developers install it to use components and tokens. All other packages (db, manifest, mailer, tsconfig) are workspace-internal infrastructure; publishing them would expose platform internals with no benefit. They are marked `"private": true`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Jun 2026 | Single owned npm scope `@sovereignfs/*` for all packages                                                                 | A split scope was considered (public `@commonsengine/sovereign-*` + internal `@sovereign/*`) and rejected: the internal `@sovereign/*` alias references an npm scope owned by a third party, which is a latent dependency-confusion footgun (safe only while every internal dependency stays `workspace:*` and `private`). Owning one scope and using it everywhere closes that gap. `@sovereign` is taken on npm and `@sovereignos`/`-stack`/`-core` collide with existing products, so `@sovereignfs` is the owned scope (`fs` = _federated systems_, signalling the project's long-term federated direction; federation itself remains a post-v1 non-goal per §1.4). One scope means one mental model, simpler tooling globs, and no rename if an internal package is ever published. The publish/no-publish boundary is enforced by `"private": true` in each package's `package.json`, not by the scope name. |
+| Jun 2026 | `packages/ui` CSS strategy: CSS Modules marked external in tsup; token CSS shipped as plain files                        | tsup (esbuild) does not process CSS Modules — class name scoping requires the consuming bundler. All consumers of `packages/ui` are Next.js apps (the runtime and plugin route segments compiled by the runtime), so Next.js handles CSS Modules natively. Token CSS files (`.css`, not `.module.css`) are plain CSS and are shipped as-is; the runtime shell imports them globally so tokens are available everywhere without a per-plugin import.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Jun 2026 | Plugin developers install `@sovereignfs/sdk` and `@sovereignfs/ui` from npm; all other packages are unreachable          | Plugin developers add `@sovereignfs/sdk` and `@sovereignfs/ui` as dependencies in their plugin's `package.json`. They never interact with db, mailer, manifest, or tsconfig directly (those are `private`). This enforces the plugin contract boundary at the package level, complementing the ESLint `no-restricted-imports` rule.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Jun 2026 | Dev DX: `transpilePackages` replaces `tsup --watch`; packages export TypeScript source for workspace consumption         | In dev, all workspace packages expose their TypeScript source via `exports: { ".": "./src/index.ts" }`. The consuming Next.js apps (runtime and apps/auth) list all workspace packages in `transpilePackages` in their `next.config.ts`. Next.js/SWC compiles package source directly as part of its own compilation pass — no intermediate `dist/` build, no watch process. Changes to any package trigger HMR in the consuming app instantly. tsup is production-only (generates `dist/` for npm publish and Docker builds).                                                                                                                                                                                                                                                                                                                                                                                     |
+| Jun 2026 | `resolve.symlinks: false` in runtime webpack config for plugin HMR                                                       | In dev, plugins are symlinked into `runtime/app/plugins/[id]/` by the generate script. Webpack's default behaviour resolves symlinks to their real filesystem path before setting up file watchers, which breaks HMR — changes to `plugins/[id]/app/` are not detected. Setting `config.resolve.symlinks = false` makes webpack use the symlink path as-is; file changes in the plugin source directory propagate through the symlink and trigger HMR correctly.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Jun 2026 | Generate script runs once on dev startup (sync) then enters watch mode; no manual `pnpm generate` needed                 | The runtime's `dev` script runs `tsx scripts/generate-registry.ts` synchronously on startup to create/update plugin symlinks, then starts the Next.js dev server. The generate script also supports a `--watch` flag for ongoing plugin directory monitoring. Developers never need to run `pnpm generate` manually during a dev session — the startup sequence handles it. Adding a new plugin directory during a running dev session triggers automatic re-linking.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Jun 2026 | Docker Compose is the sole supported deployment path; PM2 dropped                                                        | Two containers (runtime + auth) on one Compose file. Docker's own restart policy supervises processes — no in-container PM2. PM2 as a bare-Node alternative was considered and dropped to keep the supported surface small; it can be reintroduced post-v1 if there is demand. Next.js `output: 'standalone'` makes each app a self-contained `node server.js`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Jun 2026 | Auth server is internal-only; runtime is the only externally exposed service                                             | The auth container is never host-mapped — it is reachable only on the internal Docker network via `SOVEREIGN_AUTH_URL` (`http://auth:3001`). The runtime is the single public entry point, facing the reverse proxy. This removes the auth surface from the public network.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| Jun 2026 | Fixed internal ports (3000 runtime / 3001 auth); host ports differ by env (4000/4001 default in prod)                    | Containers always listen on 3000/3001 internally; the dev-vs-prod distinction is a host port mapping concern, not an app config change. Production host defaults are 4000 (runtime) and 4001 (auth, though auth is not host-mapped). Overridable via `RUNTIME_PORT` / `AUTH_PORT`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Jun 2026 | npm publishing: per-package version tags trigger a CI publish job                                                        | `@sovereignfs/sdk` and `@sovereignfs/ui` have independent release cycles (SDK changes can be breaking; UI is mostly additive), so they are released on per-package tags (`sdk-v*`, `ui-v*`) rather than a single repo-wide tag. A GitHub Actions job builds the tagged package with tsup and runs `pnpm publish` using a `NODE_AUTH_TOKEN` secret. No other packages are published.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 ---
 
-*Version 0.10 — June 2026. Changes from v0.9: npm scope finalised as a single owned scope `@sovereignfs/*` for all packages (replacing the earlier split of `@commonsengine/sovereign-*` public + `@sovereign/*` internal — the latter aliased a third-party scope, a dependency-confusion risk). Only `@sovereignfs/sdk` and `@sovereignfs/ui` are published; internal packages are `"private": true`. Decision log updated.*
+_Version 0.10 — June 2026. Changes from v0.9: npm scope finalised as a single owned scope `@sovereignfs/_`for all packages (replacing the earlier split of`@commonsengine/sovereign-_`public +`@sovereign/_`internal — the latter aliased a third-party scope, a dependency-confusion risk). Only`@sovereignfs/sdk`and`@sovereignfs/ui`are published; internal packages are`"private": true`. Decision log updated.\*

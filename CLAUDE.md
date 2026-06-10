@@ -6,7 +6,7 @@ Guidance for Claude Code working in this repository.
 
 **Sovereign** — a modular, self-hostable workspace runtime. A shared platform
 (auth, DB, email, UI) hosts installable **plugins** as first-class apps. The
-plugin system *is* the product, not an app extended with plugins. Open source,
+plugin system _is_ the product, not an app extended with plugins. Open source,
 privacy-first, single-tenant/multi-user in v1.
 
 ## Source of truth
@@ -35,6 +35,7 @@ they are authoritative over assumptions:
   e.g. `feat/shared-tsconfig`, `chore/scaffold-monorepo`.
   _(Post-v1.0.0 this changes: `main` becomes the production branch and `dev`
   the integration branch — branch from `dev` then. Until then, base off `main`.)_
+
 - **Doc task numbers (e.g. `0.3.02`) are for local tracking only.** Never put
   them in branch names, commit messages, or PR titles/descriptions. Refer to the
   work by what it does, not its task number.
@@ -77,15 +78,15 @@ Established in Task 0.3.03. Every package and PR must comply — no exceptions.
 
 ### Tools
 
-| Tool | Purpose |
-|---|---|
-| **Prettier** | Formatting — single source of truth for style |
-| **ESLint 9 (flat config)** | Linting — correctness, best practices, SDK boundary rule |
-| `typescript-eslint` | TypeScript-specific ESLint rules (recommended + strict) |
-| `eslint-config-prettier` | Disables ESLint formatting rules that conflict with Prettier |
-| `simple-git-hooks` | Pre-commit hook runner (lighter than Husky, no shell scripts) |
-| `lint-staged` | Runs Prettier then ESLint only on staged files (fast) |
-| `.editorconfig` | Editor-level baseline — indent, line endings, charset |
+| Tool                       | Purpose                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| **Prettier**               | Formatting — single source of truth for style                 |
+| **ESLint 9 (flat config)** | Linting — correctness, best practices, SDK boundary rule      |
+| `typescript-eslint`        | TypeScript-specific ESLint rules (recommended + strict)       |
+| `eslint-config-prettier`   | Disables ESLint formatting rules that conflict with Prettier  |
+| `simple-git-hooks`         | Pre-commit hook runner (lighter than Husky, no shell scripts) |
+| `lint-staged`              | Runs Prettier then ESLint only on staged files (fast)         |
+| `.editorconfig`            | Editor-level baseline — indent, line endings, charset         |
 
 ### Formatting conventions (Prettier)
 
@@ -179,7 +180,7 @@ unambiguous. **Never abbreviate after the prefix** — use full descriptive name
 
 ```ts
 // Components — typed React components
-import { Button, Card, Input, Badge } from '@sovereignfs/ui'
+import { Button, Card, Input, Badge } from '@sovereignfs/ui';
 
 // Tokens — already injected globally by the runtime shell.
 // Reference directly in plugin CSS without any import:
@@ -210,6 +211,7 @@ Nextcloud, Bitwarden, Element (Matrix).
 separate `sovereign-mobile` repository, not this monorepo.
 
 **Device API tiers — in priority order:**
+
 1. **Web APIs** — `navigator.geolocation`, `getUserMedia` etc. Work natively in
    WebViews, also work in browser/PWA. Use these first.
 2. **Capacitor plugins** — for what Web APIs can't cover: native photo picker,
@@ -253,7 +255,7 @@ bin/sv              CLI (v0.5)
 ### Package naming and scope
 
 One owned npm scope for everything: **`@sovereignfs/*`**. The `fs` denotes
-*federated systems* — reflecting the project's long-term federated direction
+_federated systems_ — reflecting the project's long-term federated direction
 (federation itself is a post-v1 concern; see SRS §1.4 non-goals).
 
 - `packages/sdk` → `@sovereignfs/sdk` — **published** (plugin contract).
@@ -314,8 +316,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 
 - ✅ Task 0.3.01 — Monorepo scaffold (merged to `main`).
 - ✅ Docs — Build, dev DX, deployment, and npm publishing strategy (merged to `main`).
-- ▶️ In review: Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`).
-- ⏳ Next: Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks).
+- ✅ Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`) (merged to `main`).
+- ▶️ In review: Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks).
+- ⏳ Next: Task 0.3.04 — `packages/db` (Drizzle client factory).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.

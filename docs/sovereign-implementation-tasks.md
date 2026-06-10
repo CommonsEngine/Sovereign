@@ -9,6 +9,7 @@
 ## How to use this document
 
 Each task maps to one Claude Code session and one PR. Before starting a session:
+
 1. Provide Claude Code with the relevant SRS sections as context
 2. Provide this document and point to the specific task
 3. Review the PR before moving to the next task — no task should start on an unmerged PR
@@ -30,6 +31,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **Goal:** Bare monorepo structure with pnpm workspaces and Turborepo configured. No application code.
 
 **Deliverables:**
+
 - Root `package.json` with pnpm workspace config
 - `pnpm-workspace.yaml` declaring `apps/*`, `packages/*`, `plugins/*`, `runtime`
 - `turbo.json` with basic pipeline: `build`, `dev`, `lint`, `typecheck`
@@ -41,6 +43,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **SRS reference:** 2.3 Monorepo Structure, 2.2 Tech Stack
 
 **Review checklist:**
+
 - `pnpm install` runs without errors
 - `turbo build` runs without errors (no-ops since no packages exist yet)
 - Directory structure matches SRS 2.3 exactly
@@ -52,6 +55,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **Goal:** Centralised TypeScript configuration inherited by all packages and apps.
 
 **Deliverables:**
+
 - `packages/tsconfig/` package with:
   - `base.json` — strict mode, path aliases, target ES2022
   - `nextjs.json` — extends base, Next.js specific settings
@@ -61,6 +65,7 @@ Tasks are sequenced — each depends on the previous unless marked **[parallel]*
 **SRS reference:** 2.2 Tech Stack
 
 **Review checklist:**
+
 - `packages/tsconfig/package.json` correctly exports all three configs
 - Configs are strict — `strict: true`, `noUncheckedIndexedAccess: true`
 
@@ -73,6 +78,7 @@ monorepo before any application code is written. All subsequent tasks inherit
 this baseline — nothing is merged without passing it.
 
 **Deliverables:**
+
 - `.editorconfig` at repo root — indent style (spaces, 2), line endings (LF),
   charset (UTF-8), trailing newline, trim trailing whitespace
 - `prettier.config.ts` at repo root — single quotes, semicolons, trailing
@@ -90,7 +96,7 @@ this baseline — nothing is merged without passing it.
   - `lint-staged` — runs `prettier --write` then `eslint --fix` on staged
     `.ts`/`.tsx`/`.css`/`.json` files
   - Scripts: `"format": "prettier --write ."`, `"format:check": "prettier
-    --check ."`, `"lint:fix": "eslint --fix ."`
+--check ."`, `"lint:fix": "eslint --fix ."`
 - `turbo.json` — confirm `lint` task is correctly wired across packages
 - Run `pnpm format` on all existing files (`.gitignore`, `README.md`,
   `package.json`, `pnpm-workspace.yaml`, `turbo.json`,
@@ -104,6 +110,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **SRS reference:** NFR-06, PLT-10, SRS §2.2 Tech Stack
 
 **Review checklist:**
+
 - `pnpm format:check` passes on all files in the repo
 - `pnpm lint` passes with zero errors or warnings
 - Attempting to commit a file with formatting errors is blocked by the
@@ -118,6 +125,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **Goal:** Shared database package providing a Drizzle client factory that supports both SQLite and PostgreSQL via a dialect flag.
 
 **Deliverables:**
+
 - `packages/db/` with:
   - `src/client.ts` — exports `createClient(config)` returning a Drizzle instance
   - `src/dialect.ts` — reads `DATABASE_URL` and `DB_DIALECT` env vars, returns correct dialect
@@ -137,6 +145,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **SRS reference:** 3.7 Database Layer, 3.1 Deployment Model (tenant_id)
 
 **Review checklist:**
+
 - `createClient()` returns a working Drizzle instance for SQLite when `DB_DIALECT=sqlite`
 - `tenant_id` present on `users` table
 - Migration runner accepts an array of migration paths and runs them in order
@@ -149,6 +158,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **Goal:** Manifest schema package providing TypeScript types and a validation function.
 
 **Deliverables:**
+
 - `packages/manifest/` with:
   - `src/types.ts` — full `SovereignManifest` interface and `Permission` type as defined in SRS section 5
   - `src/validate.ts` — `validateManifest(json): ValidationResult` — checks required fields, valid enum values, `repository` required when type is `sovereign` or `community`
@@ -163,6 +173,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **SRS reference:** 3.8 Manifest System, Section 5 Plugin Manifest Reference
 
 **Review checklist:**
+
 - All fields from SRS Section 5 present in the TypeScript interface
 - `shell`, `database`, `runtime`, `type` fields all typed correctly with correct enum values
 - Validation tests pass
@@ -174,6 +185,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **Goal:** Thin mailer package wrapping nodemailer with a simple `send()` interface.
 
 **Deliverables:**
+
 - `packages/mailer/` with:
   - `src/mailer.ts` — `createMailer(config)` factory, `send(options: MailOptions)` method
   - `src/types.ts` — `MailOptions`, `MailerConfig` interfaces
@@ -189,6 +201,7 @@ Code quality section. No Biome — ESLint is required for the custom
 **SRS reference:** NFR-02 (email optional), SDK surface `sdk.mailer.send()`
 
 **Review checklist:**
+
 - `send()` accepts `to`, `subject`, `html`, `text`
 - No-op behaviour when SMTP unconfigured — does not crash the runtime
 - No hardcoded credentials anywhere
@@ -203,6 +216,7 @@ a public contract for plugin developers; token names and component APIs must be
 treated with the same versioning discipline as the SDK.
 
 **Deliverables:**
+
 - `packages/ui/` with:
   - `src/tokens/primitives.css` — raw scale tokens with `--sv-` prefix:
     colour palette (`--sv-grey-50` … `--sv-grey-950`), spacing scale
@@ -244,6 +258,7 @@ consuming Next.js app (runtime) handles them natively. Token CSS files
 (`.css`, not `.module.css`) are plain CSS — tsup copies them to `dist/` via
 `loader: { '.css': 'copy' }` so they are importable as side-effect imports
 by the runtime shell.
+
 - `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
   clean: true, external: `[/\.css$/]`, loader: `{ '.css': 'copy' }`
 - `package.json`:
@@ -259,6 +274,7 @@ by the runtime shell.
 **SRS reference:** 2.2 Tech Stack (`packages/ui`)
 
 **Review checklist:**
+
 - `Button` renders without errors when imported into a test file
 - No hardcoded colour, spacing, or radius values in any component CSS — only
   `--sv-*` token references
@@ -275,6 +291,7 @@ by the runtime shell.
 **Goal:** SDK package with full interface definitions for v1 surface. Implementations are stubs at this stage — real implementations come in later tasks.
 
 **Deliverables:**
+
 - `packages/sdk/` with:
   - `src/types.ts` — `Session`, `PlatformConfig`, `MailOptions`, `DrizzleClient` types
   - `src/auth.ts` — `getSession()`, `requireSession()` — stubs throwing `NotImplementedError`
@@ -292,6 +309,7 @@ verifies it catches a violation.
 **Build:** `tsup` — ESM only, TypeScript declarations. Published to npm as
 `@sovereignfs/sdk`; `package.json` must include `exports`, `main`, `types`,
 and `files` fields pointing to `dist/`.
+
 - `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
   clean: true
 - `package.json`:
@@ -303,6 +321,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.6 SDK, NFR-06
 
 **Review checklist:**
+
 - All SDK methods from SRS 3.6 present
 - Unimplemented stubs throw `NotImplementedError` with a clear message
 - ESLint import boundary rule catches a `runtime/src` import in a test plugin
@@ -315,6 +334,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Auth server wrapping better-auth. Handles login, logout, registration, and session verification.
 
 **Deliverables:**
+
 - `apps/auth/` — Next.js app with:
   - better-auth configured with email/password provider
   - Session stored as httpOnly cookie
@@ -330,6 +350,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.3 Auth Layer, 4.3 Functional Requirements — Auth
 
 **Review checklist:**
+
 - Login sets httpOnly cookie
 - `/api/verify` returns 401 for invalid/expired token
 - First registered user gets `platform:admin`
@@ -343,6 +364,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Sovereign Core Next.js app scaffold with shell layout, middleware, and plugin launcher page. No plugins wired yet.
 
 **Deliverables:**
+
 - `runtime/` — Next.js 15 app with App Router:
   - `app/(platform)/layout.tsx` — shell layout: sidebar + content area (desktop), header + content + footer (mobile)
   - `app/(platform)/page.tsx` — launcher page (empty plugin grid for now)
@@ -353,7 +375,7 @@ and `files` fields pointing to `dist/`.
   - `app/login/page.tsx` — login page pointing to `apps/auth`
 - `runtime/next.config.ts` — must include:
   - `transpilePackages: ['@sovereignfs/sdk', '@sovereignfs/ui',
-    '@sovereignfs/db', '@sovereignfs/manifest', '@sovereignfs/mailer']` —
+'@sovereignfs/db', '@sovereignfs/manifest', '@sovereignfs/mailer']` —
     compiles all workspace package TypeScript sources directly during dev.
     Changes to any package file trigger HMR in the runtime without a separate
     watch build. (All packages share the single `@sovereignfs/*` scope; only
@@ -373,6 +395,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.4 Runtime Layer, 3.10 Shared Login State, PLT-01, PLT-02, PLT-08
 
 **Review checklist:**
+
 - Unauthenticated request to `/` redirects to `/login`
 - Shell renders correctly on desktop and mobile viewports
 - `app/plugins/` is gitignored
@@ -388,6 +411,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Pre-build script that reads plugin manifests, validates them, and injects plugin routes into the runtime.
 
 **Deliverables:**
+
 - `scripts/generate-registry.ts`:
   - Scans `plugins/*/manifest.json`
   - Validates each manifest via `packages/manifest`
@@ -416,6 +440,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.9 Plugin Loading Model
 
 **Review checklist:**
+
 - Invalid manifest causes script to exit non-zero with a readable error
 - `runtime/generated/registry.ts` is valid TypeScript after running
 - Symlinks created in dev mode, copies in production mode
@@ -428,6 +453,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Docker Compose setup orchestrating runtime and auth server for local development.
 
 **Deliverables:**
+
 - `docker-compose.yml` — two services on a shared network:
   - `runtime` — host-mapped `${RUNTIME_PORT:-3000}:3000`
   - `auth` — internal only; `expose: ["3001"]`, no host `ports` mapping. The
@@ -442,6 +468,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** NFR-01, 2.4 Phased Roadmap v0.3, 3.1 Deployment Model (topology, ports)
 
 **Review checklist:**
+
 - `docker compose up` starts both services without errors
 - Runtime is reachable at `localhost:3000` (dev)
 - Auth server is **not** reachable from the host — only from the runtime
@@ -457,6 +484,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Console plugin directory structure, manifest, and basic routing wired into the runtime via the generate script.
 
 **Deliverables:**
+
 - `plugins/console/manifest.json` — type: `platform`, runtime: `native`, routePrefix: `/console`, adminOnly: true, shell: `default`
 - `plugins/console/app/layout.tsx` — console shell layout
 - `plugins/console/app/page.tsx` — console home (empty, links to sub-sections)
@@ -467,6 +495,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.5 Plugin System, 4.4 Functional Requirements — Console, PLT-03
 
 **Review checklist:**
+
 - `/console` returns 403 for `platform:user`, accessible for `platform:admin`
 - Generate script correctly picks up console manifest
 - Console appears in launcher for admin users only
@@ -478,6 +507,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** User list, invite, role change, and deactivate/reactivate.
 
 **Deliverables:**
+
 - `plugins/console/app/users/page.tsx` — paginated user list: name, email, role, status, join date
 - `plugins/console/app/users/invite/page.tsx` — invite form: generates invite token, sends email via `sdk.mailer`
 - Role change and deactivate/reactivate as server actions
@@ -486,6 +516,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** CON-02, CON-03, CON-04, CON-05
 
 **Review checklist:**
+
 - User list shows all users with correct data
 - Invite email sends (or logs no-op) when SMTP unconfigured
 - Role change persists correctly
@@ -498,6 +529,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Installed plugin list with enable/disable toggle.
 
 **Deliverables:**
+
 - `plugins/console/app/plugins/page.tsx` — list of installed plugins from registry: name, version, type, status
 - Enable/disable toggle as server action — writes to a `plugin_status` table in platform db
 - Runtime middleware respects disabled status — returns 404 for disabled plugin routes
@@ -506,6 +538,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** CON-06, CON-07, PLT-04
 
 **Review checklist:**
+
 - Disabling a plugin blocks its routes immediately (no rebuild required)
 - Disabled plugin disappears from launcher
 - Re-enabling restores access
@@ -517,6 +550,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Tenant name configuration and system health dashboard.
 
 **Deliverables:**
+
 - `plugins/console/app/settings/page.tsx` — tenant name field, invite-only toggle
 - `plugins/console/app/health/page.tsx` — runtime version, database type + connection status, auth server status, disk usage
 - Tenant name stored in `tenants` table, exposed via `sdk.platform.getConfig()`
@@ -525,6 +559,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** CON-08, CON-09, CON-10, PLT-06
 
 **Review checklist:**
+
 - Tenant name change reflects in `sdk.platform.getConfig()` immediately
 - Health page shows accurate database type (SQLite vs Postgres)
 - Invite-only toggle takes effect on next registration attempt without restart
@@ -538,12 +573,19 @@ and `files` fields pointing to `dist/`.
 **Goal:** Full implementation of the install script stubbed in Task 0.3.01.
 
 **Deliverables:**
+
 - `sovereign.plugins.json` at repo root — config file declaring which sovereign/community plugins to install:
   ```json
   {
     "plugins": [
-      { "id": "com.sovereign.tasks", "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks" },
-      { "id": "com.sovereign.splitify", "repository": "https://github.com/CommonsEngine/sovereign-plugin-splitify" }
+      {
+        "id": "com.sovereign.tasks",
+        "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks"
+      },
+      {
+        "id": "com.sovereign.splitify",
+        "repository": "https://github.com/CommonsEngine/sovereign-plugin-splitify"
+      }
     ]
   }
   ```
@@ -553,6 +595,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 2.3 Monorepo Structure, 3.5 Plugin System
 
 **Review checklist:**
+
 - Running script clones declared plugins into correct directories
 - Already-cloned plugins are skipped without error
 - `pnpm generate` runs automatically after install
@@ -563,6 +606,7 @@ and `files` fields pointing to `dist/`.
 **Goal:** Runtime configured as an installable PWA.
 
 **Deliverables:**
+
 - `@ducanh2912/next-pwa` configured in `runtime/next.config.ts`
 - `public/manifest.json` — PWA manifest: name, icons, theme colour
 - Service worker caching shell and static assets
@@ -571,6 +615,7 @@ and `files` fields pointing to `dist/`.
 **SRS reference:** 3.11 PWA, PLT-09
 
 **Review checklist:**
+
 - Lighthouse PWA audit passes
 - App installable on desktop Chrome and mobile Safari
 - Offline load shows shell (not blank page)
@@ -583,6 +628,7 @@ and `files` fields pointing to `dist/`.
 from Next.js standalone output.
 
 **Deliverables:**
+
 - `Dockerfile` (runtime) — three-stage:
   - `deps` — `node:<pinned>-alpine` + corepack pnpm; install with
     `--frozen-lockfile`
@@ -602,6 +648,7 @@ from Next.js standalone output.
 **SRS reference:** NFR-01, 2.4 Phased Roadmap v0.5, 3.1 Deployment Model
 
 **Review checklist:**
+
 - Images build without errors
 - Each image is reasonably small (standalone output keeps them lean; target
   < 250MB per image)
@@ -617,6 +664,7 @@ from Next.js standalone output.
 **Goal:** Confirm full parity between SQLite and Postgres deployments.
 
 **Deliverables:**
+
 - `docker-compose.prod.yml` updated with a Postgres service variant
 - All migrations run cleanly against Postgres
 - End-to-end smoke test: login, console access, plugin enable/disable — all working on Postgres
@@ -625,6 +673,7 @@ from Next.js standalone output.
 **SRS reference:** NFR-03, 3.7 Database Layer
 
 **Review checklist:**
+
 - Switching `DB_DIALECT=postgres` and `DATABASE_URL` is the only change required
 - No SQLite-specific queries anywhere in application code
 - Migrations apply cleanly to a fresh Postgres instance
@@ -636,6 +685,7 @@ from Next.js standalone output.
 **Goal:** `sv` CLI with essential commands for managing a Sovereign deployment.
 
 **Deliverables:**
+
 - `bin/sv` — TypeScript entry point, executed via `tsx` (no separate compile
   step; consistent with the `scripts/` pattern)
 - Commands:
@@ -658,6 +708,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** 2.4 Phased Roadmap v0.5, 2.2 Tech Stack
 
 **Review checklist:**
+
 - `sv dev` starts both services correctly
 - `sv plugin add` clones and wires a plugin end-to-end
 - `sv plugin remove` cleans up symlinks/copies and updates registry
@@ -671,6 +722,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **Goal:** Complete remaining SDK implementations. `sdk.auth` and `sdk.mailer` were wired in Task 0.4.02. This task completes `sdk.db` and `sdk.platform`, and also upgrades middleware from `/api/verify` round-trips to local JWT verification.
 
 **Deliverables:**
+
 - `runtime/src/sdk/db.ts` — real `getClient()` returning scoped Drizzle instance
 - `runtime/src/sdk/platform.ts` — real `getConfig()` reading from `tenants` table
 - `runtime/src/middleware.ts` — updated to verify JWT locally using `SOVEREIGN_AUTH_SECRET` (replaces `/api/verify` round-trip per SRS AUTH-05)
@@ -679,6 +731,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** 3.6 SDK
 
 **Review checklist:**
+
 - `sdk.auth.requireSession()` throws when called from an unauthenticated context
 - `sdk.db.getClient()` returns a working Drizzle instance
 - `sdk.mailer.send()` delegates correctly to packages/mailer
@@ -691,6 +744,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **Goal:** Complete self-hosting and plugin developer documentation.
 
 **Deliverables:**
+
 - `docs/self-hosting.md` — complete: requirements, Docker deploy, env vars, first run, Postgres switch, upgrade path
 - `docs/plugin-development.md` — complete: manifest reference, SDK usage, file structure, how to submit to registry
 - `docs/architecture.md` — summary of SRS architecture sections for contributors
@@ -700,6 +754,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** NFR-10, 2.4 Phased Roadmap v1.0
 
 **Review checklist:**
+
 - A developer with no prior Sovereign knowledge can deploy from scratch following `self-hosting.md`
 - Plugin developer guide covers all manifest fields with examples
 - All env vars documented with descriptions and whether required or optional
@@ -711,6 +766,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **Goal:** GitHub Actions pipelines for continuous validation and npm publishing.
 
 **Deliverables:**
+
 - `.github/workflows/ci.yml` — validation, triggers on push to `main` and all
   pull requests:
   - `format` — runs `prettier --check .` across the repo; fails on any
@@ -737,6 +793,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06, NFR-04
 
 **Review checklist:**
+
 - All five validation jobs pass on a clean checkout
 - Unformatted file causes `format` job to fail
 - Import boundary violation in a plugin causes `lint` job to fail
@@ -752,6 +809,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **Goal:** Define and document the process for submitting a community plugin to `registry/plugins.json`.
 
 **Deliverables:**
+
 - `registry/plugins.json` — initial structure with console as the only platform entry
 - `registry/CONTRIBUTING.md` — submission requirements: manifest must be valid, repository must be public, must include LICENSE file, must target compatible platform version
 - PR template for registry submissions
@@ -760,6 +818,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** 2.7 Open Source Strategy, 3.8 Manifest System
 
 **Review checklist:**
+
 - `plugins.json` validates against manifest schema
 - Submission requirements are clear and enforceable via manifest validation
 
@@ -770,6 +829,7 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **Goal:** SDK API review, cleanup, and semver commitment documented.
 
 **Deliverables:**
+
 - SDK API review — remove anything experimental or inconsistent
 - `packages/sdk/CHANGELOG.md` — initial entry marking v1.0.0 as stable
 - `docs/sdk-stability.md` — documents what stable means: patch = no breaking changes, minor = additive only, major = breaking with migration guide
@@ -778,10 +838,11 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 **SRS reference:** NFR-04
 
 **Review checklist:**
+
 - No stub implementations remain in the v1 SDK surface
 - All unimplemented stubs (storage, notifications, events) clearly marked as unstable/experimental
 - Semver policy documented and linked from README
 
 ---
 
-*Version 0.8 — June 2026. Changes from v0.7: npm scope unified to a single owned scope `@sovereignfs/*` for all packages (was split `@commonsengine/sovereign-*` + `@sovereign/*`); transpilePackages lists, package build/publish notes, and publish.yml updated accordingly; internal packages marked `private`. Earlier v0.7 changes (Docker two-container topology, three-stage prod images, ci.yml/publish.yml split) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
+_Version 0.8 — June 2026. Changes from v0.7: npm scope unified to a single owned scope `@sovereignfs/_`for all packages (was split`@commonsengine/sovereign-_`+`@sovereign/_`); transpilePackages lists, package build/publish notes, and publish.yml updated accordingly; internal packages marked `private`. Earlier v0.7 changes (Docker two-container topology, three-stage prod images, ci.yml/publish.yml split) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.\*

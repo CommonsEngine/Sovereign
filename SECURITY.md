@@ -29,6 +29,7 @@ A useful report includes:
 ## Scope
 
 **In scope:**
+
 - Authentication bypass or session hijacking
 - Privilege escalation (accessing admin routes as a regular user)
 - Remote code execution via the plugin system or SDK
@@ -36,6 +37,7 @@ A useful report includes:
 - SDK boundary violations that enable plugin-to-platform data leakage
 
 **Out of scope:**
+
 - Issues requiring physical access to the host machine
 - Vulnerabilities in the self-hoster's own infrastructure (reverse proxy
   misconfiguration, weak secrets, etc.)
