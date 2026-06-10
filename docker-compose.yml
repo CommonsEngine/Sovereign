@@ -1,0 +1,18 @@
+# Local development services.
+#
+# For now this provides Mailpit so email flows are testable in dev (see
+# CONTRIBUTING — "Email in development"). Task 0.3.12 adds the `runtime` and
+# `auth` app services to this same file once they exist. Mailpit is dev-only and
+# is intentionally absent from docker-compose.prod.yml.
+services:
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: sovereign-mailpit
+    restart: unless-stopped
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025' # SMTP endpoint the app sends to
+      - '${MAILPIT_UI_PORT:-8025}:8025' # web inbox — open http://localhost:8025
+    environment:
+      # Accept mail without auth/TLS so the dev app can send freely.
+      MP_SMTP_AUTH_ACCEPT_ANY: 'true'
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
