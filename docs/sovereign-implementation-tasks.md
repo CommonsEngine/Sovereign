@@ -261,15 +261,18 @@ CSS Modules for components. No Tailwind. No runtime CSS-in-JS. No third-party
 component framework. See CLAUDE.md — Design System section for full rationale
 and token conventions.
 
-**Build:** `tsup` — ESM output, TypeScript declarations, CSS files marked as
-external (`external: [/\.css$/]`). tsup does not process CSS Modules; the
-consuming Next.js app (runtime) handles them natively. Token CSS files
-(`.css`, not `.module.css`) are plain CSS — tsup copies them to `dist/` via
-`loader: { '.css': 'copy' }` so they are importable as side-effect imports
-by the runtime shell.
+**Build:** `tsup` — ESM output, TypeScript declarations. CSS (both CSS Modules
+and token files) is marked **external** (`external: [/\.css$/]`); tsup/esbuild
+can't scope-hash CSS Modules, so the consuming Next.js app processes the CSS —
+via `transpilePackages` (the `src` tree) in v1, or its own bundler when the
+package is installed from npm. React is external too (`react`, `react-dom`,
+`react/jsx-runtime`), and `esbuildOptions.jsx = 'automatic'`. The `.css` files
+ship via the package `files` field; full npm-publish CSS packaging (ensuring the
+externalised `.css` imports resolve inside `dist/`) is finalised in Task 0.5.07.
 
 - `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
-  clean: true, external: `[/\.css$/]`, loader: `{ '.css': 'copy' }`
+  clean: true, external: `[/\.css$/, 'react', 'react-dom', 'react/jsx-runtime']`,
+  `esbuildOptions.jsx = 'automatic'`
 - `package.json`:
   - `build` script: `tsup`
   - No `dev` script — consuming Next.js apps (runtime) include this package in
