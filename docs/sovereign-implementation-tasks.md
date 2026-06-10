@@ -125,6 +125,14 @@ Code quality section. No Biome — ESLint is required for the custom
   - `src/schema/platform.ts` — platform tables: `tenants`, `users`, `sessions` with `tenant_id` on users
   - `src/index.ts` — barrel export
 - `packages/db/package.json` with correct dependencies: `drizzle-orm`, `better-sqlite3`, `pg`
+- `tsup.config.ts` — `entry: ['src/index.ts']`, `format: ['esm']`, `dts: true`, `clean: true`
+- `package.json`:
+  - `build` script: `tsup`
+  - No `dev` script — `transpilePackages` in the consuming Next.js apps compiles
+    this package's TypeScript source directly during dev; no watch build needed
+  - `exports` field points to TypeScript source for workspace consumption:
+    `{ ".": "./src/index.ts" }`. tsup overwrites this with `dist/` paths at
+    build time for production/npm.
 
 **SRS reference:** 3.7 Database Layer, 3.1 Deployment Model (tenant_id)
 
@@ -146,6 +154,11 @@ Code quality section. No Biome — ESLint is required for the custom
   - `src/validate.ts` — `validateManifest(json): ValidationResult` — checks required fields, valid enum values, `repository` required when type is `sovereign` or `community`
   - `src/index.ts` — barrel export
 - Unit tests covering: valid manifest passes, missing required field fails, invalid enum value fails, missing repository on sovereign type fails
+- `tsup.config.ts` — `entry: ['src/index.ts']`, `format: ['esm']`, `dts: true`, `clean: true`
+- `package.json`:
+  - `build` script: `tsup`
+  - No `dev` script — compiled by consuming apps via `transpilePackages`
+  - `exports`: `{ ".": "./src/index.ts" }` for workspace; overwritten at publish
 
 **SRS reference:** 3.8 Manifest System, Section 5 Plugin Manifest Reference
 
@@ -167,6 +180,11 @@ Code quality section. No Biome — ESLint is required for the custom
   - `src/index.ts` — barrel export
 - Config reads from env: `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
 - Graceful no-op when SMTP is not configured (logs warning, does not throw)
+- `tsup.config.ts` — `entry: ['src/index.ts']`, `format: ['esm']`, `dts: true`, `clean: true`
+- `package.json`:
+  - `build` script: `tsup`
+  - No `dev` script — compiled by consuming apps via `transpilePackages`
+  - `exports`: `{ ".": "./src/index.ts" }` for workspace; overwritten at publish
 
 **SRS reference:** NFR-02 (email optional), SDK surface `sdk.mailer.send()`
 
@@ -220,6 +238,24 @@ CSS Modules for components. No Tailwind. No runtime CSS-in-JS. No third-party
 component framework. See CLAUDE.md — Design System section for full rationale
 and token conventions.
 
+**Build:** `tsup` — ESM output, TypeScript declarations, CSS files marked as
+external (`external: [/\.css$/]`). tsup does not process CSS Modules; the
+consuming Next.js app (runtime) handles them natively. Token CSS files
+(`.css`, not `.module.css`) are plain CSS — tsup copies them to `dist/` via
+`loader: { '.css': 'copy' }` so they are importable as side-effect imports
+by the runtime shell.
+- `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
+  clean: true, external: `[/\.css$/]`, loader: `{ '.css': 'copy' }`
+- `package.json`:
+  - `build` script: `tsup`
+  - No `dev` script — consuming Next.js apps (runtime) include this package in
+    `transpilePackages`; Next.js compiles the TypeScript source directly and
+    handles CSS Modules natively. Changes to components are picked up by HMR
+    instantly without any watch build.
+  - `exports`: `{ ".": "./src/index.ts" }` for workspace; tsup overwrites with
+    `dist/` paths at build time. Published to npm as `@sovereign/ui`.
+  - `files` field must include `dist/` and any CSS files for the npm package
+
 **SRS reference:** 2.2 Tech Stack (`packages/ui`)
 
 **Review checklist:**
@@ -253,6 +289,17 @@ imports in `plugins/*` is configured in Task 0.3.03 (code quality tooling),
 not here. By the time this task runs it is already active. This task only
 verifies it catches a violation.
 
+**Build:** `tsup` — ESM only, TypeScript declarations. Published to npm as
+`@sovereign/sdk`; `package.json` must include `exports`, `main`, `types`,
+and `files` fields pointing to `dist/`.
+- `tsup.config.ts` — entry: `['src/index.ts']`, format: `['esm']`, dts: true,
+  clean: true
+- `package.json`:
+  - `build` script: `tsup`
+  - No `dev` script — compiled by consuming apps via `transpilePackages`
+  - `exports`: `{ ".": "./src/index.ts" }` for workspace; overwritten at publish
+  - `files` must include `dist/` for the npm package
+
 **SRS reference:** 3.6 SDK, NFR-06
 
 **Review checklist:**
@@ -276,7 +323,9 @@ verifies it catches a violation.
   - Invite-only toggle via `AUTH_INVITE_ONLY` env var
   - First user auto-assigned `platform:admin`, subsequent users `platform:user`
   - Environment: `AUTH_SECRET`, `DATABASE_URL`, `AUTH_INVITE_ONLY`
-- Uses `packages/db` for user storage
+- `apps/auth/next.config.ts` — must include:
+  - `transpilePackages: ['@sovereign/db', '@sovereign/mailer']` — compiles
+    workspace package TypeScript source directly; no watch build needed in dev
 
 **SRS reference:** 3.3 Auth Layer, 4.3 Functional Requirements — Auth
 
@@ -302,6 +351,21 @@ verifies it catches a violation.
   - `src/registry.ts` — reads `generated/registry.ts`, exports installed plugin list
   - `generated/registry.ts` — placeholder empty registry
   - `app/login/page.tsx` — login page pointing to `apps/auth`
+- `runtime/next.config.ts` — must include:
+  - `transpilePackages: ['@sovereign/sdk', '@sovereign/ui', '@sovereign/db',
+    '@sovereign/manifest', '@sovereign/mailer']` — compiles all workspace
+    package TypeScript sources directly during dev. Changes to any package
+    file trigger HMR in the runtime without a separate watch build.
+  - `webpack: (config) => { config.resolve.symlinks = false; return config; }`
+    — required for plugin HMR. Without this, webpack resolves symlinks to
+    their real path before watching, breaking hot reload for plugin source
+    files that are symlinked into `runtime/app/plugins/` by the generate
+    script. Setting `symlinks: false` makes webpack watch the symlink path
+    so edits to `plugins/[id]/app/` propagate via HMR immediately.
+- `runtime/package.json` — `dev` script runs the generate script before
+  starting the dev server: `tsx ../scripts/generate-registry.ts && next dev`.
+  The generate script is run synchronously on startup (creates/updates
+  symlinks), then Next.js dev server starts.
 - Environment: `SOVEREIGN_AUTH_URL`, `SOVEREIGN_AUTH_SECRET`
 
 **SRS reference:** 3.4 Runtime Layer, 3.10 Shared Login State, PLT-01, PLT-02, PLT-08
@@ -311,6 +375,9 @@ verifies it catches a violation.
 - Shell renders correctly on desktop and mobile viewports
 - `app/plugins/` is gitignored
 - No hardcoded auth secret
+- Editing a file in `packages/ui/src/` while `pnpm dev` is running triggers
+  HMR in the runtime without any manual rebuild step
+- Editing a file in `plugins/console/app/` triggers HMR in the runtime
 
 ---
 
@@ -327,7 +394,21 @@ verifies it catches a violation.
   - In `development` mode: symlinks `plugins/[id]/app/` → `runtime/app/plugins/[id]/`
   - In `production` mode: copies `plugins/[id]/app/` → `runtime/app/plugins/[id]/`
   - Mode determined by `NODE_ENV`
-- `turbo.json` updated: `runtime#build` depends on generate script running first
+  - `--watch` flag: when passed, watches the `plugins/` directory for new or
+    removed plugin directories and re-runs the symlink/copy step automatically.
+    Used by `runtime/package.json`'s `dev` script to keep the plugin route
+    tree in sync while the Next.js dev server is running. A newly added plugin
+    directory is symlinked immediately; developers may need to trigger a route
+    refresh in Next.js (fast-refresh boundary), but no manual generate command
+    is needed.
+- `turbo.json` updated with two additions:
+  - `generate` task: `dependsOn: ["packages/manifest#build"]`, outputs
+    `["runtime/app/plugins/**", "runtime/generated/**"]`, `cache: false`
+    (plugin file state is not cacheable)
+  - `runtime#build` override: `dependsOn: ["generate", "^build"]` — ensures
+    generate runs and all package deps are built before the runtime Next.js
+    build starts. Without this, `next build` may run before plugins are
+    composed in.
 - `package.json` script: `"generate": "tsx scripts/generate-registry.ts"`
 
 **SRS reference:** 3.9 Plugin Loading Model
@@ -617,6 +698,9 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
   - `build` — runs `turbo build` in production mode
 - CI triggers on: push to `main`, all pull requests
 - All jobs use pnpm cache for speed
+- `publish` job — triggers on version tags (`v*.*.*`) only; publishes
+  `packages/sdk` and `packages/ui` to npm using `NODE_AUTH_TOKEN` secret.
+  No other packages are published. Runs after `build` job succeeds.
 
 **SRS reference:** SRS 3.9 (CI validation step), PLT-07, NFR-06
 
@@ -664,4 +748,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-*Version 0.4 — June 2026. Changes from v0.3: New Task 0.3.03 (code quality tooling — ESLint 9 flat config, Prettier, simple-git-hooks, lint-staged, .editorconfig) inserted; all subsequent v0.3 tasks renumbered 0.3.04–0.3.12. SDK boundary rule ownership moved to Task 0.3.03. CI task updated with format-check job. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*
+*Version 0.6 — June 2026. Changes from v0.5: Dev DX strategy locked — packages export TypeScript source for workspace consumption; no tsup --watch in dev pipeline; transpilePackages in both Next.js apps; resolve.symlinks:false in runtime webpack config for plugin HMR; generate script gains --watch flag; runtime dev script runs generate before starting next dev. Tasks 0.3.09, 0.3.10, 0.3.11 updated accordingly. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories.*

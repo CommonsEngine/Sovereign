@@ -60,9 +60,12 @@ they are authoritative over assumptions:
     `docs/upgrade.md`
   - `chore/` / `docs/` → no version bump unless a public API changed
 
-  The **SDK** (`packages/sdk`) is under an additional constraint per NFR-04:
-  patch releases must never contain breaking changes; breaking changes require
-  at minimum a minor bump and a migration note, regardless of branch type.
+  The **SDK** (`packages/sdk`) and **UI** (`packages/ui`) are under an
+  additional constraint per NFR-04: patch releases must never contain breaking
+  changes; breaking changes require at minimum a minor bump and a migration
+  note, regardless of branch type. Both packages are published to npm as
+  `@sovereign/sdk` and `@sovereign/ui` — they are public contracts for plugin
+  developers.
 
   The **platform version** in the root `package.json` tracks the roadmap
   milestones (v0.3.x → v0.4.x → v0.5.x → v1.0.x). Bump it when a phase
@@ -226,7 +229,8 @@ See SRS §3.12 for the full specification.
 Next.js 15 (App Router) · TypeScript · Turborepo + pnpm workspaces ·
 better-auth (`apps/auth`) · Drizzle ORM (SQLite/Postgres) · nodemailer SMTP
 (`packages/mailer`) · CSS Modules + CSS custom properties (`packages/ui`) ·
-`citty` + `consola` (`bin/sv` CLI) · `@ducanh2912/next-pwa` · Docker Compose.
+`tsup` (package bundler, ESM only) · `citty` + `consola` (`bin/sv` CLI) ·
+`@ducanh2912/next-pwa` · Docker Compose.
 
 ## Monorepo layout
 
@@ -250,8 +254,8 @@ bin/sv              CLI (v0.5)
 
 ```bash
 pnpm install            # install workspace deps
-pnpm build              # turbo build (runs generate first once wired)
-pnpm dev                # turbo dev
+pnpm build              # turbo build — packages (tsup) → generate → apps (next build)
+pnpm dev                # start dev servers; generate runs automatically on startup
 pnpm format             # write Prettier formatting fixes across repo
 pnpm format:check       # check formatting without writing (CI)
 pnpm lint               # ESLint incl. SDK import-boundary rule
@@ -259,6 +263,23 @@ pnpm lint:fix           # ESLint with auto-fix
 pnpm typecheck          # tsc --noEmit across packages
 pnpm install:plugins    # clone declared sovereign/community plugins (stub until Task 0.5.00)
 ```
+
+## Dev DX notes
+
+- **No manual rebuilds in dev.** `pnpm dev` starts everything. The runtime's
+  dev script runs the generate script once on startup (creates plugin symlinks),
+  then starts the Next.js dev server. HMR handles all subsequent changes.
+- **Package changes trigger HMR instantly.** All workspace packages are listed
+  in `transpilePackages` in both `runtime/next.config.ts` and
+  `apps/auth/next.config.ts`. Next.js compiles package TypeScript source
+  directly — no `tsup --watch`, no intermediate `dist/`. Edit
+  `packages/ui/src/Button.tsx` and the runtime hot-reloads immediately.
+- **Plugin changes trigger HMR instantly.** Plugin source is symlinked into
+  `runtime/app/plugins/` in dev. The runtime webpack config sets
+  `resolve.symlinks: false` so file watchers follow the symlink path and
+  detect changes in the original plugin directory.
+- **tsup is production-only.** tsup runs during `pnpm build` to emit `dist/`
+  for Docker images and npm publishing. It is not part of the dev pipeline.
 
 ## Environment notes
 
