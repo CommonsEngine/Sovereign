@@ -1,0 +1,71 @@
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import globals from 'globals';
+
+export default tseslint.config(
+  // Ignore generated, build, and dependency output across the monorepo.
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/.next/**',
+      '**/.turbo/**',
+      'runtime/app/plugins/**',
+      'runtime/generated/**',
+    ],
+  },
+
+  // Baseline JS recommended rules.
+  js.configs.recommended,
+
+  // TypeScript: recommended + strict (non-type-checked).
+  ...tseslint.configs.strict,
+
+  // Shared language options for all source files.
+  {
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.browser,
+      },
+    },
+  },
+
+  // SDK boundary rule (NFR-06): plugins may only use @sovereignfs/sdk and
+  // @sovereignfs/ui. They must never reach into runtime internals or the
+  // workspace-internal packages. This is load-bearing — never disable it.
+  {
+    files: ['plugins/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/runtime/src', '**/runtime/src/*'],
+              message: 'Plugins must not import runtime internals. Use @sovereignfs/sdk instead.',
+            },
+            {
+              group: [
+                '@sovereignfs/db',
+                '@sovereignfs/db/*',
+                '@sovereignfs/manifest',
+                '@sovereignfs/manifest/*',
+                '@sovereignfs/mailer',
+                '@sovereignfs/mailer/*',
+              ],
+              message:
+                'Plugins may only use @sovereignfs/sdk and @sovereignfs/ui, not internal platform packages.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Disable stylistic rules that conflict with Prettier. Must come last.
+  eslintConfigPrettier,
+);
