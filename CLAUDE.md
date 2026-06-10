@@ -166,9 +166,14 @@ Semantic tokens      contextual meaning, what plugin devs use
   --sv-radius-md
 ```
 
-Plugin developers reference **semantic tokens only** — never primitives
-directly. The semantic layer is what tenant theming (CON-08) overrides at
-`:root`; primitives stay fixed.
+Plugin developers reference **semantic colour tokens** — never primitive
+colours directly. The semantic colour layer is the theming surface that tenant
+theming (CON-08) and dark mode override at `:root` / `[data-theme]`; primitives
+stay fixed. The scale tokens (`--sv-space-*`, `--sv-radius-*`,
+`--sv-font-size-*`) have no separate semantic tier — they are theme-stable and
+used directly. See `docs/design-system.md` for the full model. The v1 identity
+is **monochrome** (accent = near-black on light, near-white on dark); a tenant
+adds colour by overriding `--sv-color-accent`.
 
 ### Token prefix
 
@@ -231,7 +236,8 @@ See SRS §3.12 for the full specification.
 Next.js 15 (App Router) · TypeScript · Turborepo + pnpm workspaces ·
 better-auth (`apps/auth`) · Drizzle ORM (SQLite/Postgres) · nodemailer SMTP
 (`packages/mailer`) · CSS Modules + CSS custom properties (`packages/ui`) ·
-`tsup` (package bundler, ESM only) · Vitest (tests) · Zod (manifest
+`tsup` (package bundler, ESM only) · Vitest + Testing Library / jsdom (tests) ·
+Zod (manifest
 validation) · `citty` + `consola` (`bin/sv` CLI) · `@ducanh2912/next-pwa` ·
 Docker Compose.
 
