@@ -344,8 +344,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.05 — `packages/manifest` (schema + validation) (merged to `main`).
 - ✅ Chore — pnpm catalog for shared dev tooling (merged to `main`).
 - ✅ Task 0.3.06 — `packages/mailer` (SMTP abstraction) (merged to `main`).
-- ▶️ In review: Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold).
-- ⏳ Next: Task 0.3.08 — `packages/sdk` (interface definitions).
+- ✅ Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold) (merged to `main`).
+- ▶️ In review: Task 0.3.08 — `packages/sdk` (interface definitions).
+- ⏳ Next: Task 0.3.09 — `apps/auth` (better-auth server) [parallel with 0.3.10].
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.

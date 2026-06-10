@@ -141,6 +141,18 @@ importers:
         specifier: 'catalog:'
         version: 5.9.3
 
+  packages/sdk:
+    devDependencies:
+      '@sovereignfs/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
   packages/tsconfig: {}
 
   packages/ui:

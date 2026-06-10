@@ -32,6 +32,18 @@ export default tseslint.config(
         ...globals.browser,
       },
     },
+    rules: {
+      // Allow intentionally-unused identifiers when prefixed with `_`
+      // (e.g. required-by-signature stub params, ignored destructured fields).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
   },
 
   // SDK boundary rule (NFR-06): plugins may only use @sovereignfs/sdk and
