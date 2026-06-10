@@ -337,8 +337,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.04 — `packages/db` (Drizzle client factory) (merged to `main`).
 - ✅ Task 0.3.05 — `packages/manifest` (schema + validation) (merged to `main`).
 - ✅ Chore — pnpm catalog for shared dev tooling (merged to `main`).
-- ▶️ In review: Task 0.3.06 — `packages/mailer` (SMTP abstraction).
-- ⏳ Next: Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold).
+- ✅ Task 0.3.06 — `packages/mailer` (SMTP abstraction) (merged to `main`).
+- ▶️ In review: Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold).
+- ⏳ Next: Task 0.3.08 — `packages/sdk` (interface definitions).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.
