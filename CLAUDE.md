@@ -307,6 +307,12 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
   detect changes in the original plugin directory.
 - **tsup is production-only.** tsup runs during `pnpm build` to emit `dist/`
   for Docker images and npm publishing. It is not part of the dev pipeline.
+- **Email in dev goes to Mailpit.** The mailer speaks plain SMTP, so dev mail
+  capture is config-only (no mock-mode in the package). Run Mailpit via the
+  `docker-compose.yml` service or the native binary (both: SMTP `1025`, inbox
+  `8025`), point `SMTP_HOST` at it, and read mail at `http://localhost:8025`.
+  Email is off by default (SMTP_HOST unset → `send()` no-ops). See
+  CONTRIBUTING — "Email in development".
 
 ## Environment notes
 

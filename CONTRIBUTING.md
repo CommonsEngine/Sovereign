@@ -38,6 +38,33 @@ required variables.
 files automatically. Run `pnpm format` and `pnpm lint` at any time to check
 your working tree manually.
 
+### Email in development
+
+The mailer speaks plain SMTP, so to actually see the emails the app sends in
+dev you point `SMTP_HOST` at a local catch-all server. With email **off**
+(`SMTP_HOST` unset, the default) `send()` is a no-op and the app still runs.
+
+We use [Mailpit](https://github.com/axllent/mailpit) — a tiny SMTP server with
+a web inbox. Two ways to run it, both with SMTP on `1025` and the inbox on
+`8025`:
+
+- **Docker:** `docker compose up mailpit` (the service is in
+  `docker-compose.yml`). In `.env` set `SMTP_HOST=mailpit` if the app also runs
+  in Compose, or `SMTP_HOST=localhost` if you run it with `pnpm dev`.
+- **Native (no Docker):** install the binary and run it —
+
+  ```bash
+  brew install mailpit   # or: go install github.com/axllent/mailpit@latest
+  mailpit
+  ```
+
+  then set `SMTP_HOST=localhost` in `.env`.
+
+Either way, open the inbox at **http://localhost:8025** and trigger a flow that
+sends mail. For a zero-install option, nodemailer's
+[Ethereal](https://ethereal.email/) test accounts print a preview URL per
+message instead of using a local inbox.
+
 ---
 
 ## Branching and commits
