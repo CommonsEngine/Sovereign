@@ -1,8 +1,1 @@
 blank_issues_enabled: false
-
-contact_links:
-  - name: Report a security vulnerability
-    url: https://github.com/CommonsEngine/Sovereign/security/advisories/new
-    about: >
-      Please report security vulnerabilities privately using GitHub Security
-      Advisories. Do not open a public issue.
