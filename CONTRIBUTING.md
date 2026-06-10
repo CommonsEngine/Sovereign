@@ -51,14 +51,14 @@ git switch -c feat/your-feature-name
 
 **Branch prefixes:**
 
-| Prefix | Use for |
-|---|---|
-| `feat/` | New features or capabilities |
-| `fix/` | Bug fixes |
-| `docs/` | Documentation only |
+| Prefix   | Use for                                         |
+| -------- | ----------------------------------------------- |
+| `feat/`  | New features or capabilities                    |
+| `fix/`   | Bug fixes                                       |
+| `docs/`  | Documentation only                              |
 | `chore/` | Tooling, scaffolding, dependencies, maintenance |
 
-**Commit messages** should explain *why*, not just *what*. Keep the subject
+**Commit messages** should explain _why_, not just _what_. Keep the subject
 line under 72 characters. Body lines wrap at 100 characters.
 
 If you used an AI assistant to help write the code, include the co-author

@@ -1,6 +1,6 @@
 name: Feature request
 description: Suggest a new capability or improvement.
-labels: ["enhancement", "needs-triage"]
+labels: ['enhancement', 'needs-triage']
 
 body:
   - type: markdown
@@ -52,9 +52,9 @@ body:
     attributes:
       label: Willing to contribute a PR?
       options:
-        - "Yes"
-        - "Yes, with some guidance"
-        - "No"
+        - 'Yes'
+        - 'Yes, with some guidance'
+        - 'No'
     validations:
       required: true
 
