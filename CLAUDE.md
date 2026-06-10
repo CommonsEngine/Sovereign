@@ -317,8 +317,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.01 — Monorepo scaffold (merged to `main`).
 - ✅ Docs — Build, dev DX, deployment, and npm publishing strategy (merged to `main`).
 - ✅ Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`) (merged to `main`).
-- ▶️ In review: Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks).
-- ⏳ Next: Task 0.3.04 — `packages/db` (Drizzle client factory).
+- ✅ Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks) (merged to `main`).
+- ▶️ In review: Task 0.3.04 — `packages/db` (Drizzle client factory).
+- ⏳ Next: Task 0.3.05 — `packages/manifest` (schema + validation).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.

@@ -1,0 +1,27 @@
+{
+  "name": "@sovereignfs/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Drizzle client factory, platform schema, and migration runner for Sovereign.",
+  "license": "AGPL-3.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@sovereignfs/tsconfig": "workspace:*",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/pg": "^8.20.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
