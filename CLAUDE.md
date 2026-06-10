@@ -231,8 +231,9 @@ See SRS §3.12 for the full specification.
 Next.js 15 (App Router) · TypeScript · Turborepo + pnpm workspaces ·
 better-auth (`apps/auth`) · Drizzle ORM (SQLite/Postgres) · nodemailer SMTP
 (`packages/mailer`) · CSS Modules + CSS custom properties (`packages/ui`) ·
-`tsup` (package bundler, ESM only) · `citty` + `consola` (`bin/sv` CLI) ·
-`@ducanh2912/next-pwa` · Docker Compose.
+`tsup` (package bundler, ESM only) · Vitest (tests) · Zod (manifest
+validation) · `citty` + `consola` (`bin/sv` CLI) · `@ducanh2912/next-pwa` ·
+Docker Compose.
 
 ## Monorepo layout
 
@@ -285,6 +286,8 @@ pnpm format:check       # check formatting without writing (CI)
 pnpm lint               # ESLint incl. SDK import-boundary rule
 pnpm lint:fix           # ESLint with auto-fix
 pnpm typecheck          # tsc --noEmit across packages
+pnpm test               # run Vitest across the repo (co-located *.test.ts)
+pnpm test:watch         # Vitest in watch mode
 pnpm install:plugins    # clone declared sovereign/community plugins (stub until Task 0.5.00)
 ```
 
@@ -318,8 +321,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Docs — Build, dev DX, deployment, and npm publishing strategy (merged to `main`).
 - ✅ Task 0.3.02 — Shared TypeScript config (`packages/tsconfig`) (merged to `main`).
 - ✅ Task 0.3.03 — Code quality tooling (ESLint + Prettier + hooks) (merged to `main`).
-- ▶️ In review: Task 0.3.04 — `packages/db` (Drizzle client factory).
-- ⏳ Next: Task 0.3.05 — `packages/manifest` (schema + validation).
+- ✅ Task 0.3.04 — `packages/db` (Drizzle client factory) (merged to `main`).
+- ▶️ In review: Task 0.3.05 — `packages/manifest` (schema + validation).
+- ⏳ Next: Task 0.3.06 — `packages/mailer` (SMTP abstraction).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.

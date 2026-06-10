@@ -1,0 +1,23 @@
+{
+  "name": "@sovereignfs/manifest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Plugin manifest schema, types, and validation for Sovereign.",
+  "license": "AGPL-3.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@sovereignfs/tsconfig": "workspace:*",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.2"
+  }
+}
