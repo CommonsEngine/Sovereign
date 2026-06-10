@@ -1,7 +1,7 @@
 # Sovereign
 ## Project Concept · Project Plan · Software Requirements Specification
 
-**Version:** 0.2
+**Version:** 0.6
 **Date:** June 2026
 **Status:** Signed Off
 
@@ -39,6 +39,7 @@
    - 3.9 [Plugin Loading Model](#39-plugin-loading-model)
    - 3.10 [Shared Login State](#310-shared-login-state)
    - 3.11 [PWA](#311-pwa)
+   - 3.12 [Native Mobile App (post-v1 plan)](#312-native-mobile-app-post-v1-plan)
 
 4. [Software Requirements Specification](#4-software-requirements-specification)
    - 4.1 [User Roles and Capabilities](#41-user-roles-and-capabilities)
@@ -95,7 +96,9 @@ Sovereign provides a self-hosted workspace runtime with:
 **Non-Goals (v1):**
 - Multi-tenancy (multiple independent workspaces on one deployment)
 - Plugin sandboxing or process isolation
-- Mobile native apps
+- Native mobile app — deferred to post-v1. Planned as a universal Capacitor
+  shell app: one app on the App Store/Play Store, user enters their instance URL
+  on first launch. See §3.11 for the full planned approach.
 - Real-time collaboration
 - Federated identity or multi-instance linking
 - Public plugin marketplace
@@ -149,6 +152,8 @@ Sovereign v3 is a clean rewrite. Two prior iterations existed:
 | Database production | PostgreSQL | Config change, not a code change |
 | Email | Custom `packages/mailer` (SMTP) | Self-hostable, no third-party email dependency |
 | UI components | `packages/ui` (shared component library) | Consistent design system across runtime and plugins |
+| CLI | `citty` + `consola`, TypeScript via `tsx` | `citty` is lightweight, TypeScript-first, handles nested subcommands cleanly. `consola` pairs naturally for consistent terminal output. `tsx` avoids a separate CLI compile step. Monorepo-internal in v1. |
+| Code quality | ESLint 9 (flat config) + `typescript-eslint` + Prettier + `simple-git-hooks` + `lint-staged` | ESLint for lint rules including the SDK import boundary; Prettier for formatting (separate concerns). `simple-git-hooks` + `lint-staged` enforce both on staged files at commit time. No Biome — ESLint is required for the custom boundary rule. |
 | PWA | @ducanh2912/next-pwa | Service worker, installable shell |
 | Containerisation | Docker + Docker Compose | Standard self-hosting deployment path |
 
@@ -250,7 +255,7 @@ plugins/tasks/
 
 ### 2.5 Reference Plugins Roadmap
 
-Tasks and Splitify are maintained in separate repositories under CommonsEngine. They are the primary reference implementations demonstrating how third-party plugins integrate with the Sovereign SDK. Their development tracks loosely alongside the platform but on independent timelines.
+Tasks and Splitify are maintained in separate repositories under the Sovereign project. They are the primary reference implementations demonstrating how third-party plugins integrate with the Sovereign SDK. Their development tracks loosely alongside the platform but on independent timelines.
 
 **sovereign-plugin-tasks**
 - v0.1 — Task CRUD, list management, basic assignment; validates SDK `auth` and `db`
@@ -359,8 +364,8 @@ Plugins are the primary unit of functionality in Sovereign. Everything beyond th
 
 | Type | Meaning | Location | `type` value |
 |---|---|---|---|
-| Platform | Ships in the monorepo, maintained by CommonsEngine | `/plugins/[id]/` (in repo) | `"platform"` |
-| Sovereign | Separate repo, maintained by CommonsEngine (e.g. Tasks, Splitify) | `/plugins/[id]/` (cloned by install script) | `"sovereign"` |
+| Platform | Ships in the monorepo, maintained by the Sovereign team | `/plugins/[id]/` (in repo) | `"platform"` |
+| Sovereign | Separate repo, maintained by the Sovereign team (e.g. Tasks, Splitify) | `/plugins/[id]/` (cloned by install script) | `"sovereign"` |
 | Community | Third-party, any maintainer, any source | `/plugins/[id]/` (cloned or manually placed) | `"community"` |
 
 **Plugin activation:**
@@ -503,7 +508,47 @@ The runtime's middleware reads the session cookie and injects user context into 
 
 `@ducanh2912/next-pwa` is added to the runtime. The PWA shell is installable from the browser. The service worker caches the shell and static assets for offline availability. Plugin data is not cached offline in v1.
 
-Native app wrappers (Tauri, Capacitor) are explicitly deferred. Next.js does not currently have a native bundling path. This is reviewed when a concrete need arises.
+### 3.12 Native Mobile App (post-v1 plan)
+
+Native mobile support is deferred to post-v1 but the approach is decided:
+
+**Model: universal shell + instance URL.**
+One app published to the App Store (iOS) and Play Store (Android). On first
+launch the user enters the URL of their self-hosted Sovereign instance. The app
+loads that URL in a WebView. All Sovereign functionality — auth, plugins, shell
+layout — is served by the user's own instance and runs inside the WebView
+unchanged. Switching between multiple instances is supported (personal + work
+etc.). This is the same distribution pattern used by Nextcloud, Bitwarden, and
+Element (Matrix).
+
+**Shell technology: Capacitor.**
+A single TypeScript codebase for both iOS and Android. The shell's logic is
+minimal: instance URL configuration on first launch, persistent URL storage,
+WebView loading, and native permission declarations. Capacitor is chosen over
+Hotwire Native (Swift + Kotlin) because:
+- Single codebase — no native language required from contributors
+- Rich plugin ecosystem (`@capacitor/camera`, `@capacitor/push-notifications`,
+  `@capacitor/biometric-auth` etc.) covering device APIs beyond Web standards
+- TypeScript throughout — consistent with the rest of the stack
+- Standardised bridge pattern — easier to expose through the SDK than
+  hand-rolled Hotwire bridges
+
+**Device API strategy — three tiers:**
+
+| Tier | Technology | Examples | Works in browser too? |
+|---|---|---|---|
+| Web APIs | Standard browser APIs, work natively in WebView | GPS (`navigator.geolocation`), camera/mic (`getUserMedia`), accelerometer, Web Push | ✅ |
+| Capacitor plugins | JS bridge to native code, richer access and better UX | Native photo picker, APNs/FCM push, Face ID / fingerprint, background location, haptics | ❌ (native shell only) |
+| SDK abstraction | `sdk.device.*` detects environment, routes to correct tier | `sdk.device.getLocation()`, `sdk.device.capturePhoto()` | ✅ (falls back to Web API) |
+
+Plugin developers use `sdk.device.*` only — they never call Web APIs or
+Capacitor plugins directly. The SDK implementation picks the right tier based
+on the runtime environment. This keeps plugins portable across browser, PWA,
+and native shell without code changes.
+
+The shell app lives in a separate repository (`sovereign-mobile`) under
+the Sovereign project, not in this monorepo. It is developed and versioned
+independently of the platform.
 
 ---
 
@@ -603,7 +648,7 @@ Granular per-user capability overrides and per-plugin role assignments are expli
 - OAuth provider functionality (Sovereign as an IdP)
 - Per-plugin isolated database (`"database": "isolated"` declared in manifest but not implemented)
 - End-to-end encryption
-- Native mobile apps or desktop wrappers
+- Native mobile app (planned post-v1 — see §3.12 for the decided approach)
 - Real-time features (WebSockets, live collaboration)
 - Per-plugin permission assignment for individual users
 - Public-facing plugin marketplace or install UI
@@ -638,8 +683,8 @@ interface SovereignManifest {
   database?: "shared" | "isolated";
 
   // Plugin type — determines origin and trust level
-  // "platform"  — ships in the monorepo, maintained by CommonsEngine
-  // "sovereign" — separate repo, maintained by CommonsEngine (e.g. Tasks, Splitify)
+  // "platform"  — ships in the monorepo, maintained by the Sovereign team
+  // "sovereign" — separate repo, maintained by the Sovereign team (e.g. Tasks, Splitify)
   // "community" — third-party, any maintainer, any source
   type: "platform" | "sovereign" | "community";
 
@@ -688,15 +733,20 @@ type Permission =
 
 | Date | Decision | Rationale |
 |---|---|---|
-| Jun 2026 | Plugin type field renamed from `source` to `type`; values changed to `platform`, `sovereign`, `community` | `source` described origin mechanics, not plugin classification. `type` is semantically cleaner. `sovereign` distinguishes CommonsEngine-maintained external plugins from true third-party community plugins. `workspace` reserved as a future user-facing concept — likely an organisational layer within a tenant (one tenant may have multiple workspaces), distinct from the deployment/tenant boundary. |
+| Jun 2026 | Plugin type field renamed from `source` to `type`; values changed to `platform`, `sovereign`, `community` | `source` described origin mechanics, not plugin classification. `type` is semantically cleaner. `sovereign` distinguishes Sovereign-maintained external plugins from true third-party community plugins. `workspace` reserved as a future user-facing concept — likely an organisational layer within a tenant (one tenant may have multiple workspaces), distinct from the deployment/tenant boundary. |
 | Jun 2026 | Drizzle ORM over Prisma | Lighter, supports SQLite and Postgres with same API, better fit for Next.js server actions. |
 | Jun 2026 | Single-tenant per deployment in v1 | Target use case is personal/small-group. Multi-tenancy adds complexity with no near-term benefit. `tenant_id` included in schema for future path. |
 | Jun 2026 | Console as core plugin, not a separate app | Consistent with plugin architecture. Avoids running a third Next.js process. Admin scope enforced by middleware. |
 | Jun 2026 | SQLite default, Postgres optional | Zero-config for self-hosters. Postgres switch is an environment config change only. |
 | Jun 2026 | SDK packages under MIT, runtime under AGPL-3.0 | Lowers barrier for plugin developers while protecting the core runtime. |
-| Jun 2026 | No native app wrapper in v1 | Next.js has no native bundling path. PWA covers the install-from-browser use case. Revisit when concrete need arises. |
+| Jun 2026 | Code formatting: Prettier; linting: ESLint 9 flat config + typescript-eslint; pre-commit: simple-git-hooks + lint-staged | ESLint is required for the custom `no-restricted-imports` SDK boundary rule — Biome has no equivalent plugin system yet, making a hybrid setup necessary. Prettier and ESLint handle separate concerns (formatting vs correctness); `eslint-config-prettier` resolves conflicts. `simple-git-hooks` is chosen over Husky — no install script, no shell files, single `package.json` entry. `lint-staged` scopes hooks to staged files only for speed. `.editorconfig` provides editor-level baseline independent of tooling. |
+| Jun 2026 | Native mobile app deferred to post-v1; approach decided | PWA covers the install-from-browser use case for v1. Native app is planned post-v1 as a universal Capacitor shell — one App Store binary, user enters their instance URL on first launch. Same pattern as Nextcloud, Bitwarden, Element. Deferred due to scope, not technical dead end. |
+| Jun 2026 | Capacitor chosen over Hotwire Native for mobile shell | Capacitor provides a single TypeScript codebase for iOS + Android, a rich plugin ecosystem for device APIs, and a standardised bridge pattern that integrates cleanly with the SDK. Hotwire Native gives a better raw native feel but requires Swift + Kotlin, no plugin ecosystem, and every device API integration is a custom bridge. For a minimal shell (URL config + WebView) the cross-platform and ecosystem benefits of Capacitor outweigh the native-feel advantage of Hotwire Native. |
+| Jun 2026 | Device APIs exposed via `sdk.device.*`; three-tier implementation strategy | Web APIs (geolocation, getUserMedia etc.) work natively in WebViews and cover most cases. Capacitor plugins cover the remainder (native photo picker, APNs/FCM push, biometric auth, haptics). Plugin developers use `sdk.device.*` only — the SDK detects the environment and routes to the correct tier. Plugins are portable across browser, PWA, and native shell without changes. |
 | Jun 2026 | Plugin schema isolation via table name prefix | Simpler than Postgres schemas. One migration runner, one connection, no cross-plugin query complexity. |
+| Jun 2026 | `packages/ui` uses CSS custom properties + CSS Modules; no Tailwind | Tailwind creates ongoing content-scan config maintenance across all plugins, cannot ship pre-built CSS from a shared library, and fights component abstraction. CSS custom properties (plain `.css` files) are universally consumable — plugin developers reference tokens from any CSS without a JS import. CSS Modules are built into Next.js with no extra deps, RSC-safe, and familiar. Two-tier token architecture: primitives (raw scale) + semantic (contextual meaning, `--sv-color-surface` etc.). All tokens prefixed `--sv-*` — consistent with `sv` CLI identity, short, unambiguous. Semantic layer is the tenant-theming surface (CON-08); primitives stay fixed. |
+| Jun 2026 | `sv` CLI built with `citty` + `consola`, TypeScript via `tsx`; monorepo-internal in v1 | `citty` is lightweight, TypeScript-first, and maps cleanly to the `sv plugin add/remove` nested command structure. `consola` is the natural pairing for consistent terminal output (info/success/warn/error). Running via `tsx` keeps the CLI consistent with `scripts/` and avoids a separate compile step. CLI is not distributed as a standalone npm package in v1 — self-hosters run it from their cloned repo. Global install deferred. |
 
 ---
 
-*Version 0.2 — Signed off June 2026. Further revisions require a new version.*
+*Version 0.6 — June 2026. Changes from v0.5: Code quality tooling decisions recorded (ESLint 9 flat config + typescript-eslint + Prettier + simple-git-hooks + lint-staged; Biome rationale). Tech stack table updated with code quality row. Decision log updated.*
