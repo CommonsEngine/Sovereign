@@ -64,8 +64,8 @@ they are authoritative over assumptions:
   additional constraint per NFR-04: patch releases must never contain breaking
   changes; breaking changes require at minimum a minor bump and a migration
   note, regardless of branch type. Both packages are published to npm as
-  `@commonsengine/sovereign-sdk` and `@commonsengine/sovereign-ui` — they are
-  public contracts for plugin developers.
+  `@sovereignfs/sdk` and `@sovereignfs/ui` — they are public contracts for
+  plugin developers.
 
   The **platform version** in the root `package.json` tracks the roadmap
   milestones (v0.3.x → v0.4.x → v0.5.x → v1.0.x). Bump it when a phase
@@ -179,7 +179,7 @@ unambiguous. **Never abbreviate after the prefix** — use full descriptive name
 
 ```ts
 // Components — typed React components
-import { Button, Card, Input, Badge } from '@commonsengine/sovereign-ui'
+import { Button, Card, Input, Badge } from '@sovereignfs/ui'
 
 // Tokens — already injected globally by the runtime shell.
 // Reference directly in plugin CSS without any import:
@@ -252,17 +252,22 @@ bin/sv              CLI (v0.5)
 
 ### Package naming and scope
 
-Two npm scopes, by intent:
+One owned npm scope for everything: **`@sovereignfs/*`**. The `fs` denotes
+*federated systems* — reflecting the project's long-term federated direction
+(federation itself is a post-v1 concern; see SRS §1.4 non-goals).
 
-- **`@commonsengine/sovereign-*`** — published to npm; public contracts for
-  plugin developers. Only `packages/sdk` → `@commonsengine/sovereign-sdk` and
-  `packages/ui` → `@commonsengine/sovereign-ui`.
-- **`@sovereign/*`** — workspace-internal alias, never published. `packages/db`
-  → `@sovereign/db`, `packages/manifest` → `@sovereign/manifest`,
-  `packages/mailer` → `@sovereign/mailer`. (`@sovereign` is taken on npm by a
-  third party; since these are never published, the conflict is irrelevant.)
+- `packages/sdk` → `@sovereignfs/sdk` — **published** (plugin contract).
+- `packages/ui` → `@sovereignfs/ui` — **published** (design system).
+- `packages/db` → `@sovereignfs/db` — internal, `"private": true`.
+- `packages/manifest` → `@sovereignfs/manifest` — internal, `"private": true`.
+- `packages/mailer` → `@sovereignfs/mailer` — internal, `"private": true`.
+- `packages/tsconfig` is consumed by path, not by package name.
 
-`packages/tsconfig` is consumed by path, not by package name.
+The "do not publish" signal is `"private": true` in the package's
+`package.json` — **not** the scope. A single scope we own avoids the
+dependency-confusion risk of aliasing a scope owned by someone else
+(`@sovereign` is taken on npm; `@sovereignos`/`-stack`/`-core` collide with
+existing products). Only `sdk` and `ui` ever reach npm.
 
 ## Commands
 
