@@ -324,6 +324,12 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
   `8025`), point `SMTP_HOST` at it, and read mail at `http://localhost:8025`.
   Email is off by default (SMTP_HOST unset → `send()` no-ops). See
   CONTRIBUTING — "Email in development".
+- **Runtime dev = generate then `next dev`.** The runtime's `dev` script runs
+  `scripts/generate-registry.ts` (composes plugins, writes the registry) before
+  starting Next on `:3000`. Both apps load the single root `.env` via
+  `loadEnvConfig`. The runtime middleware verifies each request against the auth
+  server's `/api/verify` (`SOVEREIGN_AUTH_URL`) and injects `x-sovereign-user-*`
+  headers; `SOVEREIGN_AUTH_SECRET` (local JWT verify) is a v0.5 concern.
 
 ## Environment notes
 
