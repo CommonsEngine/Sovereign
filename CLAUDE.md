@@ -350,8 +350,10 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Chore — pnpm catalog for shared dev tooling (merged to `main`).
 - ✅ Task 0.3.06 — `packages/mailer` (SMTP abstraction) (merged to `main`).
 - ✅ Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold) (merged to `main`).
-- ▶️ In review: Task 0.3.08 — `packages/sdk` (interface definitions).
-- ⏳ Next: Task 0.3.09 — `apps/auth` (better-auth server) [parallel with 0.3.10].
+- ✅ Task 0.3.08 — `packages/sdk` (interface definitions) (merged to `main`).
+- ✅ Chore — manifest `icon` field + plugin specs (Console/Launcher/Account/Tasks/Splitify/Plainwrite) + shell sidebar architecture (merged to `main`).
+- ▶️ In review: Task 0.3.09 — `apps/auth` (self-contained better-auth server) [parallel with 0.3.10].
+- ⏳ Next: Task 0.3.10 — Runtime scaffold [parallel with 0.3.09].
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).

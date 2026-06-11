@@ -402,11 +402,13 @@ path in v1.
 
 ### 3.3 Auth Layer
 
-A thin Next.js application (`apps/auth`) wrapping better-auth. It is the only process besides the runtime that runs in production.
+A self-contained Next.js application (`apps/auth`) wrapping better-auth. It is the only process besides the runtime that runs in production.
+
+**Self-contained.** The auth server owns identity end to end: better-auth manages its own database (its standard `user` / `session` / `account` / `verification` schema, plus a small `invites` table) and the auth server hosts its own login and registration UI. It does **not** depend on `packages/db` — that package is for the runtime and plugins. Of the shared workspace packages it uses only `@sovereignfs/ui` (the design system), so the auth screens match the rest of the platform. This keeps the auth surface (passwords, credentials) isolated from application data.
 
 **Responsibilities:**
 
-- User login, logout, registration (with invite-only toggle)
+- User login, logout, registration (with invite-only toggle), and the login/registration UI
 - Session management via httpOnly cookies
 - Session verification endpoint consumed by the runtime
 - JWT issuance signed with a shared secret
@@ -414,7 +416,7 @@ A thin Next.js application (`apps/auth`) wrapping better-auth. It is the only pr
 **What it is not:**
 
 - An OAuth provider (future consideration)
-- A user directory (user records live in the platform database, not the auth server)
+- A store of application data — only identity (users, sessions, credentials, invites) lives here; everything else lives in the runtime/plugin database (`packages/db`)
 
 The auth server and runtime share a `SOVEREIGN_AUTH_SECRET` environment variable.
 
@@ -425,7 +427,7 @@ The auth server and runtime share a `SOVEREIGN_AUTH_SECRET` environment variable
 
 AUTH-05 describes the v0.5 target state. The `/api/verify` endpoint (AUTH-06) remains available for explicit verification scenarios after the local strategy is implemented.
 
-**First-user role assignment:** better-auth handles authentication only. When a new user registers, the auth server writes the user record to the platform database via `packages/db`, then checks if this is the first user in the `users` table. If so, it assigns `platform:admin`; otherwise `platform:user`. This logic lives in the auth server's registration handler, not in better-auth itself.
+**First-user role assignment:** the user's `role` is a custom field on the auth server's own `user` table (set via better-auth `additionalFields`, not user-editable). A better-auth `databaseHooks.user.create` hook checks whether this is the first user; if so it assigns `platform:admin`, otherwise `platform:user`. The runtime reads the role from the verified session (`/api/verify`); `tenant_id` and all application data remain a runtime/plugin concern in `packages/db`.
 
 ### 3.4 Runtime Layer
 
@@ -608,9 +610,11 @@ There is no hot-swap or dynamic loading in v1. This is an intentional simplicity
 
 ### 3.10 Shared Login State
 
-Because the runtime and all plugins are built into a single Next.js application (build-time composition), they share the same origin. better-auth sets an httpOnly session cookie on that origin. All plugin routes inherit the session automatically — no per-plugin authentication, no token passing, no SSO configuration required.
+The runtime and all plugins are built into a single Next.js application (build-time composition), so they share one origin. All plugin routes inherit the session automatically — no per-plugin authentication, no token passing, no SSO configuration required.
 
-The runtime's middleware reads the session cookie and injects user context into the request. Plugins access this context via `sdk.auth.getSession()` which reads from request context, not from a remote call.
+The auth server is a separate app, but the session cookie is still shared with the runtime because **cookies are scoped by host, not by port**: better-auth sets an httpOnly cookie for the host, so a cookie set by the auth server (e.g. `localhost:3001` in dev) is sent to the runtime (`localhost:3000`) too. In production the auth server and runtime sit behind one reverse proxy on the same domain, so the cookie is shared there as well. (The reverse-proxy/exposure topology for this is settled in the deployment tasks.)
+
+The runtime's middleware reads the session cookie and verifies it (v0.3: a call to the auth server's `/api/verify`; v0.5: local JWT verification), then injects user context into the request. Plugins access this context via `sdk.auth.getSession()`, which reads from request context, not from a remote call.
 
 ### 3.11 PWA
 
@@ -888,7 +892,8 @@ type Permission =
 | Jun 2026 | `packages/ui` builds with tsup externalising CSS and React                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | tsup/esbuild can't scope-hash CSS Modules, so both CSS Modules and token CSS are marked external; the consuming Next.js app processes the CSS — via `transpilePackages` (the `src` tree) in v1, or its own bundler when installed from npm. React is external too and esbuild uses the automatic JSX runtime. An earlier note proposing `external` + a copy loader together was dropped (they conflict in esbuild). Full npm-publish CSS packaging (resolving the externalised `.css` imports inside `dist/`) is finalised in Task 0.5.07.                                                                                                                                                                                                                                                                                                                                                                         |
 | Jun 2026 | React pinned via the pnpm catalog; component tests use Vitest + Testing Library + jsdom                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `react`, `react-dom`, and their `@types` join the pnpm `catalog:` (alongside typescript/tsup) since runtime, auth, and plugins all depend on them — one version repo-wide. React is a `peerDependency` of `@sovereignfs/ui`. Component tests run under Vitest with the jsdom environment (opted in per-file via `// @vitest-environment jsdom`) and `@testing-library/react`; `vitest.config` resolves CSS Module class names non-scoped so tests can assert on them.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Jun 2026 | SDK is interface stubs in v1; runtime injects the real implementations; `DrizzleClient` is opaque                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | `packages/sdk` defines the v1 surface (`auth`, `db`, `mailer`, `platform`) as stubs that throw `NotImplementedError` — the Sovereign runtime supplies the concrete implementations at call time (wired in later tasks). Post-v1 surfaces (`storage`, `notifications`, `events`) throw with an explicit "not implemented in Sovereign v1" message. `DrizzleClient` is typed opaque (`unknown`) at the contract level so the published SDK takes no dependency on a dialect; the runtime provides the concrete instance (refined when `sdk.db` is wired). The published SDK has no runtime dependencies.                                                                                                                                                                                                                                                                                                             |
+| Jun 2026 | `apps/auth` is self-contained; owns its identity database and login UI; does not use `packages/db`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | The auth server isolates the identity surface (passwords, credentials) from application data. better-auth manages its own database (its standard `user`/`session`/`account`/`verification` schema + a small `invites` table) — `packages/db` is for the runtime and plugins only. The auth server hosts its own login/registration UI and consumes only `@sovereignfs/ui` from the workspace, so the screens match the platform. `role` is a non-editable `additionalField`; first-user-admin runs in a `databaseHooks.user.create` hook. Session sharing works because cookies are host-scoped (not port-scoped): the cookie set by the auth server reaches the runtime on the same host (dev) or same domain behind one reverse proxy (prod). This supersedes the earlier "user records live in `packages/db` via the auth server" note; the reverse-proxy exposure topology is settled in the deployment tasks. |
 
 ---
 
-_Version 0.14 — June 2026. Changes from v0.13: Added the Launcher and Account platform plugins (§2.5) and the three-section shell sidebar with admin-configurable root plugin (§3.8, PLT-11–PLT-15, CON-11, `platform_settings`). Added the optional manifest `icon` field (§5). Recorded the plugin id namespace and sidebar/root-plugin decisions in the decision log. Plainwrite roadmap updated to OAuth-first with PAT fallback._
+_Version 0.15 — June 2026. Changes from v0.14: Auth server reframed as self-contained (§3.3) — owns its own identity database (better-auth schema + `invites`) and login/registration UI, depends only on `@sovereignfs/ui`, not `packages/db`. §3.10 clarified that session-cookie sharing across the two apps works via host-scoped cookies. Decision log updated; supersedes the prior "user records in `packages/db`" model._
