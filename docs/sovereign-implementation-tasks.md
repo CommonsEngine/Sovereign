@@ -1,6 +1,6 @@
 # Sovereign — Implementation Task Breakdown
 
-**Version:** 0.4
+**Version:** 1.0
 **Date:** June 2026
 **Purpose:** Session-by-session task guide for Claude Code. Each task is a single PR. Reference `sovereign-proposal-plan-srs.md` for architectural decisions and rationale.
 
@@ -373,13 +373,17 @@ and `files` fields pointing to `dist/`.
 
 ### Task 0.3.10 — Runtime scaffold **[parallel with 0.3.09]**
 
-**Goal:** Sovereign Core Next.js app scaffold with shell layout, middleware, and plugin launcher page. No plugins wired yet.
+**Goal:** Sovereign Core Next.js app scaffold with shell layout, middleware, and root placeholder page. No plugins wired yet.
 
 **Deliverables:**
 
 - `runtime/` — Next.js 15 app with App Router:
-  - `app/(platform)/layout.tsx` — shell layout: sidebar + content area (desktop), header + content + footer (mobile)
-  - `app/(platform)/page.tsx` — launcher page (empty plugin grid for now)
+  - `app/(platform)/layout.tsx` — shell layout implementing the three-section sidebar (PLT-11):
+    - **Top:** branding header — logo / tenant name; links to `/`.
+    - **Middle:** plugin icon area. In the v0.3 scaffold this section is empty (no plugins installed yet). The first icon will always be the root plugin, pointing to `/` (PLT-12); it is inserted and populated in Tasks 0.4.05 (Launcher) and 0.4.04 (root plugin config). Each icon loads from the manifest `icon` field (path relative to plugin root); runtime generates a two-letter monogram fallback if `icon` is absent.
+    - **Bottom:** hardcoded shell chrome, **not** driven by the plugin registry — Console icon (rendered only for `platform:admin`) + Account avatar slot (all authenticated users). This section does not participate in user customisation.
+    - Mobile layout: header (logo + Account avatar) + content area + footer launcher (mirrors middle section; Console icon visible to admin only).
+  - `app/(platform)/page.tsx` — placeholder redirect page (empty for now; in Task 0.4.04 this redirects to the configured root plugin's `routePrefix`)
   - `app/plugins/` — empty directory with `.gitignore` (generated, never committed)
   - `src/middleware.ts` — reads session cookie, calls `apps/auth /api/verify` to validate session (v0.3 approach — see SRS AUTH-05 for v0.5 local verification target), redirects to `/login` if unauthenticated
   - `src/registry.ts` — reads `generated/registry.ts`, exports installed plugin list
@@ -404,7 +408,7 @@ and `files` fields pointing to `dist/`.
   symlinks), then Next.js dev server starts.
 - Environment: `SOVEREIGN_AUTH_URL`, `SOVEREIGN_AUTH_SECRET`
 
-**SRS reference:** 3.4 Runtime Layer, 3.10 Shared Login State, PLT-01, PLT-02, PLT-08
+**SRS reference:** 3.4 Runtime Layer, 3.10 Shared Login State, PLT-01, PLT-02, PLT-08, PLT-11, PLT-12, PLT-13
 
 **Review checklist:**
 
@@ -491,7 +495,7 @@ and `files` fields pointing to `dist/`.
 
 ---
 
-## Phase v0.4 — Console Plugin
+## Phase v0.4 — Platform Plugins (Console, Launcher, Account)
 
 ### Task 0.4.01 — Console plugin scaffold
 
@@ -499,7 +503,8 @@ and `files` fields pointing to `dist/`.
 
 **Deliverables:**
 
-- `plugins/console/manifest.json` — type: `platform`, runtime: `native`, routePrefix: `/console`, adminOnly: true, shell: `default`
+- `plugins/console/manifest.json` — type: `platform`, runtime: `native`, routePrefix: `/console`, adminOnly: true, shell: `default`, icon: `icon.svg`
+- `plugins/console/icon.svg` — Console icon, rendered by the shell in the sidebar bottom section (admin only)
 - `plugins/console/app/layout.tsx` — console shell layout
 - `plugins/console/app/page.tsx` — console home (empty, links to sub-sections)
 - `plugins/console/db/schema.ts` — no tables yet (console reads platform tables)
@@ -559,24 +564,97 @@ and `files` fields pointing to `dist/`.
 
 ---
 
-### Task 0.4.04 — Console: tenant settings and system health
+### Task 0.4.04 — Console: tenant settings, system health, and root plugin config
 
-**Goal:** Tenant name configuration and system health dashboard.
+**Goal:** Tenant name configuration, invite-only toggle, system health dashboard, and admin-configurable root plugin.
 
 **Deliverables:**
 
-- `plugins/console/app/settings/page.tsx` — tenant name field, invite-only toggle
-- `plugins/console/app/health/page.tsx` — runtime version, database type + connection status, auth server status, disk usage
+- `platform_settings` table added to `packages/db` schema (`src/schema/platform.ts`):
+  - Columns: `key` (string), `value` (string), `tenant_id` (string), `updated_at` (timestamp)
+  - PK: `(key, tenant_id)`
+  - Initial row seeded on first run: `key = 'root_plugin_id'`, `value = 'fs.sovereign.launcher'`
+- `plugins/console/app/settings/page.tsx` — three settings in one page:
+  - Tenant name field (CON-08) — writes to `tenants` table
+  - Invite-only toggle (CON-10) — writes to `tenants` table, auth server reads it at registration
+  - Root plugin selector (CON-11) — dropdown listing all installed, enabled, non-`adminOnly` plugins; writes `root_plugin_id` to `platform_settings`; change takes effect immediately without restart
+- `plugins/console/app/health/page.tsx` — runtime version, database type + connection status, auth server status, disk usage (CON-09)
+- `runtime/app/(platform)/page.tsx` updated — reads `root_plugin_id` from `platform_settings` and redirects to that plugin's `routePrefix` (default: `/launcher`)
 - Tenant name stored in `tenants` table, exposed via `sdk.platform.getConfig()`
-- Invite-only toggle writes to `tenants` table, auth server reads it on registration
 
-**SRS reference:** CON-08, CON-09, CON-10, PLT-06
+**SRS reference:** CON-08, CON-09, CON-10, CON-11, PLT-06, PLT-14, PLT-15
 
 **Review checklist:**
 
 - Tenant name change reflects in `sdk.platform.getConfig()` immediately
 - Health page shows accurate database type (SQLite vs Postgres)
 - Invite-only toggle takes effect on next registration attempt without restart
+- Changing root plugin updates `platform_settings`; navigating to `/` immediately loads the newly configured root plugin without restart
+- When the root plugin is not the Launcher, the Launcher appears in the sidebar middle section as a regular icon linking to `/launcher` (PLT-12)
+- `platform_settings` table present in migration; `root_plugin_id` seeded on first run
+
+---
+
+### Task 0.4.05 — Launcher plugin
+
+**Goal:** Platform home screen that lists all installed plugins, serving as the default root page at `/`.
+
+**Deliverables:**
+
+- `plugins/launcher/` with:
+  - `manifest.json` — id: `fs.sovereign.launcher`, type: `platform`, runtime: `native`, routePrefix: `/launcher`, shell: `default`, icon: `icon.svg`, permissions: `["auth:session", "db:readOnly"]`, minPlatformVersion: `0.4.0`
+  - `icon.svg` — grid-of-dots or home symbol
+  - `app/page.tsx` — plugin grid: reads installed, enabled plugins from registry; excludes chrome plugins (`fs.sovereign.launcher`, `fs.sovereign.account`, `fs.sovereign.console`); renders main grid for accessible plugins; renders a separate "Admin" section for `adminOnly: true` plugins (visible to `platform:admin` only); empty state when no non-chrome plugins are installed
+  - `components/PluginGrid.tsx` — responsive grid layout
+  - `components/PluginTile.tsx` — tile card: plugin icon + name + description; clicking navigates to the plugin's `routePrefix`
+
+**Dependencies:** Task 0.4.03 (plugin registry and `plugin_status` table), Task 0.4.04 (root plugin redirect so `/` loads Launcher by default)
+
+**SRS reference:** LCH-01–LCH-05, PLT-12, `docs/plugins/launcher.md`
+
+**Review checklist:**
+
+- Navigating to `/` loads the Launcher page (via the root plugin redirect set in Task 0.4.04)
+- All installed, enabled, non-chrome plugins appear as tiles with icon, name, and description
+- `adminOnly` plugins appear only in the Admin section and only for `platform:admin` users
+- Chrome plugins (`fs.sovereign.launcher`, `fs.sovereign.account`, `fs.sovereign.console`) do not appear in any tile section
+- Clicking a tile navigates to the plugin's `routePrefix`
+- Empty state is shown when no non-chrome plugins are installed
+- `pnpm lint`, `pnpm format:check`, and `pnpm typecheck` pass
+
+---
+
+### Task 0.4.06 — Account plugin
+
+**Goal:** Per-user profile, preferences, and credential management for all authenticated users.
+
+**Deliverables:**
+
+- `plugins/account/` with:
+  - `manifest.json` — id: `fs.sovereign.account`, type: `platform`, runtime: `native`, routePrefix: `/account`, shell: `default`, icon: `icon.svg`, permissions: `["auth:session", "db:readWrite"]`, minPlatformVersion: `0.4.0`
+  - `icon.svg` — user silhouette or similar. Note: the sidebar bottom section renders the user's avatar (or initials) for `fs.sovereign.account`, not this icon; `icon.svg` is used in the Launcher grid only.
+  - `app/layout.tsx` — three-tab sub-navigation: Profile / Security / Preferences
+  - `app/page.tsx` — redirect to `/account/profile`
+  - `app/profile/page.tsx` — display name + avatar upload (ACC-01, ACC-02, ACC-03). Avatar stored on disk at `data/avatars/<user_id>` and served via a Next.js route; `avatar_url` written to the user record.
+  - `app/security/page.tsx` — password change with current-password confirmation (ACC-04); active sessions list with revoke (ACC-05, ACC-06)
+  - `app/preferences/page.tsx` — timezone (searchable IANA dropdown, ACC-07) + appearance toggle Light / Dark / System (ACC-08)
+  - `db/schema.ts` — `account_prefs` table: `user_id` (PK/FK), `tenant_id`, `timezone` (IANA string, default `UTC`), `theme` (`system` | `light` | `dark`, default `system`), `updated_at`
+  - `components/AvatarUpload.tsx`, `components/SessionList.tsx`, `components/TimezoneSelect.tsx`
+- Appearance preference written to both `account_prefs` (authoritative) and a `sv-theme` cookie so the shell can apply `data-theme` on the server without a DB round-trip (prevents SSR flash — see ACC-08 open question in `docs/plugins/account.md`)
+
+**Dependencies:** Task 0.4.02 (`sdk.auth` — session, password change via `better-auth`, sessions API)
+
+**SRS reference:** ACC-01–ACC-08, `docs/plugins/account.md`
+
+**Review checklist:**
+
+- User can update display name; change persists on reload
+- Avatar upload stores file, updates `avatar_url`, and is reflected in the sidebar bottom section's avatar slot
+- Password change succeeds with the correct current password; rejected with wrong current password; current session is preserved after a successful change
+- Active sessions list shows all sessions with device hint, IP, and last-active timestamp; any session except the current one can be revoked
+- Timezone preference stored in `account_prefs`
+- Appearance toggle applies `data-theme` immediately without reload; preference survives page reload via the `sv-theme` cookie
+- `pnpm lint`, `pnpm format:check`, and `pnpm typecheck` pass
 
 ---
 
@@ -593,11 +671,11 @@ and `files` fields pointing to `dist/`.
   {
     "plugins": [
       {
-        "id": "com.sovereign.tasks",
+        "id": "io.openfs.sovereign.tasks",
         "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks"
       },
       {
-        "id": "com.sovereign.splitify",
+        "id": "io.openfs.sovereign.splitify",
         "repository": "https://github.com/CommonsEngine/sovereign-plugin-splitify"
       }
     ]
@@ -859,4 +937,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-_Version 0.9 — June 2026. Changes from v0.8: Task 0.3.06 (mailer) now also delivers dev email capture (Mailpit `docker-compose.yml` service, `.env.example`, CONTRIBUTING "Email in development"); Task 0.3.12 updated to extend the existing dev compose + `.env.example` rather than create them. Earlier v0.8 changes (uniform `@sovereignfs/*` scope) retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories._
+_Version 1.0 — June 2026. Changes from v0.9: Task 0.3.10 (runtime scaffold) updated with three-section sidebar architecture (PLT-11/PLT-12) and manifest icon loading detail. Task 0.4.04 (Console settings/health) expanded with `platform_settings` table, CON-11 root plugin selector, and root redirect wiring. New Tasks 0.4.05 (Launcher plugin) and 0.4.06 (Account plugin) added. Earlier v0.9 changes retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories._
