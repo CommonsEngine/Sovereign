@@ -3,7 +3,7 @@ import { validateManifest } from './validate';
 
 const base = {
   schemaVersion: 1,
-  id: 'com.sovereign.tasks',
+  id: 'fs.sovereign.tasks',
   name: 'Tasks',
   version: '1.0.0',
   type: 'platform',
@@ -65,5 +65,16 @@ describe('validateManifest', () => {
     if (!res.valid) {
       expect(res.errors.join(' ')).toContain('routePrefix');
     }
+  });
+
+  it('accepts a manifest with an icon field', () => {
+    const res = validateManifest({ ...base, icon: 'icon.svg' });
+    expect(res.valid).toBe(true);
+  });
+
+  it('accepts a manifest without an icon field (optional)', () => {
+    const { icon: _icon, ...withoutIcon } = { ...base, icon: 'icon.svg' };
+    const res = validateManifest(withoutIcon);
+    expect(res.valid).toBe(true);
   });
 });

@@ -38,6 +38,7 @@ export const manifestSchema = z
     permissions: z.array(permissionSchema),
     shell: z.enum(['default', 'minimal']).optional(),
     adminOnly: z.boolean().optional(),
+    icon: z.string().optional(),
     compatibility: z.object({
       minPlatformVersion: z.string().min(1),
     }),
