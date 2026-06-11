@@ -1,0 +1,30 @@
+{
+  "name": "@sovereignfs/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx ../scripts/generate-registry.ts && next dev --port 3000",
+    "generate": "tsx ../scripts/generate-registry.ts",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@next/env": "^16.2.9",
+    "@sovereignfs/db": "workspace:*",
+    "@sovereignfs/mailer": "workspace:*",
+    "@sovereignfs/manifest": "workspace:*",
+    "@sovereignfs/sdk": "workspace:*",
+    "@sovereignfs/ui": "workspace:*",
+    "next": "catalog:",
+    "react": "catalog:",
+    "react-dom": "catalog:"
+  },
+  "devDependencies": {
+    "@sovereignfs/tsconfig": "workspace:*",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "typescript": "catalog:"
+  }
+}
