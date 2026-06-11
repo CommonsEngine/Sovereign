@@ -258,6 +258,8 @@ packages/
 runtime/            Sovereign Core (Next.js shell, middleware, registry, SDK bridge)
   generated/        built from manifests — never hand-edit
 plugins/console/    core admin plugin (platform type)
+plugins/launcher/   home screen plugin (platform type)
+plugins/account/    per-user profile plugin (platform type)
 scripts/            install-plugins.ts, generate-registry.ts, dev.ts
 bin/sv              CLI (v0.5)
 ```
@@ -350,6 +352,10 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold) (merged to `main`).
 - ▶️ In review: Task 0.3.08 — `packages/sdk` (interface definitions).
 - ⏳ Next: Task 0.3.09 — `apps/auth` (better-auth server) [parallel with 0.3.10].
+- ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
+- ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
+- ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
+- ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.
