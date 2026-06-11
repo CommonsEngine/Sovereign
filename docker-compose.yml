@@ -1,9 +1,14 @@
 # Local development services.
 #
-# For now this provides Mailpit so email flows are testable in dev (see
-# CONTRIBUTING — "Email in development"). Task 0.3.12 adds the `runtime` and
-# `auth` app services to this same file once they exist. Mailpit is dev-only and
-# is intentionally absent from docker-compose.prod.yml.
+# Runs Mailpit (email capture), the auth server, and the runtime together on a
+# shared internal network. See docs/self-hosting.md for setup instructions.
+#
+# For active code development (hot-reload), use `pnpm dev` instead. This file
+# is for spinning up the full containerised stack locally.
+#
+# Quick start:
+#   cp .env.example .env          # fill in AUTH_SECRET at minimum
+#   docker compose up --build
 services:
   mailpit:
     image: axllent/mailpit:latest
@@ -16,3 +21,58 @@ services:
       # Accept mail without auth/TLS so the dev app can send freely.
       MP_SMTP_AUTH_ACCEPT_ANY: 'true'
       MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+    networks:
+      - sovereign_net
+
+  auth:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+    container_name: sovereign-auth
+    # Internal only — not reachable from the host, only from the runtime
+    # container via http://auth:3001 on the shared network.
+    expose:
+      - '3001'
+    environment:
+      AUTH_SECRET: '${AUTH_SECRET}'
+      AUTH_DATABASE_URL: '${AUTH_DATABASE_URL:-file:./data/auth.db}'
+      AUTH_INVITE_ONLY: '${AUTH_INVITE_ONLY:-false}'
+      # better-auth base URL — internal service address used for server-side
+      # cookie domain and callback construction.
+      AUTH_BASE_URL: '${AUTH_BASE_URL:-http://auth:3001}'
+      NEXT_PUBLIC_RUNTIME_URL: '${NEXT_PUBLIC_RUNTIME_URL:-http://localhost:3000}'
+    volumes:
+      - ./data:/app/data
+    networks:
+      - sovereign_net
+
+  runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sovereign-runtime
+    ports:
+      - '${RUNTIME_PORT:-3000}:3000'
+    environment:
+      # Overrides the .env value (which points to localhost for native dev).
+      # Inside Docker, the runtime reaches auth via the internal service name.
+      SOVEREIGN_AUTH_URL: 'http://auth:3001'
+      DATABASE_URL: '${DATABASE_URL:-file:./data/sovereign.db}'
+      DB_DIALECT: '${DB_DIALECT:-sqlite}'
+      # Email routes to the Mailpit service on the internal network.
+      SMTP_HOST: mailpit
+      SMTP_PORT: '${MAILPIT_SMTP_PORT:-1025}'
+      SMTP_USER: '${SMTP_USER:-}'
+      SMTP_PASS: '${SMTP_PASS:-}'
+      SMTP_FROM: '${SMTP_FROM:-Sovereign <dev@localhost>}'
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - auth
+      - mailpit
+    networks:
+      - sovereign_net
+
+networks:
+  sovereign_net:
+    driver: bridge

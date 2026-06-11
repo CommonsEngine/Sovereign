@@ -1,0 +1,27 @@
+# Dependencies — reinstalled inside the image
+node_modules
+**/node_modules
+
+# Next.js build output — rebuilt inside the image
+.next
+**/.next
+
+# Generated plugin directory — recreated by the generate script
+runtime/app/plugins
+
+# SQLite databases — mounted as a volume so data persists across rebuilds
+data/*.db
+
+# Environment files — injected at container runtime, never baked in
+.env
+.env.local
+.env.*.local
+
+# Version control
+.git
+.gitignore
+
+# Editor artefacts
+.vscode
+.idea
+*.swp
