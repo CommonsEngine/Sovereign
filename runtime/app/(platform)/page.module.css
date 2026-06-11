@@ -1,0 +1,16 @@
+.home {
+  max-width: 640px;
+}
+
+.title {
+  margin: 0 0 var(--sv-space-3);
+  font-size: var(--sv-font-size-2xl);
+  font-weight: var(--sv-font-weight-semibold);
+}
+
+.text {
+  margin: 0;
+  color: var(--sv-color-text-muted);
+  font-size: var(--sv-font-size-md);
+  line-height: 1.6;
+}

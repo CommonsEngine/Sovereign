@@ -352,8 +352,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.07 — `packages/ui` (Sovereign Design System scaffold) (merged to `main`).
 - ✅ Task 0.3.08 — `packages/sdk` (interface definitions) (merged to `main`).
 - ✅ Chore — manifest `icon` field + plugin specs (Console/Launcher/Account/Tasks/Splitify/Plainwrite) + shell sidebar architecture (merged to `main`).
-- ▶️ In review: Task 0.3.09 — `apps/auth` (self-contained better-auth server) [parallel with 0.3.10].
-- ⏳ Next: Task 0.3.10 — Runtime scaffold [parallel with 0.3.09].
+- ✅ Task 0.3.09 — `apps/auth` (self-contained better-auth server) (merged to `main`).
+- ▶️ In review: Tasks 0.3.10 + 0.3.11 — Runtime scaffold + generate script (combined).
+- ⏳ Next: Task 0.3.12 — Docker Compose for local dev.
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).

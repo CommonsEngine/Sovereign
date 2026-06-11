@@ -35,6 +35,9 @@ importers:
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.4
+      '@sovereignfs/manifest':
+        specifier: workspace:*
+        version: link:packages/manifest
       '@sovereignfs/tsconfig':
         specifier: workspace:*
         version: link:packages/tsconfig
@@ -224,6 +227,49 @@ importers:
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+
+  runtime:
+    dependencies:
+      '@next/env':
+        specifier: ^16.2.9
+        version: 16.2.9
+      '@sovereignfs/db':
+        specifier: workspace:*
+        version: link:../packages/db
+      '@sovereignfs/mailer':
+        specifier: workspace:*
+        version: link:../packages/mailer
+      '@sovereignfs/manifest':
+        specifier: workspace:*
+        version: link:../packages/manifest
+      '@sovereignfs/sdk':
+        specifier: workspace:*
+        version: link:../packages/sdk
+      '@sovereignfs/ui':
+        specifier: workspace:*
+        version: link:../packages/ui
+      next:
+        specifier: 'catalog:'
+        version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      react:
+        specifier: 'catalog:'
+        version: 19.2.7
+      react-dom:
+        specifier: 'catalog:'
+        version: 19.2.7(react@19.2.7)
+    devDependencies:
+      '@sovereignfs/tsconfig':
+        specifier: workspace:*
+        version: link:../packages/tsconfig
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.2.17
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.2.3(@types/react@19.2.17)
       typescript:
         specifier: 'catalog:'
         version: 5.9.3

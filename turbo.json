@@ -9,6 +9,15 @@
       "cache": false,
       "persistent": true
     },
+    "generate": {
+      "dependsOn": ["@sovereignfs/manifest#build"],
+      "outputs": ["runtime/app/plugins/**", "runtime/generated/**"],
+      "cache": false
+    },
+    "@sovereignfs/runtime#build": {
+      "dependsOn": ["generate", "^build"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
     "lint": {
       "dependsOn": ["^build"]
     },

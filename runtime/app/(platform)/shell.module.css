@@ -1,0 +1,119 @@
+.shell {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sv-space-4);
+  padding: var(--sv-space-4) 0;
+  background-color: var(--sv-color-surface);
+  border-right: 1px solid var(--sv-color-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-accent);
+  color: var(--sv-color-text-on-accent);
+  font-weight: var(--sv-font-weight-semibold);
+  text-decoration: none;
+}
+
+.plugins {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sv-space-2);
+  width: 100%;
+}
+
+.chrome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sv-space-2);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--sv-radius-md);
+  color: var(--sv-color-text-primary);
+  background-color: var(--sv-color-surface-sunken);
+  font-size: var(--sv-font-size-sm);
+  text-decoration: none;
+}
+
+.icon:hover {
+  background-color: var(--sv-color-border);
+}
+
+.avatar {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--sv-radius-full);
+  background-color: var(--sv-color-surface-sunken);
+  border: 1px solid var(--sv-color-border-strong);
+}
+
+.content {
+  padding: var(--sv-space-8);
+}
+
+.mobileHeader,
+.mobileFooter {
+  display: none;
+}
+
+.mobileBrand {
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-primary);
+  text-decoration: none;
+}
+
+@media (max-width: 768px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .sidebar {
+    display: none;
+  }
+
+  .content {
+    padding: var(--sv-space-4);
+  }
+
+  .mobileHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sv-space-3) var(--sv-space-4);
+    background-color: var(--sv-color-surface);
+    border-bottom: 1px solid var(--sv-color-border);
+  }
+
+  .mobileFooter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sv-space-3);
+    padding: var(--sv-space-2);
+    background-color: var(--sv-color-surface);
+    border-top: 1px solid var(--sv-color-border);
+  }
+}
