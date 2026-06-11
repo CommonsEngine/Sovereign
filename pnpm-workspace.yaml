@@ -15,6 +15,7 @@ catalog:
   react-dom: ^19.0.0
   '@types/react': ^19.0.0
   '@types/react-dom': ^19.0.0
+  next: ^15.0.0
 
 # Transitive deps allowed to run install scripts (pnpm blocks them by default).
 # esbuild (via tsx) needs its postinstall to link the platform binary.
@@ -24,4 +25,5 @@ catalog:
 allowBuilds:
   better-sqlite3: true
   esbuild: true
+  sharp: false
   simple-git-hooks: false
