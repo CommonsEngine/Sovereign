@@ -343,31 +343,45 @@ and `files` fields pointing to `dist/`.
 
 ### Task 0.3.09 — `apps/auth` — better-auth server **[parallel with 0.3.10]**
 
-**Goal:** Auth server wrapping better-auth. Handles login, logout, registration, and session verification.
+**Goal:** Self-contained auth server wrapping better-auth. Handles login, logout, registration, session verification, and its own login/registration UI. Owns its identity database; does **not** use `packages/db` (SRS §3.3).
 
 **Deliverables:**
 
 - `apps/auth/` — Next.js app with:
-  - better-auth configured with email/password provider
-  - Session stored as httpOnly cookie
-  - `/api/auth/[...all]` — better-auth catch-all handler
-  - `/api/verify` — internal endpoint: validates session token, returns user object or 401
-  - Invite-only toggle via `AUTH_INVITE_ONLY` env var
-  - First user auto-assigned `platform:admin`, subsequent users `platform:user`
-  - Environment: `AUTH_SECRET`, `DATABASE_URL`, `AUTH_INVITE_ONLY`
-- `apps/auth/next.config.ts` — must include:
-  - `transpilePackages: ['@sovereignfs/db', '@sovereignfs/mailer']` — compiles
-    workspace package TypeScript source directly; no watch build needed in dev
+  - better-auth (email/password) backed by its **own** database — better-auth's
+    standard `user`/`session`/`account`/`verification` schema (SQLite default
+    via `better-sqlite3`, Postgres via env). The schema is managed by
+    better-auth, not `packages/db`.
+  - `role` as a non-editable better-auth `additionalField`; a
+    `databaseHooks.user.create` hook assigns `platform:admin` to the first user
+    and `platform:user` thereafter.
+  - Its own **login and registration UI**, built with `@sovereignfs/ui`.
+  - `/api/auth/[...all]` — better-auth catch-all handler.
+  - `/api/verify` — endpoint that validates the session and returns the user
+    (id, email, role) or 401.
+  - Invite-only: an `invites` table in the auth DB; when `AUTH_INVITE_ONLY=true`,
+    registration requires a valid, unconsumed invite token (first-user bootstrap
+    exempt). Invite **creation** is a Console feature (Task 0.4.02).
+  - Session stored as an httpOnly cookie. Cookie sharing with the runtime works
+    via host-scoping (SRS §3.10) — no special config.
+  - `AUTH_SECRET` has no default — the server throws on startup if it is unset.
+  - Environment: `AUTH_SECRET`, `AUTH_DATABASE_URL` (defaults to a local SQLite
+    file), `AUTH_INVITE_ONLY`.
+- `apps/auth/next.config.ts` — `transpilePackages: ['@sovereignfs/ui']` (the
+  only workspace package the auth server consumes).
 
-**SRS reference:** 3.3 Auth Layer, 4.3 Functional Requirements — Auth
+Deferred: password reset (AUTH-07) — revisited in a later auth task.
+
+**SRS reference:** 3.3 Auth Layer, 3.10 Shared Login State, 4.3 Functional Requirements — Auth
 
 **Review checklist:**
 
-- Login sets httpOnly cookie
-- `/api/verify` returns 401 for invalid/expired token
-- First registered user gets `platform:admin`
-- `AUTH_INVITE_ONLY=true` blocks registration without valid invite token
+- Login sets an httpOnly cookie
+- `/api/verify` returns 401 for an invalid/expired token, the user otherwise
+- First registered user gets `platform:admin`; the second gets `platform:user`
+- `AUTH_INVITE_ONLY=true` blocks registration without a valid invite token
 - `AUTH_SECRET` has no default value — throws on startup if unset
+- Login/registration screens render with `@sovereignfs/ui`
 
 ---
 
@@ -388,7 +402,9 @@ and `files` fields pointing to `dist/`.
   - `src/middleware.ts` — reads session cookie, calls `apps/auth /api/verify` to validate session (v0.3 approach — see SRS AUTH-05 for v0.5 local verification target), redirects to `/login` if unauthenticated
   - `src/registry.ts` — reads `generated/registry.ts`, exports installed plugin list
   - `generated/registry.ts` — placeholder empty registry
-  - `app/login/page.tsx` — login page pointing to `apps/auth`
+  - `app/login/route.ts` — redirects unauthenticated users to the auth server's
+    login page (the login/registration UI lives in `apps/auth`, not the runtime;
+    SRS §3.3). The auth server redirects back after login.
 - `runtime/next.config.ts` — must include:
   - `transpilePackages: ['@sovereignfs/sdk', '@sovereignfs/ui',
 '@sovereignfs/db', '@sovereignfs/manifest', '@sovereignfs/mailer']` —
@@ -937,4 +953,4 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
-_Version 1.0 — June 2026. Changes from v0.9: Task 0.3.10 (runtime scaffold) updated with three-section sidebar architecture (PLT-11/PLT-12) and manifest icon loading detail. Task 0.4.04 (Console settings/health) expanded with `platform_settings` table, CON-11 root plugin selector, and root redirect wiring. New Tasks 0.4.05 (Launcher plugin) and 0.4.06 (Account plugin) added. Earlier v0.9 changes retained. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories._
+_Version 1.1 — June 2026. Changes from v1.0: Task 0.3.09 (apps/auth) reframed as a self-contained auth server — owns its better-auth database and login/registration UI, depends only on `@sovereignfs/ui` (not `packages/db`), with an `invites` table for the invite-only gate; password reset deferred. Task 0.3.10 login route now redirects to the auth server's UI. Task breakdown covers platform only. Plugin-specific task breakdowns (Tasks, Splitify) are maintained in their respective repositories._
