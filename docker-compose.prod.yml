@@ -1,0 +1,61 @@
+# Production Docker Compose.
+#
+# Usage:  docker compose -f docker-compose.prod.yml up -d
+#
+# Mailpit is dev-only and is absent here. Configure a real SMTP provider via
+# the SMTP_* environment variables in your .env file.
+#
+# The auth server is internal-only — it is not mapped to a host port. Place a
+# reverse proxy (nginx, Caddy, Traefik) in front of the runtime container and
+# route all traffic through it. See docs/self-hosting.md for full instructions.
+#
+# Quick start:
+#   cp .env.example .env            # fill in AUTH_SECRET and all required vars
+#   docker compose -f docker-compose.prod.yml up --build -d
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+    container_name: sovereign-auth
+    expose:
+      - '3001'
+    restart: unless-stopped
+    environment:
+      AUTH_SECRET: '${AUTH_SECRET}'
+      AUTH_DATABASE_URL: '${AUTH_DATABASE_URL:-file:./data/auth.db}'
+      AUTH_INVITE_ONLY: '${AUTH_INVITE_ONLY:-false}'
+      AUTH_BASE_URL: '${AUTH_BASE_URL:-http://auth:3001}'
+      NEXT_PUBLIC_RUNTIME_URL: '${NEXT_PUBLIC_RUNTIME_URL}'
+    volumes:
+      - ./data:/app/data
+    networks:
+      - sovereign_net
+
+  runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sovereign-runtime
+    ports:
+      - '${RUNTIME_PORT:-4000}:3000'
+    restart: unless-stopped
+    environment:
+      SOVEREIGN_AUTH_URL: 'http://auth:3001'
+      DATABASE_URL: '${DATABASE_URL:-file:./data/sovereign.db}'
+      DB_DIALECT: '${DB_DIALECT:-sqlite}'
+      SMTP_HOST: '${SMTP_HOST:-}'
+      SMTP_PORT: '${SMTP_PORT:-587}'
+      SMTP_USER: '${SMTP_USER:-}'
+      SMTP_PASS: '${SMTP_PASS:-}'
+      SMTP_FROM: '${SMTP_FROM:-}'
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - auth
+    networks:
+      - sovereign_net
+
+networks:
+  sovereign_net:
+    driver: bridge
