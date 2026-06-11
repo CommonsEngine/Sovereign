@@ -324,6 +324,14 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
   `8025`), point `SMTP_HOST` at it, and read mail at `http://localhost:8025`.
   Email is off by default (SMTP_HOST unset → `send()` no-ops). See
   CONTRIBUTING — "Email in development".
+- **Docker Compose runs the full stack locally.** `docker compose up --build`
+  starts runtime (`:3000`), auth (internal-only, no host port), and Mailpit.
+  The runtime container hardcodes `SOVEREIGN_AUTH_URL=http://auth:3001` (the
+  internal service name) — do not set this var in `.env` for Docker use. For
+  production use `docker-compose.prod.yml` (standalone file, runtime on `:4000`,
+  no Mailpit). See `docs/self-hosting.md`. The `Dockerfile` (runtime) and
+  `apps/auth/Dockerfile` are dev-quality; Task 0.5.02 replaces them with
+  multi-stage standalone builds.
 - **Runtime dev = generate then `next dev`.** The runtime's `dev` script runs
   `scripts/generate-registry.ts` (composes plugins, writes the registry) before
   starting Next on `:3000`. Both apps load the single root `.env` via
@@ -360,7 +368,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Chore — manifest `icon` field + plugin specs (Console/Launcher/Account/Tasks/Splitify/Plainwrite) + shell sidebar architecture (merged to `main`).
 - ✅ Task 0.3.09 — `apps/auth` (self-contained better-auth server) (merged to `main`).
 - ▶️ In review: Tasks 0.3.10 + 0.3.11 — Runtime scaffold + generate script (combined).
-- ⏳ Next: Task 0.3.12 — Docker Compose for local dev.
+- ▶️ In review: Task 0.3.12 — Docker Compose for local dev.
+- ⏳ Next: Task 0.4.01 — Console plugin scaffold.
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
