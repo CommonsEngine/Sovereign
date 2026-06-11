@@ -2,7 +2,7 @@
 
 **Version:** 0.2\
 **Date:** June 2026\
-**Author:** kasunben, DishanRajapaksha\
+**Author(s):** kasunben, DishanRajapaksha\
 **Purpose:** Canonical specification for the Sovereign Splitify plugin — the single source of truth for its manifest, access model, data model, and build plan.\
 **Status:** Draft
 
