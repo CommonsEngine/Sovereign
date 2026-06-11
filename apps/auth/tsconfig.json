@@ -9,6 +9,7 @@
   "include": [
     "next-env.d.ts",
     "next.config.ts",
+    "instrumentation.ts",
     "src/**/*.ts",
     "scripts/**/*.ts",
     "app/**/*.ts",
