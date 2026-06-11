@@ -1,9 +1,9 @@
 # Account
 
-**Version:** 0.1
-**Date:** June 2026
-**Author:** kasunben
-**Purpose:** Canonical specification for the Sovereign Account plugin — the single source of truth for its manifest, access model, functional requirements, data model, and build plan.
+**Version:** 0.1\
+**Date:** June 2026\
+**Author:** kasunben\
+**Purpose:** Canonical specification for the Sovereign Account plugin — the single source of truth for its manifest, access model, functional requirements, data model, and build plan.\
 **Status:** Draft
 
 ---

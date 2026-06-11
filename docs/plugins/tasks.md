@@ -1,9 +1,9 @@
 # Sovereign Tasks
 
-**Version:** 0.2
-**Date:** June 2026
-**Author:** kasunben
-**Purpose:** Canonical specification for the Sovereign Tasks plugin — the single source of truth for its manifest, access model, data model, and build plan.
+**Version:** 0.2\
+**Date:** June 2026\
+**Author:** kasunben\
+**Purpose:** Canonical specification for the Sovereign Tasks plugin — the single source of truth for its manifest, access model, data model, and build plan.\
 **Status:** Draft
 
 ---

@@ -2,8 +2,8 @@
 
 ## Project Concept · Project Plan · Software Requirements Specification
 
-**Version:** 0.6
-**Date:** June 2026
+**Version:** 0.6\
+**Date:** June 2026\
 **Status:** Signed Off
 
 ---

@@ -1,7 +1,7 @@
 # Sovereign — Implementation Task Breakdown
 
-**Version:** 1.0
-**Date:** June 2026
+**Version:** 1.0\
+**Date:** June 2026\
 **Purpose:** Session-by-session task guide for Claude Code. Each task is a single PR. Reference `sovereign-proposal-plan-srs.md` for architectural decisions and rationale.
 
 ---
