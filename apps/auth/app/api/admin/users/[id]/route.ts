@@ -18,19 +18,16 @@ export async function PATCH(
   const body = (await request.json()) as PatchBody;
 
   const db = getDb();
+  const now = new Date().toISOString(); // better-auth stores dates as ISO strings
 
   if ('role' in body) {
-    db.prepare('UPDATE user SET role = ?, updatedAt = ? WHERE id = ?').run(
-      body.role,
-      Math.floor(Date.now() / 1000),
-      id,
-    );
+    db.prepare('UPDATE user SET role = ?, updatedAt = ? WHERE id = ?').run(body.role, now, id);
   }
 
   if ('active' in body) {
     db.prepare('UPDATE user SET active = ?, updatedAt = ? WHERE id = ?').run(
       body.active ? 1 : 0,
-      Math.floor(Date.now() / 1000),
+      now,
       id,
     );
   }
@@ -44,7 +41,7 @@ export async function PATCH(
         name: string | null;
         role: string;
         active: number | null;
-        createdAt: number;
+        createdAt: string; // ISO 8601 string from better-auth
       }
     | undefined;
 
