@@ -2,4 +2,26 @@
 // Run `pnpm generate` to regenerate.
 import type { SovereignManifest } from '@sovereignfs/manifest';
 
-export const registry: SovereignManifest[] = [];
+export const registry: SovereignManifest[] = [
+  {
+    "schemaVersion": 1,
+    "id": "fs.sovereign.console",
+    "name": "Console",
+    "version": "0.1.0",
+    "description": "Platform administration: users, plugins, settings, and system health.",
+    "type": "platform",
+    "runtime": "native",
+    "routePrefix": "/console",
+    "permissions": [
+      "auth:session",
+      "db:readWrite",
+      "mailer:send"
+    ],
+    "shell": "default",
+    "adminOnly": true,
+    "icon": "icon.svg",
+    "compatibility": {
+      "minPlatformVersion": "0.4.0"
+    }
+  }
+];

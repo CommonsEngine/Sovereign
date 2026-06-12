@@ -14,12 +14,6 @@ const nextConfig: NextConfig = {
     '@sovereignfs/manifest',
     '@sovereignfs/mailer',
   ],
-  webpack: (config) => {
-    // Follow symlinks so plugin source (symlinked into app/plugins/) hot-reloads.
-    config.resolve ??= {};
-    config.resolve.symlinks = false;
-    return config;
-  },
 };
 
 export default nextConfig;

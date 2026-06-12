@@ -1,12 +1,20 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { getInstalledPlugins } from '@/src/registry';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
+/** Whether a request path falls under a plugin's routePrefix. */
+function underPrefix(pathname: string, routePrefix: string): boolean {
+  return pathname === routePrefix || pathname.startsWith(`${routePrefix}/`);
+}
+
 /**
- * Session gate. Verifies the request against the auth server's /api/verify
- * (v0.3 approach; SRS AUTH-05 targets local JWT verification at v0.5). On
- * success the verified user is injected as request headers for downstream
- * server components; otherwise the request is redirected to /login.
+ * Session gate + plugin route protection. Verifies the request against the auth
+ * server's /api/verify (v0.3 approach; SRS AUTH-05 targets local JWT
+ * verification at v0.5). On success the verified user is injected as request
+ * headers for downstream server components; otherwise the request is redirected
+ * to /login. Routes under an `adminOnly` plugin's prefix are reachable only by
+ * `platform:admin` — everyone else gets 403 (SRS §3.4, PLT-03).
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const verify = await fetch(`${AUTH_URL}/api/verify`, {
@@ -20,6 +28,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { user } = (await verify.json()) as {
     user: { id: string; email: string; role: string };
   };
+
+  const { pathname } = request.nextUrl;
+  const requiresAdmin = getInstalledPlugins().some(
+    (plugin) => plugin.adminOnly && underPrefix(pathname, plugin.routePrefix),
+  );
+  if (requiresAdmin && user.role !== 'platform:admin') {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
 
   const headers = new Headers(request.headers);
   headers.set('x-sovereign-user-id', user.id);

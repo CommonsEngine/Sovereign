@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx ../scripts/generate-registry.ts && next dev --port 3000",
+    "dev": "tsx ../scripts/dev.ts",
     "generate": "tsx ../scripts/generate-registry.ts",
     "build": "next build",
     "start": "next start --port 3000",

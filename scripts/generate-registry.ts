@@ -2,9 +2,25 @@
  * generate-registry — composes installed plugins into the runtime.
  *
  * Scans `plugins/<dir>/manifest.json`, validates each via `@sovereignfs/manifest`,
- * writes the typed plugin registry to `runtime/generated/registry.ts`, and links
- * each plugin's `app/` into `runtime/app/plugins/<dir>/` — symlinks in dev,
- * copies in production (NODE_ENV). An invalid manifest fails the build.
+ * writes the typed plugin registry to `runtime/generated/registry.ts`, and copies
+ * each plugin's `app/` into the runtime App Router at its `routePrefix`. An
+ * invalid manifest fails the build.
+ *
+ * Copies, not symlinks, in every environment: Next's dev route watcher does not
+ * follow symlinked route directories, so a symlinked plugin would 404 under
+ * `next dev` (it works under `next build`, which does follow them). Copying
+ * keeps dev and prod identical. The dev orchestrator (`scripts/dev.ts`) runs
+ * this in `--watch` mode so edits under `plugins/` re-copy and trigger HMR.
+ *
+ * Composition target is chosen by the manifest `shell` value so the plugin
+ * inherits the right layout from the route tree (no per-request branching):
+ *   - `default` (or omitted) → `runtime/app/(platform)/(plugins)/<routePrefix>/`,
+ *     which sits under the platform sidebar shell.
+ *   - `minimal` → not yet implemented (a chrome-free group lands with the first
+ *     minimal plugin); the script fails loudly rather than mis-composing one.
+ *
+ * The route segment is the manifest `routePrefix` (not the source directory
+ * name), so `routePrefix` is the single source of truth for a plugin's URL.
  *
  * Run via `pnpm generate`; the runtime dev script runs it before `next dev`.
  * Pass `--watch` to re-run when plugin directories are added or removed.
@@ -18,7 +34,6 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  symlinkSync,
   watch,
   writeFileSync,
 } from 'node:fs';
@@ -28,10 +43,11 @@ import { validateManifest, type SovereignManifest } from '@sovereignfs/manifest'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGINS_DIR = join(ROOT, 'plugins');
-const RUNTIME_PLUGINS_DIR = join(ROOT, 'runtime', 'app', 'plugins');
+// Default-shell plugins compose under the platform route group so they inherit
+// the sidebar shell. `(plugins)` is a URL-transparent route group; the public
+// path is the plugin's routePrefix.
+const PLATFORM_PLUGINS_DIR = join(ROOT, 'runtime', 'app', '(platform)', '(plugins)');
 const REGISTRY_FILE = join(ROOT, 'runtime', 'generated', 'registry.ts');
-
-const isProd = process.env.NODE_ENV === 'production';
 
 interface PluginEntry {
   dir: string;
@@ -83,24 +99,41 @@ export const registry: SovereignManifest[] = ${JSON.stringify(manifests, null, 2
   writeFileSync(REGISTRY_FILE, content);
 }
 
-function composePlugins(plugins: PluginEntry[]): void {
-  mkdirSync(RUNTIME_PLUGINS_DIR, { recursive: true });
+/** Route group a plugin composes into, chosen by its `shell` mode. */
+function targetGroupDir(manifest: SovereignManifest): string {
+  const shell = manifest.shell ?? 'default';
+  if (shell === 'minimal') {
+    console.error(
+      `[generate] plugin ${manifest.id} declares shell: "minimal", which is not yet ` +
+        'supported — a chrome-free route group lands with the first minimal plugin.',
+    );
+    process.exit(1);
+  }
+  return PLATFORM_PLUGINS_DIR;
+}
 
-  // Remove previously composed plugins (keep the .gitignore).
-  for (const entry of readdirSync(RUNTIME_PLUGINS_DIR)) {
-    if (entry === '.gitignore') continue;
-    rmSync(join(RUNTIME_PLUGINS_DIR, entry), { recursive: true, force: true });
+// Every route group plugins may compose into. Listed so each is cleared before
+// composition; `(fullscreen)` for minimal-shell plugins is added when needed.
+const GROUP_DIRS = [PLATFORM_PLUGINS_DIR];
+
+function composePlugins(plugins: PluginEntry[]): void {
+  // Remove previously composed plugins from every group (keep each .gitignore).
+  for (const groupDir of GROUP_DIRS) {
+    mkdirSync(groupDir, { recursive: true });
+    for (const entry of readdirSync(groupDir)) {
+      if (entry === '.gitignore') continue;
+      rmSync(join(groupDir, entry), { recursive: true, force: true });
+    }
   }
 
-  for (const { dir } of plugins) {
+  for (const { dir, manifest } of plugins) {
     const srcApp = join(PLUGINS_DIR, dir, 'app');
     if (!existsSync(srcApp)) continue;
-    const dest = join(RUNTIME_PLUGINS_DIR, dir);
-    if (isProd) {
-      cpSync(srcApp, dest, { recursive: true });
-    } else {
-      symlinkSync(srcApp, dest, 'dir');
-    }
+    // The public path is the manifest routePrefix, not the source dir name.
+    const routeSegment = manifest.routePrefix.replace(/^\/+/, '');
+    const dest = join(targetGroupDir(manifest), routeSegment);
+    mkdirSync(dirname(dest), { recursive: true });
+    cpSync(srcApp, dest, { recursive: true });
   }
 }
 
@@ -108,9 +141,7 @@ function generate(): void {
   const plugins = readPlugins();
   writeRegistry(plugins);
   composePlugins(plugins);
-  console.log(
-    `[generate] ${String(plugins.length)} plugin(s) composed (${isProd ? 'copy' : 'symlink'}).`,
-  );
+  console.log(`[generate] ${String(plugins.length)} plugin(s) composed.`);
 }
 
 generate();

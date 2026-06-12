@@ -3,5 +3,5 @@ node_modules
 **/.next
 **/.turbo
 pnpm-lock.yaml
-runtime/app/plugins
+runtime/app/(platform)/(plugins)
 runtime/generated

@@ -134,8 +134,21 @@ pnpm lint:fix        # run ESLint with auto-fix
   No SQLite-specific SQL in app code.
 - **No secrets with defaults.** `AUTH_SECRET` / `SOVEREIGN_AUTH_SECRET` etc.
   must throw on startup if unset.
-- **`runtime/app/plugins/` is generated** (symlinks in dev, copies in prod) and
-  gitignored — never edit or commit it. Source of truth is `plugins/[id]/app/`.
+- **Plugins compose at their `routePrefix` under a `shell`-selected route
+  group.** The generate script injects `plugins/[id]/app/` into
+  `runtime/app/(platform)/(plugins)/<routePrefix>/` for `shell: default` plugins
+  (they inherit the platform sidebar via App Router layout nesting — no
+  rewrites). The route segment is the manifest `routePrefix`, not the source
+  directory name, so `routePrefix` is the single source of truth for a plugin's
+  URL; the `(plugins)` route group is URL-transparent, so `routePrefix: /console`
+  serves at `/console`. The composed segments are **copies** (in every
+  environment — Next's dev route watcher does not follow symlinked route dirs)
+  and are gitignored by a `.gitignore` inside each route group — never edit or
+  commit them. Source of truth is always `plugins/[id]/app/`. `shell: minimal` (a
+  chrome-free group) is not wired yet; the generate script fails loudly on it.
+- **`adminOnly` routes are gated in the runtime middleware.** A request under an
+  admin-only plugin's `routePrefix` from a non-`platform:admin` user returns 403
+  (SRS §3.4, PLT-03).
 
 ## Design system (`packages/ui`)
 
@@ -305,17 +318,20 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 ## Dev DX notes
 
 - **No manual rebuilds in dev.** `pnpm dev` starts everything. The runtime's
-  dev script runs the generate script once on startup (creates plugin symlinks),
-  then starts the Next.js dev server. HMR handles all subsequent changes.
+  dev script is `scripts/dev.ts`: it composes plugins once, then runs the
+  generate watcher and the Next.js dev server together (and tears both down on
+  exit). HMR handles all subsequent changes.
 - **Package changes trigger HMR instantly.** All workspace packages are listed
   in `transpilePackages` in both `runtime/next.config.ts` and
   `apps/auth/next.config.ts`. Next.js compiles package TypeScript source
   directly — no `tsup --watch`, no intermediate `dist/`. Edit
   `packages/ui/src/Button.tsx` and the runtime hot-reloads immediately.
-- **Plugin changes trigger HMR instantly.** Plugin source is symlinked into
-  `runtime/app/plugins/` in dev. The runtime webpack config sets
-  `resolve.symlinks: false` so file watchers follow the symlink path and
-  detect changes in the original plugin directory.
+- **Plugin changes trigger HMR via re-copy.** Plugins compose as copies, not
+  symlinks (Next's dev route watcher does not discover routes through symlinked
+  directories — symlinked plugin routes 404 under `next dev`). `scripts/dev.ts`
+  runs the generate script in `--watch` mode, so an edit under `plugins/[id]/app/`
+  re-copies into the route group and Next hot-reloads. (This replaced the earlier
+  symlink + `resolve.symlinks: false` approach.)
 - **tsup is production-only.** tsup runs during `pnpm build` to emit `dist/`
   for Docker images and npm publishing. It is not part of the dev pipeline.
 - **Email in dev goes to Mailpit.** The mailer speaks plain SMTP, so dev mail
@@ -332,12 +348,13 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
   no Mailpit). See `docs/self-hosting.md`. The `Dockerfile` (runtime) and
   `apps/auth/Dockerfile` are dev-quality; Task 0.5.02 replaces them with
   multi-stage standalone builds.
-- **Runtime dev = generate then `next dev`.** The runtime's `dev` script runs
-  `scripts/generate-registry.ts` (composes plugins, writes the registry) before
-  starting Next on `:3000`. Both apps load the single root `.env` via
-  `loadEnvConfig`. The runtime middleware verifies each request against the auth
-  server's `/api/verify` (`SOVEREIGN_AUTH_URL`) and injects `x-sovereign-user-*`
-  headers; `SOVEREIGN_AUTH_SECRET` (local JWT verify) is a v0.5 concern.
+- **Runtime dev = `scripts/dev.ts`.** The runtime's `dev` script runs the
+  orchestrator, which composes plugins (writes the registry, copies plugin
+  `app/` trees), then runs the generate watcher + `next dev` on `:3000`. Both
+  apps load the single root `.env` via `loadEnvConfig`. The runtime middleware
+  verifies each request against the auth server's `/api/verify`
+  (`SOVEREIGN_AUTH_URL`) and injects `x-sovereign-user-*` headers;
+  `SOVEREIGN_AUTH_SECRET` (local JWT verify) is a v0.5 concern.
 
 ## Environment notes
 
@@ -367,9 +384,10 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.08 — `packages/sdk` (interface definitions) (merged to `main`).
 - ✅ Chore — manifest `icon` field + plugin specs (Console/Launcher/Account/Tasks/Splitify/Plainwrite) + shell sidebar architecture (merged to `main`).
 - ✅ Task 0.3.09 — `apps/auth` (self-contained better-auth server) (merged to `main`).
-- ▶️ In review: Tasks 0.3.10 + 0.3.11 — Runtime scaffold + generate script (combined).
-- ▶️ In review: Task 0.3.12 — Docker Compose for local dev.
-- ⏳ Next: Task 0.4.01 — Console plugin scaffold.
+- ✅ Tasks 0.3.10 + 0.3.11 — Runtime scaffold + generate script (combined) (merged to `main`).
+- ✅ Task 0.3.12 — Docker Compose for local dev (merged to `main`).
+- ▶️ In review: Task 0.4.01 — Console plugin scaffold (plugin route-composition model + middleware admin gating; platform → 0.4.0).
+- ⏳ Next: Task 0.4.02 — Console: user management.
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).

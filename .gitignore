@@ -6,9 +6,10 @@ dist/
 .next/
 .turbo/
 
-# Generated plugin routes — symlinks in dev, copies in prod. Never commit.
-# Source of truth is always plugins/[id]/app/.
-runtime/app/plugins/
+# Generated plugin route segments are composed under each shell route group
+# (e.g. runtime/app/(platform)/(plugins)/) — symlinks in dev, copies in prod.
+# A .gitignore inside each group ignores its composed contents. Source of truth
+# is always plugins/[id]/app/.
 
 # Database files (SQLite)
 data/*.db
