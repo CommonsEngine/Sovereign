@@ -153,6 +153,7 @@
 
 .badgeActive,
 .badgeDeactivated,
+.badgeInvited,
 .badgeAdmin,
 .badgeUser {
   display: inline-block;
@@ -181,6 +182,11 @@
 
 .badgeUser {
   background-color: var(--sv-color-surface-sunken);
+  color: var(--sv-color-text-muted);
+}
+
+.badgeInvited {
+  background-color: color-mix(in srgb, var(--sv-color-text-muted) 12%, transparent);
   color: var(--sv-color-text-muted);
 }
 
@@ -355,4 +361,15 @@
   border: 1px solid var(--sv-color-border);
   border-radius: var(--sv-radius-md);
   background-color: var(--sv-color-surface-sunken);
+}
+
+/* ── Utility ────────────────────────────────────────────────────────────── */
+
+.textMuted {
+  color: var(--sv-color-text-muted);
+}
+
+.expiryNote {
+  font-size: var(--sv-font-size-xs);
+  color: var(--sv-color-text-muted);
 }
