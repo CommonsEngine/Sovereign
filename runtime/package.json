@@ -18,6 +18,7 @@
     "@sovereignfs/manifest": "workspace:*",
     "@sovereignfs/sdk": "workspace:*",
     "@sovereignfs/ui": "workspace:*",
+    "better-sqlite3": "^12.10.0",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
