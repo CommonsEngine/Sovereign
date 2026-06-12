@@ -2,16 +2,17 @@ import Link from 'next/link';
 import { changeRoleAction, toggleActiveAction } from './actions';
 import styles from '../console.module.css';
 
-interface AdminUser {
-  id: string;
+interface MemberRow {
+  id: string | null;
   email: string;
   name: string | null;
-  role: string;
-  active: boolean;
-  createdAt: string; // ISO 8601 string from better-auth
+  role: string | null;
+  status: 'active' | 'deactivated' | 'invited';
+  createdAt: string;
+  expiresAt: string | null;
 }
 
-async function getUsers(): Promise<AdminUser[]> {
+async function getMembers(): Promise<MemberRow[]> {
   const authUrl = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
   const adminKey = process.env.SOVEREIGN_ADMIN_KEY ?? '';
   const res = await fetch(`${authUrl}/api/admin/users`, {
@@ -19,11 +20,17 @@ async function getUsers(): Promise<AdminUser[]> {
     cache: 'no-store',
   });
   if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`);
-  return res.json() as Promise<AdminUser[]>;
+  return res.json() as Promise<MemberRow[]>;
+}
+
+function StatusBadge({ status }: { status: MemberRow['status'] }) {
+  if (status === 'active') return <span className={styles.badgeActive}>Active</span>;
+  if (status === 'deactivated') return <span className={styles.badgeDeactivated}>Deactivated</span>;
+  return <span className={styles.badgeInvited}>Invited</span>;
 }
 
 export default async function UsersPage() {
-  const users = await getUsers();
+  const members = await getMembers();
 
   return (
     <div>
@@ -41,67 +48,91 @@ export default async function UsersPage() {
               <th className={styles.th}>Name / Email</th>
               <th className={styles.th}>Role</th>
               <th className={styles.th}>Status</th>
-              <th className={styles.th}>Joined</th>
+              <th className={styles.th}>Joined / Invited</th>
               <th className={styles.th}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className={styles.tr}>
+            {members.map((member) => (
+              <tr key={member.id ?? `invite-${member.email}`} className={styles.tr}>
                 <td className={styles.td}>
                   <div className={styles.userCell}>
-                    <span className={styles.userName}>{user.name ?? '—'}</span>
-                    <span className={styles.userEmail}>{user.email}</span>
+                    <span className={styles.userName}>{member.name ?? '—'}</span>
+                    <span className={styles.userEmail}>{member.email}</span>
                   </div>
                 </td>
-                <td className={styles.td}>
-                  <span
-                    className={
-                      user.role === 'platform:admin' ? styles.badgeAdmin : styles.badgeUser
-                    }
-                  >
-                    {user.role === 'platform:admin' ? 'Admin' : 'User'}
-                  </span>
-                </td>
-                <td className={styles.td}>
-                  <span className={user.active ? styles.badgeActive : styles.badgeDeactivated}>
-                    {user.active ? 'Active' : 'Deactivated'}
-                  </span>
-                </td>
-                <td className={styles.td}>
-                  <time dateTime={new Date(user.createdAt).toISOString()}>
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </time>
-                </td>
-                <td className={styles.td}>
-                  <div className={styles.rowActions}>
-                    <form action={changeRoleAction} className={styles.roleForm}>
-                      <input type="hidden" name="userId" value={user.id} />
-                      <select
-                        name="role"
-                        defaultValue={user.role}
-                        className={styles.roleSelect}
-                        aria-label={`Role for ${user.email}`}
-                      >
-                        <option value="platform:user">User</option>
-                        <option value="platform:admin">Admin</option>
-                      </select>
-                      <button type="submit" className={styles.actionButtonSmall}>
-                        Save
-                      </button>
-                    </form>
 
-                    <form action={toggleActiveAction}>
-                      <input type="hidden" name="userId" value={user.id} />
-                      <input type="hidden" name="active" value={user.active ? 'false' : 'true'} />
-                      <button
-                        type="submit"
-                        className={user.active ? styles.deactivateButton : styles.reactivateButton}
-                      >
-                        {user.active ? 'Deactivate' : 'Reactivate'}
-                      </button>
-                    </form>
-                  </div>
+                <td className={styles.td}>
+                  {member.role ? (
+                    <span
+                      className={
+                        member.role === 'platform:admin' ? styles.badgeAdmin : styles.badgeUser
+                      }
+                    >
+                      {member.role === 'platform:admin' ? 'Admin' : 'User'}
+                    </span>
+                  ) : (
+                    <span className={styles.textMuted}>—</span>
+                  )}
+                </td>
+
+                <td className={styles.td}>
+                  <StatusBadge status={member.status} />
+                </td>
+
+                <td className={styles.td}>
+                  <time dateTime={new Date(member.createdAt).toISOString()}>
+                    {new Date(member.createdAt).toLocaleDateString()}
+                  </time>
+                  {member.expiresAt && (
+                    <span className={styles.expiryNote}>
+                      {' '}
+                      · expires {new Date(member.expiresAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </td>
+
+                <td className={styles.td}>
+                  {member.status !== 'invited' && member.id ? (
+                    <div className={styles.rowActions}>
+                      <form action={changeRoleAction} className={styles.roleForm}>
+                        <input type="hidden" name="userId" value={member.id} />
+                        <select
+                          name="role"
+                          defaultValue={member.role ?? 'platform:user'}
+                          className={styles.roleSelect}
+                          aria-label={`Role for ${member.email}`}
+                        >
+                          <option value="platform:user">User</option>
+                          <option value="platform:admin">Admin</option>
+                        </select>
+                        <button type="submit" className={styles.actionButtonSmall}>
+                          Save
+                        </button>
+                      </form>
+
+                      <form action={toggleActiveAction}>
+                        <input type="hidden" name="userId" value={member.id} />
+                        <input
+                          type="hidden"
+                          name="active"
+                          value={member.status === 'active' ? 'false' : 'true'}
+                        />
+                        <button
+                          type="submit"
+                          className={
+                            member.status === 'active'
+                              ? styles.deactivateButton
+                              : styles.reactivateButton
+                          }
+                        >
+                          {member.status === 'active' ? 'Deactivate' : 'Reactivate'}
+                        </button>
+                      </form>
+                    </div>
+                  ) : (
+                    <span className={styles.textMuted}>—</span>
+                  )}
                 </td>
               </tr>
             ))}
