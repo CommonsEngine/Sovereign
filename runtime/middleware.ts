@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getInstalledPlugins } from '@/src/registry';
+import { decidePluginRoute, underPrefix } from '@/src/route-guard';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
@@ -8,11 +9,6 @@ const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 // so localhost is reliable in every environment — unlike the public URL, which
 // may sit behind a reverse proxy the container cannot hairpin through.
 const SELF_URL = 'http://localhost:3000';
-
-/** Whether a request path falls under a plugin's routePrefix. */
-function underPrefix(pathname: string, routePrefix: string): boolean {
-  return pathname === routePrefix || pathname.startsWith(`${routePrefix}/`);
-}
 
 /**
  * Middleware runs on the Edge runtime, which cannot open the SQLite database.
@@ -64,15 +60,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const installedPlugins = getInstalledPlugins();
 
   // Only consult plugin status when the path is actually under a plugin prefix.
-  const matchedPlugin = installedPlugins.find((plugin) =>
-    underPrefix(pathname, plugin.routePrefix),
-  );
-  if (matchedPlugin) {
+  const underPlugin = installedPlugins.some((plugin) => underPrefix(pathname, plugin.routePrefix));
+  if (underPlugin) {
     const disabledIds = await fetchDisabledPluginIds();
-    if (disabledIds.has(matchedPlugin.id)) {
+    const decision = decidePluginRoute(pathname, installedPlugins, disabledIds, user.role);
+    if (decision === 'not-found') {
       return new NextResponse('Not Found', { status: 404 });
     }
-    if (matchedPlugin.adminOnly && user.role !== 'platform:admin') {
+    if (decision === 'forbidden') {
       return new NextResponse('Forbidden', { status: 403 });
     }
   }

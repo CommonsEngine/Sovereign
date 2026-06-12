@@ -27,7 +27,7 @@ export function createClient(config: DbConfig = {}) {
   });
 
   if (resolved.dialect === 'sqlite') {
-    const path = toSqlitePath(resolved.url);
+    const path = resolveSqlitePath(resolved.url);
     if (path !== ':memory:') {
       mkdirSync(dirname(path), { recursive: true });
     }
@@ -50,7 +50,7 @@ export function createClient(config: DbConfig = {}) {
  * apps/auth/), and all SQLite files should land in the single root-level
  * data/ directory. Falls back to cwd outside a workspace (standalone builds).
  */
-function toSqlitePath(url: string): string {
+export function resolveSqlitePath(url: string): string {
   if (url === ':memory:') return url;
   const path = url.startsWith('file:') ? url.slice('file:'.length) : url;
   if (isAbsolute(path)) return path;
