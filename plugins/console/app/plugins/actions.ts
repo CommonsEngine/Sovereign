@@ -3,11 +3,14 @@
 import { revalidatePath } from 'next/cache';
 import { sdk } from '@sovereignfs/sdk';
 
-const RUNTIME_URL = process.env.NEXT_PUBLIC_RUNTIME_URL ?? 'http://localhost:3000';
+// Self-fetch address for the runtime's own admin API — the server always
+// listens on :3000, and the public URL may sit behind a reverse proxy the
+// container cannot hairpin through.
+const SELF_URL = 'http://localhost:3000';
 
 async function adminFetch(path: string, init?: RequestInit): Promise<Response> {
   const adminKey = process.env.SOVEREIGN_ADMIN_KEY ?? '';
-  return fetch(`${RUNTIME_URL}${path}`, {
+  return fetch(`${SELF_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',

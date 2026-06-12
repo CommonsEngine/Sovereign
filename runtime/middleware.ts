@@ -3,6 +3,12 @@ import { getInstalledPlugins } from '@/src/registry';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
+// Self-fetch address for the runtime's own Node-runtime API routes. The server
+// always listens on :3000 (scripts/dev.ts and the start script both pin it),
+// so localhost is reliable in every environment — unlike the public URL, which
+// may sit behind a reverse proxy the container cannot hairpin through.
+const SELF_URL = 'http://localhost:3000';
+
 /** Whether a request path falls under a plugin's routePrefix. */
 function underPrefix(pathname: string, routePrefix: string): boolean {
   return pathname === routePrefix || pathname.startsWith(`${routePrefix}/`);
@@ -17,9 +23,9 @@ function underPrefix(pathname: string, routePrefix: string): boolean {
  * (disable is an admin convenience, not a security boundary — adminOnly
  * gating below is independent of it).
  */
-async function fetchDisabledPluginIds(origin: string): Promise<Set<string>> {
+async function fetchDisabledPluginIds(): Promise<Set<string>> {
   try {
-    const res = await fetch(`${origin}/api/admin/plugins/disabled`, {
+    const res = await fetch(`${SELF_URL}/api/admin/plugins/disabled`, {
       headers: { authorization: `Bearer ${process.env.SOVEREIGN_ADMIN_KEY ?? ''}` },
     });
     if (!res.ok) return new Set();
@@ -62,7 +68,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     underPrefix(pathname, plugin.routePrefix),
   );
   if (matchedPlugin) {
-    const disabledIds = await fetchDisabledPluginIds(request.nextUrl.origin);
+    const disabledIds = await fetchDisabledPluginIds();
     if (disabledIds.has(matchedPlugin.id)) {
       return new NextResponse('Not Found', { status: 404 });
     }
