@@ -1,5 +1,8 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { eq } from 'drizzle-orm';
+import { schema } from '@sovereignfs/db';
 import { getInstalledPlugins } from '@/src/registry';
+import { getPlatformDb } from '@/src/db';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
@@ -32,7 +35,26 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { user, expiresAt } = payload;
 
   const { pathname } = request.nextUrl;
-  const requiresAdmin = getInstalledPlugins().some(
+  const installedPlugins = getInstalledPlugins();
+
+  // Check plugin_status table to block disabled-plugin routes.
+  const db = getPlatformDb();
+  const disabledIds = new Set(
+    db
+      .select({ pluginId: schema.pluginStatus.pluginId })
+      .from(schema.pluginStatus)
+      .where(eq(schema.pluginStatus.enabled, false))
+      .all()
+      .map((r) => r.pluginId),
+  );
+  const isDisabled = installedPlugins.some(
+    (plugin) => disabledIds.has(plugin.id) && underPrefix(pathname, plugin.routePrefix),
+  );
+  if (isDisabled) {
+    return new NextResponse('Not Found', { status: 404 });
+  }
+
+  const requiresAdmin = installedPlugins.some(
     (plugin) => plugin.adminOnly && underPrefix(pathname, plugin.routePrefix),
   );
   if (requiresAdmin && user.role !== 'platform:admin') {
@@ -50,6 +72,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // Gate everything except the login redirect and Next static assets.
-  matcher: ['/((?!login|register|_next/static|_next/image|favicon.ico).*)'],
+  // Gate everything except auth redirects, internal admin API, and Next static assets.
+  matcher: ['/((?!login|register|api/admin|_next/static|_next/image|favicon.ico).*)'],
 };
