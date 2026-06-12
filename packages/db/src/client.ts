@@ -1,5 +1,5 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import { resolveDialect, type Dialect } from './dialect';
@@ -43,7 +43,26 @@ export function createClient(config: DbConfig = {}) {
   );
 }
 
+/**
+ * Convert a `file:` URL to a filesystem path. Relative paths resolve against
+ * the workspace root (nearest ancestor with pnpm-workspace.yaml), not the
+ * process cwd — apps run from their own package directories (runtime/,
+ * apps/auth/), and all SQLite files should land in the single root-level
+ * data/ directory. Falls back to cwd outside a workspace (standalone builds).
+ */
 function toSqlitePath(url: string): string {
   if (url === ':memory:') return url;
-  return url.startsWith('file:') ? url.slice('file:'.length) : url;
+  const path = url.startsWith('file:') ? url.slice('file:'.length) : url;
+  if (isAbsolute(path)) return path;
+  return resolve(findWorkspaceRoot(), path);
+}
+
+function findWorkspaceRoot(): string {
+  let dir = process.cwd();
+  for (;;) {
+    if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return process.cwd();
+    dir = parent;
+  }
 }
