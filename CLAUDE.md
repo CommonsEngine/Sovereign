@@ -386,8 +386,9 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.09 — `apps/auth` (self-contained better-auth server) (merged to `main`).
 - ✅ Tasks 0.3.10 + 0.3.11 — Runtime scaffold + generate script (combined) (merged to `main`).
 - ✅ Task 0.3.12 — Docker Compose for local dev (merged to `main`).
-- ▶️ In review: Task 0.4.01 — Console plugin scaffold (plugin route-composition model + middleware admin gating; platform → 0.4.0).
-- ⏳ Next: Task 0.4.02 — Console: user management.
+- ✅ Task 0.4.01 — Console plugin scaffold (plugin route-composition model + middleware admin gating; platform → 0.4.0) (merged to `main`).
+- ▶️ In review: Task 0.4.02 — Console: user management (user list with invited/active/deactivated status, invite flow, role change, deactivate/reactivate; `sdk.auth` + `sdk.mailer` wired).
+- ⏳ Next: Task 0.4.03 — Console: plugin management.
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
