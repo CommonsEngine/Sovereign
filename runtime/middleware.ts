@@ -1,8 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { schema } from '@sovereignfs/db';
 import { getInstalledPlugins } from '@/src/registry';
-import { getPlatformDb } from '@/src/db';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
@@ -12,12 +9,35 @@ function underPrefix(pathname: string, routePrefix: string): boolean {
 }
 
 /**
+ * Middleware runs on the Edge runtime, which cannot open the SQLite database.
+ * Plugin enabled/disabled state is fetched from the runtime's own
+ * /api/admin/plugins/disabled route (Node runtime, excluded from this
+ * middleware's matcher) — same round-trip pattern as the auth /api/verify
+ * check. Fails open: if the status fetch errors, the route stays reachable
+ * (disable is an admin convenience, not a security boundary — adminOnly
+ * gating below is independent of it).
+ */
+async function fetchDisabledPluginIds(origin: string): Promise<Set<string>> {
+  try {
+    const res = await fetch(`${origin}/api/admin/plugins/disabled`, {
+      headers: { authorization: `Bearer ${process.env.SOVEREIGN_ADMIN_KEY ?? ''}` },
+    });
+    if (!res.ok) return new Set();
+    const { disabled } = (await res.json()) as { disabled: string[] };
+    return new Set(disabled);
+  } catch {
+    return new Set();
+  }
+}
+
+/**
  * Session gate + plugin route protection. Verifies the request against the auth
  * server's /api/verify (v0.3 approach; SRS AUTH-05 targets local JWT
  * verification at v0.5). On success the verified user is injected as request
  * headers for downstream server components; otherwise the request is redirected
  * to /login. Routes under an `adminOnly` plugin's prefix are reachable only by
- * `platform:admin` — everyone else gets 403 (SRS §3.4, PLT-03).
+ * `platform:admin` — everyone else gets 403 (SRS §3.4, PLT-03). Routes under a
+ * disabled plugin's prefix return 404 (SRS CON-07, PLT-04).
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const verify = await fetch(`${AUTH_URL}/api/verify`, {
@@ -37,28 +57,18 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
   const installedPlugins = getInstalledPlugins();
 
-  // Check plugin_status table to block disabled-plugin routes.
-  const db = getPlatformDb();
-  const disabledIds = new Set(
-    db
-      .select({ pluginId: schema.pluginStatus.pluginId })
-      .from(schema.pluginStatus)
-      .where(eq(schema.pluginStatus.enabled, false))
-      .all()
-      .map((r) => r.pluginId),
+  // Only consult plugin status when the path is actually under a plugin prefix.
+  const matchedPlugin = installedPlugins.find((plugin) =>
+    underPrefix(pathname, plugin.routePrefix),
   );
-  const isDisabled = installedPlugins.some(
-    (plugin) => disabledIds.has(plugin.id) && underPrefix(pathname, plugin.routePrefix),
-  );
-  if (isDisabled) {
-    return new NextResponse('Not Found', { status: 404 });
-  }
-
-  const requiresAdmin = installedPlugins.some(
-    (plugin) => plugin.adminOnly && underPrefix(pathname, plugin.routePrefix),
-  );
-  if (requiresAdmin && user.role !== 'platform:admin') {
-    return new NextResponse('Forbidden', { status: 403 });
+  if (matchedPlugin) {
+    const disabledIds = await fetchDisabledPluginIds(request.nextUrl.origin);
+    if (disabledIds.has(matchedPlugin.id)) {
+      return new NextResponse('Not Found', { status: 404 });
+    }
+    if (matchedPlugin.adminOnly && user.role !== 'platform:admin') {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
   }
 
   const headers = new Headers(request.headers);
