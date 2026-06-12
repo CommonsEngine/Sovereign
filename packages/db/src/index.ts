@@ -10,4 +10,6 @@ export type {
   NewUser,
   Session,
   NewSession,
+  PluginStatus,
+  NewPluginStatus,
 } from './schema/sqlite/platform';

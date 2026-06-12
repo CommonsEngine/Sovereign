@@ -13,6 +13,7 @@
   "dependencies": {
     "@next/env": "^16.2.9",
     "@sovereignfs/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "@sovereignfs/mailer": "workspace:*",
     "@sovereignfs/manifest": "workspace:*",
     "@sovereignfs/sdk": "workspace:*",

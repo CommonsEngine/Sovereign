@@ -49,9 +49,23 @@ export const sessions = sqliteTable('sessions', {
   updatedAt: integer('updated_at').notNull(),
 });
 
+/**
+ * Per-plugin enable/disable state. Rows are only inserted when a plugin is
+ * explicitly toggled — absence means enabled (the default). Scoped by
+ * tenant_id for future multi-tenancy even though v1 is single-tenant.
+ */
+export const pluginStatus = sqliteTable('plugin_status', {
+  pluginId: text('plugin_id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  enabled: integer('enabled', { mode: 'boolean' }).notNull().default(true),
+  updatedAt: integer('updated_at').notNull(),
+});
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+export type PluginStatus = typeof pluginStatus.$inferSelect;
+export type NewPluginStatus = typeof pluginStatus.$inferInsert;
