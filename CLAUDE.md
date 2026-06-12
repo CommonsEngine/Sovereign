@@ -132,6 +132,11 @@ pnpm lint:fix        # run ESLint with auto-fix
   multi-tenancy), even though no multi-tenant logic exists in v1.
 - **DB is dialect-agnostic** (Drizzle): SQLite default, Postgres via env only.
   No SQLite-specific SQL in app code.
+- **Relative SQLite paths resolve against the workspace root** (nearest
+  ancestor with `pnpm-workspace.yaml`), not the process cwd — all SQLite files
+  land in the single root-level `data/` directory regardless of which app
+  opens them. Implemented in both `packages/db` and `apps/auth/src/db.ts`
+  (duplicated deliberately; auth does not depend on `packages/db`).
 - **No secrets with defaults.** `AUTH_SECRET` / `SOVEREIGN_AUTH_SECRET` etc.
   must throw on startup if unset.
 - **Plugins compose at their `routePrefix` under a `shell`-selected route
