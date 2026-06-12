@@ -30,9 +30,9 @@ pnpm dev               # starts runtime + auth server
 Open `http://localhost:3000`. The first user to register is automatically
 assigned `platform:admin`.
 
-**Environment variables:** `AUTH_SECRET` and `SOVEREIGN_AUTH_SECRET` have no
-defaults — the server will not start without them. See `.env.example` for all
-required variables.
+**Environment variables:** `AUTH_SECRET`, `SOVEREIGN_ADMIN_KEY`, and
+`SOVEREIGN_AUTH_SECRET` have no defaults — the server will not start without
+them. See `.env.example` for all required variables.
 
 **Code quality hooks:** The pre-commit hook runs Prettier and ESLint on staged
 files automatically. Run `pnpm format` and `pnpm lint` at any time to check

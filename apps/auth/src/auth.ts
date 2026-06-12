@@ -25,6 +25,13 @@ function buildOptions(): BetterAuthOptions {
           defaultValue: 'platform:user',
           input: false,
         },
+        // Whether the account is active. Admins can deactivate/reactivate via Console.
+        active: {
+          type: 'boolean',
+          required: false,
+          defaultValue: true,
+          input: false,
+        },
       },
     },
     databaseHooks: {

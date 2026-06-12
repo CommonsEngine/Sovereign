@@ -25,9 +25,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const { user } = (await verify.json()) as {
-    user: { id: string; email: string; role: string };
+  const payload = (await verify.json()) as {
+    user: { id: string; email: string; name: string | null; image: string | null; role: string };
+    expiresAt: number;
   };
+  const { user, expiresAt } = payload;
 
   const { pathname } = request.nextUrl;
   const requiresAdmin = getInstalledPlugins().some(
@@ -41,6 +43,9 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   headers.set('x-sovereign-user-id', user.id);
   headers.set('x-sovereign-user-email', user.email);
   headers.set('x-sovereign-user-role', user.role);
+  headers.set('x-sovereign-session-expires-at', String(expiresAt));
+  if (user.name != null) headers.set('x-sovereign-user-name', user.name);
+  if (user.image != null) headers.set('x-sovereign-user-image', user.image);
   return NextResponse.next({ request: { headers } });
 }
 
