@@ -51,5 +51,5 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 
 export const config = {
   // Gate everything except the login redirect and Next static assets.
-  matcher: ['/((?!login|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!login|register|_next/static|_next/image|favicon.ico).*)'],
 };

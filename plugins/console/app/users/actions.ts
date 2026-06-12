@@ -66,17 +66,18 @@ export async function sendInviteAction(
   const { token } = (await res.json()) as { token: string; email: string };
 
   const runtimeUrl = process.env.NEXT_PUBLIC_RUNTIME_URL ?? 'http://localhost:3000';
+  const registerUrl = `${runtimeUrl}/register`;
   await sdk.mailer.send({
     to: email,
     subject: 'You have been invited to Sovereign',
     text: [
       'You have been invited to join this Sovereign instance.',
       '',
-      `Register at: ${runtimeUrl}/login`,
+      `Create your account at: ${registerUrl}`,
       '',
       'Use the email address this invitation was sent to when registering.',
     ].join('\n'),
-    html: `<p>You have been invited to join this Sovereign instance.</p><p><a href="${runtimeUrl}/login">Register here</a></p><p>Use the email address this invitation was sent to when registering.</p>`,
+    html: `<p>You have been invited to join this Sovereign instance.</p><p><a href="${registerUrl}">Create your account</a></p><p>Use the email address this invitation was sent to when registering.</p>`,
   });
 
   return { success: true, token, email };
