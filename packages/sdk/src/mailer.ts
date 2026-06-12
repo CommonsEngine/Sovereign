@@ -1,9 +1,10 @@
-import { NotImplementedError } from './errors';
+import { createMailer } from '@sovereignfs/mailer';
 import type { MailOptions } from './types';
 
-/** Sends an email via the platform mailer. */
-export function send(_options: MailOptions): Promise<void> {
-  throw new NotImplementedError(
-    'sdk.mailer.send() is provided by the Sovereign runtime and has no standalone implementation.',
-  );
+// Singleton mailer — reads SMTP_* from process.env at first call.
+const _mailer = createMailer();
+
+/** Sends an email via the platform mailer. No-ops when SMTP is not configured. */
+export async function send(options: MailOptions): Promise<void> {
+  await _mailer.send(options);
 }

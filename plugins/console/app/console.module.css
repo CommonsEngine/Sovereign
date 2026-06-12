@@ -86,3 +86,273 @@
   font-size: var(--sv-font-size-sm);
   color: var(--sv-color-text-muted);
 }
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sv-space-4);
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: var(--sv-font-size-xl);
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-primary);
+}
+
+/* ── Table ──────────────────────────────────────────────────────────────── */
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--sv-font-size-sm);
+}
+
+.th {
+  padding: var(--sv-space-2) var(--sv-space-4);
+  text-align: left;
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-muted);
+  border-bottom: 1px solid var(--sv-color-border);
+  white-space: nowrap;
+}
+
+.tr:not(:last-child) .td {
+  border-bottom: 1px solid var(--sv-color-border);
+}
+
+.td {
+  padding: var(--sv-space-3) var(--sv-space-4);
+  color: var(--sv-color-text-primary);
+  vertical-align: middle;
+}
+
+.userCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-1);
+}
+
+.userName {
+  font-weight: var(--sv-font-weight-medium);
+}
+
+.userEmail {
+  color: var(--sv-color-text-muted);
+  font-size: var(--sv-font-size-xs);
+}
+
+/* ── Badges ─────────────────────────────────────────────────────────────── */
+
+.badgeActive,
+.badgeDeactivated,
+.badgeAdmin,
+.badgeUser {
+  display: inline-block;
+  padding: var(--sv-space-1) var(--sv-space-2);
+  border-radius: var(--sv-radius-sm);
+  font-size: var(--sv-font-size-xs);
+  font-weight: var(--sv-font-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badgeActive {
+  background-color: color-mix(in srgb, var(--sv-color-accent) 12%, transparent);
+  color: var(--sv-color-accent);
+}
+
+.badgeDeactivated {
+  background-color: var(--sv-color-surface-sunken);
+  color: var(--sv-color-text-muted);
+}
+
+.badgeAdmin {
+  background-color: color-mix(in srgb, var(--sv-color-text-primary) 10%, transparent);
+  color: var(--sv-color-text-primary);
+}
+
+.badgeUser {
+  background-color: var(--sv-color-surface-sunken);
+  color: var(--sv-color-text-muted);
+}
+
+/* ── Row actions ────────────────────────────────────────────────────────── */
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sv-space-3);
+  flex-wrap: wrap;
+}
+
+.roleForm {
+  display: flex;
+  align-items: center;
+  gap: var(--sv-space-2);
+}
+
+.roleSelect {
+  padding: var(--sv-space-1) var(--sv-space-2);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-sm);
+  background-color: var(--sv-color-surface);
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-sm);
+  cursor: pointer;
+}
+
+.actionButtonSmall {
+  padding: var(--sv-space-1) var(--sv-space-3);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-sm);
+  background-color: var(--sv-color-surface-raised);
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-sm);
+  cursor: pointer;
+}
+
+.actionButtonSmall:hover {
+  border-color: var(--sv-color-border-strong);
+}
+
+.deactivateButton {
+  padding: var(--sv-space-1) var(--sv-space-3);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-sm);
+  background-color: transparent;
+  color: var(--sv-color-text-muted);
+  font-size: var(--sv-font-size-sm);
+  cursor: pointer;
+}
+
+.deactivateButton:hover {
+  color: var(--sv-color-text-primary);
+  border-color: var(--sv-color-border-strong);
+}
+
+.reactivateButton {
+  padding: var(--sv-space-1) var(--sv-space-3);
+  border: 1px solid var(--sv-color-accent);
+  border-radius: var(--sv-radius-sm);
+  background-color: transparent;
+  color: var(--sv-color-accent);
+  font-size: var(--sv-font-size-sm);
+  cursor: pointer;
+}
+
+.reactivateButton:hover {
+  background-color: color-mix(in srgb, var(--sv-color-accent) 8%, transparent);
+}
+
+/* ── Primary action button ──────────────────────────────────────────────── */
+
+.actionButton {
+  display: inline-block;
+  padding: var(--sv-space-2) var(--sv-space-4);
+  border: none;
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-accent);
+  color: var(--sv-color-text-on-accent);
+  font-size: var(--sv-font-size-sm);
+  font-weight: var(--sv-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  opacity: 0.88;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Invite form ────────────────────────────────────────────────────────── */
+
+.inviteForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-5);
+  max-width: 440px;
+  margin-top: var(--sv-space-4);
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-2);
+}
+
+.label {
+  font-size: var(--sv-font-size-sm);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+.optional {
+  font-weight: normal;
+  color: var(--sv-color-text-muted);
+}
+
+.input {
+  padding: var(--sv-space-2) var(--sv-space-3);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-surface);
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: 2px solid var(--sv-color-accent);
+  outline-offset: 1px;
+  border-color: var(--sv-color-accent);
+}
+
+/* ── Feedback ───────────────────────────────────────────────────────────── */
+
+.successBox {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-3);
+  padding: var(--sv-space-5);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-lg);
+  background-color: var(--sv-color-surface-raised);
+  max-width: 560px;
+}
+
+.tokenNote {
+  font-size: var(--sv-font-size-sm);
+  color: var(--sv-color-text-muted);
+}
+
+.token {
+  display: inline-block;
+  padding: var(--sv-space-1) var(--sv-space-2);
+  border-radius: var(--sv-radius-sm);
+  background-color: var(--sv-color-surface-sunken);
+  font-family: monospace;
+  font-size: var(--sv-font-size-sm);
+  word-break: break-all;
+}
+
+.errorText {
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-sm);
+  padding: var(--sv-space-3) var(--sv-space-4);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-surface-sunken);
+}

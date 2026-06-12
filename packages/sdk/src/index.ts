@@ -7,9 +7,9 @@ import { events, notifications, storage } from './unimplemented';
 /**
  * The Sovereign SDK — the only contract between a plugin and the platform.
  *
- * In v1 these are interface stubs: the runtime supplies the real auth / db /
- * mailer / platform implementations at call time. `storage`, `notifications`,
- * and `events` are reserved for post-v1 and throw `NotImplementedError`.
+ * `auth` and `mailer` are wired with real runtime implementations (Task 0.4.02).
+ * `db` and `platform` remain as stubs until Task 0.5.05.
+ * `storage`, `notifications`, and `events` are reserved for post-v1.
  */
 export const sdk = {
   auth,
@@ -21,5 +21,5 @@ export const sdk = {
   events,
 };
 
-export { NotImplementedError } from './errors';
+export { NotImplementedError, NotAuthenticatedError } from './errors';
 export type { Session, SessionUser, MailOptions, PlatformConfig, DrizzleClient } from './types';

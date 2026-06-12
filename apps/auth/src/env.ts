@@ -15,6 +15,8 @@ export interface AuthEnv {
   inviteOnly: boolean;
   /** Public base URL of the auth server. */
   baseUrl: string;
+  /** Shared secret for runtime→auth admin API calls. No default — must be set. */
+  adminKey: string;
 }
 
 let cached: AuthEnv | undefined;
@@ -30,6 +32,7 @@ export function getEnv(): AuthEnv {
     databaseUrl: process.env.AUTH_DATABASE_URL ?? 'file:./data/auth.db',
     inviteOnly: process.env.AUTH_INVITE_ONLY === 'true',
     baseUrl: process.env.AUTH_BASE_URL ?? 'http://localhost:3001',
+    adminKey: required('SOVEREIGN_ADMIN_KEY'),
   };
   return cached;
 }

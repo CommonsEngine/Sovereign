@@ -9,3 +9,11 @@ export class NotImplementedError extends Error {
     this.name = 'NotImplementedError';
   }
 }
+
+/** Thrown by `sdk.auth.requireSession()` when no authenticated session is present. */
+export class NotAuthenticatedError extends Error {
+  constructor() {
+    super('No authenticated session. The caller must be within an authenticated request.');
+    this.name = 'NotAuthenticatedError';
+  }
+}

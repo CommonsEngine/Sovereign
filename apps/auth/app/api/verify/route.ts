@@ -2,16 +2,35 @@ import { NextResponse } from 'next/server';
 import { getAuth } from '@/src/auth';
 
 /**
- * Session verification for the runtime. Returns the authenticated user
- * (id, email, role) or 401. Consumed by the runtime middleware (SRS AUTH-05/06).
+ * Session verification for the runtime. Returns the authenticated user or 401.
+ * Consumed by the runtime middleware (SRS AUTH-05/06).
  */
 export async function GET(request: Request): Promise<Response> {
   const session = await getAuth().api.getSession({ headers: request.headers });
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
-  const user = session.user as { id: string; email: string; role?: string };
+  const user = session.user as {
+    id: string;
+    email: string;
+    name?: string | null;
+    image?: string | null;
+    role?: string;
+    active?: boolean;
+  };
+
+  if (user.active === false) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
   return NextResponse.json({
-    user: { id: user.id, email: user.email, role: user.role ?? 'platform:user' },
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name ?? null,
+      image: user.image ?? null,
+      role: user.role ?? 'platform:user',
+    },
+    expiresAt: Math.floor(new Date(session.session.expiresAt).getTime() / 1000),
   });
 }
