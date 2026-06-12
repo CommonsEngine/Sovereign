@@ -25,9 +25,7 @@ export function InviteForm() {
 
   return (
     <form action={formAction} className={styles.inviteForm}>
-      {state && !state.success && (
-        <p className={styles.errorText}>{state.error}</p>
-      )}
+      {state && !state.success && <p className={styles.errorText}>{state.error}</p>}
 
       <div className={styles.fieldGroup}>
         <label htmlFor="invite-email" className={styles.label}>

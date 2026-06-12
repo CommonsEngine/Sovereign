@@ -19,8 +19,7 @@ export async function POST(request: Request): Promise<Response> {
   const db = getDb();
   const token = crypto.randomUUID();
   const createdAt = Math.floor(Date.now() / 1000);
-  const expiresAt =
-    body.expiresInDays != null ? createdAt + body.expiresInDays * 86400 : null;
+  const expiresAt = body.expiresInDays != null ? createdAt + body.expiresInDays * 86400 : null;
 
   db.prepare('INSERT INTO invites (token, email, created_at, expires_at) VALUES (?, ?, ?, ?)').run(
     token,
