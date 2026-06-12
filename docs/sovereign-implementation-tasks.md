@@ -912,6 +912,28 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - A tag without a corresponding version bump in the package's `package.json`
   fails the publish (version already exists on npm)
 
+### Task 0.5.08 — Public `/api` namespace delegation **[parallel]**
+
+**Goal:** Reserve the top-level `/api/*` namespace for plugin-served public APIs, per PLT-16. Required before the API Composer plugin (`docs/plugins/api-composer.md`) can serve its generated APIs.
+
+**Deliverables:**
+
+- Runtime middleware: requests under `/api/*` are exempt from the session-redirect rule (PLT-02) — the serving plugin owns authentication for these routes (API keys per the API Composer spec)
+- Route delegation: the runtime rewrites `/api/<segment>/*` to the registered API-provider plugin's serve route (for API Composer: `/api-composer/serve/<segment>/*`)
+- Provider registration mechanism — likely a manifest flag (e.g. `apiProvider`); exact shape decided in this task, coordinated with `packages/manifest`. Exactly one provider per instance in v1; the generate script fails loudly if two plugins declare it
+- With no provider installed, `/api/*` returns 404
+
+**SRS reference:** PLT-16, `docs/plugins/api-composer.md` (architecture — `/api` namespace delegation)
+
+**Review checklist:**
+
+- An unauthenticated request under `/api/*` is not redirected to login
+- `/api/<slug>/<path>` reaches the provider plugin's serve handler with the slug and path intact
+- `/api/*` returns 404 when no provider plugin is installed
+- Two plugins declaring the provider flag fail the generate step with a clear error
+
+---
+
 ### Task 1.0.01 — Registry contribution process
 
 **Goal:** Define and document the process for submitting a community plugin to `registry/plugins.json`.

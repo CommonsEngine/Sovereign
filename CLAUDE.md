@@ -392,6 +392,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
+- ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).
+- ⏳ Spec complete: PaperTrail sovereign plugin (`docs/plugins/papertrail.md`) — legacy plugin adapted to the v3 native model (repo: `kasunben/PaperTrail`).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.
