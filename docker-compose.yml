@@ -41,6 +41,7 @@ services:
       # cookie domain and callback construction.
       AUTH_BASE_URL: '${AUTH_BASE_URL:-http://auth:3001}'
       NEXT_PUBLIC_RUNTIME_URL: '${NEXT_PUBLIC_RUNTIME_URL:-http://localhost:3000}'
+      SOVEREIGN_ADMIN_KEY: '${SOVEREIGN_ADMIN_KEY}'
     volumes:
       - ./data:/app/data
     networks:
@@ -57,6 +58,8 @@ services:
       # Overrides the .env value (which points to localhost for native dev).
       # Inside Docker, the runtime reaches auth via the internal service name.
       SOVEREIGN_AUTH_URL: 'http://auth:3001'
+      SOVEREIGN_ADMIN_KEY: '${SOVEREIGN_ADMIN_KEY}'
+      NEXT_PUBLIC_RUNTIME_URL: '${NEXT_PUBLIC_RUNTIME_URL:-http://localhost:3000}'
       DATABASE_URL: '${DATABASE_URL:-file:./data/sovereign.db}'
       DB_DIALECT: '${DB_DIALECT:-sqlite}'
       # Email routes to the Mailpit service on the internal network.
