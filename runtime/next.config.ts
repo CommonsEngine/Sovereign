@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
     '@sovereignfs/manifest',
     '@sovereignfs/mailer',
   ],
+  // better-sqlite3 uses native bindings — Webpack cannot bundle it.
+  serverExternalPackages: ['better-sqlite3'],
 };
 
 export default nextConfig;
