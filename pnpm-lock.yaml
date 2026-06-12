@@ -188,10 +188,17 @@ importers:
         version: 5.9.3
 
   packages/sdk:
+    dependencies:
+      '@sovereignfs/mailer':
+        specifier: workspace:*
+        version: link:../mailer
     devDependencies:
       '@sovereignfs/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      next:
+        specifier: 'catalog:'
+        version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.4)(typescript@5.9.3)(yaml@2.9.0)
@@ -233,6 +240,12 @@ importers:
 
   plugins/console:
     dependencies:
+      '@sovereignfs/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
+      '@sovereignfs/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       next:
         specifier: 'catalog:'
         version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

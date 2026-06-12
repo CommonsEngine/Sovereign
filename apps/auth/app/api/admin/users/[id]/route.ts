@@ -37,14 +37,16 @@ export async function PATCH(
 
   const updated = db
     .prepare('SELECT id, email, name, role, active, createdAt FROM user WHERE id = ?')
-    .get(id) as {
-    id: string;
-    email: string;
-    name: string | null;
-    role: string;
-    active: number | null;
-    createdAt: number;
-  } | undefined;
+    .get(id) as
+    | {
+        id: string;
+        email: string;
+        name: string | null;
+        role: string;
+        active: number | null;
+        createdAt: number;
+      }
+    | undefined;
 
   if (!updated) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
