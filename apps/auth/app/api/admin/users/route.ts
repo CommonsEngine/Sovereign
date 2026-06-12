@@ -30,17 +30,24 @@ export async function GET(request: Request): Promise<Response> {
   const registeredEmails = new Set(users.map((u) => u.email));
   const now = Math.floor(Date.now() / 1000);
 
-  // Pending invites: not consumed, not expired, and the invitee hasn't registered yet.
-  const pendingInvites = (
-    db
-      .prepare(
-        `SELECT email, created_at, expires_at FROM invites
-         WHERE consumed_at IS NULL
-           AND (expires_at IS NULL OR expires_at > ?)
-         ORDER BY created_at ASC`,
-      )
-      .all(now) as PendingInvite[]
-  ).filter((inv) => !registeredEmails.has(inv.email));
+  // Pending invites: not consumed, not expired, not already registered.
+  // Deduplicate by email — keep the most recent invite per address.
+  const rawInvites = db
+    .prepare(
+      `SELECT email, created_at, expires_at FROM invites
+       WHERE consumed_at IS NULL
+         AND (expires_at IS NULL OR expires_at > ?)
+       ORDER BY created_at ASC`,
+    )
+    .all(now) as PendingInvite[];
+
+  const inviteByEmail = new Map<string, PendingInvite>();
+  for (const inv of rawInvites) {
+    if (!registeredEmails.has(inv.email)) {
+      inviteByEmail.set(inv.email, inv); // last write wins = most recent
+    }
+  }
+  const pendingInvites = Array.from(inviteByEmail.values());
 
   const userRows = users.map((u) => ({
     id: u.id,
