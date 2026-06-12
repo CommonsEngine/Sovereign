@@ -8,7 +8,7 @@ interface AuthUser {
   name: string | null;
   role: string;
   active: number | null; // SQLite boolean: 0 | 1 | NULL (NULL = active, same as default)
-  createdAt: number;
+  createdAt: string; // better-auth stores dates as ISO 8601 strings in SQLite
 }
 
 export async function GET(request: Request): Promise<Response> {

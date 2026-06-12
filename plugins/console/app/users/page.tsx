@@ -8,7 +8,7 @@ interface AdminUser {
   name: string | null;
   role: string;
   active: boolean;
-  createdAt: number;
+  createdAt: string; // ISO 8601 string from better-auth
 }
 
 async function getUsers(): Promise<AdminUser[]> {
@@ -69,8 +69,8 @@ export default async function UsersPage() {
                   </span>
                 </td>
                 <td className={styles.td}>
-                  <time dateTime={new Date(user.createdAt * 1000).toISOString()}>
-                    {new Date(user.createdAt * 1000).toLocaleDateString()}
+                  <time dateTime={new Date(user.createdAt).toISOString()}>
+                    {new Date(user.createdAt).toLocaleDateString()}
                   </time>
                 </td>
                 <td className={styles.td}>
