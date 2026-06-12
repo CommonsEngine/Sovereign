@@ -2,7 +2,11 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['packages/**/src/**/*.test.{ts,tsx}'],
+    include: [
+      'packages/**/src/**/*.test.{ts,tsx}',
+      'apps/**/src/**/*.test.{ts,tsx}',
+      'runtime/src/**/*.test.{ts,tsx}',
+    ],
     // Default to node; component tests opt into jsdom with a
     // `// @vitest-environment jsdom` pragma at the top of the file.
     environment: 'node',

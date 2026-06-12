@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { createClient } from '@sovereignfs/db';
+import { createClient, PLUGIN_STATUS_BOOTSTRAP_SQL } from '@sovereignfs/db';
 
 let _db: ReturnType<typeof createClient> | null = null;
 
@@ -15,15 +15,7 @@ export function getPlatformDb(): ReturnType<typeof createClient> {
   if (_db) return _db;
 
   _db = createClient();
-
-  _db.run(sql`
-    CREATE TABLE IF NOT EXISTS plugin_status (
-      plugin_id TEXT PRIMARY KEY,
-      tenant_id TEXT NOT NULL,
-      enabled INTEGER NOT NULL DEFAULT 1,
-      updated_at INTEGER NOT NULL
-    )
-  `);
+  _db.run(sql.raw(PLUGIN_STATUS_BOOTSTRAP_SQL));
 
   return _db;
 }
