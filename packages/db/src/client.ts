@@ -1,3 +1,5 @@
+import { mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import { resolveDialect, type Dialect } from './dialect';
@@ -25,7 +27,11 @@ export function createClient(config: DbConfig = {}) {
   });
 
   if (resolved.dialect === 'sqlite') {
-    const sqlite = new Database(toSqlitePath(resolved.url));
+    const path = toSqlitePath(resolved.url);
+    if (path !== ':memory:') {
+      mkdirSync(dirname(path), { recursive: true });
+    }
+    const sqlite = new Database(path);
     sqlite.pragma('journal_mode = WAL');
     sqlite.pragma('foreign_keys = ON');
     return drizzleSqlite(sqlite, { schema });

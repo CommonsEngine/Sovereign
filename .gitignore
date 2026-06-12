@@ -11,11 +11,12 @@ dist/
 # A .gitignore inside each group ignores its composed contents. Source of truth
 # is always plugins/[id]/app/.
 
-# Database files (SQLite)
-data/*.db
-data/*.db-journal
-data/*.db-wal
-data/*.db-shm
+# Database files (SQLite) — data/ dirs are created next to each app's cwd
+# (root, runtime/, apps/auth/), so match at any depth.
+**/data/*.db
+**/data/*.db-journal
+**/data/*.db-wal
+**/data/*.db-shm
 
 # Environment / secrets
 .env
