@@ -52,6 +52,11 @@ export function getDb(): Database.Database {
         expires_at INTEGER,
         consumed_at INTEGER
       );
+      CREATE TABLE IF NOT EXISTS auth_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
     `);
     db = conn;
   }

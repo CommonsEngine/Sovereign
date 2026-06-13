@@ -1,5 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { NotImplementedError, NotAuthenticatedError, sdk } from './index';
+
+beforeAll(() => {
+  // sdk.platform.getConfig() opens the platform DB from the environment;
+  // point it at an in-memory database for tests.
+  process.env.DATABASE_URL = ':memory:';
+});
 
 describe('sdk', () => {
   it('exposes the full v1 surface', () => {
@@ -15,9 +21,15 @@ describe('sdk', () => {
     expect(typeof sdk.events.subscribe).toBe('function');
   });
 
-  it('db and platform stubs throw NotImplementedError (wired in Task 0.5.05)', () => {
+  it('db stub throws NotImplementedError (wired in Task 0.5.05)', () => {
     expect(() => sdk.db.getClient()).toThrow(NotImplementedError);
-    expect(() => sdk.platform.getConfig()).toThrow(NotImplementedError);
+  });
+
+  it('platform.getConfig returns tenant name, invite flag, and platform version', () => {
+    const config = sdk.platform.getConfig();
+    expect(config.tenantName).toBe('Sovereign');
+    expect(config.inviteOnly).toBe(false);
+    expect(config.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 
   it('post-v1 surfaces throw NotImplementedError with a clear v1 message', () => {

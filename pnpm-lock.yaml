@@ -189,6 +189,9 @@ importers:
 
   packages/sdk:
     dependencies:
+      '@sovereignfs/db':
+        specifier: workspace:*
+        version: link:../db
       '@sovereignfs/mailer':
         specifier: workspace:*
         version: link:../mailer

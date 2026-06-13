@@ -387,3 +387,78 @@
   font-size: var(--sv-font-size-xs);
   color: var(--sv-color-text-muted);
 }
+
+/* ── Settings ───────────────────────────────────────────────────────────── */
+
+.settingsSections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-8);
+  max-width: 560px;
+  margin-top: var(--sv-space-4);
+}
+
+.settingsSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-4);
+  padding-bottom: var(--sv-space-6);
+  border-bottom: 1px solid var(--sv-color-border);
+}
+
+.settingsSection:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-4);
+  align-items: flex-start;
+}
+
+.checkboxRow {
+  display: flex;
+  gap: var(--sv-space-3);
+  align-items: flex-start;
+  font-size: var(--sv-font-size-sm);
+  color: var(--sv-color-text-primary);
+  cursor: pointer;
+}
+
+.checkboxRow input {
+  margin-top: 3px;
+}
+
+.helpText {
+  display: block;
+  margin: var(--sv-space-1) 0 0;
+  font-size: var(--sv-font-size-xs);
+  color: var(--sv-color-text-muted);
+}
+
+/* ── Health ─────────────────────────────────────────────────────────────── */
+
+.healthCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-2);
+  padding: var(--sv-space-5);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-lg);
+  background-color: var(--sv-color-surface-raised);
+  box-shadow: var(--sv-shadow-card);
+}
+
+.healthValue {
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}

@@ -154,6 +154,22 @@ pnpm lint:fix        # run ESLint with auto-fix
 - **`adminOnly` routes are gated in the runtime middleware.** A request under an
   admin-only plugin's `routePrefix` from a non-`platform:admin` user returns 403
   (SRS §3.4, PLT-03).
+- **Invite-only is dual-written, and the auth-server copy is authoritative.**
+  The Console toggle (CON-10) writes `invite_only` to both the platform DB
+  (`platform_settings`, read by `sdk.platform.getConfig()`) and the auth
+  server's own `auth_settings` table (via the runtime PATCH proxying to
+  `apps/auth`). Registration enforcement reads only the auth copy — the auth
+  server owns identity and does not read the platform DB. A stored value
+  overrides the `AUTH_INVITE_ONLY` env default; absent a stored value, the env
+  default applies. Never make registration read the platform DB instead.
+- **`root_plugin_id` lives in `platform_settings`, seeded on first run** to
+  `fs.sovereign.launcher` (PLT-14/PLT-15). `/` redirects to that plugin's
+  `routePrefix`; the eligible set is installed + enabled + non-`adminOnly`
+  (validated in `runtime/src/root-plugin.ts`). Platform tables (`tenants`,
+  `plugin_status`, `platform_settings`) are bootstrapped with
+  CREATE-TABLE-IF-NOT-EXISTS + seed rows in `packages/db`'s `getPlatformDb()`
+  until drizzle-kit migrations land in Task 0.5.03; the DDL there must stay in
+  sync with the Drizzle schema.
 
 ## Design system (`packages/ui`)
 
@@ -393,8 +409,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.3.12 — Docker Compose for local dev (merged to `main`).
 - ✅ Task 0.4.01 — Console plugin scaffold (plugin route-composition model + middleware admin gating; platform → 0.4.0) (merged to `main`).
 - ✅ Task 0.4.02 — Console: user management (user list with invited/active/deactivated status, invite flow, role change, deactivate/reactivate; `sdk.auth` + `sdk.mailer` wired) (merged to `main`).
-- ▶️ In review: Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table).
-- ⏳ Next: Task 0.4.04 — Console: tenant settings, system health, root plugin config.
+- ✅ Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table) (merged to `main`).
+- ▶️ In review: Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin).
 - ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
