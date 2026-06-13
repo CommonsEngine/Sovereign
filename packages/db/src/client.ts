@@ -57,7 +57,11 @@ export function resolveSqlitePath(url: string): string {
   return resolve(findWorkspaceRoot(), path);
 }
 
-function findWorkspaceRoot(): string {
+/**
+ * Locate the workspace root: the nearest ancestor of the cwd containing
+ * pnpm-workspace.yaml, falling back to the cwd itself (standalone builds).
+ */
+export function findWorkspaceRoot(): string {
   let dir = process.cwd();
   for (;;) {
     if (existsSync(join(dir, 'pnpm-workspace.yaml'))) return dir;

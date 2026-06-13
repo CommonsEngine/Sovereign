@@ -3,6 +3,7 @@ import { APIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
 import { getDb } from './db';
 import { getEnv } from './env';
+import { readInviteOnlySetting, resolveInviteOnly } from './settings';
 
 function buildOptions(): BetterAuthOptions {
   const env = getEnv();
@@ -41,8 +42,11 @@ function buildOptions(): BetterAuthOptions {
             const isFirst =
               (db.prepare('SELECT COUNT(*) AS c FROM user').get() as { c: number }).c === 0;
 
-            // Invite-only gate (first user bootstraps and is exempt).
-            if (!isFirst && env.inviteOnly) {
+            // Invite-only gate (first user bootstraps and is exempt). The
+            // Console toggle (stored setting) overrides the env default, so
+            // this is resolved per registration — no restart needed (CON-10).
+            const inviteOnly = resolveInviteOnly(readInviteOnlySetting(db), env.inviteOnly);
+            if (!isFirst && inviteOnly) {
               const now = Math.floor(Date.now() / 1000);
               const invite = db
                 .prepare(

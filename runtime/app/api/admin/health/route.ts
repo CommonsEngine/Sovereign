@@ -1,0 +1,61 @@
+import { statSync } from 'node:fs';
+import { NextResponse } from 'next/server';
+import { sql } from 'drizzle-orm';
+import { resolveDialect, resolveSqlitePath } from '@sovereignfs/db';
+import { sdk } from '@sovereignfs/sdk';
+import { checkAdminKey } from '@/src/admin-guard';
+import { getPlatformDb } from '@/src/db';
+
+const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
+
+interface HealthReport {
+  platformVersion: string;
+  database: {
+    dialect: string;
+    status: 'ok' | 'error';
+    /** SQLite file size in bytes; null for :memory: or Postgres (CON-09). */
+    sizeBytes: number | null;
+  };
+  auth: { status: 'ok' | 'unreachable' };
+  uptimeSeconds: number;
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const denied = checkAdminKey(request);
+  if (denied) return denied;
+
+  const resolved = resolveDialect();
+
+  let dbStatus: 'ok' | 'error' = 'ok';
+  try {
+    getPlatformDb().get(sql`SELECT 1`);
+  } catch {
+    dbStatus = 'error';
+  }
+
+  let sizeBytes: number | null = null;
+  if (resolved.dialect === 'sqlite') {
+    try {
+      const path = resolveSqlitePath(resolved.url);
+      if (path !== ':memory:') sizeBytes = statSync(path).size;
+    } catch {
+      sizeBytes = null;
+    }
+  }
+
+  let authStatus: 'ok' | 'unreachable' = 'unreachable';
+  try {
+    const res = await fetch(`${AUTH_URL}/api/health`, { signal: AbortSignal.timeout(3000) });
+    if (res.ok) authStatus = 'ok';
+  } catch {
+    authStatus = 'unreachable';
+  }
+
+  const report: HealthReport = {
+    platformVersion: sdk.platform.getConfig().version,
+    database: { dialect: resolved.dialect, status: dbStatus, sizeBytes },
+    auth: { status: authStatus },
+    uptimeSeconds: Math.floor(process.uptime()),
+  };
+  return NextResponse.json(report);
+}
