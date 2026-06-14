@@ -186,6 +186,19 @@ pnpm lint:fix        # run ESLint with auto-fix
   rule forbids plugins importing `runtime/src` or internal packages. The route
   is session-gated (middleware injects `x-sovereign-user-role`) and role-filters
   via `selectLauncherPlugins`; `sdk.db` replaces this fetch in Task 0.5.05.
+- **Server-to-server calls to better-auth (`/api/auth/*`) must send an `Origin`
+  header** equal to the auth base URL (`SOVEREIGN_AUTH_URL`) — better-auth
+  enforces a CSRF origin check and rejects originless POSTs with
+  `MISSING_OR_NULL_ORIGIN` (403). Applies to `update-user` (Account profile)
+  and will apply to `change-password` etc. in Account part 2. The session
+  cookie is host-scoped, so forwarding it across the runtime↔auth origins works.
+- **Theme is applied before first paint by an inline script in
+  `runtime/app/layout.tsx`** reading the `sv-theme` cookie (`light`/`dark`
+  applied directly; `system`/unset follows `prefers-color-scheme`). The Account
+  plugin writes the choice to `account_prefs` (authoritative) and mirrors it to
+  the `sv-theme` cookie on PATCH. Avatars live on disk at
+  `data/avatars/<user_id>.<ext>` (served by `/api/account/avatar/[userId]`); the
+  user record's `image` field holds the servable URL.
 
 ## Design system (`packages/ui`)
 
@@ -427,8 +440,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.4.02 — Console: user management (user list with invited/active/deactivated status, invite flow, role change, deactivate/reactivate; `sdk.auth` + `sdk.mailer` wired) (merged to `main`).
 - ✅ Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table) (merged to `main`).
 - ✅ Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin) (merged to `main`).
-- ▶️ In review: Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher).
-- ⏳ Next: Task 0.4.06 — Account plugin (`plugins/account/` per-user profile, all authenticated users): three tabs — Profile (display name + avatar upload), Security (password change + active-session revoke), Preferences (IANA timezone + Light/Dark/System theme via `account_prefs` table + `sv-theme` cookie). Spec in `docs/plugins/account.md`. Functional dependency is `sdk.auth` (Task 0.4.02, done); branch from an up-to-date `main` once #22 merges, per the one-task-at-a-time rule. Closes the v0.4 chrome-plugin trio (Console, Launcher, Account).
+- ✅ Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher) (merged to `main`).
+- ▶️ In review: Task 0.4.06 (part 1 of 2) — Account plugin: Profile (display name via better-auth `update-user`; avatar upload→`data/avatars/`, served via `/api/account/avatar/[userId]`, written to the user `image`) and Preferences (IANA timezone + Light/Dark/System theme). `account_prefs` table + helpers in `packages/db`; runtime `/api/account/prefs` + avatar routes; sidebar Account slot renders the avatar/monogram; theme applied pre-paint via the `sv-theme` cookie. **Part 2 (next):** Security tab — password change + active-session list/revoke, which adds `changePassword`/`listSessions`/`revokeSession` to `sdk.auth` (published-contract change).
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 - ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).

@@ -103,3 +103,40 @@ export function setTenantName(db: PlatformDb, name: string): void {
     .where(eq(schema.tenants.id, DEFAULT_TENANT_ID))
     .run();
 }
+
+/** Account-plugin preferences with their defaults (SRS ACC-07/08). */
+export interface AccountPrefsValue {
+  timezone: string;
+  theme: string;
+}
+
+const DEFAULT_ACCOUNT_PREFS: AccountPrefsValue = { timezone: 'UTC', theme: 'system' };
+
+/** A user's Account preferences, falling back to defaults when no row exists. */
+export function getAccountPrefs(db: PlatformDb, userId: string): AccountPrefsValue {
+  const row = db
+    .select({ timezone: schema.accountPrefs.timezone, theme: schema.accountPrefs.theme })
+    .from(schema.accountPrefs)
+    .where(eq(schema.accountPrefs.userId, userId))
+    .get();
+  return row ?? DEFAULT_ACCOUNT_PREFS;
+}
+
+/** Upsert a user's Account preferences (one row per user). */
+export function setAccountPrefs(
+  db: PlatformDb,
+  userId: string,
+  prefs: Partial<AccountPrefsValue>,
+): AccountPrefsValue {
+  const current = getAccountPrefs(db, userId);
+  const next = { ...current, ...prefs };
+  const now = Math.floor(Date.now() / 1000);
+  db.insert(schema.accountPrefs)
+    .values({ userId, tenantId: DEFAULT_TENANT_ID, ...next, updatedAt: now })
+    .onConflictDoUpdate({
+      target: schema.accountPrefs.userId,
+      set: { ...next, updatedAt: now },
+    })
+    .run();
+  return next;
+}

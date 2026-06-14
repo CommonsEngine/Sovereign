@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "fs.sovereign.account",
+  "name": "Account",
+  "version": "0.1.0",
+  "description": "Personal profile, preferences, and credential management.",
+  "type": "platform",
+  "runtime": "native",
+  "routePrefix": "/account",
+  "shell": "default",
+  "icon": "icon.svg",
+  "permissions": ["auth:session", "db:readWrite"],
+  "compatibility": {
+    "minPlatformVersion": "0.4.0"
+  }
+}

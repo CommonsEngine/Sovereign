@@ -18,6 +18,9 @@ dist/
 **/data/*.db-wal
 **/data/*.db-shm
 
+# User-uploaded avatars (Account plugin, ACC-03) — runtime data, never committed.
+**/data/avatars/
+
 # Environment / secrets
 .env
 .env.*

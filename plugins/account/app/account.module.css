@@ -1,0 +1,221 @@
+.account {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-6);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-4);
+  padding-bottom: var(--sv-space-4);
+  border-bottom: 1px solid var(--sv-color-border);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--sv-font-size-2xl);
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-primary);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sv-space-2);
+}
+
+.tab {
+  padding: var(--sv-space-1) var(--sv-space-3);
+  border-radius: var(--sv-radius-md);
+  font-size: var(--sv-font-size-sm);
+  color: var(--sv-color-text-muted);
+  text-decoration: none;
+}
+
+.tab:hover {
+  color: var(--sv-color-text-primary);
+  background-color: var(--sv-color-surface-sunken);
+}
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-8);
+  max-width: 520px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-3);
+  padding-bottom: var(--sv-space-6);
+  border-bottom: 1px solid var(--sv-color-border);
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+/* ── Forms ──────────────────────────────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-4);
+  align-items: flex-start;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-2);
+  width: 100%;
+}
+
+.label {
+  font-size: var(--sv-font-size-sm);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+.input,
+.select {
+  padding: var(--sv-space-2) var(--sv-space-3);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-surface);
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus,
+.select:focus {
+  outline: 2px solid var(--sv-color-accent);
+  outline-offset: 1px;
+  border-color: var(--sv-color-accent);
+}
+
+.button {
+  display: inline-block;
+  padding: var(--sv-space-2) var(--sv-space-4);
+  border: none;
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-accent);
+  color: var(--sv-color-text-on-accent);
+  font-size: var(--sv-font-size-sm);
+  font-weight: var(--sv-font-weight-medium);
+  cursor: pointer;
+}
+
+.button:hover {
+  opacity: 0.88;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.readonlyValue {
+  margin: 0;
+  font-size: var(--sv-font-size-md);
+  color: var(--sv-color-text-primary);
+}
+
+.help {
+  margin: 0;
+  font-size: var(--sv-font-size-xs);
+  color: var(--sv-color-text-muted);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--sv-font-size-xs);
+  color: var(--sv-color-text-primary);
+  padding: var(--sv-space-2) var(--sv-space-3);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-sm);
+  background-color: var(--sv-color-surface-sunken);
+}
+
+/* ── Avatar ─────────────────────────────────────────────────────────────── */
+
+.avatarRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sv-space-5);
+}
+
+.avatarPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+  border-radius: var(--sv-radius-full);
+  background-color: var(--sv-color-surface-sunken);
+  border: 1px solid var(--sv-color-border-strong);
+  overflow: hidden;
+  font-size: var(--sv-font-size-xl);
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-muted);
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-2);
+  align-items: flex-start;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+/* ── Segmented control ──────────────────────────────────────────────────── */
+
+.segmented {
+  display: inline-flex;
+  padding: var(--sv-space-1);
+  gap: var(--sv-space-1);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-surface-sunken);
+}
+
+.segment,
+.segmentActive {
+  padding: var(--sv-space-1) var(--sv-space-4);
+  border: none;
+  border-radius: var(--sv-radius-sm);
+  background-color: transparent;
+  color: var(--sv-color-text-muted);
+  font-size: var(--sv-font-size-sm);
+  cursor: pointer;
+}
+
+.segmentActive {
+  background-color: var(--sv-color-surface-raised);
+  color: var(--sv-color-text-primary);
+  font-weight: var(--sv-font-weight-medium);
+  box-shadow: var(--sv-shadow-card);
+}

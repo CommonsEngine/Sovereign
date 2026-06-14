@@ -10,8 +10,19 @@ function monogram(name: string): string {
 }
 
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
-  const role = (await headers()).get('x-sovereign-user-role') ?? 'platform:user';
+  const h = await headers();
+  const role = h.get('x-sovereign-user-role') ?? 'platform:user';
   const isAdmin = role === 'platform:admin';
+
+  // Account slot (SRS PLT-11): the user's avatar image, or a monogram from
+  // their name/email when no avatar is set.
+  const userImage = h.get('x-sovereign-user-image');
+  const userLabel = h.get('x-sovereign-user-name') || h.get('x-sovereign-user-email') || '?';
+  const accountAvatar = userImage ? (
+    <img src={userImage} alt="" className={styles.avatarImage} />
+  ) : (
+    <span aria-hidden="true">{monogram(userLabel)}</span>
+  );
   // Middle section: one icon per non-chrome plugin. Chrome plugins (Launcher,
   // Console, Account) are reached via the home `/`, ⚙, and avatar links below
   // (SRS PLT-12). Full root-plugin-first ordering lands with the shell
@@ -39,7 +50,9 @@ export default async function PlatformLayout({ children }: { children: ReactNode
               ⚙
             </Link>
           ) : null}
-          <Link href="/account" className={styles.avatar} title="Account" aria-label="Account" />
+          <Link href="/account" className={styles.avatar} title="Account" aria-label="Account">
+            {accountAvatar}
+          </Link>
         </div>
       </aside>
 
@@ -47,7 +60,9 @@ export default async function PlatformLayout({ children }: { children: ReactNode
         <Link href="/" className={styles.mobileBrand} aria-label="Sovereign home">
           Sovereign
         </Link>
-        <Link href="/account" className={styles.avatar} aria-label="Account" />
+        <Link href="/account" className={styles.avatar} aria-label="Account">
+          {accountAvatar}
+        </Link>
       </header>
 
       <main className={styles.content}>{children}</main>

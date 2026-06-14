@@ -4,7 +4,7 @@
 **Date:** June 2026\
 **Author:** kasunben\
 **Purpose:** Canonical specification for the Sovereign Account plugin — the single source of truth for its manifest, access model, functional requirements, data model, and build plan.\
-**Status:** Draft
+**Status:** v0.1 in progress — Profile + Preferences implemented (Task 0.4.06 part 1); Security (password + sessions) follows in part 2
 
 ---
 
@@ -236,14 +236,13 @@ customisation (pin/unpin/reorder) — see ACC-10.
 
 ## Open questions
 
-1. **Avatar storage mechanism.** Avatar images require binary file storage,
-   which the platform does not have a standard abstraction for in v1. Options:
-   (a) Store as base64 in a dedicated `account_avatars` table (simple, no
-   extra infra, but bloats the DB for large images). (b) Store on disk at a
-   well-known path (e.g. `data/avatars/`) and serve via a Next.js route. (c)
-   Defer avatar upload until a platform file-storage abstraction exists
-   (v0.5+). Recommendation: option (b) for v0.1 with a simple file route, with
-   a clear migration path to an object store. Resolve before implementing ACC-03.
+1. **Avatar storage mechanism.** ✅ **Resolved (Task 0.4.06 part 1): option (b).**
+   Avatars are stored on disk at `data/avatars/<user_id>.<ext>` (workspace-root
+   `data/`, resolved like the SQLite DB) and served by the runtime route
+   `GET /api/account/avatar/[userId]`. Upload goes to `POST /api/account/avatar`
+   (validates JPEG/PNG/WebP ≤ 2 MB), which writes the file and sets the user
+   record's `image` to the cache-busted serve URL via better-auth. Migration to
+   an object store remains a clean future swap behind the same routes.
 
 2. **Email change.** Email is currently read-only (ACC-01). Changing email
    requires re-verification and potentially `better-auth` workflow changes.
@@ -255,18 +254,20 @@ customisation (pin/unpin/reorder) — see ACC-10.
    ACC-02 targets the display name only. Confirm the platform user schema
    distinguishes these two fields before implementing.
 
-4. **Appearance preference and SSR.** The `data-theme` attribute must be set
-   before the first render to avoid a flash of unstyled content. Reading the
-   preference from `account_prefs` on the server requires an authenticated DB
-   call per request. Alternative: cache the preference in a cookie (readable
-   server-side without a DB call). Recommendation: write theme preference to
-   both `account_prefs` (authoritative) and a `sv-theme` cookie (fast
-   server-side read). Resolve before implementing ACC-08.
+4. **Appearance preference and SSR.** ✅ **Resolved (Task 0.4.06 part 1).** The
+   choice is written to both `account_prefs` (authoritative) and an `sv-theme`
+   cookie. An inline script in the runtime root layout (`runtime/app/layout.tsx`)
+   runs before first paint and sets `data-theme` from the cookie — `light`/`dark`
+   directly, `system` (or unset) following `prefers-color-scheme`. This avoids a
+   flash and resolves `system` (which the server can't, lacking the OS hint)
+   without a per-request DB call. The `ThemeControl` also applies the new value
+   instantly on change before the persist round-trip.
 
 ---
 
 ## Changelog
 
-| Version | Date     | Change                                                   |
-| ------- | -------- | -------------------------------------------------------- |
-| 0.1     | Jun 2026 | Initial draft — per-user profile and preferences plugin. |
+| Version | Date     | Change                                                                                                                                                                                                                                                                                                                                     |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 0.1     | Jun 2026 | Initial draft — per-user profile and preferences plugin.                                                                                                                                                                                                                                                                                   |
+| 0.1     | Jun 2026 | Part 1 implemented (Task 0.4.06): Profile (ACC-01/02/03) + Preferences (ACC-07/08). Resolved Q1 (avatar → disk + Next route) and Q4 (theme → `account_prefs` + `sv-theme` cookie + pre-paint inline script). Deviation: components live under `app/_components/` (composition copies only `app/`). Security (ACC-04–06) follows in part 2. |
