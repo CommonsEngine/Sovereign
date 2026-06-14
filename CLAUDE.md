@@ -163,10 +163,15 @@ pnpm lint:fix        # run ESLint with auto-fix
   overrides the `AUTH_INVITE_ONLY` env default; absent a stored value, the env
   default applies. Never make registration read the platform DB instead.
 - **`root_plugin_id` lives in `platform_settings`, seeded on first run** to
-  `fs.sovereign.launcher` (PLT-14/PLT-15). `/` redirects to that plugin's
-  `routePrefix`; the eligible set is installed + enabled + non-`adminOnly`
-  (validated in `runtime/src/root-plugin.ts`). Platform tables (`tenants`,
-  `plugin_status`, `platform_settings`) are bootstrapped with
+  `fs.sovereign.launcher` (PLT-14/PLT-15). The eligible set is installed +
+  enabled + non-`adminOnly` (validated in `runtime/src/root-plugin.ts`). `/`
+  **serves the root plugin in place** — the middleware rewrites `/` to the
+  configured plugin's `routePrefix` (URL stays `/`; the plugin remains reachable
+  at its own prefix too), resolving the prefix at request time via
+  `GET /api/admin/root-plugin` (Edge middleware can't read the DB, same fetch
+  pattern as `/api/admin/plugins/disabled`). `(platform)/page.tsx` keeps a
+  `redirect()` as a fallback for when that resolution fetch fails. Platform
+  tables (`tenants`, `plugin_status`, `platform_settings`) are bootstrapped with
   CREATE-TABLE-IF-NOT-EXISTS + seed rows in `packages/db`'s `getPlatformDb()`
   until drizzle-kit migrations land in Task 0.5.03; the DDL there must stay in
   sync with the Drizzle schema.

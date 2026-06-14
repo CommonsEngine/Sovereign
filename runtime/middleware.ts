@@ -33,6 +33,25 @@ async function fetchDisabledPluginIds(): Promise<Set<string>> {
 }
 
 /**
+ * The configured root plugin's `routePrefix`, fetched from the Node-runtime
+ * route (Edge middleware cannot read the DB). Used to serve the root plugin in
+ * place at `/` (PLT-14). Returns null on any failure, so `/` falls through to
+ * the placeholder home page rather than erroring.
+ */
+async function fetchRootPluginPrefix(): Promise<string | null> {
+  try {
+    const res = await fetch(`${SELF_URL}/api/admin/root-plugin`, {
+      headers: { authorization: `Bearer ${process.env.SOVEREIGN_ADMIN_KEY ?? ''}` },
+    });
+    if (!res.ok) return null;
+    const { routePrefix } = (await res.json()) as { routePrefix: string | null };
+    return routePrefix;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Session gate + plugin route protection. Verifies the request against the auth
  * server's /api/verify (v0.3 approach; SRS AUTH-05 targets local JWT
  * verification at v0.5). On success the verified user is injected as request
@@ -79,6 +98,19 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   headers.set('x-sovereign-session-expires-at', String(expiresAt));
   if (user.name != null) headers.set('x-sovereign-user-name', user.name);
   if (user.image != null) headers.set('x-sovereign-user-image', user.image);
+
+  // Serve the configured root plugin in place at `/` (PLT-14) — the URL stays
+  // `/` while the plugin's route renders, and the plugin is still reachable at
+  // its own routePrefix. Falls through to the placeholder home page when no
+  // valid root plugin resolves. `(platform)/page.tsx` keeps a redirect as a
+  // belt-and-suspenders fallback for the rare case this fetch fails.
+  if (pathname === '/') {
+    const rootPrefix = await fetchRootPluginPrefix();
+    if (rootPrefix && rootPrefix !== '/') {
+      return NextResponse.rewrite(new URL(rootPrefix, request.url), { request: { headers } });
+    }
+  }
+
   return NextResponse.next({ request: { headers } });
 }
 

@@ -20,3 +20,18 @@ export function validateRootPlugin(
   if (plugin.adminOnly) return { ok: false, reason: 'admin-only' };
   return { ok: true };
 }
+
+/**
+ * The `routePrefix` the platform root `/` should serve in place (SRS PLT-14):
+ * the configured root plugin's prefix when it is a valid root, else null (the
+ * caller falls back to the placeholder home page). Resolved at request time so
+ * an admin's CON-11 change takes effect without a rebuild.
+ */
+export function resolveRootRoutePrefix(
+  rootPluginId: string,
+  plugins: readonly PluginRouteInfo[],
+  disabledIds: ReadonlySet<string>,
+): string | null {
+  if (!validateRootPlugin(rootPluginId, plugins, disabledIds).ok) return null;
+  return plugins.find((p) => p.id === rootPluginId)?.routePrefix ?? null;
+}
