@@ -185,9 +185,11 @@ pnpm lint:fix        # run ESLint with auto-fix
   pattern as `/api/admin/plugins/disabled`). `(platform)/page.tsx` keeps a
   `redirect()` as a fallback for when that resolution fetch fails. Platform
   tables (`tenants`, `plugin_status`, `platform_settings`) are bootstrapped with
-  CREATE-TABLE-IF-NOT-EXISTS + seed rows in `packages/db`'s `getPlatformDb()`
-  until drizzle-kit migrations land in Task 0.5.03; the DDL there must stay in
-  sync with the Drizzle schema.
+  **dialect-aware** CREATE-TABLE-IF-NOT-EXISTS + seed rows in `packages/db`'s
+  `getPlatformDb()` (`packages/db/src/bootstrap.ts`, `INTEGER`/`BIGINT` +
+  `INTEGER`/`BOOLEAN` per dialect); the DDL must stay in sync with the Drizzle
+  schemas (`schema/sqlite` + `schema/postgres`, guarded by a parity test).
+  drizzle-kit migrations replace this later (0.5.05+).
 - **Chrome plugins** (`fs.sovereign.launcher`, `fs.sovereign.account`,
   `fs.sovereign.console`) are reached through the sidebar chrome (home `/`,
   Console ⚙, Account avatar), never via the Launcher grid or the sidebar's
@@ -497,8 +499,9 @@ pnpm install:plugins    # clone sovereign/community plugins declared in sovereig
 - ✅ Task 0.4.06 — Account plugin (Profile + Preferences + Security): display name + avatar, IANA timezone + Light/Dark/System theme, password change, active-session list/revoke; `account_prefs` table; `sdk.auth` gained `changePassword`/`listSessions`/`revokeSession`; `freshAge: 0` so session listing isn't gated by session age. Completes the v0.4 chrome-plugin trio (Console, Launcher, Account) (merged to `main`).
 - ✅ Task 0.5.00 — `scripts/install-plugins.ts` (platform → 0.5.0, enters v0.5): reads `sovereign.plugins.json`, shallow-clones declared plugins into `plugins/<id>/` (skips existing), then runs `pnpm generate`; cloned plugins gitignored (allowlist keeps the three committed platform plugins) (merged to `main`).
 - ✅ Task 0.5.01 — PWA configuration (`runtime` → 0.5.0): `@ducanh2912/next-pwa` wraps `runtime/next.config.ts` (disabled in dev), `runtime/public/manifest.json` + generated PNG icons (192/512/maskable + apple-touch), manifest/theme-colour linked via root-layout metadata/viewport, `/offline` fallback page; service worker generated into `runtime/public/` at build (gitignored + eslint/prettier-ignored). SRS §3.11, PLT-09 (merged to `main`).
-- ▶️ In review: Task 0.5.02 — Production Docker image: `Dockerfile` (runtime) + `apps/auth/Dockerfile` rewritten as three-stage (`deps`/`builder`/`runner`) builds from Next.js standalone output (`output: 'standalone'` + `outputFileTracingRoot` = monorepo root in both `next.config.ts`); non-root `nextjs` runner, `HEALTHCHECK` against the new public `runtime/app/api/health` liveness route (auth already had `/api/health`); `docker-compose.prod.yml` adds healthchecks, `depends_on: condition: service_healthy`, and switches prod data to a **named volume** (non-root + bind mount breaks SQLite writes on Linux). ~264 MB true image size (≈7× smaller than the old dev image). SRS NFR-01, §3.1.
-- ⏳ Next: Task 0.5.03 — Postgres validation: confirm full SQLite↔Postgres parity (drizzle-kit migrations, both dialects exercised). Branch from an up-to-date `main` once the production-Docker PR merges.
+- ✅ Task 0.5.02 — Production Docker image: three-stage (`deps`/`builder`/`runner`) builds from Next.js standalone output (`output: 'standalone'` + `outputFileTracingRoot`); non-root `nextjs` runner, `HEALTHCHECK` against the public `runtime/app/api/health` route; `docker-compose.prod.yml` healthchecks, `depends_on: service_healthy`, and a **named volume** for prod data. ~264 MB image. SRS NFR-01, §3.1 (merged to `main`).
+- ✅ Task 0.5.03 — Postgres validation (SQLite↔Postgres parity, NFR-03; delivered in 4 PRs). The platform data layer is **async** (Postgres has no sync query) and `sdk.platform.getConfig()` is now async; `packages/db` wires the pg driver + a dialect-tagged `PlatformDb` wrapper + `schema/postgres` (bigint timestamps) + dialect-aware bootstrap DDL; `apps/auth` runs better-auth on a pg `Pool` with dialect-agnostic query helpers (quoted `"user"`, boolean/date normalisation). Postgres opt-in via the **`docker-compose.postgres.yml` overlay** (adds a `postgres` service, wires both apps). Env-gated `*.pg.test.ts` parity tests (`TEST_DATABASE_URL`). **Live-validated** end-to-end on Postgres 16: register → admin role → authenticated request → plugin toggle, all on a fresh pg. `docs/self-hosting.md` documents the Postgres setup + switch procedure (merged to `main`).
+- ⏳ Next: Task 0.5.04 — `sv` CLI core commands. Branch from an up-to-date `main`.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 - ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).

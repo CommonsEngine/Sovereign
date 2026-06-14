@@ -1,0 +1,48 @@
+# PostgreSQL overlay for the production stack.
+#
+# The base docker-compose.prod.yml runs on SQLite by default. Layer this file on
+# top to run the whole stack on PostgreSQL instead — it adds a `postgres`
+# service and points both the runtime and the auth server at it. No application
+# code changes (NFR-03): only the database connection differs.
+#
+# Usage:
+#   cp .env.example .env            # set AUTH_SECRET, SOVEREIGN_ADMIN_KEY,
+#                                   # POSTGRES_PASSWORD, NEXT_PUBLIC_RUNTIME_URL …
+#   docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up --build -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sovereign-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: '${POSTGRES_USER:-sovereign}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}'
+      POSTGRES_DB: '${POSTGRES_DB:-sovereign}'
+    volumes:
+      - sovereign_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sovereign} -d ${POSTGRES_DB:-sovereign}']
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+      retries: 5
+    networks:
+      - sovereign_net
+
+  auth:
+    environment:
+      AUTH_DATABASE_URL: 'postgres://${POSTGRES_USER:-sovereign}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sovereign}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  runtime:
+    environment:
+      DB_DIALECT: 'postgres'
+      DATABASE_URL: 'postgres://${POSTGRES_USER:-sovereign}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sovereign}'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  sovereign_pgdata:
