@@ -1,6 +1,6 @@
 {
   "name": "@sovereignfs/auth",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,12 +15,14 @@
     "better-auth": "^1.6.16",
     "better-sqlite3": "^12.10.0",
     "next": "catalog:",
+    "pg": "^8.21.0",
     "react": "catalog:",
     "react-dom": "catalog:"
   },
   "devDependencies": {
     "@sovereignfs/tsconfig": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/pg": "^8.20.0",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "typescript": "catalog:"

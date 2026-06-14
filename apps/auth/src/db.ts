@@ -1,17 +1,36 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
+import { Pool } from 'pg';
 import { getEnv } from './env';
 
-let db: Database.Database | undefined;
+/**
+ * The auth server's database, dialect-agnostic like the platform DB (NFR-03).
+ * The dialect is inferred from the connection URL: a `postgres(ql)://` URL uses
+ * node-postgres, anything else a local SQLite file.
+ *
+ * better-auth manages its own user/session/account/verification tables (created
+ * by its migrator, see ./migrate); we add an `invites` table (invite-only gate)
+ * and an `auth_settings` table (the Console invite-only toggle). better-auth
+ * receives the raw driver via `getAuthDatabase()`; the app's own queries go
+ * through the async `authGet`/`authAll`/`authRun` helpers, which paper over the
+ * better-sqlite3 (sync) vs node-postgres (async) split.
+ */
+
+type AuthDb =
+  | { dialect: 'sqlite'; sqlite: Database.Database }
+  | { dialect: 'postgres'; pool: Pool };
+
+function isPostgresUrl(url: string): boolean {
+  return url.startsWith('postgres://') || url.startsWith('postgresql://');
+}
 
 /**
- * Convert a `file:` URL to a filesystem path. Relative paths resolve against
- * the workspace root (nearest ancestor with pnpm-workspace.yaml), not the
- * process cwd — the auth server runs from apps/auth/, and all SQLite files
- * should land in the single root-level data/ directory. Mirrors the
- * resolution in packages/db (not imported: the auth server intentionally
- * does not depend on packages/db).
+ * Convert a `file:` URL to a filesystem path. Relative paths resolve against the
+ * workspace root (nearest ancestor with pnpm-workspace.yaml), not the process
+ * cwd — the auth server runs from apps/auth/, and all SQLite files should land
+ * in the single root-level data/ directory. (Mirrors packages/db; not imported,
+ * as the auth server intentionally does not depend on packages/db.)
  */
 function toPath(url: string): string {
   if (url === ':memory:') return url;
@@ -30,35 +49,104 @@ function findWorkspaceRoot(): string {
   }
 }
 
-/**
- * The auth server's own SQLite database. better-auth manages the
- * user/session/account/verification tables; we add an `invites` table for the
- * invite-only gate (invite creation is a Console feature, Task 0.4.02).
- */
-export function getDb(): Database.Database {
-  if (!db) {
-    const path = toPath(getEnv().databaseUrl);
-    if (path !== ':memory:') {
-      mkdirSync(dirname(path), { recursive: true });
-    }
-    const conn = new Database(path);
-    conn.pragma('journal_mode = WAL');
-    conn.pragma('foreign_keys = ON');
-    conn.exec(`
-      CREATE TABLE IF NOT EXISTS invites (
-        token TEXT PRIMARY KEY,
-        email TEXT NOT NULL,
-        created_at INTEGER NOT NULL,
-        expires_at INTEGER,
-        consumed_at INTEGER
-      );
-      CREATE TABLE IF NOT EXISTS auth_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL,
-        updated_at INTEGER NOT NULL
-      );
-    `);
-    db = conn;
+let _db: AuthDb | undefined;
+
+function getAuthDb(): AuthDb {
+  if (_db) return _db;
+  const url = getEnv().databaseUrl;
+
+  if (isPostgresUrl(url)) {
+    _db = { dialect: 'postgres', pool: new Pool({ connectionString: url }) };
+    return _db;
   }
-  return db;
+
+  const path = toPath(url);
+  if (path !== ':memory:') {
+    mkdirSync(dirname(path), { recursive: true });
+  }
+  const sqlite = new Database(path);
+  sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
+  _db = { dialect: 'sqlite', sqlite };
+  return _db;
+}
+
+/** The dialect of the auth database. */
+export function getAuthDialect(): 'sqlite' | 'postgres' {
+  return getAuthDb().dialect;
+}
+
+/**
+ * The raw driver better-auth manages directly (a better-sqlite3 `Database` for
+ * SQLite, a node-postgres `Pool` for Postgres). better-auth detects the dialect
+ * from the instance.
+ */
+export function getAuthDatabase(): Database.Database | Pool {
+  const db = getAuthDb();
+  return db.dialect === 'sqlite' ? db.sqlite : db.pool;
+}
+
+/** Create the auth server's own tables (invites, auth_settings). Idempotent. */
+export async function ensureAuthTables(): Promise<void> {
+  const ts = getAuthDialect() === 'postgres' ? 'BIGINT' : 'INTEGER';
+  await authRun(
+    `CREATE TABLE IF NOT EXISTS invites (
+      token TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      created_at ${ts} NOT NULL,
+      expires_at ${ts},
+      consumed_at ${ts}
+    )`,
+  );
+  await authRun(
+    `CREATE TABLE IF NOT EXISTS auth_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at ${ts} NOT NULL
+    )`,
+  );
+}
+
+/** Rewrite `?` positional placeholders to Postgres `$1, $2, …`. */
+function toPgPlaceholders(sql: string): string {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+/** better-sqlite3 cannot bind booleans; map them to 0/1. Postgres binds natively. */
+function sqliteParams(params: readonly unknown[]): unknown[] {
+  return params.map((p) => (typeof p === 'boolean' ? (p ? 1 : 0) : p));
+}
+
+/** Run a query returning at most one row. */
+export async function authGet<T>(
+  sql: string,
+  params: readonly unknown[] = [],
+): Promise<T | undefined> {
+  const db = getAuthDb();
+  if (db.dialect === 'sqlite') {
+    return db.sqlite.prepare(sql).get(...sqliteParams(params)) as T | undefined;
+  }
+  const res = await db.pool.query(toPgPlaceholders(sql), params as unknown[]);
+  return res.rows[0] as T | undefined;
+}
+
+/** Run a query returning all rows. */
+export async function authAll<T>(sql: string, params: readonly unknown[] = []): Promise<T[]> {
+  const db = getAuthDb();
+  if (db.dialect === 'sqlite') {
+    return db.sqlite.prepare(sql).all(...sqliteParams(params)) as T[];
+  }
+  const res = await db.pool.query(toPgPlaceholders(sql), params as unknown[]);
+  return res.rows as T[];
+}
+
+/** Run a statement for its side effects (INSERT/UPDATE/DDL). */
+export async function authRun(sql: string, params: readonly unknown[] = []): Promise<void> {
+  const db = getAuthDb();
+  if (db.dialect === 'sqlite') {
+    db.sqlite.prepare(sql).run(...sqliteParams(params));
+    return;
+  }
+  await db.pool.query(toPgPlaceholders(sql), params as unknown[]);
 }

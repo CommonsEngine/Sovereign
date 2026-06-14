@@ -3,13 +3,16 @@ export interface AuthUserRow {
   email: string;
   name: string | null;
   role: string;
-  active: number | null; // SQLite boolean: 0 | 1 | NULL (NULL = active, same as default)
-  createdAt: string; // better-auth stores dates as ISO 8601 strings in SQLite
+  // better-auth's `active` boolean reads back as 0/1 on SQLite and true/false on
+  // Postgres; NULL means active (the default). The route passes whichever the
+  // driver returns — `buildMemberList` treats 0 and false as deactivated.
+  active: number | boolean | null;
+  createdAt: string; // normalised to an ISO 8601 string by the caller (Date on pg)
 }
 
 export interface PendingInviteRow {
   email: string;
-  created_at: number; // Unix timestamp (seconds)
+  created_at: number; // Unix timestamp (seconds) — caller normalises pg bigint strings
   expires_at: number | null;
 }
 
@@ -46,7 +49,7 @@ export function buildMemberList(users: AuthUserRow[], invites: PendingInviteRow[
     email: u.email,
     name: u.name,
     role: u.role,
-    status: u.active === 0 ? 'deactivated' : 'active',
+    status: u.active === 0 || u.active === false ? 'deactivated' : 'active',
     createdAt: u.createdAt,
     expiresAt: null,
   }));

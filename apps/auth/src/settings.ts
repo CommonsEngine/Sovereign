@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import { authGet, authRun } from './db';
 
 /**
  * Resolve the effective invite-only flag: a stored Console setting overrides
@@ -15,18 +15,19 @@ export function resolveInviteOnly(
 }
 
 /** Read the stored invite-only setting; null when never toggled. */
-export function readInviteOnlySetting(db: Database.Database): string | null {
-  const row = db.prepare("SELECT value FROM auth_settings WHERE key = 'invite_only'").get() as
-    | { value: string }
-    | undefined;
+export async function readInviteOnlySetting(): Promise<string | null> {
+  const row = await authGet<{ value: string }>(
+    "SELECT value FROM auth_settings WHERE key = 'invite_only'",
+  );
   return row?.value ?? null;
 }
 
 /** Persist the invite-only setting (upsert). */
-export function writeInviteOnlySetting(db: Database.Database, inviteOnly: boolean): void {
+export async function writeInviteOnlySetting(inviteOnly: boolean): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  db.prepare(
+  await authRun(
     `INSERT INTO auth_settings (key, value, updated_at) VALUES ('invite_only', ?, ?)
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
-  ).run(String(inviteOnly), now);
+     ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+    [String(inviteOnly), now],
+  );
 }

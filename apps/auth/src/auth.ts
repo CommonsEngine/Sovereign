@@ -1,18 +1,17 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { APIError } from 'better-auth/api';
 import { nextCookies } from 'better-auth/next-js';
-import { getDb } from './db';
+import { authGet, authRun, getAuthDatabase } from './db';
 import { getEnv } from './env';
 import { readInviteOnlySetting, resolveInviteOnly } from './settings';
 
 function buildOptions(): BetterAuthOptions {
   const env = getEnv();
-  const db = getDb();
 
   return {
     secret: env.secret,
     baseURL: env.baseUrl,
-    database: db,
+    database: getAuthDatabase(),
     session: {
       // Disable better-auth's "fresh session" gate. By default sensitive
       // endpoints guarded by freshSessionMiddleware (e.g. GET /list-sessions,
@@ -48,26 +47,31 @@ function buildOptions(): BetterAuthOptions {
       user: {
         create: {
           before: async (user) => {
-            const isFirst =
-              (db.prepare('SELECT COUNT(*) AS c FROM user').get() as { c: number }).c === 0;
+            const countRow = await authGet<{ c: number | string }>(
+              'SELECT COUNT(*) AS c FROM "user"',
+            );
+            // COUNT is a number on SQLite, a bigint-as-string on Postgres.
+            const isFirst = Number(countRow?.c ?? 0) === 0;
 
             // Invite-only gate (first user bootstraps and is exempt). The
             // Console toggle (stored setting) overrides the env default, so
             // this is resolved per registration — no restart needed (CON-10).
-            const inviteOnly = resolveInviteOnly(readInviteOnlySetting(db), env.inviteOnly);
+            const inviteOnly = resolveInviteOnly(await readInviteOnlySetting(), env.inviteOnly);
             if (!isFirst && inviteOnly) {
               const now = Math.floor(Date.now() / 1000);
-              const invite = db
-                .prepare(
-                  'SELECT token FROM invites WHERE email = ? AND consumed_at IS NULL AND (expires_at IS NULL OR expires_at > ?)',
-                )
-                .get(user.email, now);
+              const invite = await authGet(
+                'SELECT token FROM invites WHERE email = ? AND consumed_at IS NULL AND (expires_at IS NULL OR expires_at > ?)',
+                [user.email, now],
+              );
               if (!invite) {
                 throw new APIError('FORBIDDEN', {
                   message: 'Registration is invite-only; no valid invite was found for this email.',
                 });
               }
-              db.prepare('UPDATE invites SET consumed_at = ? WHERE email = ?').run(now, user.email);
+              await authRun('UPDATE invites SET consumed_at = ? WHERE email = ?', [
+                now,
+                user.email,
+              ]);
             }
 
             // First user becomes the platform admin.
