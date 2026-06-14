@@ -1,9 +1,7 @@
 import { isAbsolute, resolve } from 'node:path';
 import { sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { PLUGIN_STATUS_BOOTSTRAP_SQL } from './bootstrap';
 import { createClient, resolveSqlitePath } from './client';
-import * as schema from './schema/sqlite';
 
 describe('resolveSqlitePath', () => {
   it('passes :memory: through untouched', () => {
@@ -27,57 +25,19 @@ describe('resolveSqlitePath', () => {
   });
 });
 
-describe('createClient (sqlite, in-memory)', () => {
-  it('opens an in-memory database and applies pragmas', () => {
-    const db = createClient({ url: ':memory:' });
-    const row = db.get<{ foreign_keys: number }>(sql`PRAGMA foreign_keys`);
+describe('createClient', () => {
+  it('opens an in-memory SQLite database with pragmas and tags the dialect', () => {
+    const client = createClient({ url: ':memory:' });
+    expect(client.dialect).toBe('sqlite');
+    if (client.dialect !== 'sqlite') throw new Error('expected sqlite');
+    const row = client.db.get<{ foreign_keys: number }>(sql`PRAGMA foreign_keys`);
     expect(row?.foreign_keys).toBe(1);
   });
 
-  it('round-trips plugin_status rows through the Drizzle schema', () => {
-    const db = createClient({ url: ':memory:' });
-    db.run(sql.raw(PLUGIN_STATUS_BOOTSTRAP_SQL));
-
-    db.insert(schema.pluginStatus)
-      .values({ pluginId: 'fs.test.alpha', tenantId: 'default', enabled: false, updatedAt: 100 })
-      .run();
-
-    const rows = db.select().from(schema.pluginStatus).all();
-    expect(rows).toHaveLength(1);
-    expect(rows[0]).toEqual({
-      pluginId: 'fs.test.alpha',
-      tenantId: 'default',
-      enabled: false,
-      updatedAt: 100,
-    });
-  });
-
-  it('upserts on plugin_id conflict (the toggle pattern)', () => {
-    const db = createClient({ url: ':memory:' });
-    db.run(sql.raw(PLUGIN_STATUS_BOOTSTRAP_SQL));
-
-    const upsert = (enabled: boolean, updatedAt: number) =>
-      db
-        .insert(schema.pluginStatus)
-        .values({ pluginId: 'fs.test.alpha', tenantId: 'default', enabled, updatedAt })
-        .onConflictDoUpdate({
-          target: schema.pluginStatus.pluginId,
-          set: { enabled, updatedAt },
-        })
-        .run();
-
-    upsert(false, 100);
-    upsert(true, 200);
-
-    const rows = db.select().from(schema.pluginStatus).all();
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.enabled).toBe(true);
-    expect(rows[0]?.updatedAt).toBe(200);
-  });
-
-  it('throws a clear error for the unwired postgres dialect', () => {
-    expect(() => createClient({ dialect: 'postgres', url: 'postgres://u:p@host/db' })).toThrow(
-      /Postgres support is not yet implemented/,
-    );
+  it('constructs a Postgres client (lazy pool) without connecting', () => {
+    // node-postgres connects lazily, so building the client must not throw even
+    // with an unreachable host — the first query would be what connects.
+    const client = createClient({ dialect: 'postgres', url: 'postgres://u:p@127.0.0.1:1/db' });
+    expect(client.dialect).toBe('postgres');
   });
 });

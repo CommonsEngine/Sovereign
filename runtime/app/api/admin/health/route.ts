@@ -1,7 +1,6 @@
 import { statSync } from 'node:fs';
 import { NextResponse } from 'next/server';
-import { sql } from 'drizzle-orm';
-import { resolveDialect, resolveSqlitePath } from '@sovereignfs/db';
+import { pingDb, resolveDialect, resolveSqlitePath } from '@sovereignfs/db';
 import { sdk } from '@sovereignfs/sdk';
 import { checkAdminKey } from '@/src/admin-guard';
 import { getPlatformDb } from '@/src/db';
@@ -28,7 +27,7 @@ export async function GET(request: Request): Promise<Response> {
 
   let dbStatus: 'ok' | 'error' = 'ok';
   try {
-    (await getPlatformDb()).get(sql`SELECT 1`);
+    await pingDb(await getPlatformDb());
   } catch {
     dbStatus = 'error';
   }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { schema } from '@sovereignfs/db';
+import { setPluginEnabled } from '@sovereignfs/db';
 import { checkAdminKey } from '@/src/admin-guard';
 import { getPlatformDb } from '@/src/db';
 import { getInstalledPlugins } from '@/src/registry';
@@ -23,16 +23,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
     return NextResponse.json({ error: 'enabled (boolean) is required' }, { status: 400 });
   }
 
-  const db = await getPlatformDb();
-  const now = Math.floor(Date.now() / 1000);
-
-  db.insert(schema.pluginStatus)
-    .values({ pluginId: id, tenantId: 'default', enabled: body.enabled, updatedAt: now })
-    .onConflictDoUpdate({
-      target: schema.pluginStatus.pluginId,
-      set: { enabled: body.enabled, updatedAt: now },
-    })
-    .run();
+  await setPluginEnabled(await getPlatformDb(), id, body.enabled);
 
   return NextResponse.json({ id, enabled: body.enabled });
 }
