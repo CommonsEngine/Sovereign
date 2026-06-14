@@ -29,7 +29,17 @@ services:
       NEXT_PUBLIC_RUNTIME_URL: '${NEXT_PUBLIC_RUNTIME_URL}'
       SOVEREIGN_ADMIN_KEY: '${SOVEREIGN_ADMIN_KEY}'
     volumes:
-      - ./data:/app/data
+      # Named volume (not a host bind mount): Docker initialises it with the
+      # image's /app/data ownership, so the non-root runner can write SQLite +
+      # avatars with zero host-side setup. Back up with `docker run --rm -v
+      # sovereign_data:/data -v "$PWD":/backup alpine tar czf /backup/data.tgz -C /data .`
+      - sovereign_data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/api/health']
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     networks:
       - sovereign_net
 
@@ -53,11 +63,23 @@ services:
       SMTP_PASS: '${SMTP_PASS:-}'
       SMTP_FROM: '${SMTP_FROM:-}'
     volumes:
-      - ./data:/app/data
+      # Shared with the auth service — both resolve relative SQLite paths
+      # against /app (the cwd), so both DBs and avatars land in this volume.
+      - sovereign_data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
     depends_on:
-      - auth
+      auth:
+        condition: service_healthy
     networks:
       - sovereign_net
+
+volumes:
+  sovereign_data:
 
 networks:
   sovereign_net:

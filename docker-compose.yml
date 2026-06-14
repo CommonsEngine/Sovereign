@@ -29,6 +29,10 @@ services:
       context: .
       dockerfile: apps/auth/Dockerfile
     container_name: sovereign-auth
+    # The production image runs as a non-root user; here we override to root so
+    # writes to the host `./data` bind mount work regardless of host ownership.
+    # (Prod uses a named volume instead and keeps the non-root user.)
+    user: root
     # Internal only — not reachable from the host, only from the runtime
     # container via http://auth:3001 on the shared network.
     expose:
@@ -52,6 +56,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: sovereign-runtime
+    # See the auth service: root override so the host `./data` bind mount is
+    # writable. Prod (docker-compose.prod.yml) keeps the image's non-root user.
+    user: root
     ports:
       - '${RUNTIME_PORT:-3000}:3000'
     environment:

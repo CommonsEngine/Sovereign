@@ -7,6 +7,11 @@ import type { NextConfig } from 'next';
 loadEnvConfig(resolve(process.cwd(), '../..'), process.env.NODE_ENV !== 'production');
 
 const nextConfig: NextConfig = {
+  // Self-contained production server (`.next/standalone`) for the Docker image.
+  // Tracing is rooted at the monorepo root so workspace package files are
+  // included in the standalone output.
+  output: 'standalone',
+  outputFileTracingRoot: resolve(process.cwd(), '../..'),
   // Compile the design system from source (no watch build needed in dev).
   transpilePackages: ['@sovereignfs/ui'],
 };

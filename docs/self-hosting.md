@@ -90,8 +90,8 @@ to get started — every variable is documented there.
 
 ## Data persistence
 
-SQLite databases and uploaded files are stored in the `./data/` directory,
-which is mounted as a volume in both the runtime and auth containers:
+SQLite databases and uploaded files live under `/app/data` inside both the
+runtime and auth containers:
 
 ```
 data/
@@ -100,7 +100,20 @@ data/
   avatars/       # User avatar uploads (Task 0.4.06)
 ```
 
-Back up the `data/` directory to preserve all application state.
+How that directory is persisted depends on the compose file:
+
+- **Dev (`docker-compose.yml`)** — bind-mounted to the repo's `./data/`
+  directory (the containers run as root, so host ownership is a non-issue).
+  Back up by copying `./data/`.
+- **Prod (`docker-compose.prod.yml`)** — a named Docker volume
+  (`sovereign_data`). The production images run as a **non-root** user, and a
+  named volume inherits the image's `/app/data` ownership, so writes work with
+  zero host-side `chown`. Back up the volume with:
+
+  ```bash
+  docker run --rm -v sovereign_data:/data -v "$PWD":/backup alpine \
+    tar czf /backup/sovereign-data.tgz -C /data .
+  ```
 
 ---
 
