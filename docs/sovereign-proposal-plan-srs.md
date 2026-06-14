@@ -692,6 +692,31 @@ The shell app lives in a separate repository (`sovereign-mobile`) under
 the Sovereign project, not in this monorepo. It is developed and versioned
 independently of the platform.
 
+### 3.13 Cross-Plugin Data Sharing (post-v1 plan)
+
+Plugins are isolated behind the SDK boundary — a plugin may not import another
+plugin's internals or read its tables. Some user-desired flows, however, want one
+plugin to enrich itself from another's data (so the user doesn't re-enter it).
+Sovereign will support this through a **consent-gated, pull-based, read-only**
+mechanism — specified in **RFC 0002 — Cross-plugin data sharing** — never by
+relaxing isolation.
+
+Model: a **provider** plugin exposes named, versioned, read-only **data
+contracts**; a **consumer** plugin requests a contract via `sdk.data.query(...)`
+and a provider registers resolvers via `sdk.data.provide(...)`. Access is
+permitted only when the user holds an explicit, revocable **consent grant** for
+`(consumer, provider, contract)`; otherwise the call raises
+`ConsentRequiredError`. Every read is platform-mediated (no direct cross-plugin
+table access), tenant- and user-scoped, read-only, and audited. Consumers manage
+their own grants from Account; Console provides oversight.
+
+Two reserved manifest permissions gate participation — `data:provide` and
+`data:consume` — and the SDK ships a reserved `sdk.data` surface that throws
+`NotImplementedError` until the mechanism is implemented (mirroring the other
+post-v1 surfaces). The full design — manifest `data.provides[]`/`data.consumes[]`
+declarations, the consent and audit tables, runtime resolution, and consent UI —
+is deferred per RFC 0002.
+
 ---
 
 ## 4. Software Requirements Specification
@@ -881,6 +906,8 @@ type Permission =
   | 'notifications:send' // not implemented v1
   | 'events:publish' // not implemented v1
   | 'events:subscribe' // not implemented v1
+  | 'data:provide' // cross-plugin data sharing — expose contracts (RFC 0002); reserved, not implemented v1
+  | 'data:consume' // cross-plugin data sharing — consume contracts (RFC 0002); reserved, not implemented v1
   | 'admin:*'; // grants admin-only routes. Equivalent to declaring adminOnly: true in the manifest — the middleware maps adminOnly to this capability check. Prefer adminOnly in the manifest; admin:* in permissions is for future fine-grained plugin-level admin scopes.
 ```
 
@@ -931,8 +958,11 @@ type Permission =
 | Jun 2026 | API Composer plugin: managed JSON storage, protocol adapters, API keys; platform reserves the `/api/*` public namespace (PLT-16)                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Generated-API records live as JSON documents in one shared `apicomposer_records` table — no runtime DDL, fully dialect-agnostic, fits the file-based migration model; constraints are enforced by the engine, an accepted trade-off at small-API scale. The metadata model (projects/resources/methods) is protocol-neutral behind a `ProtocolAdapter` interface — REST in v0.1, GraphQL later without core changes (same seam pattern as Plainwrite). External callers cannot present a session cookie, so generated APIs use per-project hashed API keys (Bearer header, reveal-once) plus a per-method public toggle; `/api/*` is therefore exempt from the session-redirect middleware and rewritten to the provider plugin's serve route (PLT-16, one provider per instance in v1). Declarative CRUD only in v0.1 — custom logic is deferred to a sandboxed-hooks milestone, consistent with deferring plugin sandboxing in v1.                                                                                                                                                                    |
 | Jun 2026 | PaperTrail adapted from the legacy architecture: plugin-owned projects containing boards; owner/editor/viewer roles; JSON export/import as the legacy migration bridge                                                                                                                                                                                                                                                                                                                                                                                                                                       | The legacy plugin (Vite SPA + Express router + Prisma extension + `plugin.json` capabilities) maps cleanly onto the v3 native model: canvas becomes a client component, the Express router becomes plugin route handlers under `/papertrail/api/*` (session-protected — no public-route dependency), Prisma models carry over to Drizzle with `tenant_id` added. The old platform-owned "project" concept no longer exists, so PaperTrail owns a projects→boards hierarchy (lifting the legacy one-board-per-project limit); the five legacy capability roles collapse to owner/editor/viewer as data-scoped membership. No automated data migration across architectures — the existing JSON board export/import is the bridge. Repo stays `kasunben/PaperTrail`, adapted in place. New-vs-legacy hardening: server-side markup sanitisation and private-address SSRF blocking on link previews.                                                                                                                                                                                                       |
 | Jun 2026 | Shell gains a third mode, `overlay`: a plugin renders as a dismissable dialog over the current page, with a full-page fallback on hard navigation (RFC 0001 accepted)                                                                                                                                                                                                                                                                                                                                                                                                                                        | Some plugins are interruptions, not destinations (Console, Account, quick-capture/settings-like plugins) — a user mid-task wants a quick layer that dismisses back to where they were, not a context-destroying navigation. Implemented with App Router parallel + intercepting routes: the generate script composes an `overlay` plugin's `app/` tree twice — an interception copy under `(platform)/@modal/(.)<routePrefix>/` (soft nav → dialog over the current page) and the ordinary full-page fallback under `(platform)/(plugins)/<routePrefix>/` (hard load, deep link, login redirect). URLs stay real and unchanged, so `adminOnly` gating and the login redirect keep working; the underlying page stays mounted; plugins write ordinary pages and flip one manifest field (the runtime owns the dialog chrome via a `@modal` slot + a `Dialog` primitive in `packages/ui`). Kept as one mutually-exclusive `shell` enum value, not a separate `presentation` field. `overlay` plugins serve `/` as a full page only, so they are ineligible as the root plugin (CON-11).                   |
+| Jun 2026 | Cross-plugin data sharing is consent-gated, pull-based, read-only, and platform-mediated (RFC 0002); reserved `sdk.data` surface + `data:provide`/`data:consume` permissions land now as stubs                                                                                                                                                                                                                                                                                                                                                                                                               | Plugin isolation (the SDK boundary) must hold, but users legitimately want one plugin to read another's data without re-entry. The mechanism: a provider exposes named, versioned read-only **data contracts**; a consumer calls `sdk.data.query(...)` and a provider registers `sdk.data.provide(...)`. Access requires an explicit, revocable user **consent grant** for `(consumer, provider, contract)`, else `ConsentRequiredError`; reads are tenant/user-scoped, read-only, and audited. Push-via-`events` and write-through were rejected as the primary model (out of scope / too large). The reserved SDK stub + permissions are additive (SDK/manifest minor bumps) with no behaviour change; the consent model, manifest `data.*` declarations, runtime resolution, and consent UI are deferred per RFC 0002. The mechanism is generic — any plugin may be provider or consumer.                                                                                                                                                                                                            |
 
 ---
+
+_Version 0.21 — June 2026. Changes from v0.20: Added §3.13 Cross-Plugin Data Sharing (post-v1 plan) and RFC 0002 (`docs/rfcs/0002-cross-plugin-data-sharing.md`, draft) — a consent-gated, pull-based, read-only mechanism for one plugin to read another's data, platform-mediated and audited. The reserved `sdk.data` surface (`packages/sdk`, stub) and the `data:provide`/`data:consume` manifest permissions (`packages/manifest`) land now (additive; SDK → 0.5.0, manifest → 0.3.0); the consent model, manifest `data.*` declarations, runtime, and consent UI are deferred. SRS §5 manifest reference lists the reserved permissions; one decision-log row added; build plan gains a future task (Task 0.5.10)._
 
 _Version 0.20 — June 2026. Changes from v0.19: Accepted RFC 0001 and incorporated the `overlay` shell mode into the plan. SRS §3.8 documents the third shell mode; §3.9 the dual composition (`@modal` interception copy + full-page fallback); §5 manifest reference adds `'overlay'` to the `shell` enum; CON-11 root-plugin eligibility gains "non-overlay"; one decision-log row added. The build plan gains the overlay wiring task (Task 0.5.09). RFC 0001 marked accepted/incorporated. (Code — manifest enum, generate script, `@modal` slot, `packages/ui` Dialog, Console/Account manifest migration — lands in that task, not in this doc change.)_
 

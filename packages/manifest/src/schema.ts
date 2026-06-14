@@ -2,7 +2,8 @@ import { z } from 'zod';
 
 /**
  * SDK capabilities a plugin may declare. Mirrors the `Permission` union in
- * SRS §5. Several are reserved for post-v1 (storage, notifications, events).
+ * SRS §5. Several are reserved for post-v1 (storage, notifications, events,
+ * and cross-plugin data sharing — `data:provide` / `data:consume`, RFC 0002).
  */
 export const permissionSchema = z.enum([
   'auth:session',
@@ -13,6 +14,8 @@ export const permissionSchema = z.enum([
   'notifications:send',
   'events:publish',
   'events:subscribe',
+  'data:provide',
+  'data:consume',
   'admin:*',
 ]);
 

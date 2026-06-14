@@ -961,6 +961,31 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
+### Task 0.5.10 — Cross-plugin data sharing (consent-gated) **[future]**
+
+**Goal:** Implement the consent-gated, pull-based, read-only cross-plugin data-sharing mechanism specified in RFC 0002 / SRS §3.13. The reserved `sdk.data` surface and the `data:provide`/`data:consume` permissions already exist as stubs; this task makes them real. Depends on `sdk.db` (Task 0.5.05).
+
+**Deliverables:**
+
+- Manifest: optional `data.provides[]` / `data.consumes[]` declarations (provider id, contract, version, scope) in `packages/manifest`, with validation + tests
+- Platform DB: `consent_grants` (consumer, provider, contract, user, granted_at, revoked_at, scope) and `data_access_log` tables, both with `tenant_id`
+- Runtime: provider-resolver registry, consent enforcement, tenant/user scoping, audit logging; routes `sdk.data.query` to the provider's registered resolver
+- SDK: implement `sdk.data.query`/`provide` against the runtime (replace the stubs); raise `ConsentRequiredError` when no active grant exists
+- UI: a consent-prompt dialog primitive in `packages/ui`; grant management in Account (own grants) and oversight in Console
+- The mechanism is generic — no plugin is special-cased
+
+**SRS reference:** RFC 0002, SRS §3.13, §5 (manifest `data.*`)
+
+**Review checklist:**
+
+- A consumer `query` without a grant raises `ConsentRequiredError` and surfaces a consent prompt; granting consent then returns the provider's data
+- Reads are read-only, scoped to the requesting user + tenant, and recorded in the audit log
+- Revoking a grant immediately blocks subsequent reads
+- A consumer cannot reach a provider's raw tables — only its registered contract resolver
+- Existing plugins (no `data.*` declared) are unaffected
+
+---
+
 ### Task 1.0.01 — Registry contribution process
 
 **Goal:** Define and document the process for submitting a community plugin to `registry/plugins.json`.
@@ -1001,6 +1026,8 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - Semver policy documented and linked from README
 
 ---
+
+_Version 1.13 — June 2026. Changes from v1.12: reserved the cross-plugin data-sharing surface (RFC 0002, SRS §3.13). Added **Task 0.5.10 — Cross-plugin data sharing (consent-gated)** `[future]` — implements the consent-gated, pull-based, read-only mechanism (consent grants + audit log, manifest `data.*` declarations, runtime resolution, `packages/ui` consent prompt, Account/Console management); depends on `sdk.db` (Task 0.5.05). Landing now (additive, no behaviour change): the reserved `sdk.data` stub (`query`/`provide` → `NotImplementedError`) and `ConsentRequiredError` in `packages/sdk`, and the reserved `data:provide`/`data:consume` permissions in `packages/manifest`, with tests; `@sovereignfs/sdk` → 0.5.0, `@sovereignfs/manifest` → 0.3.0. Also git-/Prettier-ignores `docs/local/` (private working area). Earlier notes retained._
 
 _Version 1.12 — June 2026. Planning change (no task completed, no version bumps): RFC 0001 (overlay shell variant) accepted and incorporated. Added **Task 0.5.09 — Overlay shell mode** `[parallel]` to the v0.5 phase: a third `shell` mode (`overlay`) that renders a plugin as a dismissable dialog over the current page (App Router parallel + intercepting routes — `@modal` slot + dual composition by the generate script), with a full-page fallback on hard navigation, plus a `packages/ui` `Dialog` primitive and migration of Console/Account. Sequenced as a v0.5 polish item (no hard dependency on the other v0.5 tasks; needs the UI `Dialog`). Corresponding SRS edits: §3.8 (third shell mode), §3.9 (dual composition), §5 (manifest `shell` enum gains `'overlay'`), CON-11 (root-plugin eligibility excludes overlay), and a decision-log row. The manifest enum change and all code land in Task 0.5.09, not in this planning change. Earlier notes retained._
 

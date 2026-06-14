@@ -17,3 +17,16 @@ export class NotAuthenticatedError extends Error {
     this.name = 'NotAuthenticatedError';
   }
 }
+
+/**
+ * Thrown by `sdk.data.query()` when the current user has not granted the calling
+ * (consumer) plugin consent to read the requested provider contract — the
+ * consent-gated cross-plugin data-sharing mechanism (RFC 0002). Reserved
+ * alongside that surface; not raised until the mechanism is implemented.
+ */
+export class ConsentRequiredError extends Error {
+  constructor(message = 'User consent is required to access this plugin data.') {
+    super(message);
+    this.name = 'ConsentRequiredError';
+  }
+}
