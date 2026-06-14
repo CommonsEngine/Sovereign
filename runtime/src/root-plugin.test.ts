@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateRootPlugin } from './root-plugin';
+import { resolveRootRoutePrefix, validateRootPlugin } from './root-plugin';
 import type { PluginRouteInfo } from './route-guard';
 
 const plugins: PluginRouteInfo[] = [
@@ -35,5 +35,26 @@ describe('validateRootPlugin', () => {
       ok: false,
       reason: 'admin-only',
     });
+  });
+});
+
+describe('resolveRootRoutePrefix', () => {
+  it('returns the routePrefix for a valid root plugin', () => {
+    expect(resolveRootRoutePrefix('fs.sovereign.launcher', plugins, none)).toBe('/launcher');
+    expect(resolveRootRoutePrefix('fs.example.tasks', plugins, none)).toBe('/tasks');
+  });
+
+  it('returns null when the root plugin is not installed', () => {
+    expect(resolveRootRoutePrefix('fs.missing', plugins, none)).toBeNull();
+  });
+
+  it('returns null when the root plugin is disabled', () => {
+    expect(
+      resolveRootRoutePrefix('fs.example.tasks', plugins, new Set(['fs.example.tasks'])),
+    ).toBeNull();
+  });
+
+  it('returns null when the root plugin is admin-only', () => {
+    expect(resolveRootRoutePrefix('fs.sovereign.console', plugins, none)).toBeNull();
   });
 });
