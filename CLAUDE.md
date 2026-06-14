@@ -427,8 +427,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.4.02 — Console: user management (user list with invited/active/deactivated status, invite flow, role change, deactivate/reactivate; `sdk.auth` + `sdk.mailer` wired) (merged to `main`).
 - ✅ Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table) (merged to `main`).
 - ✅ Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin) (merged to `main`).
-- ▶️ In review: Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` now resolves to `/launcher`).
-- ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
+- ▶️ In review: Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher).
+- ⏳ Next: Task 0.4.06 — Account plugin (`plugins/account/` per-user profile, all authenticated users): three tabs — Profile (display name + avatar upload), Security (password change + active-session revoke), Preferences (IANA timezone + Light/Dark/System theme via `account_prefs` table + `sv-theme` cookie). Spec in `docs/plugins/account.md`. Functional dependency is `sdk.auth` (Task 0.4.02, done); branch from an up-to-date `main` once #22 merges, per the one-task-at-a-time rule. Closes the v0.4 chrome-plugin trio (Console, Launcher, Account).
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 

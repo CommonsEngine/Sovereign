@@ -128,8 +128,9 @@ This icon is special:
 
 - It always appears first, regardless of install order.
 - It points to `/` (the platform root), not to `/launcher` directly. The
-  platform resolves `/` to the configured root plugin's `routePrefix` (default:
-  `/launcher`; admin can change this via CON-11).
+  platform serves the configured root plugin in place at `/` — the runtime
+  rewrites `/` to that plugin's `routePrefix` (default: `/launcher`; admin can
+  change this via CON-11), so the URL stays `/` while the plugin renders.
 - It cannot be hidden or reordered by users (v1).
 - Its icon is the configured root plugin's `icon.svg` (not necessarily the
   Launcher's own icon, if the admin has promoted a different plugin to root).
