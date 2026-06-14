@@ -5,3 +5,6 @@ node_modules
 pnpm-lock.yaml
 runtime/app/(platform)/(plugins)
 runtime/generated
+runtime/public/sw.js
+runtime/public/workbox-*.js
+runtime/public/fallback-*.js

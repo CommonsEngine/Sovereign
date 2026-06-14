@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import withPWAInit from '@ducanh2912/next-pwa';
 import { loadEnvConfig } from '@next/env';
 import type { NextConfig } from 'next';
 
@@ -18,4 +19,16 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3'],
 };
 
-export default nextConfig;
+// Installable PWA (SRS §3.11, PLT-09). The service worker is generated into
+// `public/` at build time and is disabled in development so it never
+// interferes with HMR. A failed navigation falls back to the cached `/offline`
+// shell instead of a blank page.
+const withPWA = withPWAInit({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  reloadOnOnline: true,
+  fallbacks: { document: '/offline' },
+});
+
+export default withPWA(nextConfig);

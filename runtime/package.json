@@ -1,6 +1,6 @@
 {
   "name": "@sovereignfs/runtime",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,14 +11,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@next/env": "^16.2.9",
     "@sovereignfs/db": "workspace:*",
-    "drizzle-orm": "^0.45.2",
     "@sovereignfs/mailer": "workspace:*",
     "@sovereignfs/manifest": "workspace:*",
     "@sovereignfs/sdk": "workspace:*",
     "@sovereignfs/ui": "workspace:*",
     "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
     "next": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
