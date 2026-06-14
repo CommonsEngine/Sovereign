@@ -4,7 +4,7 @@ node_modules
 **/.turbo
 pnpm-lock.yaml
 # Local / private working area (git-ignored; backed by a separate private repo).
-docs/local
+/local
 runtime/app/(platform)/(plugins)
 runtime/generated
 runtime/public/sw.js
