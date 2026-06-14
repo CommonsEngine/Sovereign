@@ -1,32 +1,7 @@
 import type { ActiveSession } from '@sovereignfs/sdk';
 import { revokeSessionAction } from '../actions';
+import { deviceHint } from '../_lib/device-hint';
 import styles from '../account.module.css';
-
-/** A coarse "browser on OS" hint from a User-Agent string (ACC-05). */
-function deviceHint(userAgent: string | null): string {
-  if (!userAgent) return 'Unknown device';
-  const browser = /Firefox\//.test(userAgent)
-    ? 'Firefox'
-    : /Edg\//.test(userAgent)
-      ? 'Edge'
-      : /Chrome\//.test(userAgent)
-        ? 'Chrome'
-        : /Safari\//.test(userAgent)
-          ? 'Safari'
-          : 'Browser';
-  const os = /Windows/.test(userAgent)
-    ? 'Windows'
-    : /Mac OS X|Macintosh/.test(userAgent)
-      ? 'macOS'
-      : /Android/.test(userAgent)
-        ? 'Android'
-        : /iPhone|iPad|iOS/.test(userAgent)
-          ? 'iOS'
-          : /Linux/.test(userAgent)
-            ? 'Linux'
-            : 'Unknown OS';
-  return `${browser} on ${os}`;
-}
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
