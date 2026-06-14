@@ -1,6 +1,9 @@
 import { headers } from 'next/headers';
 import { NotAuthenticatedError } from './errors';
-import type { Session } from './types';
+import { markCurrentSessions, type RawSession } from './sessions';
+import type { ActiveSession, ChangePasswordInput, Session } from './types';
+
+const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
 /** Returns the current user session from runtime-injected headers, or null if unauthenticated. */
 export async function getSession(): Promise<Session | null> {
@@ -25,4 +28,67 @@ export async function requireSession(): Promise<Session> {
   const session = await getSession();
   if (!session) throw new NotAuthenticatedError();
   return session;
+}
+
+/**
+ * Call a better-auth endpoint server-side, forwarding the caller's session
+ * cookie. better-auth enforces a CSRF Origin check on state-changing routes,
+ * so we send its own base URL as the trusted Origin.
+ */
+async function authFetch(path: string, method: 'GET' | 'POST', body?: unknown): Promise<Response> {
+  const cookie = (await headers()).get('cookie') ?? '';
+  // No explicit `cache` option: under Next 15 fetch is uncached by default, so
+  // these credentialed calls are never cached — and the SDK stays free of
+  // Next-specific RequestInit fields so it type-checks standalone.
+  return fetch(`${AUTH_URL}${path}`, {
+    method,
+    headers: {
+      cookie,
+      origin: AUTH_URL,
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+/**
+ * Change the current user's password (SRS ACC-04). Requires the current
+ * password; the current session is preserved (other sessions are kept too).
+ * Throws with better-auth's message on failure (e.g. wrong current password).
+ */
+export async function changePassword(input: ChangePasswordInput): Promise<void> {
+  const res = await authFetch('/api/auth/change-password', 'POST', {
+    currentPassword: input.currentPassword,
+    newPassword: input.newPassword,
+    revokeOtherSessions: false,
+  });
+  if (!res.ok) {
+    const message = ((await res.json().catch(() => null)) as { message?: string } | null)?.message;
+    throw new Error(message ?? `Failed to change password (${String(res.status)}).`);
+  }
+}
+
+/** List the current user's active sessions, current one first (SRS ACC-05). */
+export async function listSessions(): Promise<ActiveSession[]> {
+  const [listRes, sessionRes] = await Promise.all([
+    authFetch('/api/auth/list-sessions', 'GET'),
+    authFetch('/api/auth/get-session', 'GET'),
+  ]);
+  if (!listRes.ok) {
+    throw new Error(`Failed to list sessions (${String(listRes.status)}).`);
+  }
+  const raw = (await listRes.json()) as RawSession[];
+  const currentToken = sessionRes.ok
+    ? (((await sessionRes.json()) as { session?: { token?: string } } | null)?.session?.token ??
+      null)
+    : null;
+  return markCurrentSessions(raw, currentToken);
+}
+
+/** Revoke a session by its token (SRS ACC-06). */
+export async function revokeSession(token: string): Promise<void> {
+  const res = await authFetch('/api/auth/revoke-session', 'POST', { token });
+  if (!res.ok) {
+    throw new Error(`Failed to revoke session (${String(res.status)}).`);
+  }
 }

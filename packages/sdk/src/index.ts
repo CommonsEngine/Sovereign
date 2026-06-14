@@ -22,4 +22,12 @@ export const sdk = {
 };
 
 export { NotImplementedError, NotAuthenticatedError } from './errors';
-export type { Session, SessionUser, MailOptions, PlatformConfig, DrizzleClient } from './types';
+export type {
+  Session,
+  SessionUser,
+  ActiveSession,
+  ChangePasswordInput,
+  MailOptions,
+  PlatformConfig,
+  DrizzleClient,
+} from './types';

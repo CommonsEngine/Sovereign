@@ -2,10 +2,9 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import styles from './account.module.css';
 
-// Tabs for the Account plugin. Security (password + sessions) arrives in the
-// next part of Task 0.4.06.
 const tabs = [
   { href: '/account/profile', label: 'Profile' },
+  { href: '/account/security', label: 'Security' },
   { href: '/account/preferences', label: 'Preferences' },
 ];
 
