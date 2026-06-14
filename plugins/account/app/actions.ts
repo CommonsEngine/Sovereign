@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { sdk } from '@sovereignfs/sdk';
+import { validatePasswordChange } from './_lib/password';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 const SELF_URL = 'http://localhost:3000';
@@ -70,12 +71,8 @@ export async function changePasswordAction(
   const newPassword = (formData.get('newPassword') as string | null) ?? '';
   const confirm = (formData.get('confirmPassword') as string | null) ?? '';
 
-  if (newPassword.length < 8) {
-    return { ok: false, error: 'New password must be at least 8 characters.' };
-  }
-  if (newPassword !== confirm) {
-    return { ok: false, error: 'New password and confirmation do not match.' };
-  }
+  const invalid = validatePasswordChange(newPassword, confirm);
+  if (invalid) return { ok: false, error: invalid };
 
   try {
     await sdk.auth.changePassword({ currentPassword, newPassword });
