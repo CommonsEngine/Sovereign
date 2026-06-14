@@ -65,6 +65,26 @@ sends mail. For a zero-install option, nodemailer's
 [Ethereal](https://ethereal.email/) test accounts print a preview URL per
 message instead of using a local inbox.
 
+### Running the tests
+
+`pnpm test` runs the whole suite on **SQLite** with no external services — this
+is what CI runs by default and what you should run before a PR.
+
+The platform is dialect-agnostic (SQLite or Postgres, NFR-03), so there are also
+**Postgres parity tests** (files named `*.pg.test.ts`). They are **skipped
+unless** `TEST_DATABASE_URL` points at a Postgres instance, so the default run
+stays Docker-free. To run them against a throwaway Postgres:
+
+```bash
+docker run -d --name sov-test-pg -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=sov \
+  -p 5432:5432 postgres:16-alpine
+TEST_DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/sov pnpm test
+docker rm -f sov-test-pg
+```
+
+These tests drop and recreate their own tables, so point them only at a
+disposable database. CI gains a Postgres service that runs them in Task 0.5.07.
+
 ---
 
 ## Branching and commits

@@ -107,14 +107,17 @@ export async function ensureAuthTables(): Promise<void> {
   );
 }
 
-/** Rewrite `?` positional placeholders to Postgres `$1, $2, …`. */
-function toPgPlaceholders(sql: string): string {
+/** Rewrite `?` positional placeholders to Postgres `$1, $2, …`. Exported for testing. */
+export function toPgPlaceholders(sql: string): string {
   let i = 0;
   return sql.replace(/\?/g, () => `$${++i}`);
 }
 
-/** better-sqlite3 cannot bind booleans; map them to 0/1. Postgres binds natively. */
-function sqliteParams(params: readonly unknown[]): unknown[] {
+/**
+ * better-sqlite3 cannot bind booleans; map them to 0/1. Postgres binds natively.
+ * Exported for testing.
+ */
+export function sqliteParams(params: readonly unknown[]): unknown[] {
   return params.map((p) => (typeof p === 'boolean' ? (p ? 1 : 0) : p));
 }
 
