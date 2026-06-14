@@ -142,31 +142,47 @@ This icon is special:
 
 ## Directory structure
 
-Launcher lives in the monorepo under `plugins/launcher/`.
+Launcher lives in the monorepo under `plugins/launcher/`. As built (v0.1):
 
 ```
 plugins/launcher/
 ├── manifest.json
-├── icon.svg                     # Launcher icon — grid-of-dots or home symbol
-├── app/
-│   └── page.tsx                 # Plugin grid: regular + admin sections
-└── components/
-    ├── PluginGrid.tsx            # Grid of plugin tiles
-    └── PluginTile.tsx            # Single tile: icon, name, description
+├── icon.svg                     # Launcher icon — four-square grid symbol
+├── package.json
+└── app/
+    ├── page.tsx                 # Plugin grid: main + admin sections, empty state
+    ├── launcher.module.css      # Grid, tile, admin-section, empty-state styles
+    └── _components/
+        ├── PluginGrid.tsx       # Responsive grid of tiles
+        ├── PluginTile.tsx       # Single tile: monogram, name, description
+        └── monogram.ts          # Two-letter monogram fallback (pure; unit-tested)
 ```
 
+Components live under `app/_components/` (a private App Router folder, not a
+sibling `components/` as originally sketched) because the generate script
+composes only each plugin's `app/` tree into the runtime — anything outside
+`app/` is not copied and would fail to resolve at runtime.
+
 No `db/`, `migrations/`, or `lib/` directories — Launcher has no private tables
-and no complex business logic. It reads the plugin registry through the platform
-SDK.
+and no complex business logic.
 
 ---
 
 ## Data model
 
 Launcher has no plugin-specific database tables. It reads the platform plugin
-registry (maintained by the runtime) via `sdk.db`. The registry exposes the
-installed plugin list, their manifest fields (including `icon`, `name`,
-`description`, `adminOnly`), and their enabled/disabled status.
+registry (maintained by the runtime) — exposing the installed plugin list, their
+manifest fields (`name`, `description`, `routePrefix`, `adminOnly`), and their
+enabled/disabled status.
+
+**As built (v0.1):** because the SDK boundary rule forbids a plugin importing the
+runtime registry or internal packages, and `sdk.db` does not land until Task
+0.5.05, the Launcher reads this list from a **session-gated** runtime route,
+`GET /api/plugins`, forwarding the caller's session cookie. The route applies
+all access filtering server-side via `selectLauncherPlugins()` (excludes chrome
+plugins and disabled plugins; hides `adminOnly` plugins from non-admins) and
+returns each plugin's `adminOnly` flag so the page can section the tiles. This
+fetch is replaced by `sdk.db` when 0.5.05 lands.
 
 ---
 
@@ -176,6 +192,10 @@ installed plugin list, their manifest fields (including `icon`, `name`,
 | ----------- | ------------------------------------------------------------------ | -------------- |
 | `sdk.auth`  | Current user session; role check for the admin section             | Task 0.4.02    |
 | `sdk.db`    | Read plugin registry (installed plugins + their manifest metadata) | Task 0.5.05    |
+
+In v0.1, the registry read is served by the runtime route `GET /api/plugins`
+(see [Data model](#data-model)) until `sdk.db` is wired. `sdk.auth.getSession()`
+supplies the role used to decide whether the Admin section renders.
 
 ---
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { monogram } from './monogram';
 import styles from '../launcher.module.css';
 
 export interface PluginTileData {
@@ -6,16 +7,6 @@ export interface PluginTileData {
   name: string;
   description: string;
   routePrefix: string;
-}
-
-/** Two-letter monogram fallback (no icon-serving pipeline yet — see launcher.md Q3). */
-function monogram(name: string): string {
-  const initials = name
-    .trim()
-    .split(/\s+/)
-    .map((word) => word[0] ?? '')
-    .join('');
-  return (initials.slice(0, 2) || name.slice(0, 2)).toUpperCase();
 }
 
 /** A single plugin tile (LCH-01/02): icon, name, description; links to the plugin. */
