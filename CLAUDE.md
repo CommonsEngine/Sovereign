@@ -170,6 +170,17 @@ pnpm lint:fix        # run ESLint with auto-fix
   CREATE-TABLE-IF-NOT-EXISTS + seed rows in `packages/db`'s `getPlatformDb()`
   until drizzle-kit migrations land in Task 0.5.03; the DDL there must stay in
   sync with the Drizzle schema.
+- **Chrome plugins** (`fs.sovereign.launcher`, `fs.sovereign.account`,
+  `fs.sovereign.console`) are reached through the sidebar chrome (home `/`,
+  Console ⚙, Account avatar), never via the Launcher grid or the sidebar's
+  middle plugin-icon section (LCH-04, PLT-12). The canonical ID set is
+  `CHROME_PLUGIN_IDS` in `runtime/src/launcher-plugins.ts` — reuse it, never
+  re-hardcode the list.
+- **Plugins that need the installed-plugin list fetch the gated `/api/plugins`**
+  (forwarding the session cookie), not import the registry — the SDK boundary
+  rule forbids plugins importing `runtime/src` or internal packages. The route
+  is session-gated (middleware injects `x-sovereign-user-role`) and role-filters
+  via `selectLauncherPlugins`; `sdk.db` replaces this fetch in Task 0.5.05.
 
 ## Design system (`packages/ui`)
 
@@ -410,8 +421,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.4.01 — Console plugin scaffold (plugin route-composition model + middleware admin gating; platform → 0.4.0) (merged to `main`).
 - ✅ Task 0.4.02 — Console: user management (user list with invited/active/deactivated status, invite flow, role change, deactivate/reactivate; `sdk.auth` + `sdk.mailer` wired) (merged to `main`).
 - ✅ Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table) (merged to `main`).
-- ▶️ In review: Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin).
-- ⏳ Spec complete: Launcher platform plugin (`docs/plugins/launcher.md`) — Task 0.4.05.
+- ✅ Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin) (merged to `main`).
+- ▶️ In review: Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` now resolves to `/launcher`).
 - ⏳ Spec complete: Account platform plugin (`docs/plugins/account.md`) — Task 0.4.06.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
