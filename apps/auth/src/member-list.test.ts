@@ -23,7 +23,7 @@ function invite(overrides: Partial<PendingInviteRow> = {}): PendingInviteRow {
 }
 
 describe('buildMemberList', () => {
-  it('maps active 1 and NULL to active, 0 to deactivated', () => {
+  it('maps active 1 and NULL to active, 0 to deactivated (SQLite shape)', () => {
     const rows = buildMemberList(
       [
         user({ id: 'u1', email: 'a@x.com', active: 1 }),
@@ -33,6 +33,17 @@ describe('buildMemberList', () => {
       [],
     );
     expect(rows.map((r) => r.status)).toEqual(['active', 'active', 'deactivated']);
+  });
+
+  it('maps active true to active, false to deactivated (Postgres shape)', () => {
+    const rows = buildMemberList(
+      [
+        user({ id: 'u1', email: 'a@x.com', active: true }),
+        user({ id: 'u2', email: 'b@x.com', active: false }),
+      ],
+      [],
+    );
+    expect(rows.map((r) => r.status)).toEqual(['active', 'deactivated']);
   });
 
   it('appends pending invites as invited rows with null id and role', () => {
