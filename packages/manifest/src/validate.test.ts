@@ -49,7 +49,7 @@ describe('validateManifest', () => {
     const res = validateManifest({
       ...base,
       type: 'sovereign',
-      repository: 'https://github.com/CommonsEngine/sovereign-plugin-tasks',
+      repository: 'https://github.com/sovereignfs/sovereign-plugin-tasks',
     });
     expect(res.valid).toBe(true);
   });

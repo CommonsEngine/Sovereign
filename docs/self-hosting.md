@@ -18,7 +18,7 @@ internal network, with the runtime exposed as the single public entry point.
 
 ```bash
 # 1. Clone
-git clone https://github.com/CommonsEngine/Sovereign.git
+git clone https://github.com/sovereignfs/sovereign.git
 cd Sovereign
 
 # 2. Configure environment

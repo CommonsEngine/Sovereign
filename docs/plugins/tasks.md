@@ -34,19 +34,19 @@ externally-maintained plugin integrates with the Sovereign SDK.
 
 ## Identity and manifest
 
-| Property                           | Value                                                     |
-| ---------------------------------- | --------------------------------------------------------- |
-| `id`                               | `io.openfs.sovereign.tasks`                               |
-| `name`                             | `Tasks`                                                   |
-| `type`                             | `sovereign`                                               |
-| `runtime`                          | `native`                                                  |
-| `routePrefix`                      | `/tasks`                                                  |
-| `shell`                            | `default`                                                 |
-| `adminOnly`                        | omitted (`false`)                                         |
-| `icon`                             | `icon.svg`                                                |
-| `permissions`                      | `auth:session`, `db:readWrite`                            |
-| `repository`                       | `https://github.com/CommonsEngine/sovereign-plugin-tasks` |
-| `compatibility.minPlatformVersion` | `0.4.0`                                                   |
+| Property                           | Value                                                   |
+| ---------------------------------- | ------------------------------------------------------- |
+| `id`                               | `io.openfs.sovereign.tasks`                             |
+| `name`                             | `Tasks`                                                 |
+| `type`                             | `sovereign`                                             |
+| `runtime`                          | `native`                                                |
+| `routePrefix`                      | `/tasks`                                                |
+| `shell`                            | `default`                                               |
+| `adminOnly`                        | omitted (`false`)                                       |
+| `icon`                             | `icon.svg`                                              |
+| `permissions`                      | `auth:session`, `db:readWrite`                          |
+| `repository`                       | `https://github.com/sovereignfs/sovereign-plugin-tasks` |
+| `compatibility.minPlatformVersion` | `0.4.0`                                                 |
 
 Proposed `manifest.json`:
 
@@ -63,7 +63,7 @@ Proposed `manifest.json`:
   "shell": "default",
   "icon": "icon.svg",
   "permissions": ["auth:session", "db:readWrite"],
-  "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks",
+  "repository": "https://github.com/sovereignfs/sovereign-plugin-tasks",
   "compatibility": {
     "minPlatformVersion": "0.4.0"
   }

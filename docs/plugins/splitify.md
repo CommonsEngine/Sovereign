@@ -35,19 +35,19 @@ exercises `sdk.mailer`.
 
 ## Identity and manifest
 
-| Property                           | Value                                                        |
-| ---------------------------------- | ------------------------------------------------------------ |
-| `id`                               | `io.openfs.sovereign.splitify`                               |
-| `name`                             | `Splitify`                                                   |
-| `type`                             | `sovereign`                                                  |
-| `runtime`                          | `native`                                                     |
-| `routePrefix`                      | `/splitify`                                                  |
-| `shell`                            | `default`                                                    |
-| `adminOnly`                        | omitted (`false`)                                            |
-| `icon`                             | `icon.svg`                                                   |
-| `permissions`                      | `auth:session`, `db:readWrite`, `mailer:send`                |
-| `repository`                       | `https://github.com/CommonsEngine/sovereign-plugin-splitify` |
-| `compatibility.minPlatformVersion` | `0.4.0`                                                      |
+| Property                           | Value                                                      |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `id`                               | `io.openfs.sovereign.splitify`                             |
+| `name`                             | `Splitify`                                                 |
+| `type`                             | `sovereign`                                                |
+| `runtime`                          | `native`                                                   |
+| `routePrefix`                      | `/splitify`                                                |
+| `shell`                            | `default`                                                  |
+| `adminOnly`                        | omitted (`false`)                                          |
+| `icon`                             | `icon.svg`                                                 |
+| `permissions`                      | `auth:session`, `db:readWrite`, `mailer:send`              |
+| `repository`                       | `https://github.com/sovereignfs/sovereign-plugin-splitify` |
+| `compatibility.minPlatformVersion` | `0.4.0`                                                    |
 
 Proposed `manifest.json`:
 
@@ -64,7 +64,7 @@ Proposed `manifest.json`:
   "shell": "default",
   "icon": "icon.svg",
   "permissions": ["auth:session", "db:readWrite", "mailer:send"],
-  "repository": "https://github.com/CommonsEngine/sovereign-plugin-splitify",
+  "repository": "https://github.com/sovereignfs/sovereign-plugin-splitify",
   "compatibility": {
     "minPlatformVersion": "0.4.0"
   }
