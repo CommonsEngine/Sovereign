@@ -1,3 +1,4 @@
+import { getPlatformDb } from '@sovereignfs/db';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { ConsentRequiredError, NotImplementedError, NotAuthenticatedError, sdk } from './index';
 
@@ -26,8 +27,13 @@ describe('sdk', () => {
     expect(typeof sdk.data.provide).toBe('function');
   });
 
-  it('db stub throws NotImplementedError (wired in Task 0.5.05)', () => {
-    expect(() => sdk.db.getClient()).toThrow(NotImplementedError);
+  it('db.getClient returns the live platform Drizzle instance', async () => {
+    const client = (await sdk.db.getClient()) as Record<string, unknown>;
+    // A real Drizzle instance exposes the query-builder methods plugins use.
+    expect(typeof client.select).toBe('function');
+    expect(typeof client.insert).toBe('function');
+    // It is the platform DB's client, not a fresh connection per call.
+    expect(client).toBe((await getPlatformDb()).db);
   });
 
   it('platform.getConfig returns tenant name, invite flag, and platform version', async () => {

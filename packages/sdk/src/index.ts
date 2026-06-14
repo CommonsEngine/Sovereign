@@ -8,8 +8,8 @@ import { events, notifications, storage } from './unimplemented';
 /**
  * The Sovereign SDK — the only contract between a plugin and the platform.
  *
- * `auth` and `mailer` are wired with real runtime implementations (Task 0.4.02).
- * `db` and `platform` remain as stubs until Task 0.5.05.
+ * The full v1 surface — `auth`, `db`, `mailer`, `platform` — is implemented
+ * (`auth`/`mailer` in Task 0.4.02; `platform`/`db` in Task 0.5.x).
  * `data` (cross-plugin data sharing, RFC 0002), `storage`, `notifications`, and
  * `events` are reserved — declared but not yet implemented.
  */

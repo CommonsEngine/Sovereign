@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { DEFAULT_TENANT_ID } from '@sovereignfs/db';
 import { NotAuthenticatedError } from './errors';
 import { markCurrentSessions, type RawSession } from './sessions';
 import type { ActiveSession, ChangePasswordInput, Session } from './types';
@@ -13,7 +14,9 @@ export async function getSession(): Promise<Session | null> {
   return {
     user: {
       id,
-      tenantId: '', // v1: single-tenant; populated in Task 0.5.05
+      // v1 is single-tenant, so every session belongs to the default tenant.
+      // Multi-tenant deployments will source this from the verified session.
+      tenantId: DEFAULT_TENANT_ID,
       email: h.get('x-sovereign-user-email') ?? '',
       name: h.get('x-sovereign-user-name') ?? null,
       image: h.get('x-sovereign-user-image') ?? null,
