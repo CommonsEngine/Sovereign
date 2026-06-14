@@ -14,7 +14,7 @@ import { selectLauncherPlugins } from '@/src/launcher-plugins';
 export async function GET(request: Request): Promise<Response> {
   const role = request.headers.get('x-sovereign-user-role') ?? 'platform:user';
 
-  const db = getPlatformDb();
+  const db = await getPlatformDb();
   const disabledIds = new Set(
     db
       .select({ pluginId: schema.pluginStatus.pluginId })

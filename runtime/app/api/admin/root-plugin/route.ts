@@ -16,8 +16,8 @@ export async function GET(request: Request): Promise<Response> {
   const denied = checkAdminKey(request);
   if (denied) return denied;
 
-  const db = getPlatformDb();
-  const rootPluginId = getPlatformSetting(db, 'root_plugin_id') ?? DEFAULT_ROOT_PLUGIN_ID;
+  const db = await getPlatformDb();
+  const rootPluginId = (await getPlatformSetting(db, 'root_plugin_id')) ?? DEFAULT_ROOT_PLUGIN_ID;
   const disabledIds = new Set(
     db
       .select({ pluginId: schema.pluginStatus.pluginId })

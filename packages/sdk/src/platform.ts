@@ -28,13 +28,19 @@ function getPlatformVersion(): string {
 
 /**
  * Returns the platform runtime configuration (SRS PLT-06). Reads the platform
- * database directly — synchronous by contract, which better-sqlite3 supports.
+ * database directly. Async by contract: the platform DB is dialect-agnostic and
+ * Postgres (node-postgres) has no synchronous query, so this resolves a promise
+ * (on SQLite the underlying reads complete synchronously).
  */
-export function getConfig(): PlatformConfig {
-  const db = getPlatformDb();
+export async function getConfig(): Promise<PlatformConfig> {
+  const db = await getPlatformDb();
+  const [tenant, inviteOnly] = await Promise.all([
+    getDefaultTenant(db),
+    getPlatformSetting(db, 'invite_only'),
+  ]);
   return {
-    tenantName: getDefaultTenant(db).name,
-    inviteOnly: getPlatformSetting(db, 'invite_only') === 'true',
+    tenantName: tenant.name,
+    inviteOnly: inviteOnly === 'true',
     version: getPlatformVersion(),
   };
 }

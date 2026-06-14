@@ -30,8 +30,8 @@ describe('sdk', () => {
     expect(() => sdk.db.getClient()).toThrow(NotImplementedError);
   });
 
-  it('platform.getConfig returns tenant name, invite flag, and platform version', () => {
-    const config = sdk.platform.getConfig();
+  it('platform.getConfig returns tenant name, invite flag, and platform version', async () => {
+    const config = await sdk.platform.getConfig();
     expect(config.tenantName).toBe('Sovereign');
     expect(config.inviteOnly).toBe(false);
     expect(config.version).toMatch(/^\d+\.\d+\.\d+/);

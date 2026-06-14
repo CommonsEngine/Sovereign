@@ -8,7 +8,7 @@ export async function GET(request: Request): Promise<Response> {
   const denied = checkAdminKey(request);
   if (denied) return denied;
 
-  const db = getPlatformDb();
+  const db = await getPlatformDb();
   const statusRows = db.select().from(schema.pluginStatus).all();
   const statusMap = new Map(statusRows.map((r) => [r.pluginId, r.enabled]));
 

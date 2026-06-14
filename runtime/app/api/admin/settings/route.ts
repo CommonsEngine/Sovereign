@@ -15,19 +15,24 @@ import { validateRootPlugin } from '@/src/root-plugin';
 
 const AUTH_URL = process.env.SOVEREIGN_AUTH_URL ?? 'http://localhost:3001';
 
-function readSettings() {
-  const db = getPlatformDb();
+async function readSettings() {
+  const db = await getPlatformDb();
+  const [tenant, inviteOnly, rootPluginId] = await Promise.all([
+    getDefaultTenant(db),
+    getPlatformSetting(db, 'invite_only'),
+    getPlatformSetting(db, 'root_plugin_id'),
+  ]);
   return {
-    tenantName: getDefaultTenant(db).name,
-    inviteOnly: getPlatformSetting(db, 'invite_only') === 'true',
-    rootPluginId: getPlatformSetting(db, 'root_plugin_id') ?? DEFAULT_ROOT_PLUGIN_ID,
+    tenantName: tenant.name,
+    inviteOnly: inviteOnly === 'true',
+    rootPluginId: rootPluginId ?? DEFAULT_ROOT_PLUGIN_ID,
   };
 }
 
 export async function GET(request: Request): Promise<Response> {
   const denied = checkAdminKey(request);
   if (denied) return denied;
-  return NextResponse.json(readSettings());
+  return NextResponse.json(await readSettings());
 }
 
 export async function PATCH(request: Request): Promise<Response> {
@@ -39,14 +44,14 @@ export async function PATCH(request: Request): Promise<Response> {
     inviteOnly?: boolean;
     rootPluginId?: string;
   };
-  const db = getPlatformDb();
+  const db = await getPlatformDb();
 
   if (body.tenantName !== undefined) {
     const name = body.tenantName.trim();
     if (name.length === 0) {
       return NextResponse.json({ error: 'tenantName must not be empty' }, { status: 400 });
     }
-    setTenantName(db, name);
+    await setTenantName(db, name);
   }
 
   if (body.rootPluginId !== undefined) {
@@ -65,7 +70,7 @@ export async function PATCH(request: Request): Promise<Response> {
         { status: 400 },
       );
     }
-    setPlatformSetting(db, 'root_plugin_id', body.rootPluginId);
+    await setPlatformSetting(db, 'root_plugin_id', body.rootPluginId);
   }
 
   if (body.inviteOnly !== undefined) {
@@ -88,8 +93,8 @@ export async function PATCH(request: Request): Promise<Response> {
         { status: 502 },
       );
     }
-    setPlatformSetting(db, 'invite_only', String(body.inviteOnly));
+    await setPlatformSetting(db, 'invite_only', String(body.inviteOnly));
   }
 
-  return NextResponse.json(readSettings());
+  return NextResponse.json(await readSettings());
 }
