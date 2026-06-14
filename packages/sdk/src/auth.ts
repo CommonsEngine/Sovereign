@@ -51,6 +51,13 @@ async function authFetch(path: string, method: 'GET' | 'POST', body?: unknown): 
   });
 }
 
+/** Build an error message including better-auth's response body, for diagnosis. */
+async function authError(res: Response, action: string): Promise<Error> {
+  const body = await res.text().catch(() => '');
+  const detail = body ? ` — ${body}` : '';
+  return new Error(`${action} (${String(res.status)})${detail}`);
+}
+
 /**
  * Change the current user's password (SRS ACC-04). Requires the current
  * password; the current session is preserved (other sessions are kept too).
@@ -75,7 +82,7 @@ export async function listSessions(): Promise<ActiveSession[]> {
     authFetch('/api/auth/get-session', 'GET'),
   ]);
   if (!listRes.ok) {
-    throw new Error(`Failed to list sessions (${String(listRes.status)}).`);
+    throw await authError(listRes, 'Failed to list sessions');
   }
   const raw = (await listRes.json()) as RawSession[];
   const currentToken = sessionRes.ok
@@ -89,6 +96,6 @@ export async function listSessions(): Promise<ActiveSession[]> {
 export async function revokeSession(token: string): Promise<void> {
   const res = await authFetch('/api/auth/revoke-session', 'POST', { token });
   if (!res.ok) {
-    throw new Error(`Failed to revoke session (${String(res.status)}).`);
+    throw await authError(res, 'Failed to revoke session');
   }
 }

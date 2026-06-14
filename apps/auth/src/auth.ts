@@ -13,6 +13,15 @@ function buildOptions(): BetterAuthOptions {
     secret: env.secret,
     baseURL: env.baseUrl,
     database: db,
+    session: {
+      // Disable better-auth's "fresh session" gate. By default sensitive
+      // endpoints guarded by freshSessionMiddleware (e.g. GET /list-sessions,
+      // used by sdk.auth.listSessions / the Account Security tab) return
+      // 403 SESSION_NOT_FRESH once a session is older than freshAge (default
+      // 1 day). In a self-hosted workspace users stay signed in for weeks, so
+      // viewing/managing your own sessions must not require recent re-auth.
+      freshAge: 0,
+    },
     emailAndPassword: {
       enabled: true,
       autoSignIn: true,
