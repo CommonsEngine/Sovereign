@@ -431,6 +431,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ⏳ Next: Task 0.4.06 — Account plugin (`plugins/account/` per-user profile, all authenticated users): three tabs — Profile (display name + avatar upload), Security (password change + active-session revoke), Preferences (IANA timezone + Light/Dark/System theme via `account_prefs` table + `sv-theme` cookie). Spec in `docs/plugins/account.md`. Functional dependency is `sdk.auth` (Task 0.4.02, done); branch from an up-to-date `main` once #22 merges, per the one-task-at-a-time rule. Closes the v0.4 chrome-plugin trio (Console, Launcher, Account).
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
+- ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).
+- ⏳ Spec complete: PaperTrail sovereign plugin (`docs/plugins/papertrail.md`) — legacy plugin adapted to the v3 native model (repo: `kasunben/PaperTrail`).
 
 Keep this file current: update the Status section as tasks complete, and add any
 new load-bearing convention that future sessions must not violate.
