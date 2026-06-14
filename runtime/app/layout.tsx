@@ -20,7 +20,11 @@ document.documentElement.dataset.theme=dark?'dark':'light';
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // The theme script sets data-theme on <html> before hydration, so the
+    // attribute intentionally differs from the server markup —
+    // suppressHydrationWarning scopes React's mismatch check off this element
+    // (the standard theming pattern; suppression does not extend to children).
+    <html lang="en" suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         {children}
