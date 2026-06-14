@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Thin launcher for the sv CLI so `./bin/sv <command>` works directly.
+# Canonical invocation is `pnpm sv <command>`; this shim mirrors it via the
+# workspace-local tsx (pnpm exec puts node_modules/.bin on PATH).
+DIR=$(CDPATH= cd "$(dirname "$0")" && pwd)
+exec pnpm --silent exec tsx "$DIR/sv.ts" "$@"

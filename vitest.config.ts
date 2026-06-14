@@ -12,6 +12,8 @@ export default defineConfig({
       'plugins/**/*.test.{ts,tsx}',
       // Repo-level scripts (e.g. install-plugins, generate-registry).
       'scripts/**/*.test.{ts,tsx}',
+      // The sv CLI helpers.
+      'bin/**/*.test.{ts,tsx}',
     ],
     // Default to node; component tests opt into jsdom with a
     // `// @vitest-environment jsdom` pragma at the top of the file.
