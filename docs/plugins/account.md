@@ -4,7 +4,7 @@
 **Date:** June 2026\
 **Author:** kasunben\
 **Purpose:** Canonical specification for the Sovereign Account plugin — the single source of truth for its manifest, access model, functional requirements, data model, and build plan.\
-**Status:** v0.1 in progress — Profile + Preferences implemented (Task 0.4.06 part 1); Security (password + sessions) follows in part 2
+**Status:** v0.1 implemented (Task 0.4.06) — Profile, Security, and Preferences (ACC-01–08)
 
 ---
 
@@ -271,3 +271,4 @@ customisation (pin/unpin/reorder) — see ACC-10.
 | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 0.1     | Jun 2026 | Initial draft — per-user profile and preferences plugin.                                                                                                                                                                                                                                                                                   |
 | 0.1     | Jun 2026 | Part 1 implemented (Task 0.4.06): Profile (ACC-01/02/03) + Preferences (ACC-07/08). Resolved Q1 (avatar → disk + Next route) and Q4 (theme → `account_prefs` + `sv-theme` cookie + pre-paint inline script). Deviation: components live under `app/_components/` (composition copies only `app/`). Security (ACC-04–06) follows in part 2. |
+| 0.1     | Jun 2026 | Part 2 implemented (Task 0.4.06): Security tab — password change (ACC-04) + active-session list/revoke (ACC-05/06). Extended `sdk.auth` with `changePassword`/`listSessions`/`revokeSession` (wrap better-auth with cookie + Origin). v0.1 complete.                                                                                       |

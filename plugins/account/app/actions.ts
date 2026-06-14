@@ -55,3 +55,42 @@ export async function updateTimezoneAction(timezone: string): Promise<void> {
 export async function updateThemeAction(theme: string): Promise<void> {
   await patchPrefs({ theme });
 }
+
+// ── Security (ACC-04/05/06) ───────────────────────────────────────────────
+
+export type PasswordState = { ok: true } | { ok: false; error: string } | null;
+
+/** Change password (ACC-04), surfacing better-auth's error for the form. */
+export async function changePasswordAction(
+  _prev: PasswordState,
+  formData: FormData,
+): Promise<PasswordState> {
+  await sdk.auth.requireSession();
+  const currentPassword = (formData.get('currentPassword') as string | null) ?? '';
+  const newPassword = (formData.get('newPassword') as string | null) ?? '';
+  const confirm = (formData.get('confirmPassword') as string | null) ?? '';
+
+  if (newPassword.length < 8) {
+    return { ok: false, error: 'New password must be at least 8 characters.' };
+  }
+  if (newPassword !== confirm) {
+    return { ok: false, error: 'New password and confirmation do not match.' };
+  }
+
+  try {
+    await sdk.auth.changePassword({ currentPassword, newPassword });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Failed to change password.' };
+  }
+  return { ok: true };
+}
+
+/** Revoke another session (ACC-06). The current session can't be revoked here. */
+export async function revokeSessionAction(formData: FormData): Promise<void> {
+  await sdk.auth.requireSession();
+  const token = formData.get('token') as string | null;
+  const isCurrent = formData.get('current') === 'true';
+  if (!token || isCurrent) return;
+  await sdk.auth.revokeSession(token);
+  revalidatePath('/account/security');
+}

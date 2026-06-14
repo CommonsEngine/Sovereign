@@ -13,6 +13,26 @@ export interface Session {
   expiresAt: number;
 }
 
+/** An authenticated session for the current user (SRS ACC-05). */
+export interface ActiveSession {
+  /** Opaque session token — pass to `sdk.auth.revokeSession` to end it. */
+  token: string;
+  /** Whether this is the session making the current request. */
+  current: boolean;
+  /** Raw User-Agent string of the device that created the session, if known. */
+  userAgent: string | null;
+  ipAddress: string | null;
+  /** Creation, last-active, and expiry as ISO 8601 strings. */
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+}
+
+export interface ChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export interface MailOptions {
   to: string | string[];
   subject: string;

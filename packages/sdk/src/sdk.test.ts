@@ -11,6 +11,9 @@ describe('sdk', () => {
   it('exposes the full v1 surface', () => {
     expect(typeof sdk.auth.getSession).toBe('function');
     expect(typeof sdk.auth.requireSession).toBe('function');
+    expect(typeof sdk.auth.changePassword).toBe('function');
+    expect(typeof sdk.auth.listSessions).toBe('function');
+    expect(typeof sdk.auth.revokeSession).toBe('function');
     expect(typeof sdk.db.getClient).toBe('function');
     expect(typeof sdk.mailer.send).toBe('function');
     expect(typeof sdk.platform.getConfig).toBe('function');
