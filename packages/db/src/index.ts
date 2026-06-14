@@ -1,11 +1,5 @@
 export { createClient, findWorkspaceRoot, resolveSqlitePath, type DbConfig } from './client';
-export {
-  ACCOUNT_PREFS_BOOTSTRAP_SQL,
-  PLATFORM_BOOTSTRAP_SQL,
-  PLATFORM_SETTINGS_BOOTSTRAP_SQL,
-  PLUGIN_STATUS_BOOTSTRAP_SQL,
-  TENANTS_BOOTSTRAP_SQL,
-} from './bootstrap';
+export { platformBootstrapStatements } from './bootstrap';
 export {
   DEFAULT_ROOT_PLUGIN_ID,
   DEFAULT_TENANT_ID,
@@ -14,8 +8,12 @@ export {
   getDefaultTenant,
   getPlatformDb,
   getPlatformSetting,
+  listDisabledPluginIds,
+  listPluginStatus,
+  pingDb,
   setAccountPrefs,
   setPlatformSetting,
+  setPluginEnabled,
   setTenantName,
   type AccountPrefsValue,
   type PlatformDb,

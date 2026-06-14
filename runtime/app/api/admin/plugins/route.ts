@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { schema } from '@sovereignfs/db';
+import { listPluginStatus } from '@sovereignfs/db';
 import { checkAdminKey } from '@/src/admin-guard';
 import { getPlatformDb } from '@/src/db';
 import { getInstalledPlugins } from '@/src/registry';
@@ -8,8 +8,7 @@ export async function GET(request: Request): Promise<Response> {
   const denied = checkAdminKey(request);
   if (denied) return denied;
 
-  const db = await getPlatformDb();
-  const statusRows = db.select().from(schema.pluginStatus).all();
+  const statusRows = await listPluginStatus(await getPlatformDb());
   const statusMap = new Map(statusRows.map((r) => [r.pluginId, r.enabled]));
 
   const plugins = getInstalledPlugins().map((manifest) => ({

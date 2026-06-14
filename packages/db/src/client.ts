@@ -1,9 +1,12 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
-import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
-import { resolveDialect, type Dialect } from './dialect';
-import * as schema from './schema/sqlite';
+import { type BetterSQLite3Database, drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
+import { type NodePgDatabase, drizzle as drizzlePg } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
+import { type Dialect, resolveDialect } from './dialect';
+import * as pgSchema from './schema/postgres';
+import * as sqliteSchema from './schema/sqlite';
 
 export interface DbConfig {
   /** Override the resolved dialect. Defaults to the environment resolution. */
@@ -13,13 +16,22 @@ export interface DbConfig {
 }
 
 /**
- * Create a Drizzle client for the configured dialect.
- *
- * SQLite is fully supported. Postgres is recognised but not yet wired — the
- * driver and Postgres schema land in Task 0.5.03; until then this throws a
- * clear error rather than silently misbehaving.
+ * A dialect-tagged platform database client. The `dialect` tag drives portable
+ * execution (see ./exec) so the same query runs on SQLite (better-sqlite3,
+ * synchronous) and Postgres (node-postgres, async). Both dialects expose the
+ * same logical schema (see ./schema/{sqlite,postgres}).
  */
-export function createClient(config: DbConfig = {}) {
+export type PlatformDb =
+  | { dialect: 'sqlite'; db: BetterSQLite3Database<typeof sqliteSchema> }
+  | { dialect: 'postgres'; db: NodePgDatabase<typeof pgSchema> };
+
+/**
+ * Create a Drizzle client for the configured dialect. SQLite opens a
+ * better-sqlite3 file (WAL, foreign keys on); Postgres opens a node-postgres
+ * connection pool. The dialect is resolved from the environment unless
+ * overridden via `config`.
+ */
+export function createClient(config: DbConfig = {}): PlatformDb {
   const resolved = resolveDialect({
     ...process.env,
     ...(config.dialect ? { DB_DIALECT: config.dialect } : {}),
@@ -34,13 +46,13 @@ export function createClient(config: DbConfig = {}) {
     const sqlite = new Database(path);
     sqlite.pragma('journal_mode = WAL');
     sqlite.pragma('foreign_keys = ON');
-    return drizzleSqlite(sqlite, { schema });
+    return { dialect: 'sqlite', db: drizzleSqlite(sqlite, { schema: sqliteSchema }) };
   }
 
-  throw new Error(
-    'Postgres support is not yet implemented (Task 0.5.03). ' +
-      'Set DB_DIALECT=sqlite (or leave it unset) for now.',
-  );
+  // node-postgres: the pool connects lazily, so constructing it never blocks or
+  // throws here — the first query establishes the connection.
+  const pool = new Pool({ connectionString: resolved.url });
+  return { dialect: 'postgres', db: drizzlePg(pool, { schema: pgSchema }) };
 }
 
 /**

@@ -1,0 +1,77 @@
+import { bigint, boolean, pgTable, primaryKey, text } from 'drizzle-orm/pg-core';
+
+/**
+ * Platform schema (Postgres dialect). A 1:1 mirror of `../sqlite/platform.ts` —
+ * same table and column names — so the platform data layer is dialect-agnostic
+ * (SRS §3.7, NFR-03). A parity test (`./schema-parity.test.ts`) asserts the two
+ * dialect schemas stay structurally identical.
+ *
+ * Dialect mapping vs SQLite:
+ * - Timestamps are Unix epoch **seconds** stored as `bigint` (SQLite uses
+ *   `integer`). Postgres `INTEGER` is 32-bit and overflows in 2038; `bigint`
+ *   avoids the Y2038 cliff. `mode: 'number'` keeps the JS-side type a `number`,
+ *   matching SQLite (seconds fit safely within 2^53).
+ * - Booleans are native `boolean` (SQLite stores 0/1 via `mode: 'boolean'`).
+ *
+ * Defaults stay dialect-portable literals; callers supply timestamps.
+ */
+
+export const tenants = pgTable('tenants', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+  updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+});
+
+export const users = pgTable('users', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id),
+  email: text('email').notNull().unique(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  name: text('name'),
+  image: text('image'),
+  role: text('role').notNull().default('platform:user'),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+  updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+});
+
+export const sessions = pgTable('sessions', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id),
+  token: text('token').notNull().unique(),
+  expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+  updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+});
+
+export const pluginStatus = pgTable('plugin_status', {
+  pluginId: text('plugin_id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  enabled: boolean('enabled').notNull().default(true),
+  updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+});
+
+export const platformSettings = pgTable(
+  'platform_settings',
+  {
+    key: text('key').notNull(),
+    tenantId: text('tenant_id').notNull(),
+    value: text('value').notNull(),
+    updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.key, table.tenantId] })],
+);
+
+export const accountPrefs = pgTable('account_prefs', {
+  userId: text('user_id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  timezone: text('timezone').notNull().default('UTC'),
+  theme: text('theme').notNull().default('system'), // 'system' | 'light' | 'dark'
+  updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+});

@@ -1,20 +1,22 @@
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate as migrateSqlite } from 'drizzle-orm/better-sqlite3/migrator';
+import { migrate as migratePg } from 'drizzle-orm/node-postgres/migrator';
+import type { PlatformDb } from './client';
 
 /**
- * Apply pending migrations against a SQLite Drizzle client.
+ * Apply pending migrations against a platform client, dispatching on dialect.
  *
  * `migrationsFolder` is a directory of Drizzle-generated migrations (`.sql`
  * files plus a `_journal.json`). Drizzle applies them in journal order and
  * records what has run, so calling this repeatedly is safe (idempotent).
  *
- * Note: this uses Drizzle's standard folder+journal migrator rather than a raw
- * array of file paths — the journal is what gives ordering and idempotency.
- * Postgres migrations arrive with the Postgres driver in Task 0.5.03.
+ * Not yet load-bearing: platform tables are still created via the
+ * CREATE-TABLE-IF-NOT-EXISTS bootstrap (see ./platform-db); this runner is in
+ * place for when drizzle-kit migrations land (0.5.05+).
  */
-export function runMigrations<TSchema extends Record<string, unknown>>(
-  db: BetterSQLite3Database<TSchema>,
-  migrationsFolder: string,
-): void {
-  migrateSqlite(db, { migrationsFolder });
+export async function runMigrations(pdb: PlatformDb, migrationsFolder: string): Promise<void> {
+  if (pdb.dialect === 'sqlite') {
+    migrateSqlite(pdb.db, { migrationsFolder });
+    return;
+  }
+  await migratePg(pdb.db, { migrationsFolder });
 }

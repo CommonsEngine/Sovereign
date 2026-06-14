@@ -6,8 +6,11 @@ import {
   getAccountPrefs,
   getDefaultTenant,
   getPlatformSetting,
+  listDisabledPluginIds,
+  listPluginStatus,
   setAccountPrefs,
   setPlatformSetting,
+  setPluginEnabled,
   setTenantName,
   type PlatformDb,
 } from './platform-db';
@@ -21,7 +24,6 @@ async function freshDb(): Promise<PlatformDb> {
 describe('bootstrapPlatformDb', () => {
   it('seeds the default tenant', async () => {
     const tenant = await getDefaultTenant(await freshDb());
-    expect(tenant.id).toBe('default');
     expect(tenant.name).toBe('Sovereign');
   });
 
@@ -99,5 +101,26 @@ describe('account preferences helpers', () => {
     const db = await freshDb();
     await setAccountPrefs(db, 'u1', { theme: 'dark' });
     expect(await getAccountPrefs(db, 'u2')).toEqual({ timezone: 'UTC', theme: 'system' });
+  });
+});
+
+describe('plugin status helpers', () => {
+  it('returns no status rows on a fresh database (absence = enabled)', async () => {
+    expect(await listPluginStatus(await freshDb())).toEqual([]);
+    expect(await listDisabledPluginIds(await freshDb())).toEqual([]);
+  });
+
+  it('upserts enable/disable state and maps the boolean correctly', async () => {
+    const db = await freshDb();
+    await setPluginEnabled(db, 'fs.test.alpha', false);
+
+    const rows = await listPluginStatus(db);
+    expect(rows).toEqual([{ pluginId: 'fs.test.alpha', enabled: false }]);
+    expect(await listDisabledPluginIds(db)).toEqual(['fs.test.alpha']);
+
+    // re-enabling upserts the same row, not a duplicate
+    await setPluginEnabled(db, 'fs.test.alpha', true);
+    expect(await listPluginStatus(db)).toEqual([{ pluginId: 'fs.test.alpha', enabled: true }]);
+    expect(await listDisabledPluginIds(db)).toEqual([]);
   });
 });

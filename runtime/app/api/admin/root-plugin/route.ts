@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { DEFAULT_ROOT_PLUGIN_ID, getPlatformSetting, schema } from '@sovereignfs/db';
+import { DEFAULT_ROOT_PLUGIN_ID, getPlatformSetting, listDisabledPluginIds } from '@sovereignfs/db';
 import { checkAdminKey } from '@/src/admin-guard';
 import { getPlatformDb } from '@/src/db';
 import { getInstalledPlugins } from '@/src/registry';
@@ -18,14 +17,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const db = await getPlatformDb();
   const rootPluginId = (await getPlatformSetting(db, 'root_plugin_id')) ?? DEFAULT_ROOT_PLUGIN_ID;
-  const disabledIds = new Set(
-    db
-      .select({ pluginId: schema.pluginStatus.pluginId })
-      .from(schema.pluginStatus)
-      .where(eq(schema.pluginStatus.enabled, false))
-      .all()
-      .map((r) => r.pluginId),
-  );
+  const disabledIds = new Set(await listDisabledPluginIds(db));
 
   const routePrefix = resolveRootRoutePrefix(rootPluginId, getInstalledPlugins(), disabledIds);
   return NextResponse.json({ routePrefix });

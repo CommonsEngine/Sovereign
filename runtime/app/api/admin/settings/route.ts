@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
 import {
   DEFAULT_ROOT_PLUGIN_ID,
   getDefaultTenant,
   getPlatformSetting,
-  schema,
+  listDisabledPluginIds,
   setPlatformSetting,
   setTenantName,
 } from '@sovereignfs/db';
@@ -55,14 +54,7 @@ export async function PATCH(request: Request): Promise<Response> {
   }
 
   if (body.rootPluginId !== undefined) {
-    const disabledIds = new Set(
-      db
-        .select({ pluginId: schema.pluginStatus.pluginId })
-        .from(schema.pluginStatus)
-        .where(eq(schema.pluginStatus.enabled, false))
-        .all()
-        .map((r) => r.pluginId),
-    );
+    const disabledIds = new Set(await listDisabledPluginIds(db));
     const result = validateRootPlugin(body.rootPluginId, getInstalledPlugins(), disabledIds);
     if (!result.ok) {
       return NextResponse.json(

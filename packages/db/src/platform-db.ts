@@ -1,10 +1,11 @@
-import { and, eq } from 'drizzle-orm';
-import { sql } from 'drizzle-orm';
-import { PLATFORM_BOOTSTRAP_SQL } from './bootstrap';
-import { createClient } from './client';
-import * as schema from './schema/sqlite';
+import { eq, sql } from 'drizzle-orm';
+import { platformBootstrapStatements } from './bootstrap';
+import { type PlatformDb, createClient } from './client';
+import { dbGet, dbRun } from './exec';
+import * as pg from './schema/postgres';
+import * as sqlite from './schema/sqlite';
 
-export type PlatformDb = ReturnType<typeof createClient>;
+export type { PlatformDb };
 
 /** v1 is single-tenant; every tenant-scoped row uses this id (SRS §3.1). */
 export const DEFAULT_TENANT_ID = 'default';
@@ -15,36 +16,31 @@ export const DEFAULT_ROOT_PLUGIN_ID = 'fs.sovereign.launcher';
 const DEFAULT_TENANT_NAME = 'Sovereign';
 
 /**
- * Apply the interim DDL bootstrap and seed rows to a client. Idempotent —
- * CREATE TABLE IF NOT EXISTS plus conflict-ignoring inserts. Exported
- * separately from the singleton so tests can run it against :memory:.
- *
- * Async by contract: Postgres (node-postgres) has no synchronous query, so the
- * whole platform data layer is async. On SQLite (better-sqlite3) the underlying
- * calls run synchronously and resolve immediately. Postgres execution lands in
- * the next change (Task 0.5.03 driver wiring); the bodies here stay SQLite.
+ * Apply the interim DDL bootstrap and seed rows. Idempotent — CREATE TABLE IF
+ * NOT EXISTS plus conflict-ignoring inserts. Dialect-agnostic: the DDL is
+ * dialect-aware (see ./bootstrap) and the seeds are standard `INSERT … ON
+ * CONFLICT DO NOTHING`, supported identically by SQLite and Postgres. Exported
+ * separately from the singleton so tests can run it against `:memory:`.
  */
-export async function bootstrapPlatformDb(db: PlatformDb): Promise<void> {
-  for (const statement of PLATFORM_BOOTSTRAP_SQL) {
-    db.run(sql.raw(statement));
+export async function bootstrapPlatformDb(pdb: PlatformDb): Promise<void> {
+  for (const statement of platformBootstrapStatements(pdb.dialect)) {
+    await dbRun(pdb, sql.raw(statement));
   }
 
   const now = Math.floor(Date.now() / 1000);
 
-  db.insert(schema.tenants)
-    .values({ id: DEFAULT_TENANT_ID, name: DEFAULT_TENANT_NAME, createdAt: now, updatedAt: now })
-    .onConflictDoNothing()
-    .run();
-
-  db.insert(schema.platformSettings)
-    .values({
-      key: 'root_plugin_id',
-      tenantId: DEFAULT_TENANT_ID,
-      value: DEFAULT_ROOT_PLUGIN_ID,
-      updatedAt: now,
-    })
-    .onConflictDoNothing()
-    .run();
+  await dbRun(
+    pdb,
+    sql`INSERT INTO tenants (id, name, created_at, updated_at)
+        VALUES (${DEFAULT_TENANT_ID}, ${DEFAULT_TENANT_NAME}, ${now}, ${now})
+        ON CONFLICT (id) DO NOTHING`,
+  );
+  await dbRun(
+    pdb,
+    sql`INSERT INTO platform_settings (key, tenant_id, value, updated_at)
+        VALUES ('root_plugin_id', ${DEFAULT_TENANT_ID}, ${DEFAULT_ROOT_PLUGIN_ID}, ${now})
+        ON CONFLICT (key, tenant_id) DO NOTHING`,
+  );
 }
 
 let _dbPromise: Promise<PlatformDb> | null = null;
@@ -58,65 +54,124 @@ let _dbPromise: Promise<PlatformDb> | null = null;
 export function getPlatformDb(): Promise<PlatformDb> {
   if (!_dbPromise) {
     _dbPromise = (async () => {
-      const db = createClient();
-      await bootstrapPlatformDb(db);
-      return db;
+      const pdb = createClient();
+      await bootstrapPlatformDb(pdb);
+      return pdb;
     })();
   }
   return _dbPromise;
 }
 
+/** Liveness check — throws if the database is unreachable. */
+export async function pingDb(pdb: PlatformDb): Promise<void> {
+  await dbGet(pdb, sql`SELECT 1`);
+}
+
 /** Read a platform setting for the default tenant. Returns null when unset. */
-export async function getPlatformSetting(db: PlatformDb, key: string): Promise<string | null> {
-  const row = db
-    .select({ value: schema.platformSettings.value })
-    .from(schema.platformSettings)
-    .where(
-      and(
-        eq(schema.platformSettings.key, key),
-        eq(schema.platformSettings.tenantId, DEFAULT_TENANT_ID),
-      ),
-    )
-    .get();
+export async function getPlatformSetting(pdb: PlatformDb, key: string): Promise<string | null> {
+  const row = await dbGet<{ value: string }>(
+    pdb,
+    sql`SELECT value FROM platform_settings WHERE key = ${key} AND tenant_id = ${DEFAULT_TENANT_ID}`,
+  );
   return row?.value ?? null;
 }
 
 /** Upsert a platform setting for the default tenant. */
 export async function setPlatformSetting(
-  db: PlatformDb,
+  pdb: PlatformDb,
   key: string,
   value: string,
 ): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  db.insert(schema.platformSettings)
-    .values({ key, tenantId: DEFAULT_TENANT_ID, value, updatedAt: now })
-    .onConflictDoUpdate({
-      target: [schema.platformSettings.key, schema.platformSettings.tenantId],
-      set: { value, updatedAt: now },
-    })
-    .run();
+  await dbRun(
+    pdb,
+    sql`INSERT INTO platform_settings (key, tenant_id, value, updated_at)
+        VALUES (${key}, ${DEFAULT_TENANT_ID}, ${value}, ${now})
+        ON CONFLICT (key, tenant_id)
+        DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`,
+  );
 }
 
-/** The default tenant row. Always present after bootstrap. */
-export async function getDefaultTenant(db: PlatformDb): Promise<schema.Tenant> {
-  const tenant = db
-    .select()
-    .from(schema.tenants)
-    .where(eq(schema.tenants.id, DEFAULT_TENANT_ID))
-    .get();
-  if (!tenant) {
+/** The default tenant's name. Always present after bootstrap. */
+export async function getDefaultTenant(pdb: PlatformDb): Promise<{ name: string }> {
+  const row = await dbGet<{ name: string }>(
+    pdb,
+    sql`SELECT name FROM tenants WHERE id = ${DEFAULT_TENANT_ID}`,
+  );
+  if (!row) {
     throw new Error('Default tenant missing — was bootstrapPlatformDb() run?');
   }
-  return tenant;
+  return row;
 }
 
 /** Rename the default tenant (CON-08). */
-export async function setTenantName(db: PlatformDb, name: string): Promise<void> {
+export async function setTenantName(pdb: PlatformDb, name: string): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
-  db.update(schema.tenants)
-    .set({ name, updatedAt: now })
-    .where(eq(schema.tenants.id, DEFAULT_TENANT_ID))
-    .run();
+  await dbRun(
+    pdb,
+    sql`UPDATE tenants SET name = ${name}, updated_at = ${now} WHERE id = ${DEFAULT_TENANT_ID}`,
+  );
+}
+
+/**
+ * Per-plugin enable/disable state (absence of a row = enabled). The `enabled`
+ * column is a boolean, which SQLite stores as 0/1 and Postgres natively — so
+ * these go through the Drizzle query builder (which maps both to a JS boolean)
+ * rather than raw SQL.
+ */
+export async function listPluginStatus(
+  pdb: PlatformDb,
+): Promise<{ pluginId: string; enabled: boolean }[]> {
+  if (pdb.dialect === 'sqlite') {
+    return pdb.db
+      .select({ pluginId: sqlite.pluginStatus.pluginId, enabled: sqlite.pluginStatus.enabled })
+      .from(sqlite.pluginStatus)
+      .all();
+  }
+  return pdb.db
+    .select({ pluginId: pg.pluginStatus.pluginId, enabled: pg.pluginStatus.enabled })
+    .from(pg.pluginStatus);
+}
+
+/** IDs of explicitly-disabled plugins (consumed by the middleware gate). */
+export async function listDisabledPluginIds(pdb: PlatformDb): Promise<string[]> {
+  if (pdb.dialect === 'sqlite') {
+    const rows = pdb.db
+      .select({ pluginId: sqlite.pluginStatus.pluginId })
+      .from(sqlite.pluginStatus)
+      .where(eq(sqlite.pluginStatus.enabled, false))
+      .all();
+    return rows.map((r) => r.pluginId);
+  }
+  const rows = await pdb.db
+    .select({ pluginId: pg.pluginStatus.pluginId })
+    .from(pg.pluginStatus)
+    .where(eq(pg.pluginStatus.enabled, false));
+  return rows.map((r) => r.pluginId);
+}
+
+/** Enable or disable a plugin (upsert on plugin_id) — CON-07. */
+export async function setPluginEnabled(
+  pdb: PlatformDb,
+  pluginId: string,
+  enabled: boolean,
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  if (pdb.dialect === 'sqlite') {
+    pdb.db
+      .insert(sqlite.pluginStatus)
+      .values({ pluginId, tenantId: DEFAULT_TENANT_ID, enabled, updatedAt: now })
+      .onConflictDoUpdate({
+        target: sqlite.pluginStatus.pluginId,
+        set: { enabled, updatedAt: now },
+      })
+      .run();
+    return;
+  }
+  await pdb.db
+    .insert(pg.pluginStatus)
+    .values({ pluginId, tenantId: DEFAULT_TENANT_ID, enabled, updatedAt: now })
+    .onConflictDoUpdate({ target: pg.pluginStatus.pluginId, set: { enabled, updatedAt: now } });
 }
 
 /** Account-plugin preferences with their defaults (SRS ACC-07/08). */
@@ -128,30 +183,29 @@ export interface AccountPrefsValue {
 const DEFAULT_ACCOUNT_PREFS: AccountPrefsValue = { timezone: 'UTC', theme: 'system' };
 
 /** A user's Account preferences, falling back to defaults when no row exists. */
-export async function getAccountPrefs(db: PlatformDb, userId: string): Promise<AccountPrefsValue> {
-  const row = db
-    .select({ timezone: schema.accountPrefs.timezone, theme: schema.accountPrefs.theme })
-    .from(schema.accountPrefs)
-    .where(eq(schema.accountPrefs.userId, userId))
-    .get();
+export async function getAccountPrefs(pdb: PlatformDb, userId: string): Promise<AccountPrefsValue> {
+  const row = await dbGet<AccountPrefsValue>(
+    pdb,
+    sql`SELECT timezone, theme FROM account_prefs WHERE user_id = ${userId}`,
+  );
   return row ?? DEFAULT_ACCOUNT_PREFS;
 }
 
 /** Upsert a user's Account preferences (one row per user). */
 export async function setAccountPrefs(
-  db: PlatformDb,
+  pdb: PlatformDb,
   userId: string,
   prefs: Partial<AccountPrefsValue>,
 ): Promise<AccountPrefsValue> {
-  const current = await getAccountPrefs(db, userId);
+  const current = await getAccountPrefs(pdb, userId);
   const next = { ...current, ...prefs };
   const now = Math.floor(Date.now() / 1000);
-  db.insert(schema.accountPrefs)
-    .values({ userId, tenantId: DEFAULT_TENANT_ID, ...next, updatedAt: now })
-    .onConflictDoUpdate({
-      target: schema.accountPrefs.userId,
-      set: { ...next, updatedAt: now },
-    })
-    .run();
+  await dbRun(
+    pdb,
+    sql`INSERT INTO account_prefs (user_id, tenant_id, timezone, theme, updated_at)
+        VALUES (${userId}, ${DEFAULT_TENANT_ID}, ${next.timezone}, ${next.theme}, ${now})
+        ON CONFLICT (user_id)
+        DO UPDATE SET timezone = excluded.timezone, theme = excluded.theme, updated_at = excluded.updated_at`,
+  );
   return next;
 }

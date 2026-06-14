@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
-import { schema } from '@sovereignfs/db';
+import { listDisabledPluginIds } from '@sovereignfs/db';
 import { getPlatformDb } from '@/src/db';
 import { getInstalledPlugins } from '@/src/registry';
 import { selectLauncherPlugins } from '@/src/launcher-plugins';
@@ -14,15 +13,7 @@ import { selectLauncherPlugins } from '@/src/launcher-plugins';
 export async function GET(request: Request): Promise<Response> {
   const role = request.headers.get('x-sovereign-user-role') ?? 'platform:user';
 
-  const db = await getPlatformDb();
-  const disabledIds = new Set(
-    db
-      .select({ pluginId: schema.pluginStatus.pluginId })
-      .from(schema.pluginStatus)
-      .where(eq(schema.pluginStatus.enabled, false))
-      .all()
-      .map((r) => r.pluginId),
-  );
+  const disabledIds = new Set(await listDisabledPluginIds(await getPlatformDb()));
 
   const plugins = selectLauncherPlugins(getInstalledPlugins(), disabledIds, role);
   return NextResponse.json({ plugins });
