@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Drizzle client factory, platform schema, and migration runner for Sovereign.",
-  "license": "AGPL-3.0",
+  "license": "AGPL-3.0-or-later",
   "exports": {
     ".": "./src/index.ts"
   },

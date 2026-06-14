@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Sovereign — a modular, self-hostable workspace runtime.",
-  "license": "AGPL-3.0",
+  "license": "AGPL-3.0-or-later",
   "packageManager": "pnpm@11.5.2",
   "engines": {
     "node": ">=20"
