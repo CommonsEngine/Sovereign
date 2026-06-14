@@ -827,7 +827,9 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ### Task 0.5.05 — SDK implementations (db and platform)
 
-**Goal:** Complete remaining SDK implementations. `sdk.auth` and `sdk.mailer` were wired in Task 0.4.02. This task completes `sdk.db` and `sdk.platform`, and also upgrades middleware from `/api/verify` round-trips to local JWT verification.
+**Goal:** Complete remaining SDK implementations. `sdk.auth` and `sdk.mailer` were wired in Task 0.4.02. This task completes `sdk.db` and `sdk.platform`.
+
+> **Scope update (Jun 2026).** Since this task was written the architecture moved on: `sdk.platform` and `sdk.mailer` are implemented **directly in `packages/sdk`** (via `@sovereignfs/db`/`@sovereignfs/mailer`), not re-exported from the runtime — so the "SDK re-exports runtime implementations" deliverable below is obsolete, and `runtime/src/sdk/*` is not created. `sdk.platform.getConfig()` landed async with Task 0.5.03; this task completes the last stub, `sdk.db.getClient()` (async, returns the live platform Drizzle instance). The **local JWT-verification middleware migration (AUTH-05) is split into its own follow-up task** — it is large and security-sensitive (better-auth currently uses DB-backed session cookies with no JWT/cookie-cache configured; it needs auth-side JWT issuance plus Edge-compatible `jose` verification on the runtime), and the current `/api/verify` round-trip works correctly in the meantime.
 
 **Deliverables:**
 
@@ -844,6 +846,23 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - `sdk.db.getClient()` returns a working Drizzle instance
 - `sdk.mailer.send()` delegates correctly to packages/mailer
 - No stub implementations remain for the v1 SDK surface
+
+---
+
+### Task 0.5.05b — Local JWT middleware (AUTH-05) **[split from 0.5.05]**
+
+**Goal:** Replace the runtime middleware's per-request `/api/verify` round-trip to the auth server with **local** verification of a signed token, using `SOVEREIGN_AUTH_SECRET`.
+
+**Notes:** Security-sensitive. better-auth currently issues DB-backed session cookies with no JWT or cookie-cache configured, so this requires (a) auth-side token issuance the runtime can verify offline (e.g. better-auth JWT/cookie-cache, signed with the shared secret) and (b) Edge-compatible verification in `runtime/middleware.ts` (e.g. `jose`), preserving the current behaviour (redirect to `/login` on failure; inject `x-sovereign-user-*` headers; `adminOnly` 403, disabled-plugin 404, root-plugin rewrite). The existing `/api/verify` flow is correct and stays until this lands.
+
+**SRS reference:** AUTH-05
+
+**Review checklist:**
+
+- An authenticated request is verified with no network call to the auth server
+- An invalid/expired/missing token redirects to `/login`
+- Deactivated accounts are rejected (parity with the current `active === false` check)
+- `SOVEREIGN_AUTH_SECRET` is required at startup (no insecure default)
 
 ---
 

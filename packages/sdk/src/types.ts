@@ -48,9 +48,9 @@ export interface PlatformConfig {
 }
 
 /**
- * The scoped Drizzle client returned by `sdk.db.getClient()`. The concrete,
- * dialect-specific instance is supplied by the runtime; at the contract level it
- * is opaque (refined when `sdk.db` is wired in the runtime). Plugins type their
- * own queries through their schema.
+ * The Drizzle client returned by `sdk.db.getClient()` — the live platform
+ * Drizzle instance. Kept opaque (`unknown`) at the contract level so the
+ * published SDK takes no dependency on a specific dialect's Drizzle types;
+ * plugins type their own queries through their schema.
  */
 export type DrizzleClient = unknown;
