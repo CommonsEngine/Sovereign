@@ -7,6 +7,11 @@ import type { NextConfig } from 'next';
 loadEnvConfig(resolve(process.cwd(), '..'), process.env.NODE_ENV !== 'production');
 
 const nextConfig: NextConfig = {
+  // Self-contained production server (`.next/standalone`) for the Docker image.
+  // In a pnpm monorepo, file tracing must be rooted at the repo root or the
+  // traced output misses workspace package files.
+  output: 'standalone',
+  outputFileTracingRoot: resolve(process.cwd(), '..'),
   // Compile all workspace packages from source — package edits trigger HMR.
   transpilePackages: [
     '@sovereignfs/sdk',

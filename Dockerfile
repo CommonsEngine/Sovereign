@@ -1,21 +1,57 @@
-FROM node:24-alpine
+# Production image for the Sovereign runtime (Next.js standalone output).
+#
+# Build context is the monorepo root — required for pnpm workspace resolution:
+#   docker build -f Dockerfile -t sovereign-runtime .
+#
+# No secrets are baked in: all configuration is injected at runtime via env.
 
-# Native build tools required for better-sqlite3 bindings
+# ---- deps: install workspace dependencies ---------------------------------
+FROM node:24-alpine AS deps
+# Native toolchain for better-sqlite3's musl build (no prebuilt for Alpine).
 RUN apk add --no-cache python3 make g++
-
 RUN corepack enable && corepack prepare pnpm@11.5.2 --activate
-
 WORKDIR /app
-
+# .dockerignore strips node_modules/.next/.env/.git; copying the whole tree
+# keeps pnpm workspace resolution intact.
 COPY . .
-
 RUN pnpm install --frozen-lockfile
 
-# Generate plugin registry and symlinks before building
+# ---- builder: compose plugins + build the standalone server ---------------
+FROM deps AS builder
+ENV NODE_ENV=production
+# Composes plugin app/ trees into the route group — must precede the build.
 RUN pnpm run generate
-
+# tsup packages → next build → runtime/.next/standalone
 RUN pnpm --filter @sovereignfs/runtime build
 
+# ---- runner: minimal non-root production image ----------------------------
+FROM node:24-alpine AS runner
+ENV NODE_ENV=production
+# The standalone server reads PORT/HOSTNAME; bind on all interfaces so the
+# published port mapping reaches it.
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+WORKDIR /app
+
+RUN addgroup -S nodejs && adduser -S nextjs -G nodejs
+
+# Standalone output (tracing rooted at the monorepo root) replicates the repo
+# layout: server.js lives under runtime/, with traced node_modules + packages.
+COPY --from=builder --chown=nextjs:nodejs /app/runtime/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/runtime/.next/static ./runtime/.next/static
+# public/ holds the PWA assets generated at build (sw.js, workbox-*, fallback-*,
+# manifest.json, icons).
+COPY --from=builder --chown=nextjs:nodejs /app/runtime/public ./runtime/public
+
+# SQLite + avatars persist here (mounted as a volume). The relative DB path
+# resolves against the cwd (/app) at runtime, so it must be writable by the
+# non-root runner.
+RUN mkdir -p /app/data && chown nextjs:nodejs /app/data
+
+USER nextjs
 EXPOSE 3000
 
-CMD ["pnpm", "--filter", "@sovereignfs/runtime", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
+
+CMD ["node", "runtime/server.js"]

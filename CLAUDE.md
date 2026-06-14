@@ -53,6 +53,13 @@ they are authoritative over assumptions:
   show the output.
 - Never merge a PR automatically. Either wait for explicit instruction to merge,
   or ask for consent before doing so.
+- **Flag Docker-config impact immediately.** While building features or fixing
+  bugs, whenever a change requires updating the Docker setup (`Dockerfile`,
+  `apps/auth/Dockerfile`, `docker-compose.yml`, `docker-compose.prod.yml`,
+  `.dockerignore`) — e.g. a new/renamed env var, a new port, a new on-disk path
+  (writable dir or served asset dir), a new native dep, or anything affecting
+  `next build`/standalone output — call it out in the same turn and update the
+  relevant config (or ask), rather than letting it drift behind the code.
 - **Version bumps** are part of the PR — bump the relevant `package.json`(s)
   in the same branch, following semver tied to the change type:
   - `fix/` → **patch** (0.0.x)
@@ -216,6 +223,28 @@ pnpm lint:fix        # run ESLint with auto-fix
   production build (`next build`). The PWA assets and the `/offline` fallback
   are excluded from the middleware session gate (they must load without a
   session).
+- **Production images build from Next.js standalone output** (Task 0.5.02).
+  Both `next.config.ts` set `output: 'standalone'` **and**
+  `outputFileTracingRoot` to the monorepo root — required in a pnpm monorepo or
+  the trace misses workspace package files. The standalone tree mirrors the repo
+  layout, so the runner runs `node runtime/server.js` / `node apps/auth/server.js`
+  (not `next start`). The standalone server reads `PORT`/`HOSTNAME` env (the old
+  `next start --port` flag is gone): the runner sets `PORT` + `HOSTNAME=0.0.0.0`
+  (runtime 3000, auth 3001). `runtime/.next/static` and `runtime/public` (which
+  holds the generated PWA assets) must be **copied explicitly** into the runner —
+  standalone does not include them. Healthchecks use **`127.0.0.1`, not
+  `localhost`** (busybox `localhost`→`::1`, but the server binds IPv4
+  `0.0.0.0` → connection refused on `localhost`). The runtime's `HEALTHCHECK`
+  hits the public `/api/health` liveness route (excluded from the middleware
+  gate); the admin-key-gated `/api/admin/health` stays the richer report.
+  **`docker-compose.prod.yml` uses a named volume (`sovereign_data`), not a host
+  bind mount**, for `/app/data`: the images run **non-root**, and a named volume
+  inherits the image's `/app/data` ownership so SQLite/avatar writes work with
+  zero host `chown` (a bind mount keeps host ownership and breaks non-root writes
+  on Linux — macOS VirtioFS hides this). Dev (`docker-compose.yml`) keeps the
+  `./data` bind mount (runs as root). The relative SQLite path resolves against
+  cwd (`/app`) because `findWorkspaceRoot()` falls back to cwd when no
+  `pnpm-workspace.yaml` ancestor exists — the standalone case.
 
 ## Design system (`packages/ui`)
 
@@ -413,8 +442,9 @@ pnpm install:plugins    # clone sovereign/community plugins declared in sovereig
   internal service name) — do not set this var in `.env` for Docker use. For
   production use `docker-compose.prod.yml` (standalone file, runtime on `:4000`,
   no Mailpit). See `docs/self-hosting.md`. The `Dockerfile` (runtime) and
-  `apps/auth/Dockerfile` are dev-quality; Task 0.5.02 replaces them with
-  multi-stage standalone builds.
+  `apps/auth/Dockerfile` are three-stage standalone production builds (Task
+  0.5.02) — both compose files build from them (dev runs them as root with a
+  `./data` bind mount; prod runs them non-root with a named volume).
 - **Runtime dev = `scripts/dev.ts`.** The runtime's `dev` script runs the
   orchestrator, which composes plugins (writes the registry, copies plugin
   `app/` trees), then runs the generate watcher + `next dev` on `:3000`. Both
@@ -460,8 +490,9 @@ pnpm install:plugins    # clone sovereign/community plugins declared in sovereig
 - ✅ Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher) (merged to `main`).
 - ✅ Task 0.4.06 — Account plugin (Profile + Preferences + Security): display name + avatar, IANA timezone + Light/Dark/System theme, password change, active-session list/revoke; `account_prefs` table; `sdk.auth` gained `changePassword`/`listSessions`/`revokeSession`; `freshAge: 0` so session listing isn't gated by session age. Completes the v0.4 chrome-plugin trio (Console, Launcher, Account) (merged to `main`).
 - ✅ Task 0.5.00 — `scripts/install-plugins.ts` (platform → 0.5.0, enters v0.5): reads `sovereign.plugins.json`, shallow-clones declared plugins into `plugins/<id>/` (skips existing), then runs `pnpm generate`; cloned plugins gitignored (allowlist keeps the three committed platform plugins) (merged to `main`).
-- ▶️ In review: Task 0.5.01 — PWA configuration (`runtime` → 0.5.0): `@ducanh2912/next-pwa` wraps `runtime/next.config.ts` (disabled in dev), `runtime/public/manifest.json` + generated PNG icons (192/512/maskable + apple-touch), manifest/theme-colour linked via root-layout metadata/viewport, `/offline` fallback page; service worker generated into `runtime/public/` at build (gitignored + eslint/prettier-ignored). SRS §3.11, PLT-09.
-- ⏳ Next: Task 0.5.02 — Production Docker image: multi-stage `Dockerfile` (runtime) + `apps/auth/Dockerfile` from Next.js standalone output (`output: 'standalone'`), non-root runner, `HEALTHCHECK`, and `docker-compose.prod.yml` wired to the built images (SRS deployment). Branch from an up-to-date `main` once #27 merges.
+- ✅ Task 0.5.01 — PWA configuration (`runtime` → 0.5.0): `@ducanh2912/next-pwa` wraps `runtime/next.config.ts` (disabled in dev), `runtime/public/manifest.json` + generated PNG icons (192/512/maskable + apple-touch), manifest/theme-colour linked via root-layout metadata/viewport, `/offline` fallback page; service worker generated into `runtime/public/` at build (gitignored + eslint/prettier-ignored). SRS §3.11, PLT-09 (merged to `main`).
+- ▶️ In review: Task 0.5.02 — Production Docker image: `Dockerfile` (runtime) + `apps/auth/Dockerfile` rewritten as three-stage (`deps`/`builder`/`runner`) builds from Next.js standalone output (`output: 'standalone'` + `outputFileTracingRoot` = monorepo root in both `next.config.ts`); non-root `nextjs` runner, `HEALTHCHECK` against the new public `runtime/app/api/health` liveness route (auth already had `/api/health`); `docker-compose.prod.yml` adds healthchecks, `depends_on: condition: service_healthy`, and switches prod data to a **named volume** (non-root + bind mount breaks SQLite writes on Linux). ~264 MB true image size (≈7× smaller than the old dev image). SRS NFR-01, §3.1.
+- ⏳ Next: Task 0.5.03 — Postgres validation: confirm full SQLite↔Postgres parity (drizzle-kit migrations, both dialects exercised). Branch from an up-to-date `main` once the production-Docker PR merges.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 - ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).
