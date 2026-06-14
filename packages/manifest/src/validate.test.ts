@@ -77,4 +77,12 @@ describe('validateManifest', () => {
     const res = validateManifest(withoutIcon);
     expect(res.valid).toBe(true);
   });
+
+  it('accepts the reserved cross-plugin data-sharing permissions (RFC 0002)', () => {
+    const res = validateManifest({
+      ...base,
+      permissions: ['auth:session', 'db:readWrite', 'data:provide', 'data:consume'],
+    });
+    expect(res.valid).toBe(true);
+  });
 });

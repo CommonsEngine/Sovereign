@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { NotImplementedError, NotAuthenticatedError, sdk } from './index';
+import { ConsentRequiredError, NotImplementedError, NotAuthenticatedError, sdk } from './index';
 
 beforeAll(() => {
   // sdk.platform.getConfig() opens the platform DB from the environment;
@@ -22,6 +22,8 @@ describe('sdk', () => {
     expect(typeof sdk.notifications.send).toBe('function');
     expect(typeof sdk.events.publish).toBe('function');
     expect(typeof sdk.events.subscribe).toBe('function');
+    expect(typeof sdk.data.query).toBe('function');
+    expect(typeof sdk.data.provide).toBe('function');
   });
 
   it('db stub throws NotImplementedError (wired in Task 0.5.05)', () => {
@@ -41,9 +43,20 @@ describe('sdk', () => {
     expect(() => sdk.events.subscribe('e', () => undefined)).toThrow(NotImplementedError);
   });
 
-  it('exports NotAuthenticatedError', () => {
+  it('reserved cross-plugin data surface (RFC 0002) throws NotImplementedError', () => {
+    expect(() => sdk.data.query({ providerId: 'p', contract: 'c', version: 1 })).toThrow(
+      NotImplementedError,
+    );
+    expect(() => sdk.data.provide('c', async () => [])).toThrow(NotImplementedError);
+  });
+
+  it('exports NotAuthenticatedError and ConsentRequiredError', () => {
     const err = new NotAuthenticatedError();
     expect(err.name).toBe('NotAuthenticatedError');
     expect(err).toBeInstanceOf(Error);
+
+    const consent = new ConsentRequiredError();
+    expect(consent.name).toBe('ConsentRequiredError');
+    expect(consent).toBeInstanceOf(Error);
   });
 });
