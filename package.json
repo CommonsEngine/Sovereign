@@ -1,6 +1,6 @@
 {
   "name": "sovereign",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "description": "Sovereign — a modular, self-hostable workspace runtime.",
@@ -21,6 +21,7 @@
     "test:watch": "vitest",
     "generate": "tsx scripts/generate-registry.ts",
     "install:plugins": "tsx scripts/install-plugins.ts",
+    "sv": "tsx bin/sv.ts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -40,6 +41,8 @@
     "@sovereignfs/manifest": "workspace:*",
     "@sovereignfs/tsconfig": "workspace:*",
     "@types/node": "^22.10.2",
+    "citty": "^0.1.6",
+    "consola": "^3.4.2",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.0",
     "globals": "^15.14.0",
