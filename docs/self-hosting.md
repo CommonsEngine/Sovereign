@@ -148,6 +148,67 @@ Caddy automatically.
 
 ---
 
+## PostgreSQL
+
+SQLite is the zero-config default and is fine for personal and small-group use.
+For larger or higher-concurrency deployments, run the whole stack on PostgreSQL
+instead — the only change is the database connection (NFR-03), no application
+code differs.
+
+### With Docker (recommended)
+
+Layer the `docker-compose.postgres.yml` overlay on top of the production file. It
+provisions a `postgres` service and points both the runtime and the auth server
+at it:
+
+```bash
+cp .env.example .env
+# Set AUTH_SECRET, SOVEREIGN_ADMIN_KEY, NEXT_PUBLIC_RUNTIME_URL, and at minimum
+# POSTGRES_PASSWORD. POSTGRES_USER / POSTGRES_DB default to "sovereign".
+
+docker compose -f docker-compose.prod.yml -f docker-compose.postgres.yml up --build -d
+```
+
+The runtime and auth server wait for Postgres to be healthy, then create their
+tables on first start (better-auth's identity tables and the platform tables).
+Postgres data lives in the `sovereign_pgdata` named volume; back it up with
+`pg_dump`:
+
+```bash
+docker exec sovereign-postgres pg_dump -U sovereign sovereign > backup.sql
+```
+
+### Without Docker
+
+Point all three database variables at your Postgres instance in `.env`:
+
+```bash
+DB_DIALECT=postgres
+DATABASE_URL=postgres://user:pass@host:5432/sovereign
+AUTH_DATABASE_URL=postgres://user:pass@host:5432/sovereign
+```
+
+The runtime and auth server can share one database (their table names don't
+collide) or use separate ones.
+
+### Switching SQLite → PostgreSQL
+
+There is no automatic data migration. To move an existing instance:
+
+1. Stop the stack (`docker compose ... down`, keeping volumes).
+2. Stand up PostgreSQL and start the stack with the Postgres overlay once so the
+   schema is created on the new database.
+3. Copy your data across with a tool such as
+   [pgloader](https://pgloader.io/) (pointed at the SQLite files under the
+   `sovereign_data` volume), or re-enter it. Timestamps are stored as integers
+   and booleans/`active` flags map directly, so a straight table copy works.
+4. Verify login, Console access, and your plugins, then retire the SQLite files.
+
+Uploaded files (avatars under `/app/data`) are independent of the database and
+stay on the `sovereign_data` volume regardless of dialect.
+
+---
+
 ## Email in development
 
 The dev Compose file includes [Mailpit](https://mailpit.axllent.org/) — a
