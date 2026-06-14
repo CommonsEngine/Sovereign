@@ -190,8 +190,15 @@ pnpm lint:fix        # run ESLint with auto-fix
   header** equal to the auth base URL (`SOVEREIGN_AUTH_URL`) — better-auth
   enforces a CSRF origin check and rejects originless POSTs with
   `MISSING_OR_NULL_ORIGIN` (403). Applies to `update-user` (Account profile)
-  and will apply to `change-password` etc. in Account part 2. The session
-  cookie is host-scoped, so forwarding it across the runtime↔auth origins works.
+  and `change-password`. The session cookie is host-scoped, so forwarding it
+  across the runtime↔auth origins works.
+- **better-auth's fresh-session gate is disabled (`session.freshAge: 0`** in
+  `apps/auth/src/auth.ts`). By default `freshSessionMiddleware` (guarding
+  `GET /list-sessions`, used by `sdk.auth.listSessions`) returns
+  `403 SESSION_NOT_FRESH` once a session is older than `freshAge` (1 day) — so
+  the Account Security tab broke for day-old sessions. Self-hosted users stay
+  signed in for weeks, so freshness re-auth is off. Don't re-enable it without
+  a re-auth flow. (A regression test asserts `freshAge === 0`.)
 - **Theme is applied before first paint by an inline script in
   `runtime/app/layout.tsx`** reading the `sv-theme` cookie (`light`/`dark`
   applied directly; `system`/unset follows `prefers-color-scheme`). The Account
