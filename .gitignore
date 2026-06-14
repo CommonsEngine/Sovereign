@@ -21,6 +21,14 @@ dist/
 # User-uploaded avatars (Account plugin, ACC-03) — runtime data, never committed.
 **/data/avatars/
 
+# Externally-installed plugins (cloned by scripts/install-plugins.ts) are not
+# committed here — they live in their own repositories. Ignore every plugin
+# directory except the platform plugins that ship in this monorepo.
+/plugins/*/
+!/plugins/account/
+!/plugins/console/
+!/plugins/launcher/
+
 # Environment / secrets
 .env
 .env.*

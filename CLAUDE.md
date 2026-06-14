@@ -369,7 +369,7 @@ pnpm lint:fix           # ESLint with auto-fix
 pnpm typecheck          # tsc --noEmit across packages
 pnpm test               # run Vitest across the repo (co-located *.test.ts)
 pnpm test:watch         # Vitest in watch mode
-pnpm install:plugins    # clone declared sovereign/community plugins (stub until Task 0.5.00)
+pnpm install:plugins    # clone sovereign/community plugins declared in sovereign.plugins.json
 ```
 
 ## Dev DX notes
@@ -448,8 +448,8 @@ pnpm install:plugins    # clone declared sovereign/community plugins (stub until
 - ✅ Task 0.4.03 — Console: plugin management (installed plugin list, enable/disable toggle, middleware 404 for disabled routes; platform DB singleton + `plugin_status` table) (merged to `main`).
 - ✅ Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin) (merged to `main`).
 - ✅ Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher) (merged to `main`).
-- ✅ Task 0.4.06 (part 1 of 2) — Account plugin: Profile (display name via better-auth `update-user`; avatar upload→`data/avatars/`, served via `/api/account/avatar/[userId]`, written to the user `image`) and Preferences (IANA timezone + Light/Dark/System theme). `account_prefs` table + helpers in `packages/db`; runtime `/api/account/prefs` + avatar routes; sidebar Account slot renders the avatar/monogram; theme applied pre-paint via the `sv-theme` cookie (merged to `main`).
-- ▶️ In review: Task 0.4.06 (part 2 of 2) — Account Security tab: password change (ACC-04, current-session preserved) and active-session list/revoke (ACC-05/06). `sdk.auth` gains `changePassword`/`listSessions`/`revokeSession` (wrapping better-auth with the cookie + Origin pattern; `sdk` → 0.4.0, published-contract minor). Completes the v0.4 chrome-plugin trio (Console, Launcher, Account).
+- ✅ Task 0.4.06 — Account plugin (Profile + Preferences + Security): display name + avatar, IANA timezone + Light/Dark/System theme, password change, active-session list/revoke; `account_prefs` table; `sdk.auth` gained `changePassword`/`listSessions`/`revokeSession`; `freshAge: 0` so session listing isn't gated by session age. Completes the v0.4 chrome-plugin trio (Console, Launcher, Account) (merged to `main`).
+- ▶️ In review: Task 0.5.00 — `scripts/install-plugins.ts` (platform → 0.5.0, enters v0.5): reads `sovereign.plugins.json` (`{ plugins: [{ id, repository }] }`), shallow-clones declared plugins into `plugins/<id>/` (skips existing), then runs `pnpm generate`; fails clearly on an unreachable repo. Cloned plugins are gitignored (allowlist keeps the three committed platform plugins). Ships with an empty plugin list (the reference plugin repos don't exist yet).
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 - ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).

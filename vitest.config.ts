@@ -10,6 +10,8 @@ export default defineConfig({
       // the composed copies live under runtime/app/(platform)/(plugins)/ and
       // are not covered by any include pattern, so they are never double-run.
       'plugins/**/*.test.{ts,tsx}',
+      // Repo-level scripts (e.g. install-plugins, generate-registry).
+      'scripts/**/*.test.{ts,tsx}',
     ],
     // Default to node; component tests opt into jsdom with a
     // `// @vitest-environment jsdom` pragma at the top of the file.
