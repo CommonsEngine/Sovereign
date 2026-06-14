@@ -28,7 +28,7 @@ export async function GET(request: Request): Promise<Response> {
 
   let dbStatus: 'ok' | 'error' = 'ok';
   try {
-    getPlatformDb().get(sql`SELECT 1`);
+    (await getPlatformDb()).get(sql`SELECT 1`);
   } catch {
     dbStatus = 'error';
   }
@@ -52,7 +52,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const report: HealthReport = {
-    platformVersion: sdk.platform.getConfig().version,
+    platformVersion: (await sdk.platform.getConfig()).version,
     database: { dialect: resolved.dialect, status: dbStatus, sizeBytes },
     auth: { status: authStatus },
     uptimeSeconds: Math.floor(process.uptime()),

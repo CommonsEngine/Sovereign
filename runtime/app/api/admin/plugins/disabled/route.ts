@@ -14,7 +14,7 @@ export async function GET(request: Request): Promise<Response> {
   const denied = checkAdminKey(request);
   if (denied) return denied;
 
-  const db = getPlatformDb();
+  const db = await getPlatformDb();
   const rows = db
     .select({ pluginId: schema.pluginStatus.pluginId })
     .from(schema.pluginStatus)

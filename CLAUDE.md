@@ -139,6 +139,12 @@ pnpm lint:fix        # run ESLint with auto-fix
   multi-tenancy), even though no multi-tenant logic exists in v1.
 - **DB is dialect-agnostic** (Drizzle): SQLite default, Postgres via env only.
   No SQLite-specific SQL in app code.
+- **The platform data layer is async** (Task 0.5.03). Postgres (node-postgres)
+  has no synchronous query, so `getPlatformDb()` and every `packages/db` platform
+  helper (`getPlatformSetting`, `setAccountPrefs`, …) and `sdk.platform.getConfig()`
+  return promises — always `await` them. (On SQLite the underlying better-sqlite3
+  calls still run synchronously; the async signature is the dialect-agnostic
+  contract.) Never reintroduce a synchronous platform-DB read.
 - **Relative SQLite paths resolve against the workspace root** (nearest
   ancestor with `pnpm-workspace.yaml`), not the process cwd — all SQLite files
   land in the single root-level `data/` directory regardless of which app

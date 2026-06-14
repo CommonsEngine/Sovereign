@@ -8,9 +8,9 @@ import styles from './page.module.css';
 // Force dynamic so a root-plugin change in Console takes effect immediately.
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
+export default async function Home() {
   const rootPluginId =
-    getPlatformSetting(getPlatformDb(), 'root_plugin_id') ?? DEFAULT_ROOT_PLUGIN_ID;
+    (await getPlatformSetting(await getPlatformDb(), 'root_plugin_id')) ?? DEFAULT_ROOT_PLUGIN_ID;
   const rootPlugin = getInstalledPlugins().find((plugin) => plugin.id === rootPluginId);
 
   if (rootPlugin) {

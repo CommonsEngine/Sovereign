@@ -16,7 +16,7 @@ function currentUserId(request: Request): string | null {
 export async function GET(request: Request): Promise<Response> {
   const userId = currentUserId(request);
   if (!userId) return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
-  return NextResponse.json(getAccountPrefs(getPlatformDb(), userId));
+  return NextResponse.json(await getAccountPrefs(await getPlatformDb(), userId));
 }
 
 export async function PATCH(request: Request): Promise<Response> {
@@ -39,7 +39,7 @@ export async function PATCH(request: Request): Promise<Response> {
     patch.theme = body.theme;
   }
 
-  const next = setAccountPrefs(getPlatformDb(), userId, patch);
+  const next = await setAccountPrefs(await getPlatformDb(), userId, patch);
   const res = NextResponse.json(next);
 
   // Mirror the theme to a cookie so the shell can resolve it before first paint

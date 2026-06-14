@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: RouteParams): Promise<
     return NextResponse.json({ error: 'enabled (boolean) is required' }, { status: 400 });
   }
 
-  const db = getPlatformDb();
+  const db = await getPlatformDb();
   const now = Math.floor(Date.now() / 1000);
 
   db.insert(schema.pluginStatus)

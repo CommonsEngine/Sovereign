@@ -18,8 +18,13 @@ const DEFAULT_TENANT_NAME = 'Sovereign';
  * Apply the interim DDL bootstrap and seed rows to a client. Idempotent —
  * CREATE TABLE IF NOT EXISTS plus conflict-ignoring inserts. Exported
  * separately from the singleton so tests can run it against :memory:.
+ *
+ * Async by contract: Postgres (node-postgres) has no synchronous query, so the
+ * whole platform data layer is async. On SQLite (better-sqlite3) the underlying
+ * calls run synchronously and resolve immediately. Postgres execution lands in
+ * the next change (Task 0.5.03 driver wiring); the bodies here stay SQLite.
  */
-export function bootstrapPlatformDb(db: PlatformDb): void {
+export async function bootstrapPlatformDb(db: PlatformDb): Promise<void> {
   for (const statement of PLATFORM_BOOTSTRAP_SQL) {
     db.run(sql.raw(statement));
   }
@@ -42,21 +47,27 @@ export function bootstrapPlatformDb(db: PlatformDb): void {
     .run();
 }
 
-let _db: PlatformDb | null = null;
+let _dbPromise: Promise<PlatformDb> | null = null;
 
 /**
  * The platform database, initialised once per process from the environment
  * (DATABASE_URL / DB_DIALECT) with tables bootstrapped and seed rows present.
+ * The initialisation promise is memoised so bootstrap runs exactly once even
+ * under concurrent first calls.
  */
-export function getPlatformDb(): PlatformDb {
-  if (_db) return _db;
-  _db = createClient();
-  bootstrapPlatformDb(_db);
-  return _db;
+export function getPlatformDb(): Promise<PlatformDb> {
+  if (!_dbPromise) {
+    _dbPromise = (async () => {
+      const db = createClient();
+      await bootstrapPlatformDb(db);
+      return db;
+    })();
+  }
+  return _dbPromise;
 }
 
 /** Read a platform setting for the default tenant. Returns null when unset. */
-export function getPlatformSetting(db: PlatformDb, key: string): string | null {
+export async function getPlatformSetting(db: PlatformDb, key: string): Promise<string | null> {
   const row = db
     .select({ value: schema.platformSettings.value })
     .from(schema.platformSettings)
@@ -71,7 +82,11 @@ export function getPlatformSetting(db: PlatformDb, key: string): string | null {
 }
 
 /** Upsert a platform setting for the default tenant. */
-export function setPlatformSetting(db: PlatformDb, key: string, value: string): void {
+export async function setPlatformSetting(
+  db: PlatformDb,
+  key: string,
+  value: string,
+): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   db.insert(schema.platformSettings)
     .values({ key, tenantId: DEFAULT_TENANT_ID, value, updatedAt: now })
@@ -83,7 +98,7 @@ export function setPlatformSetting(db: PlatformDb, key: string, value: string): 
 }
 
 /** The default tenant row. Always present after bootstrap. */
-export function getDefaultTenant(db: PlatformDb): schema.Tenant {
+export async function getDefaultTenant(db: PlatformDb): Promise<schema.Tenant> {
   const tenant = db
     .select()
     .from(schema.tenants)
@@ -96,7 +111,7 @@ export function getDefaultTenant(db: PlatformDb): schema.Tenant {
 }
 
 /** Rename the default tenant (CON-08). */
-export function setTenantName(db: PlatformDb, name: string): void {
+export async function setTenantName(db: PlatformDb, name: string): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
   db.update(schema.tenants)
     .set({ name, updatedAt: now })
@@ -113,7 +128,7 @@ export interface AccountPrefsValue {
 const DEFAULT_ACCOUNT_PREFS: AccountPrefsValue = { timezone: 'UTC', theme: 'system' };
 
 /** A user's Account preferences, falling back to defaults when no row exists. */
-export function getAccountPrefs(db: PlatformDb, userId: string): AccountPrefsValue {
+export async function getAccountPrefs(db: PlatformDb, userId: string): Promise<AccountPrefsValue> {
   const row = db
     .select({ timezone: schema.accountPrefs.timezone, theme: schema.accountPrefs.theme })
     .from(schema.accountPrefs)
@@ -123,12 +138,12 @@ export function getAccountPrefs(db: PlatformDb, userId: string): AccountPrefsVal
 }
 
 /** Upsert a user's Account preferences (one row per user). */
-export function setAccountPrefs(
+export async function setAccountPrefs(
   db: PlatformDb,
   userId: string,
   prefs: Partial<AccountPrefsValue>,
-): AccountPrefsValue {
-  const current = getAccountPrefs(db, userId);
+): Promise<AccountPrefsValue> {
+  const current = await getAccountPrefs(db, userId);
   const next = { ...current, ...prefs };
   const now = Math.floor(Date.now() / 1000);
   db.insert(schema.accountPrefs)
