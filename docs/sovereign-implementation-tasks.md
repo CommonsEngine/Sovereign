@@ -934,6 +934,33 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 
 ---
 
+### Task 0.5.09 — Overlay shell mode **[parallel]**
+
+**Goal:** Add the `overlay` shell mode from RFC 0001 (SRS §3.8/§3.9) — a plugin renders as a dismissable dialog over the current page, with a full-page fallback on hard navigation — and migrate Console and Account to it. A v0.5 polish item; no hard dependency on the other v0.5 tasks, but it needs the `packages/ui` `Dialog` primitive. Console and Account already ship as `default`/full-page, so this is a retrofit.
+
+**Deliverables:**
+
+- `packages/manifest`: `shell` enum gains `'overlay'`; tests; **minor** version bump
+- `packages/ui`: a `Dialog` primitive (scrim + panel, sizes, Esc/scrim-click dismissal, focus trap, `--sv-*` tokens) and its mobile full-screen sheet behaviour
+- Runtime: a `@modal` parallel-route slot under `(platform)/` (`default.tsx`, dialog `layout.tsx`); the platform layout renders the slot
+- `scripts/generate-registry.ts`: for `shell: overlay`, compose the plugin's `app/` tree twice — interception copy under `(platform)/@modal/(.)<routePrefix>/` and full-page fallback under `(platform)/(plugins)/<routePrefix>/`; emit the mode in the registry
+- Root-plugin eligibility (CON-11) excludes `overlay` plugins
+- Migrate `plugins/console` and `plugins/account` manifests to `shell: "overlay"`; update `docs/plugins/console.md` and `docs/plugins/account.md`
+- `CLAUDE.md`: hard-rule note that the shell route-group mapping gains the overlay compose target
+
+**SRS reference:** RFC 0001, SRS §3.8, §3.9, CON-11, §5
+
+**Review checklist:**
+
+- A soft (in-app) navigation to Console/Account opens it as a dialog over the current page; the underlying page stays mounted and is restored on dismiss
+- A hard load / deep link / refresh of `/console` or `/account` renders the full-page fallback
+- `adminOnly` gating still returns 403 for Console regardless of presentation mode
+- Esc and scrim-click dismiss the dialog; mobile renders a full-screen sheet
+- An `overlay` plugin cannot be selected as the root plugin (CON-11)
+- The generate script composes both copies; navigating between an overlay plugin's sub-routes stays within the dialog
+
+---
+
 ### Task 1.0.01 — Registry contribution process
 
 **Goal:** Define and document the process for submitting a community plugin to `registry/plugins.json`.
@@ -974,6 +1001,8 @@ consistent info/success/warn/error formatting. CLI is monorepo-internal in v1
 - Semver policy documented and linked from README
 
 ---
+
+_Version 1.12 — June 2026. Planning change (no task completed, no version bumps): RFC 0001 (overlay shell variant) accepted and incorporated. Added **Task 0.5.09 — Overlay shell mode** `[parallel]` to the v0.5 phase: a third `shell` mode (`overlay`) that renders a plugin as a dismissable dialog over the current page (App Router parallel + intercepting routes — `@modal` slot + dual composition by the generate script), with a full-page fallback on hard navigation, plus a `packages/ui` `Dialog` primitive and migration of Console/Account. Sequenced as a v0.5 polish item (no hard dependency on the other v0.5 tasks; needs the UI `Dialog`). Corresponding SRS edits: §3.8 (third shell mode), §3.9 (dual composition), §5 (manifest `shell` enum gains `'overlay'`), CON-11 (root-plugin eligibility excludes overlay), and a decision-log row. The manifest enum change and all code land in Task 0.5.09, not in this planning change. Earlier notes retained._
 
 _Version 1.11 — June 2026. Changes from v1.10 (Task 0.5.01, PWA configuration — SRS §3.11, PLT-09; `runtime` → 0.5.0): the runtime is now an installable PWA. `@ducanh2912/next-pwa` wraps `runtime/next.config.ts` (preserving `transpilePackages`/`serverExternalPackages`), **disabled in development** so it never touches HMR — installability/Lighthouse therefore apply only to a production build. `runtime/public/manifest.json` (name, `standalone`, theme/background `#09090b`, 192/512/maskable icons) and the PNG icons in `runtime/public/icons/` are committed source; the icons are the monochrome Launcher 2×2-grid mark, generated programmatically (no rasterizer available). The manifest, theme colour, and apple-touch icon are linked via root-layout `metadata`/`viewport`. A self-contained `/offline` route is the navigation fallback (`fallbacks.document`). The service worker (`sw.js`/`workbox-*`/`fallback-*`) is generated into `runtime/public/` at build and is gitignored + ESLint/Prettier-ignored. The middleware matcher now also excludes the PWA assets and `/offline` (they must load without a session). Verified: `next build` generates the SW cleanly and prerenders `/offline`; a manifest regression test (4) asserts the installability fields. Earlier notes retained._
 

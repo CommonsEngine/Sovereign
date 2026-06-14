@@ -37,6 +37,11 @@ runtime/public/workbox-*.js
 runtime/public/workbox-*.js.map
 runtime/public/fallback-*.js
 
+# Local / private working area. Not part of the open-source monorepo — may hold
+# proprietary plugin specs and notes, typically backed by a separate private
+# repository initialised inside it. Never committed here.
+docs/local/
+
 # Environment / secrets
 .env
 .env.*

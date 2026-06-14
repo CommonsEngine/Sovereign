@@ -1,10 +1,10 @@
 # RFC 0001 — Overlay shell variant
 
-**Status:** Draft\
+**Status:** Accepted\
 **Date:** June 2026\
 **Author:** kasunben\
 **Scope:** Platform shell, manifest schema, generate script, `packages/ui`\
-**Incorporated into plan:** No — this document proposes; the SRS, plugin specs, and implementation tasks are updated only when this RFC is accepted.
+**Incorporated into plan:** Yes — the design is recorded in SRS §3.8 (shell modes), §3.9 (dual composition), §5 (manifest `shell` enum), and CON-11 (root-plugin eligibility), with a decision-log row. The implementation is scheduled as Task 0.5.09 (overlay shell mode); the code changes in the "Impact when accepted" table land in that task.
 
 ---
 
@@ -150,7 +150,7 @@ New primitives (also independently useful):
   (`default` / `minimal` / `overlay` → three compose targets) should be kept
   coherent when either lands.
 
-## Impact when accepted (deferred — no edits yet)
+## Impact (accepted — SRS/tasks incorporated; code lands in Task 0.5.09)
 
 | Where                                                | Change                                                                                                                                               |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -211,6 +211,7 @@ New primitives (also independently useful):
 
 ## Changelog
 
-| Version | Date     | Change         |
-| ------- | -------- | -------------- |
-| 0.1     | Jun 2026 | Initial draft. |
+| Version | Date     | Change                                                                                |
+| ------- | -------- | ------------------------------------------------------------------------------------- |
+| 0.1     | Jun 2026 | Initial draft.                                                                        |
+| 1.0     | Jun 2026 | Accepted; incorporated into SRS (§3.8/§3.9/§5/CON-11 + decision log) and Task 0.5.09. |
