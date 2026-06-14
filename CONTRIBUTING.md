@@ -140,3 +140,27 @@ a plugin rather than contribute to the runtime itself:
 
 Third-party plugins may use any licence. They do not require a CLA unless
 submitted to the official registry.
+
+### Installing external plugins
+
+The platform plugins (`console`, `launcher`, `account`) ship in this repo.
+Sovereign/community plugins live in their own repositories and are pulled in
+with `pnpm install:plugins`, which reads `sovereign.plugins.json` at the repo
+root:
+
+```json
+{
+  "plugins": [
+    {
+      "id": "fs.example.tasks",
+      "repository": "https://github.com/your-org/sovereign-plugin-tasks"
+    }
+  ]
+}
+```
+
+Each entry is shallow-cloned into `plugins/<id>/` (skipped if already present),
+then `pnpm generate` composes it into the runtime. Cloned plugins are
+gitignored — they are not committed to this repo. The shipped config has an
+empty `plugins` list; add entries to install. An unreachable repository URL
+fails the script with a clear error.
