@@ -23,5 +23,24 @@ export const registry: SovereignManifest[] = [
     "compatibility": {
       "minPlatformVersion": "0.4.0"
     }
+  },
+  {
+    "schemaVersion": 1,
+    "id": "fs.sovereign.launcher",
+    "name": "Launcher",
+    "version": "0.1.0",
+    "description": "Home screen — lists all installed plugins for easy access.",
+    "type": "platform",
+    "runtime": "native",
+    "routePrefix": "/launcher",
+    "permissions": [
+      "auth:session",
+      "db:readOnly"
+    ],
+    "shell": "default",
+    "icon": "icon.svg",
+    "compatibility": {
+      "minPlatformVersion": "0.4.0"
+    }
   }
 ];

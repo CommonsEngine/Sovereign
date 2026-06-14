@@ -4,7 +4,7 @@
 **Date:** June 2026\
 **Author:** kasunben\
 **Purpose:** Canonical specification for the Sovereign Launcher plugin — the single source of truth for its manifest, access model, functional requirements, and build plan.\
-**Status:** Draft
+**Status:** v0.1 implemented (Task 0.4.05)
 
 ---
 
@@ -245,6 +245,7 @@ Multi-project tile expansion, search, notification badges.
 
 ## Changelog
 
-| Version | Date     | Change                                     |
-| ------- | -------- | ------------------------------------------ |
-| 0.1     | Jun 2026 | Initial draft — platform home screen spec. |
+| Version | Date     | Change                                                                                                                                                                                                                                                                                                                                                              |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1     | Jun 2026 | Initial draft — platform home screen spec.                                                                                                                                                                                                                                                                                                                          |
+| 0.1     | Jun 2026 | v0.1 implemented (Task 0.4.05). Deviations from this spec: components live under `app/_components/` (not a sibling `components/`) since composition copies only `app/`; registry is read via the gated `/api/plugins` route (forwarding the session cookie) rather than `sdk.db`, which lands in 0.5.05; tiles use monograms pending an icon-serving pipeline (Q3). |

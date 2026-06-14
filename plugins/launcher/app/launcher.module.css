@@ -1,0 +1,114 @@
+.launcher {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-6);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--sv-font-size-2xl);
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-primary);
+}
+
+/* ── Grid ───────────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--sv-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sv-space-3);
+  height: 100%;
+  padding: var(--sv-space-6) var(--sv-space-5);
+  border: 1px solid var(--sv-color-border);
+  border-radius: var(--sv-radius-lg);
+  background-color: var(--sv-color-surface-raised);
+  box-shadow: var(--sv-shadow-card);
+  text-decoration: none;
+}
+
+.tile:hover {
+  border-color: var(--sv-color-border-strong);
+}
+
+.tileIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--sv-radius-md);
+  background-color: var(--sv-color-surface-sunken);
+  color: var(--sv-color-text-primary);
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-semibold);
+}
+
+.tileName {
+  font-size: var(--sv-font-size-md);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+.tileDesc {
+  font-size: var(--sv-font-size-sm);
+  color: var(--sv-color-text-muted);
+}
+
+/* ── Admin section ──────────────────────────────────────────────────────── */
+
+.adminSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sv-space-4);
+  padding-top: var(--sv-space-4);
+  border-top: 1px solid var(--sv-color-border);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-muted);
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sv-space-2);
+  padding: var(--sv-space-16) var(--sv-space-6);
+  border: 1px dashed var(--sv-color-border);
+  border-radius: var(--sv-radius-lg);
+  text-align: center;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: var(--sv-font-size-lg);
+  font-weight: var(--sv-font-weight-medium);
+  color: var(--sv-color-text-primary);
+}
+
+.emptyText {
+  margin: 0;
+  font-size: var(--sv-font-size-sm);
+  color: var(--sv-color-text-muted);
+}
+
+.emptyLink {
+  color: var(--sv-color-accent);
+  text-decoration: underline;
+}
