@@ -5,6 +5,25 @@ import type { SovereignManifest } from '@sovereignfs/manifest';
 export const registry: SovereignManifest[] = [
   {
     "schemaVersion": 1,
+    "id": "fs.sovereign.account",
+    "name": "Account",
+    "version": "0.1.0",
+    "description": "Personal profile, preferences, and credential management.",
+    "type": "platform",
+    "runtime": "native",
+    "routePrefix": "/account",
+    "permissions": [
+      "auth:session",
+      "db:readWrite"
+    ],
+    "shell": "default",
+    "icon": "icon.svg",
+    "compatibility": {
+      "minPlatformVersion": "0.4.0"
+    }
+  },
+  {
+    "schemaVersion": 1,
     "id": "fs.sovereign.console",
     "name": "Console",
     "version": "0.1.0",

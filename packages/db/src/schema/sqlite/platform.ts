@@ -77,6 +77,20 @@ export const platformSettings = sqliteTable(
   (table) => [primaryKey({ columns: [table.key, table.tenantId] })],
 );
 
+/**
+ * Per-user Account-plugin preferences (SRS ACC-07/08, `docs/plugins/account.md`).
+ * Plugin-owned (`account_` prefix) but lives in the shared platform schema —
+ * the runtime reads/writes it on the plugin's behalf until `sdk.db` lands
+ * (Task 0.5.05). One row per user, upserted on any preference change.
+ */
+export const accountPrefs = sqliteTable('account_prefs', {
+  userId: text('user_id').primaryKey(),
+  tenantId: text('tenant_id').notNull(),
+  timezone: text('timezone').notNull().default('UTC'),
+  theme: text('theme').notNull().default('system'), // 'system' | 'light' | 'dark'
+  updatedAt: integer('updated_at').notNull(),
+});
+
 export type Tenant = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type User = typeof users.$inferSelect;
@@ -87,3 +101,5 @@ export type PluginStatus = typeof pluginStatus.$inferSelect;
 export type NewPluginStatus = typeof pluginStatus.$inferInsert;
 export type PlatformSetting = typeof platformSettings.$inferSelect;
 export type NewPlatformSetting = typeof platformSettings.$inferInsert;
+export type AccountPrefs = typeof accountPrefs.$inferSelect;
+export type NewAccountPrefs = typeof accountPrefs.$inferInsert;

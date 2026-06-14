@@ -62,11 +62,24 @@
 
 .avatar {
   display: flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: var(--sv-radius-full);
   background-color: var(--sv-color-surface-sunken);
   border: 1px solid var(--sv-color-border-strong);
+  overflow: hidden;
+  font-size: var(--sv-font-size-xs);
+  font-weight: var(--sv-font-weight-semibold);
+  color: var(--sv-color-text-muted);
+  text-decoration: none;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .content {

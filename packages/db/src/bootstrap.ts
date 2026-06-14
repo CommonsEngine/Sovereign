@@ -38,9 +38,20 @@ export const PLATFORM_SETTINGS_BOOTSTRAP_SQL = `
   )
 `;
 
+export const ACCOUNT_PREFS_BOOTSTRAP_SQL = `
+  CREATE TABLE IF NOT EXISTS account_prefs (
+    user_id TEXT PRIMARY KEY,
+    tenant_id TEXT NOT NULL,
+    timezone TEXT NOT NULL DEFAULT 'UTC',
+    theme TEXT NOT NULL DEFAULT 'system',
+    updated_at INTEGER NOT NULL
+  )
+`;
+
 /** All platform DDL statements, in dependency order. */
 export const PLATFORM_BOOTSTRAP_SQL: readonly string[] = [
   TENANTS_BOOTSTRAP_SQL,
   PLUGIN_STATUS_BOOTSTRAP_SQL,
   PLATFORM_SETTINGS_BOOTSTRAP_SQL,
+  ACCOUNT_PREFS_BOOTSTRAP_SQL,
 ];

@@ -3,8 +3,10 @@ import { createClient } from './client';
 import {
   DEFAULT_ROOT_PLUGIN_ID,
   bootstrapPlatformDb,
+  getAccountPrefs,
   getDefaultTenant,
   getPlatformSetting,
+  setAccountPrefs,
   setPlatformSetting,
   setTenantName,
   type PlatformDb,
@@ -63,5 +65,31 @@ describe('tenant helpers', () => {
     const db = freshDb();
     setTenantName(db, 'My Workspace');
     expect(getDefaultTenant(db).name).toBe('My Workspace');
+  });
+});
+
+describe('account preferences helpers', () => {
+  it('returns UTC + system defaults when no row exists', () => {
+    expect(getAccountPrefs(freshDb(), 'u1')).toEqual({ timezone: 'UTC', theme: 'system' });
+  });
+
+  it('inserts a row on first set and round-trips it', () => {
+    const db = freshDb();
+    const next = setAccountPrefs(db, 'u1', { timezone: 'America/New_York', theme: 'dark' });
+    expect(next).toEqual({ timezone: 'America/New_York', theme: 'dark' });
+    expect(getAccountPrefs(db, 'u1')).toEqual({ timezone: 'America/New_York', theme: 'dark' });
+  });
+
+  it('merges a partial update, leaving other fields intact', () => {
+    const db = freshDb();
+    setAccountPrefs(db, 'u1', { timezone: 'Europe/Berlin', theme: 'light' });
+    setAccountPrefs(db, 'u1', { theme: 'dark' });
+    expect(getAccountPrefs(db, 'u1')).toEqual({ timezone: 'Europe/Berlin', theme: 'dark' });
+  });
+
+  it('keeps preferences isolated per user', () => {
+    const db = freshDb();
+    setAccountPrefs(db, 'u1', { theme: 'dark' });
+    expect(getAccountPrefs(db, 'u2')).toEqual({ timezone: 'UTC', theme: 'system' });
   });
 });
