@@ -48,19 +48,19 @@ endpoints under the platform's `/api` namespace (PLT-16).
 
 ## Identity and manifest
 
-| Property                           | Value                                                           |
-| ---------------------------------- | --------------------------------------------------------------- |
-| `id`                               | `io.openfs.sovereign.apicomposer`                               |
-| `name`                             | `API Composer`                                                  |
-| `type`                             | `sovereign`                                                     |
-| `runtime`                          | `native`                                                        |
-| `routePrefix`                      | `/api-composer`                                                 |
-| `shell`                            | `default`                                                       |
-| `adminOnly`                        | omitted (`false`)                                               |
-| `icon`                             | `icon.svg`                                                      |
-| `permissions`                      | `auth:session`, `db:readWrite`                                  |
-| `repository`                       | `https://github.com/CommonsEngine/sovereign-plugin-apicomposer` |
-| `compatibility.minPlatformVersion` | `0.5.0`                                                         |
+| Property                           | Value                                                         |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `id`                               | `io.openfs.sovereign.apicomposer`                             |
+| `name`                             | `API Composer`                                                |
+| `type`                             | `sovereign`                                                   |
+| `runtime`                          | `native`                                                      |
+| `routePrefix`                      | `/api-composer`                                               |
+| `shell`                            | `default`                                                     |
+| `adminOnly`                        | omitted (`false`)                                             |
+| `icon`                             | `icon.svg`                                                    |
+| `permissions`                      | `auth:session`, `db:readWrite`                                |
+| `repository`                       | `https://github.com/sovereignfs/sovereign-plugin-apicomposer` |
+| `compatibility.minPlatformVersion` | `0.5.0`                                                       |
 
 Proposed `manifest.json`:
 
@@ -77,7 +77,7 @@ Proposed `manifest.json`:
   "shell": "default",
   "icon": "icon.svg",
   "permissions": ["auth:session", "db:readWrite"],
-  "repository": "https://github.com/CommonsEngine/sovereign-plugin-apicomposer",
+  "repository": "https://github.com/sovereignfs/sovereign-plugin-apicomposer",
   "compatibility": {
     "minPlatformVersion": "0.5.0"
   }

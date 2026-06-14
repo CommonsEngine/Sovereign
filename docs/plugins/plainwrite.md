@@ -46,19 +46,19 @@ third-party API integration from within a Sovereign plugin.
 
 ## Identity and manifest
 
-| Property                           | Value                                                          |
-| ---------------------------------- | -------------------------------------------------------------- |
-| `id`                               | `io.openfs.sovereign.plainwrite`                               |
-| `name`                             | `Plainwrite`                                                   |
-| `type`                             | `sovereign`                                                    |
-| `runtime`                          | `native`                                                       |
-| `routePrefix`                      | `/plainwrite`                                                  |
-| `shell`                            | `default`                                                      |
-| `adminOnly`                        | omitted (`false`)                                              |
-| `icon`                             | `icon.svg`                                                     |
-| `permissions`                      | `auth:session`, `db:readWrite`                                 |
-| `repository`                       | `https://github.com/CommonsEngine/sovereign-plugin-plainwrite` |
-| `compatibility.minPlatformVersion` | `0.4.0`                                                        |
+| Property                           | Value                                                        |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `id`                               | `io.openfs.sovereign.plainwrite`                             |
+| `name`                             | `Plainwrite`                                                 |
+| `type`                             | `sovereign`                                                  |
+| `runtime`                          | `native`                                                     |
+| `routePrefix`                      | `/plainwrite`                                                |
+| `shell`                            | `default`                                                    |
+| `adminOnly`                        | omitted (`false`)                                            |
+| `icon`                             | `icon.svg`                                                   |
+| `permissions`                      | `auth:session`, `db:readWrite`                               |
+| `repository`                       | `https://github.com/sovereignfs/sovereign-plugin-plainwrite` |
+| `compatibility.minPlatformVersion` | `0.4.0`                                                      |
 
 Proposed `manifest.json`:
 
@@ -75,7 +75,7 @@ Proposed `manifest.json`:
   "shell": "default",
   "icon": "icon.svg",
   "permissions": ["auth:session", "db:readWrite"],
-  "repository": "https://github.com/CommonsEngine/sovereign-plugin-plainwrite",
+  "repository": "https://github.com/sovereignfs/sovereign-plugin-plainwrite",
   "compatibility": {
     "minPlatformVersion": "0.4.0"
   }

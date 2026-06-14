@@ -688,11 +688,11 @@ Deferred: password reset (AUTH-07) — revisited in a later auth task.
     "plugins": [
       {
         "id": "io.openfs.sovereign.tasks",
-        "repository": "https://github.com/CommonsEngine/sovereign-plugin-tasks"
+        "repository": "https://github.com/sovereignfs/sovereign-plugin-tasks"
       },
       {
         "id": "io.openfs.sovereign.splitify",
-        "repository": "https://github.com/CommonsEngine/sovereign-plugin-splitify"
+        "repository": "https://github.com/sovereignfs/sovereign-plugin-splitify"
       }
     ]
   }

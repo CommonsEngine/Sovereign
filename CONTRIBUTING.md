@@ -19,7 +19,7 @@ you need to get started.
 recommended for running the full stack locally.
 
 ```bash
-git clone https://github.com/CommonsEngine/Sovereign.git
+git clone https://github.com/sovereignfs/sovereign.git
 cd Sovereign
 pnpm install
 cp .env.example .env   # fill in required values
@@ -198,7 +198,7 @@ try to commit or track it.
    manifest `id` as the directory name:
 
    ```bash
-   git clone https://github.com/CommonsEngine/Sovereign.git
+   git clone https://github.com/sovereignfs/sovereign.git
    cd Sovereign
    mkdir -p plugins/fs.example.splitify
    ```
