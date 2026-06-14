@@ -164,3 +164,57 @@ then `pnpm generate` composes it into the runtime. Cloned plugins are
 gitignored — they are not committed to this repo. The shipped config has an
 empty `plugins` list; add entries to install. An unreachable repository URL
 fails the script with a clear error.
+
+### Developing a plugin against a local Sovereign
+
+You can develop a plugin that lives in **its own repository** while using a
+local Sovereign checkout for hot-reload and the full dev experience. The
+plugin directory under `plugins/` is gitignored by this repo (the allowlist
+only keeps the platform plugins `console`/`launcher`/`account`), so it can be
+its own independent Git repository with its own remote — Sovereign will never
+try to commit or track it.
+
+1. **Clone Sovereign and create your plugin directory.** Use your plugin's
+   manifest `id` as the directory name:
+
+   ```bash
+   git clone https://github.com/CommonsEngine/Sovereign.git
+   cd Sovereign
+   mkdir -p plugins/fs.example.splitify
+   ```
+
+2. **Make it its own repository.** Initialise Git inside the plugin directory
+   and point it at your remote (this repo is separate from Sovereign):
+
+   ```bash
+   cd plugins/fs.example.splitify
+   git init && git remote add origin https://github.com/your-org/sovereign-plugin-splitify
+   cd ../..
+   ```
+
+3. **Add the plugin's `manifest.json` and `package.json`.** Mirror an existing
+   plugin (e.g. `plugins/launcher/`). A non-platform plugin's manifest
+   **requires a `repository` field** (your plugin's GitHub URL) — `pnpm generate`
+   validates the manifest at startup and fails loudly otherwise. Depend on
+   `@sovereignfs/sdk` and `@sovereignfs/ui` only (the ESLint boundary rule
+   enforces this); use `"workspace:*"` for them and `catalog:` for
+   `next`/`react`.
+
+4. **Link the workspace, then start dev.** `plugins/*` is a pnpm workspace
+   glob, so a `pnpm install` links your plugin's workspace dependencies:
+
+   ```bash
+   pnpm install   # after adding package.json (re-run when deps change)
+   pnpm dev
+   ```
+
+   `pnpm dev` runs the generate watcher, which composes `plugins/<id>/app/`
+   into the runtime and **re-copies on every edit → Next hot-reloads**. Editing
+   `@sovereignfs/sdk` or `@sovereignfs/ui` hot-reloads too (they compile from
+   source via `transpilePackages`). If you add the plugin while `pnpm dev` is
+   already running, restart it once so the newly-linked workspace deps resolve;
+   after that, edits under `app/` reload without a restart.
+
+You do **not** add a locally-developed plugin to `sovereign.plugins.json` —
+that file is only for _cloning_ plugins you don't already have. Add an entry
+there later so others can `pnpm install:plugins` your published repo.
