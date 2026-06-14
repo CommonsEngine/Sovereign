@@ -29,6 +29,14 @@ dist/
 !/plugins/console/
 !/plugins/launcher/
 
+# PWA service worker + Workbox bundles, generated into runtime/public by
+# @ducanh2912/next-pwa at build time. Never committed (the manifest + icons are).
+runtime/public/sw.js
+runtime/public/sw.js.map
+runtime/public/workbox-*.js
+runtime/public/workbox-*.js.map
+runtime/public/fallback-*.js
+
 # Environment / secrets
 .env
 .env.*

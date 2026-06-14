@@ -206,6 +206,16 @@ pnpm lint:fix        # run ESLint with auto-fix
   the `sv-theme` cookie on PATCH. Avatars live on disk at
   `data/avatars/<user_id>.<ext>` (served by `/api/account/avatar/[userId]`); the
   user record's `image` field holds the servable URL.
+- **The runtime is an installable PWA** (`@ducanh2912/next-pwa`, PLT-09). The
+  web manifest (`runtime/public/manifest.json`) and PNG icons
+  (`runtime/public/icons/`) are committed **source**; the service worker
+  (`sw.js`, `workbox-*.js`, `fallback-*.js`) is **generated into
+  `runtime/public/` at build** and is gitignored + ignored by ESLint and
+  Prettier — never commit or lint it. The SW is **disabled in dev** (so it
+  never interferes with HMR), so installability/Lighthouse only apply to a
+  production build (`next build`). The PWA assets and the `/offline` fallback
+  are excluded from the middleware session gate (they must load without a
+  session).
 
 ## Design system (`packages/ui`)
 
@@ -449,8 +459,9 @@ pnpm install:plugins    # clone sovereign/community plugins declared in sovereig
 - ✅ Task 0.4.04 — Console: tenant settings, system health, root plugin config (`platform_settings` + `tenants` seeded in platform DB; `sdk.platform.getConfig()` wired; invite-only toggle dual-written to auth server; `/` redirects to the configured root plugin) (merged to `main`).
 - ✅ Task 0.4.05 — Launcher plugin (`plugins/launcher/` home grid; gated `/api/plugins` + `selectLauncherPlugins` helper; chrome plugins excluded from grid and sidebar middle section; `/` serves the root plugin in place via middleware rewrite — `/` and `/launcher` both render the Launcher) (merged to `main`).
 - ✅ Task 0.4.06 — Account plugin (Profile + Preferences + Security): display name + avatar, IANA timezone + Light/Dark/System theme, password change, active-session list/revoke; `account_prefs` table; `sdk.auth` gained `changePassword`/`listSessions`/`revokeSession`; `freshAge: 0` so session listing isn't gated by session age. Completes the v0.4 chrome-plugin trio (Console, Launcher, Account) (merged to `main`).
-- ▶️ In review: Task 0.5.00 — `scripts/install-plugins.ts` (platform → 0.5.0, enters v0.5): reads `sovereign.plugins.json` (`{ plugins: [{ id, repository }] }`), shallow-clones declared plugins into `plugins/<id>/` (skips existing), then runs `pnpm generate`; fails clearly on an unreachable repo. Cloned plugins are gitignored (allowlist keeps the three committed platform plugins). Ships with an empty plugin list (the reference plugin repos don't exist yet).
-- ⏳ Next: Task 0.5.01 — PWA configuration: `@ducanh2912/next-pwa` in `runtime/next.config.ts`, `public/manifest.json` (name, icons, theme colour), a service worker caching the shell + static assets, installable from Chrome/Safari with an offline shell (SRS §3.11, PLT-09). Branch from an up-to-date `main` once #26 merges.
+- ✅ Task 0.5.00 — `scripts/install-plugins.ts` (platform → 0.5.0, enters v0.5): reads `sovereign.plugins.json`, shallow-clones declared plugins into `plugins/<id>/` (skips existing), then runs `pnpm generate`; cloned plugins gitignored (allowlist keeps the three committed platform plugins) (merged to `main`).
+- ▶️ In review: Task 0.5.01 — PWA configuration (`runtime` → 0.5.0): `@ducanh2912/next-pwa` wraps `runtime/next.config.ts` (disabled in dev), `runtime/public/manifest.json` + generated PNG icons (192/512/maskable + apple-touch), manifest/theme-colour linked via root-layout metadata/viewport, `/offline` fallback page; service worker generated into `runtime/public/` at build (gitignored + eslint/prettier-ignored). SRS §3.11, PLT-09.
+- ⏳ Next: Task 0.5.02 — Production Docker image: multi-stage `Dockerfile` (runtime) + `apps/auth/Dockerfile` from Next.js standalone output (`output: 'standalone'`), non-root runner, `HEALTHCHECK`, and `docker-compose.prod.yml` wired to the built images (SRS deployment). Branch from an up-to-date `main` once #27 merges.
 - ⏳ Spec complete: Shell sidebar three-section architecture (PLT-11–PLT-15, SRS updated).
 - ⏳ Spec complete: Plainwrite sovereign plugin (`docs/plugins/plainwrite.md`, v0.2 — provider + SSG adapters).
 - ⏳ Spec complete: API Composer sovereign plugin (`docs/plugins/api-composer.md`) — GUI API builder, `/api` namespace (PLT-16, Task 0.5.08).

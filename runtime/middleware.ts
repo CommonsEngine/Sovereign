@@ -115,6 +115,10 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // Gate everything except auth redirects, internal admin API, and Next static assets.
-  matcher: ['/((?!login|register|api/admin|_next/static|_next/image|favicon.ico).*)'],
+  // Gate everything except auth redirects, internal admin API, the offline
+  // fallback, the PWA assets (manifest, service worker, Workbox/fallback
+  // bundles, icons — must load without a session), and Next static assets.
+  matcher: [
+    '/((?!login|register|offline|api/admin|manifest.json|sw.js|workbox-|fallback-|icons/|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
